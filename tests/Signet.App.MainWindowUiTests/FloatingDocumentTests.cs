@@ -28,7 +28,8 @@ namespace Signet.App.MainWindowUiTests;
 /// </summary>
 public sealed class FloatingDocumentTests
 {
-    private static readonly string[] RegionIds = { "LeftDock", "RightDock", "BottomDock" };
+    // The six places of the panels (each an area of tabs of its own).
+    private static readonly string[] RegionIds = PanelPlaces.All.Select(PanelPlaces.DockId).ToArray();
 
     // Created inside each test: the constructor and Dispose of a test class do not run on the UI thread.
     private sealed class Scenario : IDisposable

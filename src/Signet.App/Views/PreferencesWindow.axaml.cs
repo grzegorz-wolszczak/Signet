@@ -350,6 +350,7 @@ public partial class PreferencesWindow : Window
         yield return PreviewPreviewHost;
         yield return NotificationsPreviewHost;
         yield return ToolbarsPreviewHost;
+        yield return ActionBarsPreviewHost;
     }
 
     // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
@@ -426,6 +427,19 @@ public partial class PreferencesWindow : Window
             ToolbarManager.ApplyResources(ToolbarsPreviewPane.Resources, vm.ToolbarSampleManager.Appearance);
             vm.ToolbarSampleManager.AppearanceChanged +=
                 (_, _) => ToolbarManager.ApplyResources(ToolbarsPreviewPane.Resources, vm.ToolbarSampleManager.Appearance);
+            // The sample stripes take the font of the names from the resources of the preview (the draft's font), which
+            // come before the application's (the saved one); their width follows the draft by itself.
+            PanelStripeFontsView.DataContext = vm.PanelStripeFonts;
+            ActionBarsPreviewLeft.DataContext = vm.PanelStripesSample.Left;
+            ActionBarsPreviewRight.DataContext = vm.PanelStripesSample.Right;
+            PanelStripeLook.Apply(ActionBarsPreviewPane.Resources, this, vm.PanelStripeLookDraft);
+            vm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName?.StartsWith("PanelStripeFont", StringComparison.Ordinal) == true)
+                {
+                    PanelStripeLook.Apply(ActionBarsPreviewPane.Resources, this, vm.PanelStripeLookDraft);
+                }
+            };
             ContextMenuFontsView.DataContext = vm.ContextMenuFonts;
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
             PreviewSampleTip.DataContext = vm.PreviewFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.Preview);

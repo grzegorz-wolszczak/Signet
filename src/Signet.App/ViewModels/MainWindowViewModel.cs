@@ -65,8 +65,8 @@ public sealed partial class MainWindowViewModel
     /// <summary>Settings group holding panel visibility.</summary>
     public const string DockPanelsGroup = "dock_panels";
 
-    /// <summary>Settings group holding the slid-out sizes of "Auto Hide" panels.</summary>
-    public const string DockPinnedSizesGroup = "dock_pinned_sizes";
+    /// <summary>Settings group of the panels whose button is off the stripes (<see cref="MainDockFactory.CaptureOffStripe"/>).</summary>
+    public const string DockOffStripeGroup = "dock_off_stripe";
 
     /// <summary>Settings group of the floating panel windows (<see cref="MainDockFactory.CaptureFloatingPanels"/>).</summary>
     public const string DockFloatingGroup = "dock_floating";
@@ -251,12 +251,13 @@ public sealed partial class MainWindowViewModel
         Layout = _dockFactory.CreateLayout();
         _dockFactory.InitLayout(Layout);
         UpdateBookOpenState();
-        // RestoreDockLayout() is disabled: restoring a saved layout could degenerate the
-        // assignment/proportions of the regions (e.g. the document area disappears entirely) —
-        // so we always start with the default layout from CreateLayout/InitLayout.
-        // Only the widths of Book Browser and Preview are restored (a safe subset).
+        // The whole saved layout is not restored: restoring its proportions could degenerate the layout (e.g. the
+        // document area disappears entirely) — so we start with the default layout from CreateLayout/InitLayout and
+        // restore a safe subset: the widths of the side columns, the places of the panels (with the share of each half,
+        // clamped) and their visibility.
         RestoreSideRegionWidths();
         RestorePanelVisibility();
+        PanelStripes = new PanelStripesViewModel(_dockFactory, _settings, _actions);
         WirePanelActions();
         WireNotificationsActions();
         MarkCheckableFormatActions();
@@ -880,6 +881,9 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>Layout of the dockable panels.</summary>
     public IRootDock Layout { get; }
+
+    /// <summary>The stripes of the panels along the sides of the window (IntelliJ's tool window bars).</summary>
+    public PanelStripesViewModel PanelStripes { get; }
 
     /// <summary>Dock factory (for the <c>DockControl</c> — drag operations at runtime).</summary>
     public Dock.Model.Core.IFactory DockFactory => _dockFactory;
@@ -1717,7 +1721,7 @@ public sealed partial class MainWindowViewModel
         SaveNavigationHistory();
         _settings.BookOpenAtExit = _currentBook is not null;
         _settings.SetStringMap(DockPanelsGroup, _dockFactory.CaptureToolVisibility());
-        _settings.SetStringMap(DockPinnedSizesGroup, _dockFactory.CapturePinnedSizes());
+        _settings.SetStringMap(DockOffStripeGroup, _dockFactory.CaptureOffStripe());
         _settings.SetStringMap(DockFloatingGroup, _dockFactory.CaptureFloatingPanels());
         _settings.MainWindowDockLayout = _dockFactory.CaptureLayoutState();
         if (_currentBook is not null)
@@ -3954,13 +3958,18 @@ public sealed partial class MainWindowViewModel
 
     private void RestorePanelVisibility()
     {
+        // The places first: a panel is moved while it is still where the default layout put it.
+        if (_settings.MainWindowDockLayout is { } state)
+        {
+            _dockFactory.ApplyPanelPlaces(state);
+        }
+
+        _dockFactory.ApplyOffStripe(_settings.GetStringMap(DockOffStripeGroup));
         IReadOnlyDictionary<string, string> stored = _settings.GetStringMap(DockPanelsGroup);
         if (stored.Count > 0)
         {
             _dockFactory.ApplyToolVisibility(stored);
         }
-
-        _dockFactory.ApplyPinnedSizes(_settings.GetStringMap(DockPinnedSizesGroup));
     }
 
     private void WirePanelActions()

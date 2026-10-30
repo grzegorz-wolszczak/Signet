@@ -64,7 +64,9 @@ public sealed class FloatingPanelTests
         Dispatcher.UIThread.RunJobs();
         MenuItem[] items = menu.Items.Cast<MenuItem>().ToArray();
         MenuItem Item(string key) => items.Single(i => Equals(i.Header, Application.Current!.FindResource(key)));
-        (bool, bool) enabled = (Item("ToolChromeControlFloatString").IsEnabled, Item("ToolChromeControlDockString").IsEnabled);
+        // Offered = listed and enabled ("Dock" is listed only for a floating panel).
+        static bool Offered(MenuItem item) => item.IsVisible && item.IsEnabled;
+        (bool, bool) enabled = (Offered(Item("ToolChromeControlFloatString")), Offered(Item("ToolChromeControlDockString")));
         menu.Hide();
         Dispatcher.UIThread.RunJobs();
         return enabled;
@@ -337,7 +339,7 @@ public sealed class FloatingPanelTests
         Settle(host.Window);
 
         // Assert
-        host.Factory.CaptureLayoutState().Regions.Single(r => r.DockId == "RightDock").ToolIds
+        host.Factory.CaptureLayoutState().Regions.Single(r => r.DockId == PanelPlaces.DockId(PanelPlace.RightTop)).ToolIds
             .Should().Contain(DockableIds.TableOfContents);
         FloatingWindow(host).Close();
         host.Window.Close();
@@ -383,7 +385,7 @@ public sealed class FloatingPanelTests
         // Assert
         toc.Owner.Should().BeSameAs(rightDock);
         host.Factory.IsToolFloating(DockableIds.TableOfContents).Should().BeFalse();
-        host.Factory.IsToolPinned(DockableIds.TableOfContents).Should().BeFalse("\"Dock\" must not switch the panel to Auto Hide");
+        host.Root.RightPinnedDockables.Should().BeNullOrEmpty("\"Dock\" must not switch the panel to Auto Hide");
         host.Root.Windows.Should().BeNullOrEmpty("the emptied floating window is closed");
         host.Window.Close();
     }

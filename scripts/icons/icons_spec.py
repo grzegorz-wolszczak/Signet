@@ -4,6 +4,9 @@ ICONS: key -> dict(
     m, f   : base glyph in the Material (m; also used by the colored Default set) / Fluent (f) family, or '@key' = an
              icon that already exists in the sets (shared by all three).
     mb, fb : optional badge glyph (small, bottom-right) in the Material / Fluent family.
+    drawn  : instead of glyphs, a small drawing on a 16 x 16 canvas shared by the three sets: a list of
+             (path data, part), part 'frame' (the base color) or 'fill' (the Default set's other color; the accent in
+             the single-colored sets) — for the diagrams no family has (the places of a panel).
 )
 ACTIONS: action id -> icon key (existing keys included).
 """
@@ -11,10 +14,19 @@ ACTIONS: action id -> icon key (existing keys included).
 ICONS = {}
 
 
-def icon(key, m=None, f=None, mb=None, fb=None, base=None):
+def icon(key, m=None, f=None, mb=None, fb=None, base=None, drawn=None):
     if base:
         m = f = base
-    ICONS[key] = dict(m=m, f=f, mb=mb, fb=fb)
+    ICONS[key] = dict(m=m, f=f, mb=mb, fb=fb, drawn=drawn)
+
+
+# The window of a "place of a panel" diagram: a frame one unit thick around a 16 x 16 canvas (even-odd: outer - inner).
+WINDOW_FRAME = ('M 1 1 H 15 V 15 H 1 Z M 2 2 V 14 H 14 V 2 Z', 'frame')
+
+
+def place_diagram(x0, y0, x1, y1):
+    """A window with the part (x0, y0)-(x1, y1) of its inside filled: where a panel sits."""
+    return [WINDOW_FRAME, ('M %s %s H %s V %s H %s Z' % (x0, y0, x1, y1, x0), 'fill')]
 
 
 # ---- File -------------------------------------------------------------------------------------------------------
@@ -150,6 +162,15 @@ icon('file-info', m='info', f='info')
 # ---- Toolbar context menu (plain commands, not catalog actions) -------------------------------------------------
 icon('toolbar-configure', m='tune', f='options')
 icon('lock', m='lock', f='lock_closed')
+
+# ---- The stripes of the panels (IntelliJ's tool window bars): "More Tool Windows" and the places of "Move To" ------
+icon('more-horizontal', m='more_horiz', f='more_horizontal')
+icon('panel-place-left-top', drawn=place_diagram(2, 2, 6, 8))
+icon('panel-place-left-bottom', drawn=place_diagram(2, 8, 6, 14))
+icon('panel-place-bottom-left', drawn=place_diagram(2, 10, 8, 14))
+icon('panel-place-bottom-right', drawn=place_diagram(8, 10, 14, 14))
+icon('panel-place-right-bottom', drawn=place_diagram(10, 8, 14, 14))
+icon('panel-place-right-top', drawn=place_diagram(10, 2, 14, 8))
 
 # ---- Action id -> icon key (existing keys are reused as they are) -----------------------------------------------
 W = 'MainWindow.'

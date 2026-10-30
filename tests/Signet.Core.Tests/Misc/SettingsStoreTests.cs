@@ -636,6 +636,41 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void Action_bar_look_defaults_to_a_dynamic_width_survives_save_and_reload_and_is_normalized()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        PanelStripeAppearance look = new(PanelStripeWidthMode.Resizable, 50, 90, "Georgia", 12, 600);
+
+        // Assert
+        writer.PanelStripeAppearance.Should().Be(PanelStripeAppearance.Default);
+        writer.PanelStripeAppearance.WidthMode.Should().Be(PanelStripeWidthMode.Dynamic);
+
+        // Act
+        writer.PanelStripeAppearance = look;
+        writer.Save();
+
+        // Assert
+        new SettingsStore(path).PanelStripeAppearance.Should().Be(look);
+
+        // Act
+        writer.PanelStripeAppearance = new PanelStripeAppearance((PanelStripeWidthMode)42, 5, 500, "  Arial  ", 500, 0);
+
+        // Assert
+        writer.PanelStripeAppearance.Should().Be(new PanelStripeAppearance(
+            PanelStripeWidthMode.Dynamic, PanelStripeAppearance.MinWidth, PanelStripeAppearance.MaxWidth, "Arial",
+            PanelStripeAppearance.FontSizeMax, 0));
+
+        // Act
+        writer.ClearAppearanceSettings();
+
+        // Assert
+        writer.PanelStripeAppearance.Should().Be(PanelStripeAppearance.Default, "the defaults of Appearance restore it");
+    }
+
+    [Fact]
     public void Toolbar_appearance_is_normalized()
     {
         // Arrange

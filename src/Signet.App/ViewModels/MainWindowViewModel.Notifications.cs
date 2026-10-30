@@ -29,7 +29,9 @@ public sealed partial class MainWindowViewModel
     private void InitNotifications()
     {
         _dockFactory.Notifications = _notifications;
-        _notifications.WarningArrived += (_, _) => _dockFactory.ShowToolCollapsed(DockableIds.Notifications);
+        // A warning puts the panel's button back on the stripe (when it was taken off), where its bell gets the red dot;
+        // the panel itself is not opened over the work.
+        _notifications.WarningArrived += (_, _) => _dockFactory.SetOnStripe(DockableIds.Notifications, true);
         _notifications.PropertyChanged += OnNotificationsPropertyChanged;
     }
 
@@ -50,7 +52,7 @@ public sealed partial class MainWindowViewModel
     [RelayCommand]
     private void OpenNotifications()
     {
-        _dockFactory.ExpandTool(DockableIds.Notifications);
+        _dockFactory.FocusTool(DockableIds.Notifications);
         _notifications.MarkAsRead();
     }
 

@@ -14,6 +14,9 @@ public static class SettingChangeKeys
     /// <summary>The fonts of the context menus (<see cref="SettingsStore.ContextMenuAppearance"/>).</summary>
     public const string ContextMenuAppearance = "context_menu_appearance";
 
+    /// <summary>The look of the stripes of the panels (<see cref="SettingsStore.PanelStripeAppearance"/>).</summary>
+    public const string PanelStripeAppearance = "panel_stripe_appearance";
+
     /// <summary>The appearance settings were reset to their defaults (<see cref="SettingsStore.ClearAppearanceSettings"/>).</summary>
     public const string AppearanceSettingsCleared = "appearance_settings_cleared";
 

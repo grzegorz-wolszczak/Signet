@@ -122,9 +122,10 @@
       <FontWeight x:Key="SignetContextMenuItemsFontWeight">Normal</FontWeight>
       <FontWeight x:Key="SignetContextMenuTitleFontWeight">Bold</FontWeight>
 
-      <!-- The menu of a panel's title bar (▾), replacing the Dock theme's one (same key, same items). Dock only enables
-           "Dock" to undo "Auto Hide" and keeps "Float" enabled in a floating window; here a floating panel has "Float"
-           disabled and "Dock" enabled, which docks it back into its region (MainDockFactory.PinDockable). -->
+      <!-- The menu of a panel's title bar (▾), replacing the Dock theme's one (same key). Dock only enables "Dock" to undo
+           "Auto Hide" and keeps "Float" enabled in a floating window; here a floating panel has "Float" disabled and
+           "Dock", which docks it back into its place (MainDockFactory.PinDockable). There is no "Auto Hide": the stripes of
+           the panels took its place. -->
       <MenuFlyout x:Key="ToolChromeControlContextMenu" x:DataType="dockControls:IToolDock">
         <MenuItem Header="{DynamicResource ToolChromeControlFloatString}"
                   Command="{Binding Owner.Factory.FloatDockable}"
@@ -145,24 +146,12 @@
             </MultiBinding>
           </MenuItem.IsVisible>
         </MenuItem>
+        <!-- "Dock" docks a floating panel back into its place (MainDockFactory.PinDockable); a docked panel has nothing to
+             dock (there is no "Auto Hide": the stripes of the panels took its place). -->
         <MenuItem Header="{DynamicResource ToolChromeControlDockString}"
                   Command="{Binding Owner.Factory.PinDockable}"
-                  CommandParameter="{Binding ActiveDockable}">
-          <MenuItem.IsEnabled>
-            <MultiBinding Converter="{x:Static BoolConverters.Or}">
-              <Binding Path="ActiveDockable.OriginalOwner" Converter="{x:Static ObjectConverters.IsNotNull}" FallbackValue="False" />
-              <Binding Path="$parent[dock:ToolChromeControl].IsFloating" FallbackValue="False" />
-            </MultiBinding>
-          </MenuItem.IsEnabled>
-          <MenuItem.IsVisible>
-            <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanPinMultiConverter}">
-              <Binding Path="ActiveDockable" />
-              <Binding Path="ActiveDockable.CanPin" />
-              <Binding Path="ActiveDockable.DockCapabilityOverrides.CanPin" />
-              <Binding Path="(dockCore:IDock).DockCapabilityPolicy.CanPin" />
-            </MultiBinding>
-          </MenuItem.IsVisible>
-        </MenuItem>
+                  CommandParameter="{Binding ActiveDockable}"
+                  IsVisible="{Binding $parent[dock:ToolChromeControl].IsFloating, FallbackValue=False}" />
         <MenuItem Header="{DynamicResource ToolChromeControlDockAsDocumentString}"
                   Command="{Binding Owner.Factory.DockAsDocument}"
                   CommandParameter="{Binding ActiveDockable}">
@@ -175,22 +164,6 @@
                 <Binding Path="(dockCore:IDock).DockCapabilityPolicy.CanDockAsDocument" />
               </MultiBinding>
               <Binding Path="ActiveDockable.Owner" Converter="{x:Static dockConverters:OwnerIsToolDockConverter.Instance}" />
-            </MultiBinding>
-          </MenuItem.IsVisible>
-        </MenuItem>
-        <MenuItem Header="{DynamicResource ToolChromeControlAutoHideString}"
-                  Command="{Binding Owner.Factory.PinDockable}"
-                  CommandParameter="{Binding ActiveDockable}"
-                  IsEnabled="{Binding ActiveDockable.OriginalOwner, Converter={x:Static ObjectConverters.IsNull}, FallbackValue=False}">
-          <MenuItem.IsVisible>
-            <MultiBinding Converter="{x:Static BoolConverters.And}">
-              <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanPinMultiConverter}">
-                <Binding Path="ActiveDockable" />
-                <Binding Path="ActiveDockable.CanPin" />
-                <Binding Path="ActiveDockable.DockCapabilityOverrides.CanPin" />
-                <Binding Path="(dockCore:IDock).DockCapabilityPolicy.CanPin" />
-              </MultiBinding>
-              <Binding Path="$parent[dock:ToolChromeControl].IsFloating" Converter="{x:Static BoolConverters.Not}" />
             </MultiBinding>
           </MenuItem.IsVisible>
         </MenuItem>
@@ -424,48 +397,6 @@
                                     UnreadCount="{Binding AttentionCount, FallbackValue=0}" />
           </StackPanel>
         </DataTemplate>
-      </Setter>
-    </Style>
-    <!-- A collapsed ("Auto Hide") tab: the ToolPinItemControl template of Dock.Avalonia.Themes.Fluent (v12.1.0.6)
-         with the notification bell after the title (as in the tool tab header above). -->
-    <Style Selector="dock|ToolPinItemControl" x:DataType="dockCore:IDockable">
-      <Setter Property="Template">
-        <ControlTemplate>
-          <DockableControl TrackingMode="Pinned">
-            <LayoutTransformControl x:Name="PART_LayoutTransformControl">
-              <Border Background="{TemplateBinding Background}"
-                      DockProperties.IsDragArea="True"
-                      DockProperties.IsDropArea="True"
-                      DockProperties.IsDockTarget="True"
-                      DockProperties.ShowDockIndicatorOnly="True"
-                      DockProperties.IndicatorDockOperation="Fill">
-                <Button Background="Transparent"
-                        BorderBrush="Transparent"
-                        BorderThickness="0"
-                        CornerRadius="0"
-                        Command="{Binding Owner.Factory.TogglePreviewPinnedDockable}"
-                        CommandParameter="{Binding}">
-                  <Button.IsVisible>
-                    <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanPinMultiConverter}">
-                      <Binding />
-                      <Binding Path="CanPin" />
-                      <Binding Path="DockCapabilityOverrides.CanPin" />
-                      <Binding Path="((dockCore:IDock)Owner).DockCapabilityPolicy.CanPin" />
-                    </MultiBinding>
-                  </Button.IsVisible>
-                  <StackPanel Orientation="Horizontal" Spacing="5" ContextMenu="{TemplateBinding PinContextMenu}">
-                    <TextBlock Text="{Binding Title}"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Left" />
-                    <views:NotificationBell x:DataType="docking:SignetTool"
-                                            IsVisible="{Binding ShowsNotificationBell, FallbackValue=False}"
-                                            UnreadCount="{Binding AttentionCount, FallbackValue=0}" />
-                  </StackPanel>
-                </Button>
-              </Border>
-            </LayoutTransformControl>
-          </DockableControl>
-        </ControlTemplate>
       </Setter>
     </Style>
 

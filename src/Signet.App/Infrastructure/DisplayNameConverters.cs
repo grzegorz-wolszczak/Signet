@@ -35,4 +35,9 @@ public static class DisplayNameConverters
     public static readonly IValueConverter ToolbarIconSize =
         new FuncValueConverter<Core.Misc.ToolbarIconSize, string>(
             value => Strings.TryGet("ToolbarStripView_" + value + "Icons") ?? value.ToString());
+
+    /// <summary><see cref="Core.Misc.PanelStripeWidthMode"/> → its name (keys <c>PanelStripeWidthMode_*</c>).</summary>
+    public static readonly IValueConverter PanelStripeWidthMode =
+        new FuncValueConverter<Core.Misc.PanelStripeWidthMode, string>(
+            value => Strings.TryGet("PanelStripeWidthMode_" + value) ?? value.ToString());
 }

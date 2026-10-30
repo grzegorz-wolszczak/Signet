@@ -1,0 +1,192 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:views="using:Signet.App.Views"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             xmlns:actions="using:Signet.App.Actions"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.PanelStripeView"
+             x:DataType="vm:PanelStripeViewModel"
+             Classes.names="{Binding Owner.ShowNames}"
+             Width="{Binding Owner.Width}"
+             MinWidth="{x:Static vm:PanelStripesViewModel.MinWidth}">
+
+  <!-- A stripe of panel buttons along a side of the main window (IntelliJ's tool window bar): the buttons of the place
+       at its top, under a line those of the second half of the column, and at its foot those of the half of the bottom
+       row on this side (and, on the left one, "More Tool Windows"). A button is dragged to another group (also on the
+       other stripe) to move its panel there; see PanelStripeView.axaml.cs. -->
+  <UserControl.Styles>
+    <!-- The width comes from PanelStripesViewModel.Width (Preferences › Action Bars): an icon wide without the names; with
+         them as wide as the longest name (Dynamic), or the width set (Fixed) or dragged to (Resizable). -->
+    <Style Selector="Button.stripeButton">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Padding" Value="3,5" />
+      <Setter Property="Margin" Value="3,2" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <!-- An open panel is pressed, the same whether it is in front of its place or behind another tab of it (two looks
+         read as two different states of a toggle). -->
+    <Style Selector="Button.stripeButton.open">
+      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListAccentLowBrush}" />
+    </Style>
+    <Style Selector="TextBlock.stripeLabel">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetPanelStripeFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource SignetPanelStripeFontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource SignetPanelStripeFontWeight}" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="views|PanelStripeView.names TextBlock.stripeLabel">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <!-- While a button is dragged an empty group still has room to drop into. -->
+    <Style Selector="views|PanelStripeView.dragging ItemsControl.stripeGroup">
+      <Setter Property="MinHeight" Value="26" />
+    </Style>
+    <!-- The icon of a menu item is its Tag (an icon key), as in the menu of a toolbar. -->
+    <Style Selector="MenuItem.withIcon">
+      <Setter Property="Icon">
+        <Template>
+          <Panel>
+            <Image Width="16" Height="16"
+                   Source="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Width="16" Height="16"
+                      Data="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Template>
+      </Setter>
+    </Style>
+  </UserControl.Styles>
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="StripeButtonTemplate" x:DataType="vm:PanelStripeButtonViewModel">
+      <Button Classes="stripeButton"
+              Classes.open="{Binding IsOpen}"
+              Classes.front="{Binding IsInFront}"
+              Command="{Binding ClickCommand}"
+              ToolTip.Tip="{Binding ToolTip}"
+              Loaded="OnButtonLoaded">
+        <StackPanel Spacing="2">
+          <Panel Width="20" Height="20" HorizontalAlignment="Center">
+            <Image Source="{Binding IconKey, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <!-- Unread errors (the Notifications panel): the red dot of its bell. -->
+            <Ellipse x:Name="AttentionDot" Width="7" Height="7" Margin="0,-2,-2,0"
+                     HorizontalAlignment="Right" VerticalAlignment="Top"
+                     Fill="{DynamicResource SignetErrorBrush}"
+                     IsVisible="{Binding HasAttention}" />
+          </Panel>
+          <TextBlock Classes="stripeLabel" Text="{Binding Label}" />
+        </StackPanel>
+        <Button.ContextMenu>
+          <ContextMenu>
+            <MenuItem x:Name="HideFromStripeItem" Header="{loc:Loc PanelStripe_Hide}" Command="{Binding HideFromStripeCommand}" />
+            <Separator />
+            <MenuItem x:Name="MoveToItem" Header="{loc:Loc PanelStripe_MoveTo}" ItemsSource="{Binding MoveToItems}">
+              <MenuItem.Styles>
+                <Style Selector="MenuItem#MoveToItem > MenuItem" x:DataType="vm:PanelPlaceItemViewModel">
+                  <Setter Property="Header" Value="{Binding Name}" />
+                  <Setter Property="Command" Value="{Binding MoveCommand}" />
+                  <Setter Property="Tag" Value="{Binding IconKey}" />
+                  <Setter Property="Icon">
+                    <Template>
+                      <Panel>
+                        <Image Width="16" Height="16"
+                               Source="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                               IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        <PathIcon Width="16" Height="16"
+                                  Data="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                                  IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                      </Panel>
+                    </Template>
+                  </Setter>
+                </Style>
+              </MenuItem.Styles>
+            </MenuItem>
+            <Separator />
+            <MenuItem x:Name="ShowNamesItem" Header="{loc:Loc PanelStripe_ShowNames}" ToggleType="CheckBox"
+                      IsChecked="{Binding ShowNames, Mode=OneWay}"
+                      Command="{Binding ToggleShowNamesCommand}" />
+          </ContextMenu>
+        </Button.ContextMenu>
+      </Button>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Border x:Name="Frame" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+          BorderBrush="{DynamicResource SignetFrameBrush}">
+    <Panel>
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,4">
+          <ItemsControl x:Name="BottomGroup" Classes="stripeGroup" ItemsSource="{Binding Bottom}"
+                        ItemTemplate="{StaticResource StripeButtonTemplate}" />
+        </StackPanel>
+        <StackPanel Margin="0,4,0,0">
+          <ItemsControl x:Name="TopGroup" Classes="stripeGroup" ItemsSource="{Binding Top}"
+                        ItemTemplate="{StaticResource StripeButtonTemplate}" />
+          <!-- The line between the halves of the column: only when both have buttons. -->
+          <Border x:Name="GroupSeparator" Height="1" Margin="8,4" Background="{DynamicResource SignetFrameBrush}" />
+          <ItemsControl x:Name="MiddleGroup" Classes="stripeGroup" ItemsSource="{Binding Middle}"
+                        ItemTemplate="{StaticResource StripeButtonTemplate}" />
+          <!-- "More Tool Windows": every panel, by name (also those whose button was hidden). Always shown, only on the left
+               stripe, as the last button of its upper part (as in Rider). -->
+          <Button x:Name="MoreButton" Classes="stripeButton" IsVisible="{Binding HoldsMoreButton}"
+                  ToolTip.Tip="{loc:Loc PanelStripe_More}">
+            <Panel Width="20" Height="20" HorizontalAlignment="Center">
+              <Image Source="{Binding Source={x:Static actions:ActionIconKeys.MoreHorizontal}, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                     IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <PathIcon Data="{Binding Source={x:Static actions:ActionIconKeys.MoreHorizontal}, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                        IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            </Panel>
+            <Button.Flyout>
+              <MenuFlyout Placement="RightEdgeAlignedTop" ItemsSource="{Binding Owner.MoreItems}">
+                <MenuFlyout.ItemContainerTheme>
+                  <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:PanelStripeButtonViewModel">
+                    <Setter Property="Header" Value="{Binding ToolTip}" />
+                    <Setter Property="Command" Value="{Binding RestoreCommand}" />
+                    <Setter Property="Tag" Value="{Binding IconKey}" />
+                    <Setter Property="Icon">
+                      <Template>
+                        <Panel>
+                          <Image Width="16" Height="16"
+                                 Source="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                          <PathIcon Width="16" Height="16"
+                                    Data="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                        </Panel>
+                      </Template>
+                    </Setter>
+                  </ControlTheme>
+                </MenuFlyout.ItemContainerTheme>
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+        </StackPanel>
+      </DockPanel>
+      <!-- The inner edge, dragged to widen or narrow the stripe (Resizable, with the names shown). -->
+      <Thumb x:Name="ResizeGrip" Width="5" HorizontalAlignment="Right" Cursor="SizeWestEast" Background="Transparent"
+             IsVisible="{Binding Owner.CanResize}" DragDelta="OnResizeDelta" DragCompleted="OnResizeCompleted">
+        <Thumb.Template>
+          <ControlTemplate>
+            <Border Background="{TemplateBinding Background}" />
+          </ControlTemplate>
+        </Thumb.Template>
+      </Thumb>
+      <!-- Where a dragged button would be dropped. -->
+      <Canvas IsHitTestVisible="False">
+        <Border x:Name="DropIndicator" Height="2" IsVisible="False"
+                Background="{DynamicResource SystemControlHighlightAccentBrush}" />
+      </Canvas>
+    </Panel>
+  </Border>
+</UserControl>

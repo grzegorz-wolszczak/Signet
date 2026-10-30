@@ -1079,6 +1079,49 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether the buttons of the stripes of the panels show the names of the panels under their icons ("Show Tool Window
+    /// Names" of a stripe button's menu, IntelliJ's); otherwise only the icons, the names in their tooltips.
+    /// </summary>
+    public bool PanelStripeNamesShown
+    {
+        get => ReadBool("panel_stripe_names", false);
+        set => Write("panel_stripe_names", value);
+    }
+
+    /// <summary>
+    /// The look of the stripes of the panels (<see cref="PanelStripeAppearance"/>): their width while they show the names
+    /// and the font of the names. Always read normalized.
+    /// </summary>
+    public PanelStripeAppearance PanelStripeAppearance
+    {
+        get
+        {
+            PanelStripeAppearance d = PanelStripeAppearance.Default;
+            return new PanelStripeAppearance(
+                Enum.TryParse(ReadString("panel_stripe_width_mode", d.WidthMode.ToString()), ignoreCase: true, out PanelStripeWidthMode mode)
+                    ? mode
+                    : d.WidthMode,
+                ReadInt("panel_stripe_fixed_width", d.FixedWidth),
+                ReadInt("panel_stripe_resized_width", d.ResizedWidth),
+                ReadString("panel_stripe_font_family", d.FontFamily),
+                ReadInt("panel_stripe_font_size", d.FontSize),
+                ReadInt("panel_stripe_font_weight", d.FontWeight)).Normalized();
+        }
+
+        set
+        {
+            PanelStripeAppearance v = value.Normalized();
+            WriteSilent("panel_stripe_width_mode", v.WidthMode.ToString());
+            WriteSilent("panel_stripe_fixed_width", v.FixedWidth);
+            WriteSilent("panel_stripe_resized_width", v.ResizedWidth);
+            WriteSilent("panel_stripe_font_family", v.FontFamily);
+            WriteSilent("panel_stripe_font_size", v.FontSize);
+            WriteSilent("panel_stripe_font_weight", v.FontWeight);
+            RaiseChanged(SettingChangeKeys.PanelStripeAppearance);
+        }
+    }
+
+    /// <summary>
     /// Whether a book was open when the application was closed last time. Without one (it was closed after
     /// File → Close) <see cref="ReopenLastFileOnStartup"/> does not reopen the last book.
     /// </summary>
@@ -2469,6 +2512,12 @@ public sealed class SettingsStore
         yield return "context_menu_items_font_family";
         yield return "context_menu_items_font_size";
         yield return "context_menu_items_font_weight";
+        yield return "panel_stripe_width_mode";
+        yield return "panel_stripe_fixed_width";
+        yield return "panel_stripe_resized_width";
+        yield return "panel_stripe_font_family";
+        yield return "panel_stripe_font_size";
+        yield return "panel_stripe_font_weight";
         yield return "toolbar_text_position";
         yield return "toolbar_icon_size";
         yield return "toolbar_positions_locked";
@@ -2549,12 +2598,16 @@ public sealed class SettingsStore
 
         foreach ((string group, string key) in _file.Entries().ToList())
         {
-            if (group == Group && key.StartsWith("cv_dark_", StringComparison.Ordinal))
+            // The slid-out sizes of the panels collapsed by "Auto Hide", which the stripes of the panels replaced.
+            if (group == Group && key.StartsWith("cv_dark_", StringComparison.Ordinal) || group == ObsoletePinnedSizesGroup)
             {
                 _file.Remove(group, key);
             }
         }
     }
+
+    // The group of the slid-out sizes of "Auto Hide" panels (before the stripes of the panels).
+    private const string ObsoletePinnedSizesGroup = "dock_pinned_sizes";
 
     private void RaiseChanged(string key) => RaiseChangedQualified($"{Group}/{key}");
 

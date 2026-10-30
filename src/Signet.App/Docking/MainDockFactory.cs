@@ -16,9 +16,12 @@ using Signet.Core.Misc;
 namespace Signet.App.Docking;
 
 /// <summary>
-/// Dock layout factory of the main window: BookBrowser and Clips on the left, Preview and TOC
-/// on the right, document tabs in the middle and Validation Results, Notifications and Find Usages at the bottom
-/// (along the whole window width).
+/// Dock layout factory of the main window: document tabs in the middle and the panels in six places around them
+/// (<see cref="PanelPlace"/>, IntelliJ's tool window anchors): the top and the bottom half of the left and of the right
+/// column, and the left and the right half of the bottom row (along the whole window width). Each place is an area of
+/// tabs. By default Book Browser and Clips are on the left, Preview, TOC and Checkpoints on the right, and Validation
+/// Results, Notifications and Find Usages at the bottom. The factory keeps the order of the panels of every place,
+/// closed ones included — the order of their buttons on the stripes (<see cref="PanelsAt"/>).
 /// </summary>
 public sealed class MainDockFactory : Factory
 {
@@ -33,6 +36,19 @@ public sealed class MainDockFactory : Factory
     private readonly Dictionary<string, Tool> _tools = new(StringComparer.Ordinal);
     private readonly HashSet<string> _hidden = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IToolDock> _regionDocks = new(StringComparer.Ordinal);
+
+    // The panels of every place in their order (closed and floating ones included): the order of the stripe buttons.
+    private readonly Dictionary<PanelPlace, List<string>> _order = new();
+
+    // The panels whose button was taken off the stripes ("Hide" in its menu); "More Tool Windows" lists them.
+    private readonly HashSet<string> _offStripe = new(StringComparer.Ordinal);
+
+    // The columns and the row that hold the halves: never removed from the layout, like the places themselves.
+    private readonly List<IProportionalDock> _placeContainers = new();
+
+    // Every row / column of the layout with all its children, the splitters included (some of them are taken out of the
+    // layout while a side of theirs shows nothing: see ShowSplittersBetweenShownParts).
+    private readonly Dictionary<IProportionalDock, IDockable[]> _splitHosts = new();
 
     // The region a panel belongs to while it floats in its own window: where closing the window (or hiding the
     // panel) docks it back. Filled with the default layout and updated whenever a panel is floated.
@@ -83,14 +99,67 @@ public sealed class MainDockFactory : Factory
         // every change of place the panels' places follow, so a log shows where each panel was when something went wrong.
         DockableHidden += (_, e) => LogPlaces($"hidden {NameOf(e.Dockable)}");
         DockableRestored += (_, e) => LogPlaces($"shown {NameOf(e.Dockable)}");
-        DockablePinned += (_, e) => LogPlaces($"auto-hide {NameOf(e.Dockable)}");
-        DockableUnpinned += (_, e) => LogPlaces($"docked back from auto-hide {NameOf(e.Dockable)}");
         DockableMoved += (_, e) => DebugLog.Write("Panel", $"moved {NameOf(e.Dockable)}");
         DockableDocked += (_, e) => LogPlaces($"docked {NameOf(e.Dockable)} ({e.Operation})");
         DockableUndocked += (_, e) => LogPlaces($"undocked {NameOf(e.Dockable)} ({e.Operation})");
         WindowOpened += (_, e) => LogPlaces($"floating window opened: {PanelsOf(e.Window)}");
         WindowClosed += (_, e) => LogPlaces($"floating window closed: {PanelsOf(e.Window)}");
         WindowMoveDragEnd += (_, e) => DebugLog.Write("Panel", $"floating window moved: {PanelsOf(e.Window)}");
+
+        // Whatever changes whether a panel is shown, which tab of its place is the active one or where it is: the stripes
+        // follow (PanelsChanged).
+        DockableHidden += (_, _) => RaisePanelsChanged();
+        DockableRestored += (_, _) => RaisePanelsChanged();
+        DockableMoved += (_, _) => RaisePanelsChanged();
+        DockableDocked += (_, _) => RaisePanelsChanged();
+        DockableUndocked += (_, _) => RaisePanelsChanged();
+        ActiveDockableChanged += (_, _) => RaisePanelsChanged();
+        WindowOpened += (_, _) => RaisePanelsChanged();
+        WindowClosed += (_, _) => RaisePanelsChanged();
+    }
+
+    /// <summary>
+    /// Raised after a panel was shown, closed, activated, moved to another place or floated, and after its button was put
+    /// on or taken off the stripes — the stripes refresh.
+    /// </summary>
+    public event EventHandler? PanelsChanged;
+
+    // Several changes of one operation (a move: restore, move, hide) make one notice.
+    private int _changeBatch;
+    private bool _changedInBatch;
+
+    private void RaisePanelsChanged()
+    {
+        if (_changeBatch > 0)
+        {
+            _changedInBatch = true;
+            return;
+        }
+
+        GiveRoomToShownHalves();
+        ShowSplittersBetweenShownParts();
+        PanelsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void InBatch(Action action)
+    {
+        _changeBatch++;
+        try
+        {
+            action();
+        }
+        finally
+        {
+            _changeBatch--;
+        }
+
+        if (_changeBatch == 0 && _changedInBatch)
+        {
+            _changedInBatch = false;
+            GiveRoomToShownHalves();
+            ShowSplittersBetweenShownParts();
+            PanelsChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>
@@ -118,8 +187,8 @@ public sealed class MainDockFactory : Factory
     private void LogPlaces(string operation) => DebugLog.Write("Panel", $"{operation}; places: {DescribePlaces()}");
 
     /// <summary>
-    /// Where every panel is: its region, "floating" (in its own window), "auto-hide" (collapsed at the edge of its
-    /// region or window), "hidden", or "?" when it is nowhere (a defect) — for the debug log and the tests.
+    /// Where every panel is: the dock of its place, "floating" (in its own window), "hidden", or "?" when it is nowhere
+    /// (a defect) — for the debug log and the tests.
     /// </summary>
     public string DescribePlaces()
     {
@@ -128,7 +197,6 @@ public sealed class MainDockFactory : Factory
         {
             string place = _hidden.Contains(id) ? "hidden"
                 : WindowOf(tool) is not null ? (tool.Owner is IToolDock ? "floating" : "floating?")
-                : IsToolPinned(id) ? "auto-hide"
                 : FindOwnerDock(tool)?.Id ?? "?";
             places.Add($"{id}={place}");
         }
@@ -221,8 +289,28 @@ public sealed class MainDockFactory : Factory
         DockableIds.FindUsages,
     };
 
-    /// <summary>Value in the visibility snapshot for a panel collapsed by "Auto Hide" (pinned to the edge).</summary>
+    /// <summary>
+    /// Value in the visibility snapshots saved while panels could be collapsed by "Auto Hide" (pinned to the edge). The
+    /// stripes took its place: such a panel is read as closed (its button stays on the stripe).
+    /// </summary>
     public const string PinnedState = "pinned";
+
+    // The places of the panels in the default layout, in their order.
+    private static readonly (PanelPlace Place, string[] Ids)[] DefaultPlaces =
+    {
+        (PanelPlace.LeftTop, new[] { DockableIds.BookBrowser, DockableIds.Clips }),
+        (PanelPlace.RightTop, new[] { DockableIds.Preview, DockableIds.TableOfContents, DockableIds.Checkpoints }),
+        (PanelPlace.BottomLeft, new[] { DockableIds.ValidationResults, DockableIds.Notifications, DockableIds.FindUsages }),
+    };
+
+    /// <summary>The id of the column of the left places in the layout (its width is saved).</summary>
+    public const string LeftColumnId = "LeftColumn";
+
+    /// <summary>The id of the column of the right places in the layout (its width is saved).</summary>
+    public const string RightColumnId = "RightColumn";
+
+    /// <summary>The id of the row of the bottom places in the layout (its height is saved).</summary>
+    public const string BottomRowId = "BottomRow";
 
     /// <inheritdoc />
     public override IRootDock CreateLayout()
@@ -246,39 +334,57 @@ public sealed class MainDockFactory : Factory
 
         SetBookOpen(_bookOpen);
 
-        IToolDock leftDock = CreateToolDock();
-        leftDock.Id = "LeftDock";
-        leftDock.Alignment = Alignment.Left;
-        leftDock.Proportion = 0.18;
-        leftDock.VisibleDockables = CreateList<IDockable>(bookBrowser, clips);
-        leftDock.ActiveDockable = bookBrowser;
-
-        IToolDock rightDock = CreateToolDock();
-        rightDock.Id = "RightDock";
-        rightDock.Alignment = Alignment.Right;
-        rightDock.Proportion = 0.26;
-        rightDock.VisibleDockables = CreateList<IDockable>(preview, toc, checkpoints);
-        rightDock.ActiveDockable = preview;
-
-        IToolDock bottomDock = CreateToolDock();
-        bottomDock.Id = "BottomDock";
-        bottomDock.Alignment = Alignment.Bottom;
-        bottomDock.Proportion = 0.28;
-        bottomDock.VisibleDockables = CreateList<IDockable>(validation, notifications, findUsages);
-        bottomDock.ActiveDockable = validation;
-
-        _regionDocks["LeftDock"] = leftDock;
-        _regionDocks["RightDock"] = rightDock;
-        _regionDocks["BottomDock"] = bottomDock;
-        foreach (IToolDock region in _regionDocks.Values)
+        // The stripes replace Dock's "Auto Hide" (a panel collapsed to a tab at the edge of the window) and the dragging of
+        // panels by their tab or title (a stripe button is dragged instead); a panel still floats from its menu.
+        foreach (Tool tool in _tools.Values)
         {
-            // The last panel of a region can be closed too (it is only hidden, see CloseDockable).
-            region.CanCloseLastDockable = true;
-            foreach (Tool tool in region.VisibleDockables!.OfType<Tool>())
-            {
-                _homeDocks[tool.Id] = region;
-            }
+            tool.CanPin = false;
+            tool.CanDrag = false;
+            tool.CanDrop = false;
         }
+
+        _regionDocks.Clear();
+        _homeDocks.Clear();
+        _order.Clear();
+        _placeContainers.Clear();
+        foreach (PanelPlace place in PanelPlaces.All)
+        {
+            IToolDock dock = CreateToolDock();
+            dock.Id = PanelPlaces.DockId(place);
+            dock.Alignment = PanelPlaces.SideOf(place) == PanelStripeSide.Left && place != PanelPlace.BottomLeft ? Alignment.Left
+                : place is PanelPlace.BottomLeft or PanelPlace.BottomRight ? Alignment.Bottom
+                : Alignment.Right;
+            dock.VisibleDockables = CreateList<IDockable>();
+            // The last panel of a place can be closed too (it is only hidden, see CloseDockable).
+            dock.CanCloseLastDockable = true;
+            dock.CanDrop = false;
+            _regionDocks[dock.Id] = dock;
+            _order[place] = new List<string>();
+        }
+
+        foreach ((PanelPlace place, string[] ids) in DefaultPlaces)
+        {
+            IToolDock dock = DockOf(place);
+            foreach (string id in ids)
+            {
+                Tool tool = _tools[id];
+                dock.VisibleDockables!.Add(tool);
+                tool.Owner = dock;
+                _order[place].Add(id);
+                _homeDocks[id] = dock;
+            }
+
+            dock.ActiveDockable = dock.VisibleDockables!.FirstOrDefault();
+        }
+
+        // The halves of a column / of the bottom row: a half with no shown panel is collapsed by Dock (empty), and so is
+        // the whole column when both are.
+        IProportionalDock leftColumn = Halves(LeftColumnId, Orientation.Vertical, PanelPlace.LeftTop, PanelPlace.LeftBottom);
+        leftColumn.Proportion = 0.18;
+        IProportionalDock rightColumn = Halves(RightColumnId, Orientation.Vertical, PanelPlace.RightTop, PanelPlace.RightBottom);
+        rightColumn.Proportion = 0.26;
+        IProportionalDock bottomRow = Halves(BottomRowId, Orientation.Horizontal, PanelPlace.BottomLeft, PanelPlace.BottomRight);
+        bottomRow.Proportion = 0.28;
 
         IDocumentDock documentDock = CreateDocumentDock();
         documentDock.Id = DockableIds.Documents;
@@ -295,21 +401,19 @@ public sealed class MainDockFactory : Factory
         mainRow.Orientation = Orientation.Horizontal;
         mainRow.Proportion = 0.72;
         mainRow.VisibleDockables = CreateList<IDockable>(
-            leftDock,
+            leftColumn,
             CreateProportionalDockSplitter(),
             documentDock,
             CreateProportionalDockSplitter(),
-            rightDock);
+            rightColumn);
 
-        // The bottom region spans the whole window width, under the side regions too — the same place where
-        // its panels slide out when collapsed ("Auto Hide": Dock draws the bottom strip along the whole window),
-        // so pinning or collapsing a panel does not move it between the full width and the middle column.
+        // The bottom row spans the whole window width, under the side columns too (IntelliJ's bottom tool windows).
         IProportionalDock mainLayout = CreateProportionalDock();
         mainLayout.Orientation = Orientation.Vertical;
         mainLayout.VisibleDockables = CreateList<IDockable>(
             mainRow,
             CreateProportionalDockSplitter(),
-            bottomDock);
+            bottomRow);
 
         IRootDock root = CreateRootDock();
         root.Id = "Root";
@@ -317,14 +421,148 @@ public sealed class MainDockFactory : Factory
         root.VisibleDockables = CreateList<IDockable>(mainLayout);
         root.ActiveDockable = mainLayout;
         root.DefaultDockable = mainLayout;
-        // "Auto Hide": a slid-out panel takes up space in the layout instead of overlaying the content.
-        // The overlay does not work with the preview — the native WebView control is always drawn above
-        // Avalonia elements, so it covered the slid-out panel.
-        root.PinnedDockDisplayMode = PinnedDockDisplayMode.Inline;
+
+        _splitHosts.Clear();
+        foreach (IProportionalDock host in _placeContainers.Concat(new[] { mainRow, mainLayout }))
+        {
+            _splitHosts[host] = host.VisibleDockables!.ToArray();
+        }
 
         _root = root;
+        ShowSplittersBetweenShownParts();
         return root;
     }
+
+    /// <summary>
+    /// Gives a half of a column / of the bottom row that shows a panel again its share of the room. Dock leaves a half
+    /// that had no shown panel with proportion 0 (its sibling took 1), and nothing gives it back when a panel is shown in
+    /// it: the panel got no width (the bottom panels opened as an empty white area). A shown half without a share gets
+    /// what its shown sibling leaves, or half of the room when the sibling took all of it, or all of it when alone.
+    /// </summary>
+    private void GiveRoomToShownHalves()
+    {
+        foreach (IProportionalDock container in _placeContainers)
+        {
+            if (container.VisibleDockables is not { } children)
+            {
+                continue;
+            }
+
+            IDock[] halves = children.OfType<IToolDock>().Cast<IDock>().ToArray();
+            if (halves.Length != 2)
+            {
+                continue;
+            }
+
+            IDock first = halves[0];
+            IDock second = halves[1];
+            bool firstShown = first.VisibleDockables is { Count: > 0 };
+            bool secondShown = second.VisibleDockables is { Count: > 0 };
+            if (firstShown && secondShown)
+            {
+                bool firstFits = IsShare(first.Proportion);
+                bool secondFits = IsShare(second.Proportion);
+                if (firstFits && secondFits)
+                {
+                    continue;
+                }
+
+                if (firstFits)
+                {
+                    second.Proportion = 1 - first.Proportion;
+                }
+                else if (secondFits)
+                {
+                    first.Proportion = 1 - second.Proportion;
+                }
+                else
+                {
+                    first.Proportion = 0.5;
+                    second.Proportion = 0.5;
+                }
+            }
+            else if (firstShown && !(first.Proportion > 0))
+            {
+                first.Proportion = 1;
+            }
+            else if (secondShown && !(second.Proportion > 0))
+            {
+                second.Proportion = 1;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Keeps in the layout only the splitters with something shown on both sides. Dock collapses a dock with no shown
+    /// panel but leaves the splitter next to it, which cut a gap into the frame of the panel above (at the foot of a column
+    /// whose second half is empty) and could be dragged for nothing. A splitter taken out goes back to its place as soon
+    /// as both its sides show something; the parts themselves are never moved (their views and contents stay).
+    /// </summary>
+    private void ShowSplittersBetweenShownParts()
+    {
+        foreach ((IProportionalDock host, IDockable[] all) in _splitHosts)
+        {
+            if (host.VisibleDockables is not { } children)
+            {
+                continue;
+            }
+
+            int kept = 0;
+            bool shownBefore = false;
+            for (int i = 0; i < all.Length; i++)
+            {
+                IDockable child = all[i];
+                bool wanted = child is not IProportionalDockSplitter
+                    || shownBefore && all.Skip(i + 1).TakeWhile(d => d is not IProportionalDockSplitter).Any(IsShownPart);
+                if (child is not IProportionalDockSplitter && IsShownPart(child))
+                {
+                    shownBefore = true;
+                }
+
+                int at = children.IndexOf(child);
+                if (wanted && at < 0)
+                {
+                    children.Insert(Math.Min(kept, children.Count), child);
+                    child.Owner = host;
+                }
+                else if (!wanted && at >= 0)
+                {
+                    children.RemoveAt(at);
+                }
+
+                if (wanted)
+                {
+                    kept++;
+                }
+            }
+        }
+    }
+
+    // Whether a part of the layout shows something (Dock collapses one that does not).
+    private static bool IsShownPart(IDockable part) => part switch
+    {
+        IDocumentDock => true,
+        IToolDock tools => tools.VisibleDockables is { Count: > 0 },
+        IProportionalDock row => row.VisibleDockables?.Any(d => d is not IProportionalDockSplitter && IsShownPart(d)) == true,
+        _ => true,
+    };
+
+    // A share one half can have with its sibling shown too.
+    private static bool IsShare(double proportion) =>
+        proportion >= MinRestoredProportion && proportion <= 1 - MinRestoredProportion;
+
+    // A column or a row of two places (each one half of it), with a splitter between them.
+    private IProportionalDock Halves(string id, Orientation orientation, PanelPlace first, PanelPlace second)
+    {
+        IProportionalDock halves = CreateProportionalDock();
+        halves.Id = id;
+        halves.Orientation = orientation;
+        halves.VisibleDockables = CreateList<IDockable>(DockOf(first), CreateProportionalDockSplitter(), DockOf(second));
+        _placeContainers.Add(halves);
+        return halves;
+    }
+
+    private IToolDock DockOf(PanelPlace place) => _regionDocks[PanelPlaces.DockId(place)];
 
     /// <inheritdoc />
     public override void InitLayout(IDockable layout)
@@ -366,6 +604,7 @@ public sealed class MainDockFactory : Factory
 
         // The name of the shown file goes back after the title of the panel was reset above.
         UpdatePreviewTitle();
+        RaisePanelsChanged();
     }
 
     /// <summary>
@@ -396,104 +635,236 @@ public sealed class MainDockFactory : Factory
         }
     }
 
-    /// <summary>Whether the panel is collapsed by "Auto Hide" (pinned to the window edge).</summary>
-    public bool IsToolPinned(string id) =>
-        _root is not null && _tools.TryGetValue(id, out Tool? tool) && IsDockablePinned(tool, _root);
-
-    /// <summary>
-    /// Snapshot of panel visibility (id → <c>"1"</c> visible, <c>"0"</c> hidden,
-    /// <see cref="PinnedState"/> collapsed by "Auto Hide") — for persistence.
-    /// </summary>
+    /// <summary>Snapshot of panel visibility (id → <c>"1"</c> visible, <c>"0"</c> hidden) — for persistence.</summary>
     public IReadOnlyDictionary<string, string> CaptureToolVisibility()
     {
         Dictionary<string, string> result = new(StringComparer.Ordinal);
         foreach (string id in _tools.Keys)
         {
-            result[id] = _hidden.Contains(id) ? "0" : IsToolPinned(id) ? PinnedState : "1";
+            result[id] = _hidden.Contains(id) ? "0" : "1";
         }
 
         return result;
     }
 
     /// <summary>
-    /// Applies the stored panel visibility (including "Auto Hide"). Panels from
-    /// <see cref="AlwaysHiddenOnStart"/> stay hidden regardless of the stored state.
+    /// Applies the stored panel visibility. Panels from <see cref="AlwaysHiddenOnStart"/> stay hidden regardless of the
+    /// stored state; a panel saved as collapsed by "Auto Hide" (<see cref="PinnedState"/>, before the stripes) is read as
+    /// hidden — its button on the stripe shows it.
     /// </summary>
     public void ApplyToolVisibility(IReadOnlyDictionary<string, string> stored)
     {
-        foreach (KeyValuePair<string, Tool> pair in _tools)
+        ArgumentNullException.ThrowIfNull(stored);
+        InBatch(() =>
         {
-            if (!stored.TryGetValue(pair.Key, out string? v))
+            foreach (KeyValuePair<string, Tool> pair in _tools)
             {
-                continue;
-            }
+                if (!stored.TryGetValue(pair.Key, out string? v))
+                {
+                    continue;
+                }
 
-            bool pinned = v == PinnedState;
-            bool want = (v == "1" || pinned) && !AlwaysHiddenOnStart.Contains(pair.Key);
-            bool have = !_hidden.Contains(pair.Key);
-            if (want && !have)
-            {
-                ShowHiddenTool(pair.Value);
+                bool want = v == "1" && !AlwaysHiddenOnStart.Contains(pair.Key);
+                bool have = !_hidden.Contains(pair.Key);
+                if (want && !have)
+                {
+                    ShowHiddenTool(pair.Value);
+                }
+                else if (!want && have)
+                {
+                    HideDockable(pair.Value);
+                    _hidden.Add(pair.Key);
+                }
             }
-            else if (!want && have)
-            {
-                HideDockable(pair.Value);
-                _hidden.Add(pair.Key);
-            }
-
-            if (want && pinned && !IsToolPinned(pair.Key))
-            {
-                PinDockable(pair.Value);
-            }
-        }
+        });
     }
 
+    // ---- the places of the panels and the stripes ----------------------------------------------------------------
+
+    /// <summary>The place of a panel (where it is docked, or where it docks back to when it floats or is closed).</summary>
+    public PanelPlace PlaceOf(string id) =>
+        _order.First(pair => pair.Value.Contains(id, StringComparer.Ordinal)).Key;
+
+    /// <summary>The panels of a place in their order (closed and floating ones included): the buttons of its stripe group.</summary>
+    public IReadOnlyList<string> PanelsAt(PanelPlace place) => _order[place].ToList();
+
     /// <summary>
-    /// Snapshot of the slid-out sizes of "Auto Hide" panels (id → <c>"width;height"</c> in DIP, invariant
-    /// culture) — only the panels whose slid-out size is known (Dock records it in
-    /// <see cref="IDockable.PinnedBounds"/> when the user resizes the slid-out panel). For persistence.
+    /// Moves a panel to another place (or to another position in its own), at <paramref name="index"/> among the panels of
+    /// the target place (clamped; the panel itself not counted). A shown panel moves at once and stays the active tab; a
+    /// closed one shows there next time; a floating one docks back there.
     /// </summary>
-    public IReadOnlyDictionary<string, string> CapturePinnedSizes()
+    public void MoveTool(string id, PanelPlace place, int index)
     {
-        Dictionary<string, string> result = new(StringComparer.Ordinal);
-        foreach (KeyValuePair<string, Tool> pair in _tools)
+        if (!_tools.TryGetValue(id, out Tool? tool))
         {
-            pair.Value.GetPinnedBounds(out _, out _, out double width, out double height);
-            if (IsUsablePinnedSize(width) && IsUsablePinnedSize(height))
-            {
-                result[pair.Key] = string.Create(CultureInfo.InvariantCulture, $"{width};{height}");
-            }
+            return;
         }
 
-        return result;
+        PanelPlace from = PlaceOf(id);
+        List<string> target = _order[place];
+        _order[from].Remove(id);
+        target.Insert(Math.Clamp(index, 0, target.Count), id);
+        IToolDock dock = DockOf(place);
+        DebugLog.Write("Panel", $"move {id}: {from} → {place} at {index}");
+
+        InBatch(() =>
+        {
+            _homeDocks[id] = dock;
+            if (IsFloating(tool))
+            {
+                // It docks back into the new place when its window closes.
+            }
+            else if (_hidden.Contains(id))
+            {
+                // A closed panel is moved by Dock only while shown: shown, moved, closed again (one notice for the stripes).
+                if (!ReferenceEquals(HiddenOwner(tool), dock))
+                {
+                    RestoreDockable(tool);
+                    MoveIntoPlace(tool, dock);
+                    HideDockable(tool);
+                }
+            }
+            else
+            {
+                MoveIntoPlace(tool, dock);
+                SetActiveDockable(tool);
+            }
+
+            SortDock(DockOf(from));
+            SortDock(dock);
+            RaisePanelsChanged();
+        });
     }
 
+    // The dock a closed panel goes back to when it is shown.
+    private static IDockable? HiddenOwner(Tool tool) => tool.OriginalOwner ?? tool.Owner;
+
+    private void MoveIntoPlace(Tool tool, IToolDock dock)
+    {
+        if (tool.Owner is IDock source && !ReferenceEquals(source, dock))
+        {
+            bool outer = _dockingBack;
+            _dockingBack = true;
+            try
+            {
+                MoveDockable(source, dock, tool, null);
+            }
+            finally
+            {
+                _dockingBack = outer;
+            }
+        }
+    }
+
+    // Puts the tabs of a place in the order of its panels (Dock adds a panel shown again or moved in at the end).
+    private void SortDock(IToolDock dock)
+    {
+        if (dock.VisibleDockables is not { } tabs || !PanelPlaces.TryParseDockId(dock.Id, out PanelPlace place))
+        {
+            return;
+        }
+
+        List<IDockable> wanted = _order[place]
+            .Select(id => _tools[id])
+            .Where(tabs.Contains)
+            .Cast<IDockable>()
+            .ToList();
+        for (int i = 0; i < wanted.Count; i++)
+        {
+            if (!ReferenceEquals(tabs[i], wanted[i]))
+            {
+                tabs.Remove(wanted[i]);
+                tabs.Insert(i, wanted[i]);
+            }
+        }
+    }
+
+    /// <summary>Whether a panel's button is on the stripes (not taken off by "Hide" of its menu).</summary>
+    public bool IsOnStripe(string id) => _tools.ContainsKey(id) && !_offStripe.Contains(id);
+
     /// <summary>
-    /// Restores the slid-out sizes of "Auto Hide" panels saved by <see cref="CapturePinnedSizes"/>.
-    /// Without it a slid-out panel opens at Dock's minimum width (50 px) after every restart.
-    /// Unreadable or degenerate entries are skipped.
+    /// Takes a panel's button off the stripes ("Hide" of its menu, closing the panel too) or puts it back ("More Tool
+    /// Windows").
     /// </summary>
-    public void ApplyPinnedSizes(IReadOnlyDictionary<string, string> stored)
+    public void SetOnStripe(string id, bool onStripe)
+    {
+        if (!_tools.TryGetValue(id, out Tool? tool) || onStripe == IsOnStripe(id))
+        {
+            return;
+        }
+
+        InBatch(() =>
+        {
+            if (onStripe)
+            {
+                _offStripe.Remove(id);
+            }
+            else
+            {
+                _offStripe.Add(id);
+                if (!_hidden.Contains(id))
+                {
+                    HideTool(tool);
+                }
+            }
+
+            RaisePanelsChanged();
+        });
+    }
+
+    /// <summary>Snapshot of the panels whose button is off the stripes (id → <c>"0"</c>) — for persistence.</summary>
+    public IReadOnlyDictionary<string, string> CaptureOffStripe() =>
+        _offStripe.OrderBy(id => id, StringComparer.Ordinal).ToDictionary(id => id, _ => "0", StringComparer.Ordinal);
+
+    /// <summary>Takes off the stripes the buttons saved by <see cref="CaptureOffStripe"/>.</summary>
+    public void ApplyOffStripe(IReadOnlyDictionary<string, string> stored)
     {
         ArgumentNullException.ThrowIfNull(stored);
-        foreach (KeyValuePair<string, string> pair in stored)
+        foreach (KeyValuePair<string, string> pair in stored.Where(p => p.Value == "0" && _tools.ContainsKey(p.Key)))
         {
-            string[] parts = pair.Value.Split(';');
-            if (_tools.TryGetValue(pair.Key, out Tool? tool)
-                && parts.Length == 2
-                && double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double width)
-                && double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double height)
-                && IsUsablePinnedSize(width)
-                && IsUsablePinnedSize(height))
-            {
-                tool.SetPinnedBounds(0, 0, width, height);
-            }
+            _offStripe.Add(pair.Key);
+        }
+
+        RaisePanelsChanged();
+    }
+
+    /// <summary>
+    /// Whether a panel is shown and is the one its place shows (the active tab), or floats — a click on its stripe button
+    /// then closes it.
+    /// </summary>
+    public bool IsToolInFront(string id)
+    {
+        if (!_tools.TryGetValue(id, out Tool? tool) || _hidden.Contains(id))
+        {
+            return false;
+        }
+
+        return IsFloating(tool) || FindOwnerDock(tool) is { } dock && ReferenceEquals(dock.ActiveDockable, tool);
+    }
+
+    /// <summary>
+    /// A click on a panel's stripe button (IntelliJ's): a closed panel opens, a panel behind another tab of its place comes
+    /// to the front, a panel in front closes.
+    /// </summary>
+    public void ClickStripeButton(string id)
+    {
+        if (!_tools.TryGetValue(id, out Tool? tool))
+        {
+            return;
+        }
+
+        if (IsToolInFront(id))
+        {
+            HideTool(tool);
+        }
+        else
+        {
+            FocusTool(id);
         }
     }
 
-    // Dock's own minimum of a slid-out panel is 50 px; anything above a sane screen size is garbage.
-    private static bool IsUsablePinnedSize(double size) =>
-        double.IsFinite(size) && size >= 50 && size <= 10_000;
+    /// <summary>The title of a panel on its stripe button: the name of the panel (not, e.g., the file the Preview shows).</summary>
+    public static string StripeTitle(string id) => Strings.TryGet("Panel_" + id) ?? id;
 
     /// <summary>Toggles the panel's visibility; returns the new visibility state.</summary>
     public bool ToggleTool(string id)
@@ -553,12 +924,24 @@ public sealed class MainDockFactory : Factory
     // hidden while floating.
     private void ShowHiddenTool(Tool tool)
     {
-        RestoreDockable(tool);
-        _hidden.Remove(tool.Id);
-        if (_floatingWhenHidden.Remove(tool.Id, out FloatingBounds bounds))
+        InBatch(() =>
         {
-            FloatAt(tool, bounds);
-        }
+            // Shown in any way (the View menu, a shortcut, new results), a panel gets its stripe button back.
+            _offStripe.Remove(tool.Id);
+            RestoreDockable(tool);
+            _hidden.Remove(tool.Id);
+            if (FindOwnerDock(tool) is { } dock)
+            {
+                SortDock(dock);
+            }
+
+            if (_floatingWhenHidden.Remove(tool.Id, out FloatingBounds bounds))
+            {
+                FloatAt(tool, bounds);
+            }
+
+            RaisePanelsChanged();
+        });
     }
 
     private static FloatingBounds BoundsOf(IDockWindow window)
@@ -593,95 +976,90 @@ public sealed class MainDockFactory : Factory
     }
 
     /// <summary>
-    /// Snapshot of the current assignment of panels to regions, their order, the region's active tab
-    /// and the proportions — to be persisted in <see cref="SettingsStore.MainWindowDockLayout"/>.
+    /// Snapshot of the places of the panels (every place with all its panels in their order, closed and floating ones
+    /// included, its active tab and its share of its column / row) and of the sizes of the columns and of the bottom row —
+    /// to be persisted in <see cref="SettingsStore.MainWindowDockLayout"/>.
     /// </summary>
     public DockLayoutState CaptureLayoutState()
     {
         List<DockRegionState> regions = new();
-        foreach (KeyValuePair<string, IToolDock> pair in _regionDocks)
+        foreach (PanelPlace place in PanelPlaces.All)
         {
-            List<string> toolIds = pair.Value.VisibleDockables is null
-                ? new List<string>()
-                : pair.Value.VisibleDockables.OfType<Tool>().Select(t => t.Id).ToList();
-            // Floating panels belong to the region they were taken from.
-            toolIds.AddRange(_tools.Values
-                .Where(t => IsFloating(t) && ReferenceEquals(_homeDocks.GetValueOrDefault(t.Id), pair.Value))
-                .Select(t => t.Id));
-            string? activeId = (pair.Value.ActiveDockable as IDockable)?.Id;
-            regions.Add(new DockRegionState(pair.Key, pair.Value.Proportion, toolIds, activeId));
+            IToolDock dock = DockOf(place);
+            string? activeId = (dock.ActiveDockable as IDockable)?.Id;
+            regions.Add(new DockRegionState(dock.Id, Saved(dock.Proportion), _order[place].ToList(), activeId));
         }
 
-        // The document area takes what the side regions leave, so its proportion may be unset (NaN) — which JSON
+        foreach (IProportionalDock container in _placeContainers)
+        {
+            regions.Add(new DockRegionState(container.Id, Saved(container.Proportion), Array.Empty<string>(), null));
+        }
+
+        // The document area takes what the side columns leave, so its proportion may be unset (NaN) — which JSON
         // cannot store; 0 = not saved.
-        double documentsProportion = DocumentDock?.Proportion is double p && !double.IsNaN(p) ? p : 0;
-        return new DockLayoutState(regions, documentsProportion);
+        return new DockLayoutState(regions, Saved(DocumentDock?.Proportion ?? double.NaN));
     }
 
+    // A proportion as it is saved: 0 for none (NaN, which JSON cannot store).
+    private static double Saved(double proportion) => double.IsNaN(proportion) ? 0 : proportion;
+
     /// <summary>
-    /// Applies a previously persisted layout snapshot: moves panels between
-    /// regions, restores the proportions and the region's active tab. Called AFTER
-    /// <see cref="CreateLayout"/>/<see cref="InitLayout"/>, BEFORE restoring panel
-    /// visibility (a panel hidden in the meantime is no longer in the source region's
-    /// <c>VisibleDockables</c>, so the call order matters).
+    /// Puts the panels in the places of a persisted snapshot (<see cref="CaptureLayoutState"/>), in its order, with the
+    /// active tab of each place and the share of each half. A snapshot from before the places were split
+    /// (LeftDock, RightDock, BottomDock) puts the panels of each region in the first half of it. Unknown panels and docks
+    /// are skipped; panels the snapshot does not name stay where they are. Called AFTER <see cref="CreateLayout"/> /
+    /// <see cref="InitLayout"/>, BEFORE restoring panel visibility.
     /// </summary>
-    public void ApplyLayoutState(DockLayoutState state)
+    public void ApplyPanelPlaces(DockLayoutState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-
-        if (DocumentDock is not null && state.DocumentsProportion > 0)
+        InBatch(() =>
         {
-            DocumentDock.Proportion = Math.Max(state.DocumentsProportion, MinRestoredProportion);
-        }
-
-        foreach (DockRegionState region in state.Regions)
-        {
-            if (!_regionDocks.TryGetValue(region.DockId, out IToolDock? targetDock))
+            foreach (DockRegionState region in state.Regions ?? Array.Empty<DockRegionState>())
             {
-                continue;
-            }
-
-            if (region.Proportion > 0)
-            {
-                targetDock.Proportion = Math.Max(region.Proportion, MinRestoredProportion);
-            }
-
-            foreach (string toolId in region.ToolIds)
-            {
-                if (!_tools.TryGetValue(toolId, out Tool? tool))
+                if (!PanelPlaces.TryParseDockId(region.DockId, out PanelPlace place))
                 {
                     continue;
                 }
 
-                IToolDock? sourceDock = FindOwnerDock(tool);
-                if (sourceDock is not null && !ReferenceEquals(sourceDock, targetDock))
+                int index = 0;
+                foreach (string id in region.ToolIds ?? Array.Empty<string>())
                 {
-                    MoveDockable(sourceDock, targetDock, tool, null);
+                    if (_tools.ContainsKey(id))
+                    {
+                        MoveTool(id, place, index++);
+                    }
+                }
+
+                // The share of a half within its column / row; a legacy region's proportion was the column's width.
+                IToolDock dock = DockOf(place);
+                if (region.DockId == dock.Id && region.Proportion > 0 && region.Proportion < 1)
+                {
+                    dock.Proportion = Math.Clamp(region.Proportion, MinRestoredProportion, 1 - MinRestoredProportion);
+                }
+
+                if (region.ActiveToolId is not null && _tools.TryGetValue(region.ActiveToolId, out Tool? active)
+                    && ReferenceEquals(FindOwnerDock(active), dock))
+                {
+                    dock.ActiveDockable = active;
                 }
             }
-
-            if (region.ActiveToolId is not null
-                && _tools.TryGetValue(region.ActiveToolId, out Tool? activeTool))
-            {
-                SetActiveDockable(activeTool);
-            }
-        }
+        });
     }
 
     /// <summary>
-    /// Restores from the persisted snapshot ONLY the widths of the side regions (LeftDock —
-    /// Book Browser, RightDock — Preview). Unlike <see cref="ApplyLayoutState"/>
-    /// it does not move panels and does not touch the vertical proportions (document area / bottom panel) —
-    /// those degenerated the layout when the bottom region was saved as collapsed (documents
-    /// proportion ≈ 1). Each width is clamped and their sum is limited so that the middle
-    /// column with the tabs always has room.
+    /// Restores from the persisted snapshot ONLY the widths of the side columns (the left one — Book Browser, the right
+    /// one — Preview; in a snapshot from before the places were split, LeftDock and RightDock). It does not touch the
+    /// vertical proportions (document area / bottom row) — those degenerated the layout when the bottom region was saved
+    /// as collapsed (documents proportion ≈ 1). Each width is clamped and their sum is limited so that the middle column
+    /// with the tabs always has room.
     /// </summary>
     public void ApplySideRegionWidths(DockLayoutState state)
     {
         ArgumentNullException.ThrowIfNull(state);
 
-        double left = RestorableWidth(state, "LeftDock");
-        double right = RestorableWidth(state, "RightDock");
+        double left = RestorableWidth(state, LeftColumnId, PanelPlaces.LegacyLeftDock);
+        double right = RestorableWidth(state, RightColumnId, PanelPlaces.LegacyRightDock);
         double sum = (double.IsNaN(left) ? 0 : left) + (double.IsNaN(right) ? 0 : right);
         if (sum > MaxRestoredSidesSum)
         {
@@ -692,25 +1070,28 @@ public sealed class MainDockFactory : Factory
 
         if (!double.IsNaN(left))
         {
-            _regionDocks["LeftDock"].Proportion = left;
+            Container(LeftColumnId).Proportion = left;
         }
 
         if (!double.IsNaN(right))
         {
-            _regionDocks["RightDock"].Proportion = right;
+            Container(RightColumnId).Proportion = right;
         }
     }
 
-    /// <summary>Upper bound of a single side region's width when restoring.</summary>
+    private IProportionalDock Container(string id) => _placeContainers.First(c => c.Id == id);
+
+    /// <summary>Upper bound of a single side column's width when restoring.</summary>
     private const double MaxRestoredSideProportion = 0.6;
 
-    /// <summary>Upper bound of the sum of both side regions' widths when restoring.</summary>
+    /// <summary>Upper bound of the sum of both side columns' widths when restoring.</summary>
     private const double MaxRestoredSidesSum = 0.8;
 
-    // NaN = no (sensible) saved value — the region keeps its default width.
-    private static double RestorableWidth(DockLayoutState state, string dockId)
+    // NaN = no (sensible) saved value — the column keeps its default width.
+    private static double RestorableWidth(DockLayoutState state, string columnId, string legacyId)
     {
-        DockRegionState? region = state.Regions?.FirstOrDefault(r => r.DockId == dockId);
+        DockRegionState? region = state.Regions?.FirstOrDefault(r => r.DockId == columnId)
+                                  ?? state.Regions?.FirstOrDefault(r => r.DockId == legacyId);
         if (region is null || double.IsNaN(region.Proportion) || region.Proportion <= 0)
         {
             return double.NaN;
@@ -810,15 +1191,20 @@ public sealed class MainDockFactory : Factory
 
     /// <summary>
     /// "Dock" in a panel's menu: Dock only uses it to undo "Auto Hide", so for a floating panel it did nothing; here it
-    /// docks the panel back into the region it was taken from (and closes the emptied window).
+    /// docks the panel back into its place (and closes the emptied window). There is no "Auto Hide" (the stripes took its
+    /// place), so a docked panel is never pinned; Dock's own call while it moves a panel back is passed on.
     /// </summary>
     public override void PinDockable(IDockable dockable)
     {
         bool floating = dockable is Tool t && IsFloating(t);
         DebugLog.Write("Panel", $"pin/dock requested for {NameOf(dockable)} (floating: {floating}, docking back already: {_dockingBack}); places: {DescribePlaces()}");
-        if (!_dockingBack && dockable is Tool tool && floating)
+        if (!_dockingBack && dockable is Tool tool)
         {
-            DockBackIfFloating(tool);
+            if (floating)
+            {
+                DockBackIfFloating(tool);
+            }
+
             return;
         }
 
@@ -862,13 +1248,14 @@ public sealed class MainDockFactory : Factory
     }
 
     /// <summary>
-    /// The three regions (left, right, bottom) are never collapsed out of the layout: when their last panel is floated
-    /// Dock would remove the emptied region, and the panel could not be docked back into it. An empty region stays in
-    /// the layout like one whose panels are all hidden.
+    /// The six places and the columns / row that hold them are never collapsed out of the layout: when their last panel
+    /// is floated Dock would remove the emptied place, and the panel could not be docked back into it. An empty place
+    /// stays in the layout like one whose panels are all hidden (Dock gives it no room).
     /// </summary>
     public override void CollapseDock(IDock dock)
     {
-        if (dock is IToolDock toolDock && _regionDocks.ContainsValue(toolDock))
+        if (dock is IToolDock toolDock && _regionDocks.ContainsValue(toolDock)
+            || dock is IProportionalDock container && _placeContainers.Contains(container))
         {
             return;
         }
@@ -1013,7 +1400,7 @@ public sealed class MainDockFactory : Factory
     public bool IsToolFloating(string id) => _tools.TryGetValue(id, out Tool? tool) && IsFloating(tool);
 
     private bool IsFloating(Tool tool) =>
-        !_hidden.Contains(tool.Id) && FindOwnerDock(tool) is null && !IsToolPinned(tool.Id) && tool.Owner is not null;
+        !_hidden.Contains(tool.Id) && FindOwnerDock(tool) is null && tool.Owner is not null;
 
     // Remembers the current region of every panel in the dockable (a panel or a dock) before it leaves for a window.
     private void RememberHomes(IDockable dockable)
@@ -1134,7 +1521,8 @@ public sealed class MainDockFactory : Factory
         return null;
     }
 
-    /// <summary>Makes the panel visible (if hidden, slides it out when collapsed) and activates it — for the "Focus on…" actions and for new results shown in a panel.</summary>
+    /// <summary>Makes the panel visible (if hidden) and activates it — for the "Focus on…" actions, a click on its stripe
+    /// button and new results shown in a panel.</summary>
     public void FocusTool(string id)
     {
         if (!_tools.TryGetValue(id, out Tool? tool))
@@ -1147,12 +1535,6 @@ public sealed class MainDockFactory : Factory
             ShowHiddenTool(tool);
         }
 
-        // A panel collapsed by "Auto Hide" (only its tab at the edge) slides out, so showing it is visible.
-        if (IsToolPinned(id))
-        {
-            PreviewPinnedDockable(tool);
-        }
-
         SetActiveDockable(tool);
         if (_root is not null)
         {
@@ -1161,63 +1543,21 @@ public sealed class MainDockFactory : Factory
     }
 
     /// <summary>
-    /// Makes a hidden panel visible but collapsed ("Auto Hide" — only its tab at the window edge),
-    /// so it does not take space from the editor. A panel that is already visible is left as it is.
-    /// </summary>
-    public void ShowToolCollapsed(string id)
-    {
-        if (!_tools.TryGetValue(id, out Tool? tool) || !_hidden.Contains(id))
-        {
-            return;
-        }
-
-        // A panel hidden while floating comes back in its window (it takes no space from the editor either).
-        if (_floatingWhenHidden.ContainsKey(id))
-        {
-            ShowHiddenTool(tool);
-            return;
-        }
-
-        RestoreDockable(tool);
-        _hidden.Remove(id);
-        if (!IsToolPinned(id))
-        {
-            PinDockable(tool);
-        }
-    }
-
-    /// <summary>
-    /// Shows the panel expanded: makes it visible (if hidden), slides it out when it is collapsed
-    /// by "Auto Hide" and activates it.
-    /// </summary>
-    public void ExpandTool(string id)
-    {
-        if (!_tools.TryGetValue(id, out Tool? tool))
-        {
-            return;
-        }
-
-        if (IsToolPinned(id))
-        {
-            PreviewPinnedDockable(tool);
-            SetActiveDockable(tool);
-            return;
-        }
-
-        FocusTool(id);
-    }
-
-    /// <summary>
     /// Sets the attention state of a panel tab: <paramref name="count"/> &gt; 0 puts a red dot on the tab's bell
     /// and "[count]" after it (<see cref="SignetTool.AttentionCount"/>).
     /// </summary>
     public void SetToolAttention(string id, int count)
     {
-        if (_tools.TryGetValue(id, out Tool? tool) && tool is SignetTool signetTool)
+        if (_tools.TryGetValue(id, out Tool? tool) && tool is SignetTool signetTool && signetTool.AttentionCount != count)
         {
             signetTool.AttentionCount = count;
+            RaisePanelsChanged();
         }
     }
+
+    /// <summary>The attention state of a panel (<see cref="SetToolAttention"/>): its unread errors, 0 = none.</summary>
+    public int AttentionOf(string id) =>
+        _tools.TryGetValue(id, out Tool? tool) && tool is SignetTool signetTool ? signetTool.AttentionCount : 0;
 
     // The place of a floating panel window (Dock's window coordinates).
     private readonly record struct FloatingBounds(double X, double Y, double Width, double Height);

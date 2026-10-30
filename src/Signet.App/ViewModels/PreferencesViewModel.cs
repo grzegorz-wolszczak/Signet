@@ -127,6 +127,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadStartScreenAppearance();
         LoadToolbarAppearance();
         LoadContextMenuAppearance();
+        LoadPanelStripeAppearance();
         LoadFindUsagesFonts();
         LoadSearchEditorFonts();
         LoadLineNumbersFont();
@@ -231,6 +232,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
         // Before the draft is rebased: loading a layout may record a one-off migration in the draft (not a change).
         CreateToolbarSample(actions);
+        CreatePanelStripesSample(actions);
 
         // A bundled color scheme follows the variant of the theme chosen (a dark theme, the dark scheme), as in Rider; a
         // scheme of the user stays as it is, and the scheme never changes the theme.
@@ -313,6 +315,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         if (Changed(SettingChangeKeys.ContextMenuAppearance, SettingChangeKeys.AppearanceSettingsCleared))
         {
             _uiDensity.ApplyContextMenuFonts();
+        }
+
+        if (Changed(SettingChangeKeys.PanelStripeAppearance, SettingChangeKeys.AppearanceSettingsCleared))
+        {
+            _uiDensity.ApplyPanelStripeFont();
         }
 
         if (Changed("ui_theme_id", "editor_scheme_id") || themesChanged)
@@ -867,6 +874,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadStartScreenAppearance();
         LoadToolbarAppearance();
         LoadContextMenuAppearance();
+        LoadPanelStripeAppearance();
         LoadFindUsagesFonts();
         LoadSearchEditorFonts();
         LoadLineNumbersFont();

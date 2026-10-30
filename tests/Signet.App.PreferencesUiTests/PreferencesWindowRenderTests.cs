@@ -561,14 +561,14 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     // through editing, to cleaning up.
     private static readonly string[] PartsWithFonts =
     {
-        "StartScreen", "ContextMenus", "Toolbars", "BookBrowser", "TableOfContents", "CodeEditor", "Preview", "FindReplace", "SpecialCharacters",
+        "StartScreen", "ContextMenus", "Toolbars", "ActionBars", "BookBrowser", "TableOfContents", "CodeEditor", "Preview", "FindReplace", "SpecialCharacters",
         "Checkpoints", "Validation", "Notifications", "MetadataEditor", "Cleanup", "Footnotes",
     };
 
     // The parts whose section is directly under Appearance and Behavior (no longer under Appearance), in the order of the tree.
     private static readonly string[] PartsUnderAppearanceAndBehavior =
     {
-        "StartScreen", "ContextMenus", "Toolbars", "BookBrowser", "TableOfContents", "FindReplace", "SpecialCharacters",
+        "StartScreen", "ContextMenus", "Toolbars", "ActionBars", "BookBrowser", "TableOfContents", "FindReplace", "SpecialCharacters",
         "Checkpoints", "Validation", "Notifications", "MetadataEditor", "Cleanup",
     };
 
@@ -632,7 +632,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
                 ? new[] { general, fonts, Strings.Get("PreferencesWindow_InterfaceColors") } // the themes, the fonts, the colors of the theme
                 : bothTabs.Contains(part)
                     ? new[] { Strings.Get("PreferencesWindow_" + part), fonts }
-                    : part is "BookBrowser" or "StartScreen" or "ContextMenus" or "Toolbars" or "CodeEditor" or "FindReplace" or "Notifications"
+                    : part is "BookBrowser" or "StartScreen" or "ContextMenus" or "Toolbars" or "ActionBars" or "CodeEditor" or "FindReplace" or "Notifications"
                         ? new[] { general, fonts } // the general settings, then the fonts
                         : new[] { fonts };
 
@@ -1034,6 +1034,69 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         fonts.DataContext.Should().BeSameAs(vm.ToolbarFonts);
         fonts.GetVisualDescendants().OfType<FontSettingView>().Should().ContainSingle();
         preview.IsEffectivelyVisible.Should().BeTrue("the preview is under both tabs");
+        window.Close();
+    }
+
+    /// <summary>
+    /// The Action Bars page: how wide the stripes of the panels are while they show the names (General) and the font of the
+    /// names (Fonts), with a preview under them — the two stripes with the names, following the settings not saved yet.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_Action_Bars_page_edits_the_width_and_the_font_of_the_stripes_and_its_preview_follows_them()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        void Settle()
+        {
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        // Act
+        ShowPage(window, "ActionBarsAppearancePage");
+        Settle();
+        ComboBox mode = window.FindControl<ComboBox>("PanelStripeWidthModeBox")!;
+        NumericUpDown width = window.FindControl<NumericUpDown>("PanelStripeFixedWidthBox")!;
+        PanelStripeView left = window.FindControl<PanelStripeView>("ActionBarsPreviewLeft")!;
+        PanelStripeView right = window.FindControl<PanelStripeView>("ActionBarsPreviewRight")!;
+
+        // Assert
+        mode.IsEffectivelyVisible.Should().BeTrue();
+        mode.SelectedItem.Should().Be(Signet.Core.Misc.PanelStripeWidthMode.Dynamic);
+        width.IsEffectivelyEnabled.Should().BeFalse("the width is set only for Fixed");
+        left.IsEffectivelyVisible.Should().BeTrue();
+        left.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("stripeLabel"))
+            .Should().NotBeEmpty().And.OnlyContain(t => t.IsEffectivelyVisible, "the preview shows the names");
+        right.GetVisualDescendants().OfType<Button>().Should().Contain(b => b.DataContext is PanelStripeButtonViewModel);
+
+        // Act
+        mode.SelectedItem = Signet.Core.Misc.PanelStripeWidthMode.Fixed;
+        vm.PanelStripeFixedWidth = 90;
+        vm.PanelStripeFontSize = 13;
+        Settle();
+
+        // Assert
+        width.IsEffectivelyEnabled.Should().BeTrue();
+        left.Bounds.Width.Should().Be(90, "the preview takes the width not saved yet");
+        left.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains("stripeLabel")).FontSize
+            .Should().Be(13, "and the font of the names");
+
+        // Act
+        TabControl tabs = window.FindControl<TabControl>("ActionBarsAppearanceTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Settle();
+
+        // Assert
+        FontsPageView fonts = window.FindControl<FontsPageView>("PanelStripeFontsView")!;
+        fonts.DataContext.Should().BeSameAs(vm.PanelStripeFonts);
+        fonts.GetVisualDescendants().OfType<FontSettingView>().Should().ContainSingle();
+        left.IsEffectivelyVisible.Should().BeTrue("the preview is under both tabs");
         window.Close();
     }
 

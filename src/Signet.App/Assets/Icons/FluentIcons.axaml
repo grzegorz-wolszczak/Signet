@@ -2693,6 +2693,19 @@
       </DrawingGroup>
     </DrawingImage.Drawing>
   </DrawingImage>
+  <DrawingImage x:Key="more-horizontal">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,0" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 5 8 a 1 1 0 1 1 -2 0 1 1 0 0 1 2 0 m 4 0 a 1 1 0 1 1 -2 0 1 1 0 0 1 2 0 m 3 1 a 1 1 0 1 0 0 -2 1 1 0 0 0 0 2" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
   <DrawingImage x:Key="move-down">
     <DrawingImage.Drawing>
       <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
@@ -2920,6 +2933,60 @@
           </DrawingGroup.Transform>
           <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 8 2 a 4.5 4.5 0 0 0 -4.5 4.5 v 2.4 l -.96 2.41 A .5 .5 0 0 0 3 12 h 3 a 2 2 0 1 0 4 0 h 3 a .5 .5 0 0 0 .46 -.69 l -.96 -2.4 V 6.5 A 4.5 4.5 0 0 0 8 2 m 1 10 a 1 1 0 0 1 -1 1 1 1 0 0 1 -1 -1 z M 4.5 6.5 a 3.5 3.5 0 1 1 7 0 V 9 q 0 .09 .04 .18 l .72 1.82 H 3.74 l .72 -1.82 L 4.5 9 z" />
         </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="panel-place-bottom-left">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 1 1 H 15 V 15 H 1 Z M 2 2 V 14 H 14 V 2 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 2 10 H 8 V 14 H 2 Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="panel-place-bottom-right">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 1 1 H 15 V 15 H 1 Z M 2 2 V 14 H 14 V 2 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 8 10 H 14 V 14 H 8 Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="panel-place-left-bottom">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 1 1 H 15 V 15 H 1 Z M 2 2 V 14 H 14 V 2 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 2 8 H 6 V 14 H 2 Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="panel-place-left-top">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 1 1 H 15 V 15 H 1 Z M 2 2 V 14 H 14 V 2 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 2 2 H 6 V 8 H 2 Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="panel-place-right-bottom">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 1 1 H 15 V 15 H 1 Z M 2 2 V 14 H 14 V 2 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 10 8 H 14 V 14 H 10 Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="panel-place-right-top">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 1 1 H 15 V 15 H 1 Z M 2 2 V 14 H 14 V 2 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 M 10 2 H 14 V 8 H 10 Z" />
       </DrawingGroup>
     </DrawingImage.Drawing>
   </DrawingImage>
