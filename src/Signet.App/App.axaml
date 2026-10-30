@@ -107,6 +107,12 @@
            clipped longer menu labels (no ellipsis). Lift the cap so popups size to their content. -->
       <x:Double x:Key="FlyoutThemeMaxWidth">Infinity</x:Double>
 
+      <!-- The fonts of the context menus until ContextMenuLook sets them from the settings (at startup). -->
+      <x:Double x:Key="SignetContextMenuItemsFontSize">14</x:Double>
+      <x:Double x:Key="SignetContextMenuTitleFontSize">14</x:Double>
+      <FontWeight x:Key="SignetContextMenuItemsFontWeight">Normal</FontWeight>
+      <FontWeight x:Key="SignetContextMenuTitleFontWeight">Bold</FontWeight>
+
       <!-- The menu of a panel's title bar (▾), replacing the Dock theme's one (same key, same items). Dock only enables
            "Dock" to undo "Auto Hide" and keeps "Float" enabled in a floating window; here a floating panel has "Float"
            disabled and "Dock" enabled, which docks it back into its region (MainDockFactory.PinDockable). -->
@@ -476,6 +482,19 @@
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="IsHitTestVisible" Value="False" />
       <Setter Property="Focusable" Value="False" />
+    </Style>
+    <!-- The fonts of the context menus and the background of their title (Preferences › Appearance › Context Menus,
+         ContextMenuLook; the color: ui.contextMenu.title.background). Not the main menu or the drop-down menus. -->
+    <Style Selector="ContextMenu MenuItem">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetContextMenuItemsFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource SignetContextMenuItemsFontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource SignetContextMenuItemsFontWeight}" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem.menuTitle">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetContextMenuTitleFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource SignetContextMenuTitleFontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource SignetContextMenuTitleFontWeight}" />
+      <Setter Property="Background" Value="{DynamicResource SignetContextMenuTitleBackgroundBrush}" />
     </Style>
   </Application.Styles>
 

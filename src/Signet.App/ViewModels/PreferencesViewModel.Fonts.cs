@@ -199,6 +199,7 @@ public sealed partial class PreferencesViewModel
 
         StartScreenFonts = new FontPageViewModel(StartScreenFontRows().Append(TooltipRow(TooltipArea.StartScreen)).ToArray());
         ToolbarFonts = new FontPageViewModel(new[] { ToolbarFontRow() });
+        ContextMenuFonts = new FontPageViewModel(ContextMenuFontRows());
         BookBrowserFonts = new FontPageViewModel(new[]
         {
             InterfaceFontRow(
@@ -303,7 +304,7 @@ public sealed partial class PreferencesViewModel
         FootnotesFonts = TooltipPage(TooltipArea.Footnotes);
         _fontPages.AddRange(new[]
         {
-            AppearanceFonts, StartScreenFonts, ToolbarFonts, BookBrowserFonts, TableOfContentsFonts, CodeEditorFonts, PreviewFonts,
+            AppearanceFonts, StartScreenFonts, ToolbarFonts, ContextMenuFonts, BookBrowserFonts, TableOfContentsFonts, CodeEditorFonts, PreviewFonts,
             FindReplaceFonts, FindUsagesFonts, SearchEditorFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts,
             CleanupFonts, FootnotesFonts, NotificationsFonts,
         });

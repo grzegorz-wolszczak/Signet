@@ -1170,6 +1170,34 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>The fonts of the context menus (<see cref="ContextMenuAppearance"/>). Always read normalized.</summary>
+    public ContextMenuAppearance ContextMenuAppearance
+    {
+        get
+        {
+            ContextMenuAppearance d = ContextMenuAppearance.Default;
+            return new ContextMenuAppearance(
+                ReadString("context_menu_title_font_family", d.TitleFontFamily),
+                ReadInt("context_menu_title_font_size", d.TitleFontSize),
+                ReadInt("context_menu_title_font_weight", d.TitleFontWeight),
+                ReadString("context_menu_items_font_family", d.ItemsFontFamily),
+                ReadInt("context_menu_items_font_size", d.ItemsFontSize),
+                ReadInt("context_menu_items_font_weight", d.ItemsFontWeight)).Normalized();
+        }
+
+        set
+        {
+            ContextMenuAppearance v = value.Normalized();
+            WriteSilent("context_menu_title_font_family", v.TitleFontFamily);
+            WriteSilent("context_menu_title_font_size", v.TitleFontSize);
+            WriteSilent("context_menu_title_font_weight", v.TitleFontWeight);
+            WriteSilent("context_menu_items_font_family", v.ItemsFontFamily);
+            WriteSilent("context_menu_items_font_size", v.ItemsFontSize);
+            WriteSilent("context_menu_items_font_weight", v.ItemsFontWeight);
+            RaiseChanged("context_menu_appearance");
+        }
+    }
+
     /// <summary>
     /// Whether all toolbars of the main window are hidden (View › Toolbars › Hide All Toolbars), whatever each
     /// toolbar's own visibility is; turning it off brings back the toolbars that were shown.
@@ -2435,6 +2463,12 @@ public sealed class SettingsStore
         yield return "tool_header_font_family";
         yield return "tool_header_font_size";
         yield return "tool_header_font_weight";
+        yield return "context_menu_title_font_family";
+        yield return "context_menu_title_font_size";
+        yield return "context_menu_title_font_weight";
+        yield return "context_menu_items_font_family";
+        yield return "context_menu_items_font_size";
+        yield return "context_menu_items_font_weight";
         yield return "toolbar_text_position";
         yield return "toolbar_icon_size";
         yield return "toolbar_positions_locked";

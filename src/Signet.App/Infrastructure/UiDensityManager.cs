@@ -105,6 +105,19 @@ public sealed class UiDensityManager(
         ApplyTooltipFonts();
         ApplyDocumentTabFont();
         ApplyToolHeaderFont();
+        ApplyContextMenuFonts();
+    }
+
+    /// <summary>
+    /// Applies the saved fonts of the context menus (Preferences → Appearance › Context Menus); also after the interface
+    /// font changes, which the empty settings follow (<see cref="ContextMenuLook"/>).
+    /// </summary>
+    public void ApplyContextMenuFonts()
+    {
+        if (Application.Current is { } app)
+        {
+            ContextMenuLook.Apply(app, _settings.ContextMenuAppearance);
+        }
     }
 
     /// <summary>The application resource of the weight of the interface font (<c>SignetUiFontWeight</c>).</summary>
@@ -284,6 +297,7 @@ public sealed class UiDensityManager(
         ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
         ApplyTooltipFonts();
         _iconTheme.RefreshToolbarIconSize();
+        ApplyContextMenuFonts();
     }
 
     // The interface font: the family and the size given (empty / 0 = the mode default).

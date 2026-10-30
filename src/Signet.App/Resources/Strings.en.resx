@@ -6937,6 +6937,9 @@ Close the tab</value>
   <data name="PreferencesWindow_FindUsagesBackgroundInTheme" xml:space="preserve">
     <value>Column backgrounds: Appearance › Interface Colors</value>
   </data>
+  <data name="ThemeKey_ui_contextMenu_title_background" xml:space="preserve">
+    <value>Background of the title of a context menu</value>
+  </data>
   <data name="ThemeKey_ui_startScreen_title" xml:space="preserve">
     <value>Name of a recent file on the start screen</value>
   </data>
@@ -7299,6 +7302,30 @@ Close the tab</value>
   </data>
   <data name="PreferencesWindow_StartScreenHighlightInTheme" xml:space="preserve">
     <value>Background of the highlighted file: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenus" xml:space="preserve">
+    <value>Context Menus</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenusSection" xml:space="preserve">
+    <value>Right-click menus</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenusHint" xml:space="preserve">
+    <value>Every context menu starts with a title naming what was clicked. The fonts of the title and of the items are on the Fonts tab; the main menu and the drop-down menus of buttons keep the interface font.</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenuTitleBackgroundInTheme" xml:space="preserve">
+    <value>Title background: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenuTitleFont" xml:space="preserve">
+    <value>Menu title</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenuItemsFont" xml:space="preserve">
+    <value>Menu items</value>
+  </data>
+  <data name="FontPreview_ContextMenuTitle" xml:space="preserve">
+    <value>chapter_01.xhtml</value>
+  </data>
+  <data name="FontPreview_ContextMenuItems" xml:space="preserve">
+    <value>Open   Rename…   Delete</value>
   </data>
   <data name="PreferencesWindow_Toolbars" xml:space="preserve">
     <value>Toolbars</value>

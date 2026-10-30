@@ -89,6 +89,9 @@ public sealed class ResolvedTheme
 /// </summary>
 public static class AppTheme
 {
+    /// <summary>The application resource of the background of a context menu's title (<see cref="MenuTitle"/>).</summary>
+    public const string ContextMenuTitleBackgroundKey = "SignetContextMenuTitleBackgroundBrush";
+
     /// <summary>The application resource of the folder icon of the file lists (a <see cref="DrawingImage"/>).</summary>
     public const string FolderIconKey = "SignetFolderIcon";
 
@@ -138,6 +141,11 @@ public static class AppTheme
         {
             SetBrush(app, resource, theme.Color(key));
         }
+
+        // Unset: a light shade of the accent color (lighter on a light theme, darker on a dark one).
+        string accentShade = app.ActualThemeVariant == ThemeVariant.Dark ? "SystemAccentColorDark2" : "SystemAccentColorLight2";
+        SetBrush(app, ContextMenuTitleBackgroundKey, theme.Color(ThemeKeys.UiContextMenuTitleBackground)
+            ?? (app.TryGetResource(accentShade, app.ActualThemeVariant, out object? accent) && accent is Color shade ? shade : null));
 
         SetBrush(app, "SignetDocumentTabForegroundBrush", theme.Foreground(ThemeKeys.UiDocumentTab));
         SetBrush(app, "SignetDocumentTabBackgroundBrush", theme.Background(ThemeKeys.UiDocumentTab));

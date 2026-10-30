@@ -310,6 +310,9 @@ public static class ThemeKeys
     /// <summary>The background of the recent file under the pointer on the start screen; unset = the colors of the controls.</summary>
     public static readonly ThemeKey UiStartScreenHighlight = Color("ui.startScreen.highlight", ThemePage.Interface, "Controls", null);
 
+    /// <summary>The background of the title of a context menu (the line naming what was clicked); unset = a light shade of the accent color.</summary>
+    public static readonly ThemeKey UiContextMenuTitleBackground = Color("ui.contextMenu.title.background", ThemePage.Interface, "Controls", null);
+
     /// <summary>The background of the "Usage" column of the Find Usages window; unset = none.</summary>
     public static readonly ThemeKey UiFindUsagesUsageBackground = Color("ui.findUsages.usage.background", ThemePage.Interface, "Controls", null);
 
