@@ -10,6 +10,9 @@ namespace Signet.Controls.TreeDataGrid.Primitives
 {
     public class TreeDataGridRowsPresenter : TreeDataGridPresenterBase<IRow>, IChildIndexProvider
     {
+        public static readonly StyledProperty<bool> KeepEstimatedScrollExtentStableProperty =
+            AvaloniaProperty.Register<TreeDataGridRowsPresenter, bool>(nameof(KeepEstimatedScrollExtentStable), false);
+
         public static readonly DirectProperty<TreeDataGridRowsPresenter, IColumns?> ColumnsProperty =
             AvaloniaProperty.RegisterDirect<TreeDataGridRowsPresenter, IColumns?>(
                 nameof(Columns),
@@ -20,6 +23,12 @@ namespace Signet.Controls.TreeDataGrid.Primitives
 
         public event EventHandler<ChildIndexChangedEventArgs>? ChildIndexChanged;
 
+        public bool KeepEstimatedScrollExtentStable
+        {
+            get => GetValue(KeepEstimatedScrollExtentStableProperty);
+            set => SetValue(KeepEstimatedScrollExtentStableProperty, value);
+        }
+
         public IColumns? Columns
         {
             get => _columns;
@@ -27,6 +36,8 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         }
 
         protected override Orientation Orientation => Orientation.Vertical;
+
+        protected override bool UseStableEstimatedScrollExtent => KeepEstimatedScrollExtentStable;
 
         protected override (int index, double position) GetElementAt(double position)
         {
@@ -83,6 +94,11 @@ namespace Signet.Controls.TreeDataGrid.Primitives
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
+            if (change.Property == KeepEstimatedScrollExtentStableProperty)
+            {
+                ResetEstimatedScrollExtent();
+            }
+
             if (change.Property == ColumnsProperty)
             {
                 var oldValue = change.GetOldValue<IColumns>();

@@ -59,6 +59,7 @@
                   <TreeDataGridRowsPresenter Name="PART_RowsPresenter"
                                              Columns="{TemplateBinding Columns}"
                                              ElementFactory="{TemplateBinding ElementFactory}"
+                                             KeepEstimatedScrollExtentStable="{TemplateBinding KeepEstimatedScrollExtentStable}"
                                              Items="{TemplateBinding Rows}" />
                 </ScrollViewer>
               </DockPanel>

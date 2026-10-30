@@ -50,6 +50,12 @@ history.
     template multiplies the level by a constant 20 (`IndentConverter`, now unused); the cell computes its padding
     itself (`IndentPadding`, the template binds to it), so a style can set another size. The vertical part of the
     cell's `Padding` is added to `IndentPadding` (top and bottom), so a style can pad the name cell vertically.
+  - `TreeDataGrid.KeepEstimatedScrollExtentStable` (default `false`, passed to
+    `TreeDataGridRowsPresenter.KeepEstimatedScrollExtentStable` by the `Generic.axaml` template). With rows of
+    different heights the presenter re-estimates the row size from the rows realized on every layout pass, so the
+    estimated extent — and the scroll bar thumb — changes size while the user scrolls. When the option is on, the
+    first estimate is kept (`TreeDataGridPresenterBase.UseStableEstimatedScrollExtent`, `RealizedStackElements`
+    takes `useExistingEstimate`) until the items change or are replaced. Off, the presenter behaves as upstream.
 - **Fixes:**
   - `TreeDataGridExpanderCell`: when the row refuses to expand (its children are empty), the expander toggle
     (bound two-way) is put back in step with the row; upstream left it checked, inverting later clicks.
