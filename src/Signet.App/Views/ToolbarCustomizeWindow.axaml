@@ -11,13 +11,15 @@
 
   <Window.Resources>
     <!-- A list entry: a column for the icon (the same width for every entry, empty when the action has no icon), then
-         the text. A built-in set gives a colored DrawingImage, "Custom" a monochrome geometry (as on the toolbars). -->
+         the text. A built-in set gives a colored DrawingImage, "Custom" a monochrome geometry (as on the toolbars). The
+         icons are drawn at the biggest toolbar size (ToolbarAppearance.BigIconPixels, 32 px), so that what a button
+         will look like can be seen while the toolbar is edited. -->
     <DataTemplate x:Key="EntryTemplate" x:DataType="vm:ToolbarEntry">
-      <Grid ColumnDefinitions="20,*">
-        <Image Grid.Column="0" Width="16" Height="16" HorizontalAlignment="Left"
+      <Grid ColumnDefinitions="40,*" Margin="0,2">
+        <Image Grid.Column="0" Width="32" Height="32" HorizontalAlignment="Left"
                Source="{Binding IconKey, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
                IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        <PathIcon Grid.Column="0" Width="16" Height="16" HorizontalAlignment="Left"
+        <PathIcon Grid.Column="0" Width="32" Height="32" HorizontalAlignment="Left"
                   Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
                   IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center" />
