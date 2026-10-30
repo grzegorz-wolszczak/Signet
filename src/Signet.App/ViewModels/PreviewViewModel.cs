@@ -64,6 +64,10 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     // element to the middle of the preview (also when a text selection made with the mouse ends with a click).
     private (int Offset, long Tick)? _previewClick;
     private bool _restoreCaretAfterLoad;
+
+    // The source offset of the note a footnote link went to in another file: once that page is loaded, the note is
+    // scrolled to the middle of the preview and highlighted (the engine leaves a fragment at the top, unmarked).
+    private int? _footnoteLanding;
     private string _currentUrlText = string.Empty;
     private double _zoomFactor = 1.0;
     private PreviewAppearance _fonts = PreviewAppearance.Default;
@@ -264,6 +268,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         _currentResource = null;
         _lastCaretOffset = null;
         _restoreCaretAfterLoad = false;
+        _footnoteLanding = null;
         _instrumentation = null;
         CurrentUrlText = string.Empty;
         OnPropertyChanged(nameof(HasContent));
@@ -289,6 +294,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         {
             _lastCaretOffset = null;
             _currentFragment = null;
+            _footnoteLanding = null;
         }
 
         _currentBookPath = html.BookPath;
@@ -319,6 +325,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         _currentResource = null;
         _lastCaretOffset = null;
         _restoreCaretAfterLoad = false;
+        _footnoteLanding = null;
         _instrumentation = null;
         CurrentUrlText = string.Empty;
         OnPropertyChanged(nameof(HasContent));
@@ -428,7 +435,19 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// </summary>
     public void NotifyPageLoaded()
     {
-        if (_disposed || !_restoreCaretAfterLoad)
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (_footnoteLanding is { } landing)
+        {
+            _footnoteLanding = null;
+            ScrollToNote(landing);
+            return;
+        }
+
+        if (!_restoreCaretAfterLoad)
         {
             return;
         }
@@ -792,16 +811,32 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 
         _previewClick = null;
         _restoreCaretAfterLoad = false;
+        int offset = OffsetForFootnote(html, target, overrides);
+
+        // The note in the middle of the preview, highlighted: after the other file is loaded, or at once on this page.
+        _footnoteLanding = pathChanged ? offset : null;
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(CurrentBookPath));
         CurrentUrlText = html.BookPath;
         NavigateRequested?.Invoke(this, target);
+        if (!pathChanged)
+        {
+            ScrollToNote(offset);
+        }
 
         if (FollowFootnotesInCodeView)
         {
-            int offset = OffsetForFootnote(html, target, overrides);
             _previewClick = (offset, Environment.TickCount64);
             CodeCaretJumpRequested?.Invoke(this, offset);
+        }
+    }
+
+    // Scrolls the note at a source offset to the middle of the preview and highlights it (ScrollToLocRequested).
+    private void ScrollToNote(int offset)
+    {
+        if (_instrumentation?.NearestLocAtOrBefore(offset) is int loc and >= 0)
+        {
+            ScrollToLocRequested?.Invoke(this, loc);
         }
     }
 

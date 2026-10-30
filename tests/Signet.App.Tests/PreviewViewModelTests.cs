@@ -608,6 +608,53 @@ public sealed class PreviewViewModelTests
         }
     }
 
+    /// <summary>
+    /// A footnote followed into another file is scrolled to the middle of the preview and highlighted once that page is
+    /// loaded (the engine left the fragment at the top, unmarked) — and only once; a note on the same page at once.
+    /// </summary>
+    [Fact]
+    public void A_followed_footnote_is_scrolled_to_the_middle_and_highlighted_when_its_page_is_loaded()
+    {
+        // Arrange
+        using Book book = BookCreator.CreateNewBook("3.0");
+        HtmlResource chapter = book.GetHtmlResourcesExcludingNav().First();
+        HtmlResource note = book.CreateEmptyHtmlFile();
+        chapter.SetText("<html><body><p>Text<a epub:type=\"noteref\" href=\"" + note.Filename
+            + "#note\" id=\"ref\">[1]</a></p><aside epub:type=\"footnote\" id=\"local\"><p>Local.</p></aside></body></html>");
+        note.SetText("<html><body>\n<p>Before.</p>\n<aside epub:type=\"footnote\" id=\"note\"><p><a href=\"" + chapter.Filename
+            + "#ref\">1.</a> Global note.</p></aside>\n</body></html>");
+        using PreviewViewModel sut = New();
+        List<int> scrolled = new();
+        sut.ScrollToLocRequested += (_, loc) => scrolled.Add(loc);
+        sut.SetBook(book);
+        sut.ShowResource(chapter);
+        sut.NotifyPageLoaded();
+        scrolled.Clear();
+        Uri noteUrl = new UriBuilder(
+            new Uri(Path.Combine(sut.MirrorRootPath!, note.BookPath.Replace('/', Path.DirectorySeparatorChar))))
+        {
+            Fragment = "note",
+        }.Uri;
+
+        // Act
+        sut.HandlePreviewMessage("signet-link:-1 " + noteUrl.AbsoluteUri);
+
+        // Assert
+        scrolled.Should().BeEmpty("the page of the note is not loaded yet");
+
+        // Act
+        sut.NotifyPageLoaded();
+
+        // Assert
+        scrolled.Should().ContainSingle("the note is scrolled to and highlighted").Which.Should().BeGreaterThanOrEqualTo(0);
+
+        // Act
+        sut.NotifyPageLoaded();
+
+        // Assert
+        scrolled.Should().ContainSingle("a later load (a live refresh) does not jump back to the note");
+    }
+
     [Fact]
     public void HandlePreviewMessage_OrdinaryLink_is_navigated_to_and_moves_code_to_the_clicked_element()
     {
