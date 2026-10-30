@@ -62,7 +62,8 @@ public partial class PreviewView : UserControl
     private bool _initStarted;
     private bool _initialized;
     private bool _initFailed;
-    private Uri? _pendingUrl;
+    // When a page may be loaded: in the visual tree, with the engine initialized (a closed panel is out of the tree).
+    private readonly PreviewNavigationGate _gate = new();
     private string? _customCssUri;
 
     /// <summary>Initializes the view.</summary>
@@ -136,11 +137,24 @@ public partial class PreviewView : UserControl
     {
         base.OnAttachedToVisualTree(e);
         StartWebViewInitialization();
+
+        // The page the preview went to while the panel was closed (it follows the active tab all the time).
+        if (_gate.Attached() is { } url)
+        {
+            Navigate(url);
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _gate.Detached();
     }
 
     // The view is NOT torn down when it leaves the visual tree: Dock detaches and re-attaches the same
-    // view whenever an auto-hidden (pinned) Preview flyout is hidden and shown again, or the tool is moved
-    // between docks/windows — NativeWebView handles re-parenting itself. Disposing it on detach left a
+    // view whenever the Preview panel is closed and opened again, or the tool is moved between docks/windows —
+    // NativeWebView handles re-parenting itself. Disposing it on detach left a
     // dead control behind ("Cannot access a disposed object: NativeWebViewController" on the next show).
     // The native resources are released when the application exits.
     private void OnApplicationExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
@@ -197,10 +211,9 @@ public partial class PreviewView : UserControl
 
             _initialized = true;
 
-            if (_pendingUrl is not null)
+            if (_gate.Initialized() is { } url)
             {
-                Navigate(_pendingUrl);
-                _pendingUrl = null;
+                Navigate(url);
             }
 
             if (_boundViewModel is not null)
@@ -246,13 +259,10 @@ public partial class PreviewView : UserControl
             return;
         }
 
-        if (!_initialized)
+        if (_gate.Request(url) is { } now)
         {
-            _pendingUrl = url;
-            return;
+            Navigate(now);
         }
-
-        Navigate(url);
     }
 
     private void Navigate(Uri url)
@@ -285,10 +295,22 @@ public partial class PreviewView : UserControl
     // No tab is open: drop the page (also a URL still waiting for the engine initialization).
     private void OnClearRequested(object? sender, EventArgs e)
     {
-        _pendingUrl = null;
-        if (_initialized && !_initFailed)
+        if (_initFailed)
         {
-            Navigate(BlankPage);
+            return;
+        }
+
+        // Also while the panel is closed: opened again it shows no page of a tab that is gone.
+        if (_initialized)
+        {
+            if (_gate.Request(BlankPage) is { } now)
+            {
+                Navigate(now);
+            }
+        }
+        else
+        {
+            _gate.Forget();
         }
     }
 
