@@ -428,6 +428,7 @@ public sealed class ToolbarAreaViewModel : ObservableObject
         _toolbars = toolbars;
         Rebuild();
         manager.PlacementChanged += (_, _) => Rebuild();
+        manager.AllHiddenChanged += (_, _) => OnPropertyChanged(nameof(HasVisibleToolbars));
     }
 
     /// <summary>Which area this is.</summary>
@@ -436,8 +437,8 @@ public sealed class ToolbarAreaViewModel : ObservableObject
     /// <summary>Rows of the area, top to bottom (their order matches <see cref="ToolbarManager.GetRows"/>).</summary>
     public ObservableCollection<ToolbarRowViewModel> Rows { get; } = new();
 
-    /// <summary>Whether at least one toolbar of the area is shown.</summary>
-    public bool HasVisibleToolbars => Rows.Any(r => r.HasVisibleToolbars);
+    /// <summary>Whether at least one toolbar of the area is shown (none while all are hidden, <see cref="ToolbarManager.AllHidden"/>).</summary>
+    public bool HasVisibleToolbars => !_manager.AllHidden && Rows.Any(r => r.HasVisibleToolbars);
 
     /// <summary>
     /// Moves a dragged toolbar to the place found by <see cref="ToolbarDropResolver"/>: into a new row, or into an

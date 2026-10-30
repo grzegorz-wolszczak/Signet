@@ -4030,6 +4030,9 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   <data name="Menu_ClearBookmarks" xml:space="preserve">
     <value>Wyczyść zakładki</value>
   </data>
+  <data name="Menu_HideAllToolbars" xml:space="preserve">
+    <value>&amp;Ukryj wszystkie paski narzędzi</value>
+  </data>
   <data name="Menu_CustomizeToolbars" xml:space="preserve">
     <value>&amp;Dostosuj paski narzędzi...</value>
   </data>

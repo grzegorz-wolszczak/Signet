@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.LogicalTree;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -205,6 +206,51 @@ public sealed class ToolbarAreaViewTests : IDisposable
 
         // Assert
         format.IsVisible.Should().BeFalse();
+    }
+
+    [AvaloniaFact]
+    public void Hide_all_toolbars_takes_the_toolbar_areas_out_of_the_window_and_back()
+    {
+        // Arrange
+        (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+        ToolbarAreaView top = Area(window, vm.TopToolbars);
+        static bool HoldsToolbarToggles(Signet.App.Menu.MenuItemViewModel item) =>
+            item.Items is { } children && children.Any(t => t.Header == ToolbarManager.DisplayName(ToolbarId.Format));
+        MenuItem viewMenu = window.FindControl<Avalonia.Controls.Menu>("MainMenu")!.GetLogicalChildren().OfType<MenuItem>()
+            .Single(m => m.DataContext is Signet.App.Menu.MenuItemViewModel { Items: { } items } && items.Any(HoldsToolbarToggles));
+        viewMenu.Open();
+        Flush(window);
+        MenuItem toolbarsMenu = viewMenu.GetLogicalChildren().OfType<MenuItem>()
+            .Single(m => m.DataContext is Signet.App.Menu.MenuItemViewModel item && HoldsToolbarToggles(item));
+        toolbarsMenu.Open();
+        Flush(window);
+        MenuItem[] entries = toolbarsMenu.GetLogicalChildren().OfType<MenuItem>().ToArray();
+        MenuItem format = entries.Single(m => m.DataContext is Signet.App.Menu.MenuItemViewModel { Header: var h } && h == ToolbarManager.DisplayName(ToolbarId.Format));
+        MenuItem hideAll = entries.Last();
+
+        // Assert
+        top.IsVisible.Should().BeTrue();
+        format.StaysOpenOnClick.Should().BeTrue("the menu stays open while toolbars are switched");
+        hideAll.StaysOpenOnClick.Should().BeTrue();
+
+        // Act
+        hideAll.Command!.Execute(null);
+        Flush(window);
+
+        // Assert
+        top.IsVisible.Should().BeFalse("the toolbars take no room in the window");
+        Area(window, vm.BottomToolbars).IsVisible.Should().BeFalse();
+        format.IsEffectivelyEnabled.Should().BeFalse();
+        hideAll.IsChecked.Should().BeTrue();
+
+        // Act
+        hideAll.Command!.Execute(null);
+        Flush(window);
+
+        // Assert
+        top.IsVisible.Should().BeTrue();
+        format.IsEffectivelyEnabled.Should().BeTrue();
+        viewMenu.Close();
     }
 
     [AvaloniaFact]

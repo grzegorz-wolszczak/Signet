@@ -341,6 +341,29 @@ public sealed class ToolbarManager
     /// <summary>Toggles toolbar visibility.</summary>
     public void ToggleVisible(ToolbarId toolbar) => SetVisible(toolbar, !_visible[toolbar]);
 
+    /// <summary>
+    /// Whether all toolbars are hidden (View › Toolbars › Hide All Toolbars): the toolbar areas take no space, while
+    /// each toolbar keeps its own visibility (<see cref="IsVisible"/>) for when they are shown again. Saved at once.
+    /// </summary>
+    public bool AllHidden
+    {
+        get => _settings.ToolbarsAllHidden;
+        set
+        {
+            if (_settings.ToolbarsAllHidden == value)
+            {
+                return;
+            }
+
+            _settings.ToolbarsAllHidden = value;
+            _settings.Save();
+            AllHiddenChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Raised after <see cref="AllHidden"/> changed.</summary>
+    public event EventHandler? AllHiddenChanged;
+
     /// <summary>Replaces the toolbar layout with a new item list (action ids or separators) and persists it.</summary>
     public void SetItems(ToolbarId toolbar, IEnumerable<string> items)
     {

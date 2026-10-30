@@ -318,6 +318,25 @@ public sealed class ToolbarManagerTests
     }
 
     [Fact]
+    public void Hiding_all_toolbars_is_saved_raises_one_change_and_keeps_each_toolbars_visibility()
+    {
+        // Arrange
+        using TestHost host = new();
+        int raised = 0;
+        host.Toolbars.AllHiddenChanged += (_, _) => raised++;
+
+        // Act
+        host.Toolbars.AllHidden = true;
+        host.Toolbars.AllHidden = true;
+
+        // Assert
+        raised.Should().Be(1);
+        host.ReopenSettings().ToolbarsAllHidden.Should().BeTrue();
+        new ToolbarManager(host.ReopenSettings()).AllHidden.Should().BeTrue();
+        host.Toolbars.IsVisible(ToolbarId.Format).Should().BeTrue("the toolbar's own visibility does not change");
+    }
+
+    [Fact]
     public void Changing_the_look_saves_it_and_raises_AppearanceChanged_once()
     {
         // Arrange

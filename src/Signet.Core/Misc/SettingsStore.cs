@@ -1170,6 +1170,16 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>
+    /// Whether all toolbars of the main window are hidden (View › Toolbars › Hide All Toolbars), whatever each
+    /// toolbar's own visibility is; turning it off brings back the toolbars that were shown.
+    /// </summary>
+    public bool ToolbarsAllHidden
+    {
+        get => ReadBool("toolbars_all_hidden", false);
+        set => Write("toolbars_all_hidden", value);
+    }
+
     /// <summary>Main menu icon size (multiplier).</summary>
     public double MainMenuIconSize
     {

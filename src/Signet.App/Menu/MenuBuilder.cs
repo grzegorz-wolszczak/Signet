@@ -324,13 +324,16 @@ public sealed class MenuBuilder
     private List<MenuItemViewModel> BuildToolbarsSubmenu()
     {
         List<MenuItemViewModel> items = new();
+
+        // While all toolbars are hidden the toggles of the single toolbars are disabled: there is nothing to see.
+        List<RelayCommand> toggles = new();
         foreach (ToolbarId toolbar in ToolbarManager.AllToolbars)
         {
             ToolbarId captured = toolbar;
+            RelayCommand toggle = new(() => _toolbars.ToggleVisible(captured), () => !_toolbars.AllHidden);
+            toggles.Add(toggle);
             MenuItemViewModel item = MenuItemViewModel.ForToggle(
-                ToolbarManager.DisplayName(toolbar),
-                _toolbars.IsVisible(toolbar),
-                new RelayCommand(() => _toolbars.ToggleVisible(captured)));
+                ToolbarManager.DisplayName(toolbar), _toolbars.IsVisible(toolbar), toggle, staysOpenOnClick: true);
             items.Add(Localized(item, () => ToolbarManager.DisplayName(captured)));
         }
 
@@ -346,6 +349,17 @@ public sealed class MenuBuilder
         items.Add(MenuItemViewModel.Separator());
         static string Customize() => AppAction.ConvertMnemonics(Strings.Get("Menu_CustomizeToolbars"));
         items.Add(Localized(MenuItemViewModel.ForCommand(Customize(), _customizeToolbarsCommand), Customize));
+
+        items.Add(MenuItemViewModel.Separator());
+        static string HideAll() => AppAction.ConvertMnemonics(Strings.Get("Menu_HideAllToolbars"));
+        MenuItemViewModel hideAll = MenuItemViewModel.ForToggle(
+            HideAll(), _toolbars.AllHidden, new RelayCommand(() => _toolbars.AllHidden = !_toolbars.AllHidden), staysOpenOnClick: true);
+        items.Add(Localized(hideAll, HideAll));
+        _toolbars.AllHiddenChanged += (_, _) =>
+        {
+            hideAll.IsChecked = _toolbars.AllHidden;
+            toggles.ForEach(toggle => toggle.NotifyCanExecuteChanged());
+        };
         return items;
     }
 }
