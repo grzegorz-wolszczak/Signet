@@ -37,7 +37,9 @@ public sealed class ToolbarRowPanel : Panel
         }
 
         double[] width = (double[])full.Clone();
-        if (full.Sum() > availableSize.Width)
+        // A fraction of a pixel short (sizes rounded to device pixels on a scaled display) is no shortage: each
+        // toolbar keeps its full width (see ToolbarOverflowPanel).
+        if (full.Sum() > availableSize.Width + 1)
         {
             double remaining = availableSize.Width - min.Sum();
             for (int i = 0; i < n; i++)

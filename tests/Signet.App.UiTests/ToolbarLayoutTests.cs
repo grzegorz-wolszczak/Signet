@@ -32,8 +32,25 @@ public sealed class ToolbarLayoutTests
         sut.Measure(new Size(200, 30));
 
         // Assert
-        sut.HasOverflow.Should().BeFalse();
+        sut.HasOverflow.Should().BeFalse("full={0}", sut.FullContentWidth);
         sut.DesiredSize.Width.Should().Be(80);
+        sut.OverflowedItems.Should().BeEmpty();
+    }
+
+    // Found in October 2026: with the display scaled (125 %, 150 %) the sizes are rounded to device pixels, and the
+    // width a toolbar gets can come out a fraction of a pixel short of the sum of its buttons — the last button went
+    // to the "»" menu although it fitted.
+    [AvaloniaFact]
+    public void A_shortfall_of_a_fraction_of_a_pixel_from_rounding_is_no_overflow()
+    {
+        // Arrange
+        ToolbarOverflowPanel sut = Strip(8, 30);
+
+        // Act
+        sut.Measure(new Size((8 * 30) - 0.5, 30));
+
+        // Assert
+        sut.HasOverflow.Should().BeFalse();
         sut.OverflowedItems.Should().BeEmpty();
     }
 
