@@ -53,6 +53,10 @@ public sealed class HeadingSelectorModel
     /// <summary>The highest (numerically) heading level occurring in the book (0 when there are no headings).</summary>
     public int MaxHeadingLevel { get; private set; }
 
+    /// <summary>Whether any heading level differs from its value when the selector opened.</summary>
+    public bool HasHeadingLevelChanges =>
+        BookManipulation.Headings.GetFlattenedHeadings(_headings).Any(heading => heading.Level != heading.OrigLevel);
+
     /// <summary>Sets whether the given heading goes into the TOC.</summary>
     public void SetInclusion(Heading heading, bool includeInToc)
     {
@@ -82,11 +86,16 @@ public sealed class HeadingSelectorModel
     }
 
     /// <summary>
-    /// Changes the heading's level by <paramref name="delta"/> (clamped to 1–6) and rebuilds the
-    /// hierarchy (rewriting the tag is deferred until <see cref="Apply"/>).
+    /// Changes the heading's level by <paramref name="delta"/> and optionally changes all descendants by
+    /// the same amount. Any headings in <paramref name="headingsToLeaveUnchanged"/> are excluded from the
+    /// descendant changes. The hierarchy is rebuilt; rewriting tags is deferred until <see cref="Apply"/>.
     /// </summary>
     /// <returns><c>true</c> when the level actually changed.</returns>
-    public bool ChangeHeadingLevel(Heading heading, int delta)
+    public bool ChangeHeadingLevel(
+        Heading heading,
+        int delta,
+        bool updateChildHeadings = false,
+        IReadOnlySet<Heading>? headingsToLeaveUnchanged = null)
     {
         ArgumentNullException.ThrowIfNull(heading);
 
@@ -95,13 +104,24 @@ public sealed class HeadingSelectorModel
             return false;
         }
 
-        int newLevel = heading.Level + delta;
-        if (newLevel < 1 || newLevel > 6)
+        List<Heading> affected = new() { heading };
+        if (updateChildHeadings)
+        {
+            AddDescendants(heading, affected);
+        }
+
+        affected.RemoveAll(item =>
+            !ReferenceEquals(item, heading) && headingsToLeaveUnchanged?.Contains(item) == true);
+
+        if (affected.Any(item => item.Level + delta is < 1 or > 6))
         {
             return false;
         }
 
-        heading.Level = newLevel;
+        foreach (Heading item in affected)
+        {
+            item.Level += delta;
+        }
 
         List<Heading> flat = BookManipulation.Headings.GetFlattenedHeadings(_headings).ToList();
         foreach (Heading item in flat)
@@ -112,6 +132,15 @@ public sealed class HeadingSelectorModel
         _headings = BookManipulation.Headings.MakeHeadingHierarchy(flat);
         MaxHeadingLevel = flat.Count > 0 ? flat.Max(h => h.Level) : 0;
         return true;
+    }
+
+    private static void AddDescendants(Heading heading, List<Heading> accumulator)
+    {
+        foreach (Heading child in heading.Children)
+        {
+            accumulator.Add(child);
+            AddDescendants(child, accumulator);
+        }
     }
 
     /// <summary>

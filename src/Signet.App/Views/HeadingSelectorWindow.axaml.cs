@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -7,10 +8,12 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 using Signet.App.Infrastructure;
+using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
 using Signet.Controls.TreeDataGrid.Models;
 using Signet.Controls.TreeDataGrid.Primitives;
+using Signet.Core.BookManipulation;
 
 namespace Signet.App.Views;
 
@@ -51,7 +54,15 @@ public partial class HeadingSelectorWindow : Window
     public static async Task<bool> RunAsync(Window owner, HeadingSelectorViewModel viewModel)
     {
         var window = new HeadingSelectorWindow { DataContext = viewModel };
-        await window.ShowDialog(owner);
+        try
+        {
+            await window.ShowDialog(owner);
+        }
+        finally
+        {
+            window.DetachConfirmationHandlers();
+        }
+
         return viewModel.Accepted;
     }
 
@@ -61,7 +72,10 @@ public partial class HeadingSelectorWindow : Window
         {
             _bound.CloseRequested -= OnCloseRequested;
             _bound.EditTitleRequested -= OnEditTitleRequested;
+            _bound.HeadingRevealed -= OnHeadingRevealed;
             _bound.PropertyChanged -= OnViewModelPropertyChanged;
+            _bound.ConfirmHeadingLevelOverflowAsync = null;
+            _bound.ConfirmHeadingLevelChangesAsync = null;
         }
 
         _source?.Dispose();
@@ -73,7 +87,10 @@ public partial class HeadingSelectorWindow : Window
         {
             _bound.CloseRequested += OnCloseRequested;
             _bound.EditTitleRequested += OnEditTitleRequested;
+            _bound.HeadingRevealed += OnHeadingRevealed;
             _bound.PropertyChanged += OnViewModelPropertyChanged;
+            _bound.ConfirmHeadingLevelOverflowAsync = ConfirmHeadingLevelOverflowAsync;
+            _bound.ConfirmHeadingLevelChangesAsync = ConfirmHeadingLevelChangesAsync;
             HeadingSelectorViewModel vm = _bound;
             _source = BuildSource(vm);
             _selection = new TreeSelectionSync<HeadingNodeViewModel>(
@@ -82,6 +99,35 @@ public partial class HeadingSelectorWindow : Window
 
         Tree.Source = _source;
         _selection?.SelectFromViewModel();
+    }
+
+    private async Task<bool> ConfirmHeadingLevelOverflowAsync(IReadOnlyList<Heading> headings)
+    {
+        HeadingLevelOverflowDecision? decision = await HeadingLevelOverflowWindow.AskAsync(this, headings);
+        if (decision?.HeadingToShow is { } heading)
+        {
+            // The level is not changed: the user sees the heading that stops it and can lower it first.
+            _bound?.RevealHeading(heading);
+        }
+
+        return decision?.ContinueWithUnchangedHeadings == true;
+    }
+
+    private Task<bool> ConfirmHeadingLevelChangesAsync() =>
+        ConfirmWindow.AskAsync(
+            this,
+            Strings.Get("HeadingSelectorWindow_HeadingLevelsChangedTitle"),
+            Strings.Get("HeadingSelectorWindow_HeadingLevelsChangedMessage"));
+
+    private void DetachConfirmationHandlers()
+    {
+        if (_bound is null)
+        {
+            return;
+        }
+
+        _bound.ConfirmHeadingLevelOverflowAsync = null;
+        _bound.ConfirmHeadingLevelChangesAsync = null;
     }
 
     private HierarchicalTreeDataGridSource<HeadingNodeViewModel> BuildSource(HeadingSelectorViewModel vm)
@@ -121,6 +167,18 @@ public partial class HeadingSelectorWindow : Window
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();
+
+    // A node selected by the view model (a heading shown from the h6 dialog): its row is scrolled into view once the
+    // expanded ancestors have their rows.
+    private void OnHeadingRevealed(object? sender, HeadingNodeViewModel node) =>
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            if (_selection?.FindPath(node) is { } path && _source?.Rows is { } rows
+                && rows.ModelIndexToRowIndex(new IndexPath(path)) is >= 0 and var rowIndex)
+            {
+                Tree.RowsPresenter?.BringIntoView(rowIndex);
+            }
+        });
 
     private void OnEditTitleRequested(object? sender, EventArgs e)
     {

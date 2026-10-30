@@ -92,6 +92,7 @@
     <TreeDataGrid x:Name="Grid"
                   Classes="gridLines"
                   CanUserSortColumns="False"
+                  KeepEstimatedScrollExtentStable="True"
                   BorderThickness="1"
                   BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
       <TreeDataGrid.ContextMenu>

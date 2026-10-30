@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
@@ -126,6 +127,107 @@ public sealed class HeadingsTests
 
         // Assert
         Chapter(book).GetText().Should().Contain(">B</h1>").And.NotContain("<h2");
+    }
+
+    private static (HeadingSelectorModel Model, Heading A, Heading B, Heading C) Nested(Book book, int topLevel)
+    {
+        SetBody(book, $"<body>\n<h{topLevel}>A</h{topLevel}>\n<h{topLevel + 1}>B</h{topLevel + 1}>\n"
+            + $"<h{topLevel + 2}>C</h{topLevel + 2}>\n</body>");
+        HeadingSelectorModel model = new(book);
+        Heading[] flat = Headings.GetFlattenedHeadings(model.RootHeadings).ToArray();
+        return (model, flat.Single(h => h.Text == "A"), flat.Single(h => h.Text == "B"), flat.Single(h => h.Text == "C"));
+    }
+
+    [Theory]
+    [InlineData(false, 2, 2, 3)]
+    [InlineData(true, 2, 3, 4)]
+    public void Selector_model_change_level_moves_the_descendants_only_when_asked(
+        bool updateChildHeadings, int expectedA, int expectedB, int expectedC)
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        (HeadingSelectorModel model, Heading a, Heading b, Heading c) = Nested(book, topLevel: 1);
+
+        // Act
+        bool changed = model.ChangeHeadingLevel(a, 1, updateChildHeadings);
+
+        // Assert
+        changed.Should().BeTrue();
+        (a.Level, b.Level, c.Level).Should().Be((expectedA, expectedB, expectedC));
+    }
+
+    [Fact]
+    public void Selector_model_change_level_refuses_to_push_a_descendant_past_h6()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        (HeadingSelectorModel model, Heading a, Heading b, Heading c) = Nested(book, topLevel: 4);
+
+        // Act
+        bool changed = model.ChangeHeadingLevel(a, 1, updateChildHeadings: true);
+
+        // Assert
+        changed.Should().BeFalse();
+        (a.Level, b.Level, c.Level).Should().Be((4, 5, 6));
+        model.HasHeadingLevelChanges.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Selector_model_change_level_leaves_the_listed_descendants_where_they_are()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        (HeadingSelectorModel model, Heading a, Heading b, Heading c) = Nested(book, topLevel: 4);
+
+        // Act
+        bool changed = model.ChangeHeadingLevel(a, 1, updateChildHeadings: true, new HashSet<Heading> { c });
+
+        // Assert
+        changed.Should().BeTrue();
+        (a.Level, b.Level, c.Level).Should().Be((5, 6, 6));
+    }
+
+    [Fact]
+    public void Selector_model_reports_level_changes_until_they_are_undone()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        (HeadingSelectorModel model, Heading a, _, _) = Nested(book, topLevel: 1);
+
+        // Act & Assert
+        model.HasHeadingLevelChanges.Should().BeFalse();
+
+        // Act
+        model.ChangeHeadingLevel(a, 1, updateChildHeadings: true);
+
+        // Assert
+        model.HasHeadingLevelChanges.Should().BeTrue();
+
+        // Act
+        model.ChangeHeadingLevel(a, -1, updateChildHeadings: true);
+
+        // Assert
+        model.HasHeadingLevelChanges.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Heading_source_offset_points_at_its_opening_tag()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        SetBody(book, "<body>\n<h1>A</h1>\n<p>text</p>\n<h2 id=\"b\">B</h2>\n</body>");
+        string text = Chapter(book).GetText();
+
+        // Act
+        var list = Headings.GetHeadingList(book.GetHtmlResourcesExcludingNav());
+
+        // Assert
+        list.Select(h => text[h.SourceOffset..].Split('>')[0] + ">").Should().Equal("<h1>", "<h2 id=\"b\">");
     }
 
     [Fact]

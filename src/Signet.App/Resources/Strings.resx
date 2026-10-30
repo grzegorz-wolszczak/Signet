@@ -437,11 +437,50 @@
   <data name="HeadingSelectorWindow_Title" xml:space="preserve">
     <value>Generuj spis treści</value>
   </data>
+  <data name="HeadingSelectorWindow_LevelChoicePrompt" xml:space="preserve">
+    <value>Wybierz nagłówki do spisu treści</value>
+  </data>
+  <data name="HeadingSelectorWindow_CountsSummary" xml:space="preserve">
+    <value>Poziom: włączone / ukryte —    </value>
+  </data>
+  <data name="HeadingSelectorWindow_NoHeadings" xml:space="preserve">
+    <value>Brak nagłówków w publikacji.</value>
+  </data>
+  <data name="HeadingSelectorWindow_UpdateChildHeadingsLevels" xml:space="preserve">
+    <value>Aktualizuj poziomy nagłówków podrzędnych</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLevelOverflowTitle" xml:space="preserve">
+    <value>Nagłówki h6 pozostaną bez zmian</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLevelOverflowMessage" xml:space="preserve">
+    <value>Niektóre nagłówki pozostaną na poziomie h6. Kliknij nagłówek, aby zaznaczyć go na liście (poziom nie zostanie wtedy zmieniony).</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLocation" xml:space="preserve">
+    <value>{0}, wiersz {1}</value>
+  </data>
+  <data name="HeadingSelectorWindow_ShowHeadingTip" xml:space="preserve">
+    <value>Zaznacz ten nagłówek na liście</value>
+  </data>
+  <data name="HeadingSelectorWindow_Continue" xml:space="preserve">
+    <value>Kontynuuj</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLevelsChangedTitle" xml:space="preserve">
+    <value>Zapisać zmiany poziomów nagłówków?</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLevelsChangedMessage" xml:space="preserve">
+    <value>Poziomy nagłówków uległy zmianie. Kontynuacja zapisze je w plikach XHTML książki. Czy chcesz kontynuować?</value>
+  </data>
   <data name="HeadingSelectorWindow_LevelChoiceTip" xml:space="preserve">
     <value>Szybko zaznacz, które nagłówki trafią do TOC.</value>
   </data>
   <data name="HeadingSelectorWindow_TocItemsOnly" xml:space="preserve">
     <value>Pokaż tylko pozycje TOC</value>
+  </data>
+  <data name="HeadingSelectorWindow_ExpandAllTip" xml:space="preserve">
+    <value>Rozwiń wszystkie nagłówki.</value>
+  </data>
+  <data name="HeadingSelectorWindow_CollapseAllTip" xml:space="preserve">
+    <value>Zwiń wszystkie nagłówki.</value>
   </data>
   <data name="HeadingSelectorWindow_DecreaseLevelTip" xml:space="preserve">
     <value>Zmniejsz poziom nagłówka o 1 (strzałka w lewo).</value>
