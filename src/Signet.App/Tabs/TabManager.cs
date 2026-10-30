@@ -143,14 +143,20 @@ public sealed class TabManager : IDisposable
     /// </summary>
     public void SaveAllTabs()
     {
-        bool anyModified = false;
         foreach (ContentTabViewModel view in _views.Values)
         {
-            anyModified |= view.IsModified;
-            view.Save();
+            FlushToBook(view);
         }
+    }
 
-        if (anyModified && _book is not null)
+    // Flushes a tab's working text into its resource. Its unsaved changes become the book's (the tab is no longer
+    // modified, the book is): otherwise they would be visible neither in the tab nor in the book — the Save icon went
+    // gray when another tab was activated, and closing the program would not ask about saving.
+    private void FlushToBook(ContentTabViewModel view)
+    {
+        bool modified = view.IsModified;
+        view.Save();
+        if (modified && _book is not null)
         {
             _book.Modified = true;
         }
@@ -584,7 +590,11 @@ public sealed class TabManager : IDisposable
         if (!ReferenceEquals(outgoing, incoming))
         {
             DebugLog.Write("Tab", $"activated {e.Tab.Resource.BookPath}");
-            outgoing?.Save();
+            if (outgoing is not null)
+            {
+                FlushToBook(outgoing);
+            }
+
             ActiveTabChanged?.Invoke(this, EventArgs.Empty);
         }
 
@@ -623,7 +633,7 @@ public sealed class TabManager : IDisposable
             ActiveTabChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        view.Save();
+        FlushToBook(view);
 
         if (!_bridging && DocumentDock is not null)
         {
