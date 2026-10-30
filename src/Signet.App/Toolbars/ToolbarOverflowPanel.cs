@@ -21,6 +21,11 @@ public sealed class ToolbarOverflowPanel : Panel
     public static readonly StyledProperty<double> ChevronWidthProperty =
         AvaloniaProperty.Register<ToolbarOverflowPanel, double>(nameof(ChevronWidth), 16);
 
+    // With the display scaled the sizes are rounded to device pixels, so the width given to a toolbar can come out a
+    // fraction of a pixel short of the sum of its (rounded) buttons. A shortfall below this is no overflow: the last
+    // button would otherwise go to the "»" menu although it fits.
+    private const double RoundingTolerance = 1;
+
     private bool _hasOverflow;
     private int _visibleCount;
 
@@ -75,11 +80,11 @@ public sealed class ToolbarOverflowPanel : Panel
         FullContentWidth = full;
         MinContentWidth = Children.Count > 1 ? Children[0].DesiredSize.Width + ChevronWidth : full;
 
-        if (full <= availableSize.Width || Children.Count <= 1)
+        if (full <= availableSize.Width + RoundingTolerance || Children.Count <= 1)
         {
             _visibleCount = Children.Count;
             HasOverflow = false;
-            return new Size(full, height);
+            return new Size(Math.Min(full, availableSize.Width), height);
         }
 
         double limit = availableSize.Width - ChevronWidth;
@@ -87,7 +92,7 @@ public sealed class ToolbarOverflowPanel : Panel
         int count = 0;
         foreach (Control child in Children)
         {
-            if (count > 0 && used + child.DesiredSize.Width > limit)
+            if (count > 0 && used + child.DesiredSize.Width > limit + RoundingTolerance)
             {
                 break;
             }
