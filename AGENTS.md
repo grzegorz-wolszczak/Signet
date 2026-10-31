@@ -12,13 +12,16 @@ validation, checkpoints (snapshot + diff).
 - **Stack:** `net10.0`, Avalonia 12.x, `CommunityToolkit.Mvvm`, Dock.Avalonia (docking layout).
 - **Libraries:** `AngleSharp` (HTML5/CSS parsing), `AvaloniaEdit` + `TextMateSharp` (code editor),
   `WeCantSpell.Hunspell` (spelling), `PCRE.NET` (regex in Find & Replace), `NativeWebView`
-  (Preview), `SkiaSharp` (images/fonts), `DiffPlex` (diffs), Serilog (logging). Trees and tables use
+  (Preview; its Linux backend is Signet's fork `Signet.NativeWebView.Platform.Linux`, see its `UPSTREAM.md`),
+  `SkiaSharp` (images/fonts), `DiffPlex` (diffs), Serilog (logging). Trees and tables use
   `Signet.Controls.TreeDataGrid` — Signet's fork of the MIT Avalonia TreeDataGrid (see its `UPSTREAM.md`);
   there is no `TreeView` / `DataGrid` in the app.
 - **Naming:** solution `Signet.slnx`; projects `Signet.Core` (domain model, no UI dependencies),
   `Signet.App` (Avalonia app), `Signet.Cli` (headless CLI), `Signet.Controls.TreeDataGrid` (the
-  TreeDataGrid fork); tests `Signet.Core.Tests`, `Signet.App.Tests`, `Signet.App.UiTests`,
-  `Signet.App.MainWindowUiTests`, `Signet.App.PreferencesUiTests`, `Signet.Controls.TreeDataGrid.Tests`; namespaces `Signet.*`.
+  TreeDataGrid fork), `Signet.NativeWebView.Platform.Linux` (the NativeWebView Linux backend fork, assembly and namespace
+  keep the upstream `NativeWebView.Platform.Linux`); tests `Signet.Core.Tests`, `Signet.App.Tests`, `Signet.App.UiTests`,
+  `Signet.App.MainWindowUiTests`, `Signet.App.PreferencesUiTests`, `Signet.Controls.TreeDataGrid.Tests`,
+  `Signet.NativeWebView.Platform.Linux.Tests`; namespaces `Signet.*`.
 - **License:** GNU GPL v3 or later (see `LICENSE`). Source files carry **no** license header.
 - **UI localization:** `.resx` resources — `Strings.resx` / `CoreStrings.resx` hold Polish (default),
   `*.en.resx` hold English. Every user-visible string goes through resources, in both languages.
@@ -70,6 +73,22 @@ When there are several doubts, collect them and ask all at once, not one by one.
   project); every change against upstream is listed in `src/Signet.Controls.TreeDataGrid/UPSTREAM.md`.
   The fork's `Fluent.axaml` must come after `FluentTheme` in `App.axaml` (it resolves Fluent colours with
   `StaticResource`).
+
+- **The Preview on Linux: a forked NativeWebView backend.** `src/Signet.NativeWebView.Platform.Linux` is Signet's fork
+  of NativeWebView's WebKitGTK backend (the rest of NativeWebView is NuGet, all on the fork's version); its
+  `UPSTREAM.md` lists every change, why it was made, and how such problems were diagnosed. What it taught (October 2026):
+  - WebKitGTK runs on NativeWebView's own GTK thread. Upstream raised the web view's events there, so handlers touching
+    Avalonia threw, and an exception unwinding through native GTK frames ends the process with `stack smashing
+    detected` — a crash that looks random. The fork now raises the events on the UI thread (deferring WebKit's policy
+    decisions until the handler has run) and catches every exception in a native callback
+    (`LinuxNativeCallbackExceptions` → logged and shown in Notifications by `PreviewView`).
+  - Any code called back from native code (P/Invoke callbacks, GObject signals) must catch its exceptions and must keep
+    its delegate alive in a field — a method group passed to a native function that calls it later is collected by the
+    GC.
+  - Embedding the GTK window under Avalonia's X11 host: show it only after it is reparented, with the web view already in
+    it; GTK frame sync is off for it. Otherwise a compositor shows a transparent hole, or the view stays blank.
+  - Diagnose native crashes with `coredumpctl` and the runtime's crash report (`DOTNET_EnableCrashReport=1`), not by
+    guessing — see the fork's `UPSTREAM.md`.
 
 ## Running the GUI
 
