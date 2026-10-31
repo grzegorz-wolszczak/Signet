@@ -466,8 +466,6 @@ public sealed class ToolbarAreaViewTests : IDisposable
         Button open = window.GetVisualDescendants().OfType<Button>()
             .First(b => b.DataContext is ToolbarItemViewModel { Action: { } a } && a.Id == AppActionIds.Open);
 
-        System.IO.File.WriteAllText("/tmp/claude-1000/-home-gregw-repos-my-github-Signet/2bce09ea-53ad-4cc6-9b74-f5985c828d1b/scratchpad/dbg.txt",
-            $"label size={Label(open).FontSize} fam={Label(open).FontFamily} w={Label(open).FontWeight}; button size={open.FontSize} fam={open.FontFamily}");
         // Act
         settings.ToolbarAppearance = settings.ToolbarAppearance with
         {
