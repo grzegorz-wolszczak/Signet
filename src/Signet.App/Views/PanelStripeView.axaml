@@ -27,11 +27,6 @@
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
     </Style>
-    <!-- An open panel is pressed, the same whether it is in front of its place or behind another tab of it (two looks
-         read as two different states of a toggle). -->
-    <Style Selector="Button.stripeButton.open">
-      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListAccentLowBrush}" />
-    </Style>
     <Style Selector="TextBlock.stripeLabel">
       <Setter Property="FontFamily" Value="{DynamicResource SignetPanelStripeFontFamily}" />
       <Setter Property="FontSize" Value="{DynamicResource SignetPanelStripeFontSize}" />
@@ -68,8 +63,6 @@
   <UserControl.Resources>
     <DataTemplate x:Key="StripeButtonTemplate" x:DataType="vm:PanelStripeButtonViewModel">
       <Button Classes="stripeButton"
-              Classes.open="{Binding IsOpen}"
-              Classes.front="{Binding IsInFront}"
               Command="{Binding ClickCommand}"
               ToolTip.Tip="{Binding ToolTip}"
               Loaded="OnButtonLoaded">
