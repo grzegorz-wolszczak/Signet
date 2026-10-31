@@ -2312,8 +2312,11 @@ public sealed class LinuxNativeWebViewBackend
 
         LinuxNativeInterop.gtk_window_set_decorated(gtkWindow, false);
         LinuxNativeInterop.gtk_window_set_resizable(gtkWindow, true);
+        // Signet: realized but not shown here. Mapped first as a window of its own (an override-redirect popup on the
+        // root window), it was picked up by the compositing window manager as a separate window, which left a
+        // transparent hole over the embedded web view. InitializeRuntimeOnGtkThread shows it, with the web view inside,
+        // once it is reparented into its parent.
         LinuxNativeInterop.gtk_widget_realize(gtkWindow);
-        LinuxNativeInterop.gtk_widget_show_all(gtkWindow);
 
         var gdkWindow = LinuxNativeInterop.gtk_widget_get_window(gtkWindow);
         if (gdkWindow == IntPtr.Zero)
