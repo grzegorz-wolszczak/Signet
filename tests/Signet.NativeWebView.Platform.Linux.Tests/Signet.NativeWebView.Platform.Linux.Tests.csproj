@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tests of Signet.NativeWebView.Platform.Linux (the fork of NativeWebView's Linux backend, see its UPSTREAM.md):
+    Upstream/ - the Linux tests of the upstream test project, ported; Fork/ - the tests of Signet's changes. As in the
+    fork, the upstream code keeps its style (xUnit Assert, implicit usings): .NET analyzers and code-style enforcement
+    are off.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Signet.NativeWebView.Platform.Linux.Tests</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <AnalysisLevel>none</AnalysisLevel>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- The tests declare a few GTK functions with DllImport, as the fork does; the ported upstream tests (written for
+         xUnit v2) call the backend's async methods without the test's cancellation token. -->
+    <NoWarn>$(NoWarn);SYSLIB1054;xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3.mtp-off" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="AutoFixture" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The upstream tests use xUnit without a using directive. -->
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The temporary-folder isolation and cleanup check shared by all the test projects (Signet.Core.Tests is not
+         referenced here: the fork's tests do not depend on Signet.Core). -->
+    <Compile Include="..\Signet.Core.Tests\TestSupport\TestIsolation.cs" Link="TestSupport\TestIsolation.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Signet.NativeWebView.Platform.Linux\Signet.NativeWebView.Platform.Linux.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using AutoFixture;
 using AwesomeAssertions;
 using Signet.App.Services;
 using Signet.App.ViewModels;
@@ -1076,5 +1077,29 @@ public sealed class PreviewViewModelTests
 
         // Assert
         applied.Should().BeNull();
+    }
+
+    /// <summary>
+    /// An exception the preview engine caught in its native code (on Linux: a WebKitGTK callback, see
+    /// src/Signet.NativeWebView.Platform.Linux/UPSTREAM.md) is a warning in the status bar, which also puts it in the
+    /// Notifications panel - the application keeps running.
+    /// </summary>
+    [Fact]
+    public void ReportEngineError_ShowsAWarningWithTheMessage()
+    {
+        // Arrange
+        using StatusBarService statusBar = new();
+        using PreviewViewModel sut = new(statusBar) { DebounceInterval = TimeSpan.Zero };
+        string message = new Fixture().Create<string>();
+        StatusNotification? shown = null;
+        statusBar.MessageShown += (_, notification) => shown = notification;
+
+        // Act
+        sut.ReportEngineError(new InvalidOperationException(message));
+
+        // Assert
+        shown.Should().NotBeNull();
+        shown!.Level.Should().Be(NotificationLevel.Warning);
+        shown.Message.Should().Contain(message);
     }
 }
