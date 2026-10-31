@@ -22,11 +22,30 @@ public sealed class PreviewHighlightScriptTests
 
         // Assert
         js.Should().Contain($"[data-signet-loc=\"{loc.ToString(CultureInfo.InvariantCulture)}\"]")
-            .And.Contain(".closest('" + PreviewHighlightScript.AncestorSelector + "')")
+            .And.Contain(PreviewHighlightScript.BlockElementScript)
             .And.Contain("el.style.backgroundColor='rgba(255,235,59,0.45)'")
             .And.Contain("scrollIntoView")
             .And.NotContain("setTimeout(")
             .And.NotContain("px solid");
+    }
+
+    /// <summary>
+    /// Added in October 2026: following a footnote highlighted the whole notes page and left it at its top. The link
+    /// leads to <c>&lt;aside id="en-1"&gt;</c> (Signet's own footnote shape), and the script walked up a list of tags
+    /// without <c>aside</c> to the <c>&lt;div&gt;</c> around all the notes. The element itself is highlighted when the
+    /// page lays it out as a block; only an inline one gives way to its nearest block ancestor.
+    /// </summary>
+    [Theory]
+    [AutoData]
+    public void The_target_itself_is_highlighted_when_it_is_a_block_by_its_computed_style(int loc)
+    {
+        // Act
+        string js = PreviewHighlightScript.Build(loc, PreviewHighlight.Default, Yellow);
+
+        // Assert
+        js.Should().Contain("getComputedStyle(e).display")
+            .And.Contain("while(el.parentElement&&inl(el))el=el.parentElement;")
+            .And.NotContain(".closest(", "a list of tags misses blocks such as aside and section");
     }
 
     [Theory]

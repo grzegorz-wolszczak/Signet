@@ -15,12 +15,20 @@ namespace Signet.App.Infrastructure;
 public static class PreviewHighlightScript
 {
     /// <summary>
-    /// Selector of a "sensible" ancestor to highlight: the element pointed to by <c>data-signet-loc</c>
-    /// is often a deeply nested inline tag (e.g. <c>&lt;em&gt;</c>, <c>&lt;span&gt;</c>), so
-    /// the nearest block-level text container is highlighted, not the literal target.
+    /// The script part that picks the element to highlight: the element pointed to by <c>data-signet-loc</c> when the
+    /// page lays it out as a block, otherwise (an inline tag such as <c>&lt;em&gt;</c>, <c>&lt;span&gt;</c>,
+    /// <c>&lt;a&gt;</c>) its nearest ancestor that is one. Decided by the computed <c>display</c>, so any tag and the
+    /// book's own CSS count.
     /// </summary>
-    public const string AncestorSelector =
-        "p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th, div, pre, dd, dt, figcaption, caption";
+    /// <remarks>
+    /// It used to take the nearest ancestor matching a list of tags (<c>p, li, div, …</c>), which had no
+    /// <c>aside</c> / <c>section</c>: a footnote link leads to <c>&lt;aside id="en-1"&gt;</c> (the shape Signet's own
+    /// footnote conversion writes), the walk went up to the <c>&lt;div&gt;</c> around all the notes, and following a
+    /// footnote highlighted the whole notes page and "centered" it at its top (October 2026).
+    /// </remarks>
+    public const string BlockElementScript =
+        "function inl(e){var d=getComputedStyle(e).display;return d.indexOf('inline')===0||d==='contents'||d==='none';}"
+        + "while(el.parentElement&&inl(el))el=el.parentElement;";
 
     // Duration of the smooth fade-out when disappearing (ms).
     private const int FadeMs = 400;
@@ -42,7 +50,7 @@ public static class PreviewHighlightScript
         StringBuilder js = new();
         js.Append("(function(){var w=window;var el=document.querySelector('[data-signet-loc=\"")
             .Append(loc.ToString(CultureInfo.InvariantCulture))
-            .Append("\"]');if(!el)return;el=el.closest('").Append(AncestorSelector).Append("')||el;")
+            .Append("\"]');if(!el)return;").Append(BlockElementScript)
             // Clean up the previous highlight (even one in another style) and its scheduled fade-out.
             .Append("function clear(e){e.style.transition='';e.style.backgroundColor='';")
             .Append("e.style.outline='';e.style.outlineColor='';e.style.outlineOffset='';}")
