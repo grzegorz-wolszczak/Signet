@@ -57,6 +57,8 @@ public partial class PreviewView : UserControl
 
     private static readonly Uri BlankPage = new("about:blank");
 
+    private static readonly Serilog.ILogger Log = Serilog.Log.ForContext<PreviewView>();
+
     private PreviewViewModel? _boundViewModel;
     private bool _revealed;
     private bool _initStarted;
@@ -200,8 +202,19 @@ public partial class PreviewView : UserControl
         {
             Nwv.NativeWebViewRuntime.EnsureCurrentPlatformRegistered();
 
-            WebView.RenderFrameCaptured += OnRenderFrameCaptured;
-            DispatcherTimer.RunOnce(RevealWebView, RevealFallbackDelay);
+            if (OperatingSystem.IsLinux())
+            {
+                // The Linux backend captures no frames in GpuSurface mode (only synthetic ones): the WebKitGTK window
+                // is always embedded over the control, so there is no first real frame to wait for.
+                WebView.RenderMode = Nwv.NativeWebViewRenderMode.Embedded;
+                RevealWebView();
+            }
+            else
+            {
+                WebView.RenderFrameCaptured += OnRenderFrameCaptured;
+                DispatcherTimer.RunOnce(RevealWebView, RevealFallbackDelay);
+            }
+
             WebView.NavigationStarted += OnNavigationStarted;
             WebView.NavigationCompleted += OnNavigationCompleted;
             WebView.NewWindowRequested += OnNewWindowRequested;
@@ -223,6 +236,7 @@ public partial class PreviewView : UserControl
         }
         catch (Exception ex)
         {
+            Log.Error(ex, "The preview engine could not be initialized");
             _initFailed = true;
             ShowFallback(
                 Strings.Format("Preview_EngineUnavailable", ex.GetType().Name, ex.Message));
@@ -273,6 +287,7 @@ public partial class PreviewView : UserControl
         }
         catch (Exception ex)
         {
+            Log.Warning(ex, "The preview could not load {Url}", url);
             ShowFallback(Strings.Format("Preview_LoadFailed", ex.Message));
         }
     }
