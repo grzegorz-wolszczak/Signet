@@ -73,11 +73,11 @@
       WebKitGTK (Linux) / WKWebView (macOS), without bundling Chromium/CEF.
       All packages are released together - keep them on the same version.
     -->
-    <PackageVersion Include="NativeWebView" Version="12.0.4.8" />
-    <PackageVersion Include="NativeWebView.Core" Version="12.0.4.8" />
-    <PackageVersion Include="NativeWebView.Platform.Windows" Version="12.0.4.8" />
-    <PackageVersion Include="NativeWebView.Platform.Linux" Version="12.0.4.8" />
-    <PackageVersion Include="NativeWebView.Platform.macOS" Version="12.0.4.8" />
+    <PackageVersion Include="NativeWebView" Version="12.0.4.9" />
+    <PackageVersion Include="NativeWebView.Core" Version="12.0.4.9" />
+    <PackageVersion Include="NativeWebView.Platform.Windows" Version="12.0.4.9" />
+    <PackageVersion Include="NativeWebView.Platform.Linux" Version="12.0.4.9" />
+    <PackageVersion Include="NativeWebView.Platform.macOS" Version="12.0.4.9" />
   </ItemGroup>
 
   <ItemGroup Label="Image / font tabs">
