@@ -2333,7 +2333,8 @@ public sealed partial class LinuxNativeWebViewBackend
         return string.Equals(leftValue, rightValue, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static LinuxHostWindowHandle CreateHostWindowOnGtkThread()
+    // Signet: internal for the fork's tests.
+    internal static LinuxHostWindowHandle CreateHostWindowOnGtkThread()
     {
         var gtkWindow = LinuxNativeInterop.gtk_window_new(LinuxNativeInterop.GtkWindowType.Popup);
         if (gtkWindow == IntPtr.Zero)
@@ -2512,7 +2513,8 @@ public sealed partial class LinuxNativeWebViewBackend
         ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
-    private readonly record struct LinuxHostWindowHandle(nint GtkWindow, nint Xid);
+    // Signet: internal for the fork's tests.
+    internal readonly record struct LinuxHostWindowHandle(nint GtkWindow, nint Xid);
 
     private sealed class PendingProgrammaticDownload
     {

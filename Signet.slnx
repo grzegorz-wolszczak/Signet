@@ -13,6 +13,7 @@
     <Project Path="tests/Signet.App.UiTests/Signet.App.UiTests.csproj" />
     <Project Path="tests/Signet.Benchmarks/Signet.Benchmarks.csproj" />
     <Project Path="tests/Signet.Controls.TreeDataGrid.Tests/Signet.Controls.TreeDataGrid.Tests.csproj" />
+    <Project Path="tests/Signet.NativeWebView.Platform.Linux.Tests/Signet.NativeWebView.Platform.Linux.Tests.csproj" />
     <Project Path="tests/Signet.Core.Tests/Signet.Core.Tests.csproj" />
   </Folder>
 </Solution>
