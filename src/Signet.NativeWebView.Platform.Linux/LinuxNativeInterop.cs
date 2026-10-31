@@ -309,6 +309,13 @@ internal static class LinuxNativeInterop
         {
             ((Action)handle.Target!).Invoke();
         }
+        catch (Exception exception)
+        {
+            // Signet: an exception must not unwind through the native GLib frames of the idle source (it corrupts the
+            // GTK thread's stack - see LinuxNativeWebViewBackend.Signet.cs). LinuxGtkDispatcher.InvokeAsync already hands
+            // its exceptions to the awaiting task; this catches what an action enqueued directly throws.
+            LinuxNativeCallbackExceptions.Report(exception);
+        }
         finally
         {
             handle.Free();
@@ -432,6 +439,10 @@ internal static class LinuxNativeInterop
     private delegate int CairoWriteCallback(IntPtr closure, IntPtr data, uint length);
 
     private static readonly SnapshotFinishedCallback SnapshotFinished = OnSnapshotFinished;
+    // Signet: kept in a field like the callbacks above. Passed as a method group, the delegate was a temporary that the
+    // marshaller kept alive only for the duration of webkit_web_view_run_javascript; WebKit calls it later, and once a
+    // garbage collection had collected it the process died ("stack smashing detected", e.g. on "Close All Tabs").
+    private static readonly JavaScriptFinishedCallback JavaScriptFinished = OnJavaScriptFinished;
     private static readonly CairoWriteCallback CairoWrite = WriteCairoPngData;
 
     private sealed class ConnectedSignal : IDisposable
@@ -1153,7 +1164,7 @@ internal static class LinuxNativeInterop
                 webView,
                 script,
                 request.Cancellable,
-                OnJavaScriptFinished,
+                JavaScriptFinished,
                 request.UserData);
         }
         catch
