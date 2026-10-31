@@ -5,7 +5,7 @@ using NativeWebView.Interop;
 
 namespace NativeWebView.Platform.Linux;
 
-public sealed class LinuxNativeWebViewBackend
+public sealed partial class LinuxNativeWebViewBackend
     : INativeWebViewBackend,
       INativeWebViewFrameSource,
       INativeWebViewPlatformHandleProvider,
@@ -1252,7 +1252,9 @@ public sealed class LinuxNativeWebViewBackend
         }
 
         _coreInitializedRaised = true;
-        CoreWebView2Initialized?.Invoke(this, new CoreWebViewInitializedEventArgs(success, initializationException, nativeObject));
+        // Signet: raised after an await on a thread-pool thread - on the event thread instead.
+        var initializedArgs = new CoreWebViewInitializedEventArgs(success, initializationException, nativeObject);
+        RaiseEvent(() => CoreWebView2Initialized?.Invoke(this, initializedArgs));
     }
 
     [SupportedOSPlatformGuard("linux")]
@@ -1293,7 +1295,8 @@ public sealed class LinuxNativeWebViewBackend
 
         if (changed)
         {
-            NavigationHistoryChanged?.Invoke(this, new NativeWebViewNavigationHistoryChangedEventArgs(_canGoBack, _canGoForward));
+            var historyArgs = new NativeWebViewNavigationHistoryChangedEventArgs(_canGoBack, _canGoForward);
+            RaiseEvent(() => NavigationHistoryChanged?.Invoke(this, historyArgs));
         }
     }
 
@@ -1360,7 +1363,7 @@ public sealed class LinuxNativeWebViewBackend
         _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(
             _webContext,
             "download-started",
-            new LinuxNativeInterop.DownloadStartedSignal(OnDownloadStarted)));
+            new LinuxNativeInterop.DownloadStartedSignal((c, d, u) => GuardCallback(() => OnDownloadStarted(c, d, u)))));
 
         _websiteDataManager = LinuxNativeInterop.webkit_web_context_get_website_data_manager(_webContext);
         _webView = LinuxNativeInterop.webkit_web_view_new_with_context(_webContext);
@@ -1430,14 +1433,14 @@ public sealed class LinuxNativeWebViewBackend
             }
         }
 
-        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "load-changed", new LinuxNativeInterop.LoadChangedSignal(OnLoadChanged)));
-        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "load-failed", new LinuxNativeInterop.LoadFailedSignal(OnLoadFailed)));
-        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "decide-policy", new LinuxNativeInterop.DecidePolicySignal(OnDecidePolicy)));
-        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "close", new LinuxNativeInterop.CloseSignal(OnCloseRequested)));
-        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "context-menu", new LinuxNativeInterop.ContextMenuSignal(OnContextMenu)));
-        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "mouse-target-changed", new LinuxNativeInterop.MouseTargetChangedSignal(OnMouseTargetChanged)));
-        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "notify::zoom-level", new LinuxNativeInterop.NotifySignal(OnZoomLevelChanged)));
-        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_userContentManager, $"script-message-received::{ScriptMessageHandlerName}", new LinuxNativeInterop.ScriptMessageReceivedSignal(OnScriptMessageReceived)));
+        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "load-changed", new LinuxNativeInterop.LoadChangedSignal((w, e, u) => GuardCallback(() => OnLoadChanged(w, e, u)))));
+        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "load-failed", new LinuxNativeInterop.LoadFailedSignal((w, e, f, r, u) => GuardCallback(() => OnLoadFailed(w, e, f, r, u), 0))));
+        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "decide-policy", new LinuxNativeInterop.DecidePolicySignal((w, d, t, u) => GuardCallback(() => OnDecidePolicy(w, d, t, u), 0))));
+        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "close", new LinuxNativeInterop.CloseSignal((w, u) => GuardCallback(() => OnCloseRequested(w, u)))));
+        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "context-menu", new LinuxNativeInterop.ContextMenuSignal((w, m, e, h, u) => GuardCallback(() => OnContextMenu(w, m, e, h, u), 0))));
+        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "mouse-target-changed", new LinuxNativeInterop.MouseTargetChangedSignal((w, h, m, u) => GuardCallback(() => OnMouseTargetChanged(w, h, m, u)))));
+        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_webView, "notify::zoom-level", new LinuxNativeInterop.NotifySignal((i, p, u) => GuardCallback(() => OnZoomLevelChanged(i, p, u)))));
+        _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(_userContentManager, $"script-message-received::{ScriptMessageHandlerName}", new LinuxNativeInterop.ScriptMessageReceivedSignal((m, r, u) => GuardCallback(() => OnScriptMessageReceived(m, r, u)))));
 
         LinuxNativeInterop.gtk_container_add(_gtkWindow, _webView);
         LinuxNativeInterop.gtk_widget_show_all(_gtkWindow);
@@ -1689,11 +1692,10 @@ public sealed class LinuxNativeWebViewBackend
                     _runtimeNavigationLifecycle.CurrentNavigationId,
                     TryCreateUri(LinuxNativeInterop.ConvertUtf8Pointer(LinuxNativeInterop.webkit_web_view_get_uri(webView))),
                     isRedirected: true);
-                NavigationStarted?.Invoke(
-                    this,
-                    new NativeWebViewNavigationStartedEventArgs(
-                        TryCreateUri(LinuxNativeInterop.ConvertUtf8Pointer(LinuxNativeInterop.webkit_web_view_get_uri(webView))),
-                        isRedirected: true));
+                var redirectedArgs = new NativeWebViewNavigationStartedEventArgs(
+                    TryCreateUri(LinuxNativeInterop.ConvertUtf8Pointer(LinuxNativeInterop.webkit_web_view_get_uri(webView))),
+                    isRedirected: true);
+                RaiseEvent(() => NavigationStarted?.Invoke(this, redirectedArgs));
                 break;
 
             case LinuxNativeInterop.WebKitLoadEvent.Committed:
@@ -1708,9 +1710,8 @@ public sealed class LinuxNativeWebViewBackend
                 _navigationReplayState.CompleteNavigation(finishedNavigationId, _currentUrl);
                 var faviconRefreshVersion = Interlocked.Increment(ref _faviconRefreshVersion);
                 _ = RefreshRuntimeFaviconAsync(faviconRefreshVersion);
-                NavigationCompleted?.Invoke(
-                    this,
-                    new NativeWebViewNavigationCompletedEventArgs(_currentUrl, isSuccess: true, httpStatusCode: 200));
+                var completedArgs = new NativeWebViewNavigationCompletedEventArgs(_currentUrl, isSuccess: true, httpStatusCode: 200);
+                RaiseEvent(() => NavigationCompleted?.Invoke(this, completedArgs));
                 break;
         }
     }
@@ -1735,7 +1736,8 @@ public sealed class LinuxNativeWebViewBackend
             }
 
             _faviconUri = faviconUri;
-            FaviconChanged?.Invoke(this, new NativeWebViewFaviconChangedEventArgs(faviconUri));
+            var faviconArgs = new NativeWebViewFaviconChangedEventArgs(faviconUri);
+            RaiseEvent(() => FaviconChanged?.Invoke(this, faviconArgs));
         }
         catch
         {
@@ -1764,9 +1766,8 @@ public sealed class LinuxNativeWebViewBackend
             LinuxNativeInterop.webkit_web_view_can_go_back(webView),
             LinuxNativeInterop.webkit_web_view_can_go_forward(webView));
 
-        NavigationCompleted?.Invoke(
-            this,
-            new NativeWebViewNavigationCompletedEventArgs(uri, isSuccess: false, error: message));
+        var failedArgs = new NativeWebViewNavigationCompletedEventArgs(uri, isSuccess: false, error: message);
+        RaiseEvent(() => NavigationCompleted?.Invoke(this, failedArgs));
 
         return 0;
     }
@@ -1838,7 +1839,8 @@ public sealed class LinuxNativeWebViewBackend
             return;
 
         _statusText = normalized;
-        StatusTextChanged?.Invoke(this, new NativeWebViewStatusTextChangedEventArgs(normalized));
+        var statusArgs = new NativeWebViewStatusTextChangedEventArgs(normalized);
+        RaiseEvent(() => StatusTextChanged?.Invoke(this, statusArgs));
     }
 
     private void UpdateZoomFactor(double zoomFactor)
@@ -1847,7 +1849,8 @@ public sealed class LinuxNativeWebViewBackend
             return;
 
         _zoomFactor = zoomFactor;
-        ZoomFactorChanged?.Invoke(this, new NativeWebViewZoomFactorChangedEventArgs(zoomFactor));
+        var zoomArgs = new NativeWebViewZoomFactorChangedEventArgs(zoomFactor);
+        RaiseEvent(() => ZoomFactorChanged?.Invoke(this, zoomArgs));
     }
 
     private void OnDownloadStarted(IntPtr context, IntPtr download, IntPtr userData)
@@ -1874,19 +1877,19 @@ public sealed class LinuxNativeWebViewBackend
         _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(
             download,
             "decide-destination",
-            new LinuxNativeInterop.DownloadDecideDestinationSignal(OnDownloadDecideDestination)));
+            new LinuxNativeInterop.DownloadDecideDestinationSignal((d, f, u) => GuardCallback(() => OnDownloadDecideDestination(d, f, u), 0))));
         _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(
             download,
             "received-data",
-            new LinuxNativeInterop.DownloadReceivedDataSignal(OnDownloadReceivedData)));
+            new LinuxNativeInterop.DownloadReceivedDataSignal((d, l, u) => GuardCallback(() => OnDownloadReceivedData(d, l, u)))));
         _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(
             download,
             "failed",
-            new LinuxNativeInterop.DownloadFailedSignal(OnDownloadFailed)));
+            new LinuxNativeInterop.DownloadFailedSignal((d, e, u) => GuardCallback(() => OnDownloadFailed(d, e, u)))));
         _signalSubscriptions.Add(LinuxNativeInterop.ConnectSignal(
             download,
             "finished",
-            new LinuxNativeInterop.DownloadFinishedSignal(OnDownloadFinished)));
+            new LinuxNativeInterop.DownloadFinishedSignal((d, u) => GuardCallback(() => OnDownloadFinished(d, u)))));
     }
 
     private int OnDownloadDecideDestination(IntPtr download, IntPtr suggestedFilename, IntPtr userData)
@@ -2046,6 +2049,17 @@ public sealed class LinuxNativeWebViewBackend
         {
             case LinuxNativeInterop.WebKitPolicyDecisionType.NavigationAction:
                 {
+                    // Signet: decided on the event thread (see LinuxNativeWebViewBackend.Signet.cs).
+                    if (RaisesOnOtherThread)
+                    {
+                        return DecideOnEventThread(decision, () =>
+                        {
+                            var deferredArgs = new NativeWebViewNavigationStartedEventArgs(uri, isRedirected: false);
+                            NavigationStarted?.Invoke(this, deferredArgs);
+                            return deferredArgs.Cancel;
+                        });
+                    }
+
                     var args = new NativeWebViewNavigationStartedEventArgs(uri, isRedirected: false);
                     NavigationStarted?.Invoke(this, args);
                     if (args.Cancel)
@@ -2059,6 +2073,17 @@ public sealed class LinuxNativeWebViewBackend
 
             case LinuxNativeInterop.WebKitPolicyDecisionType.NewWindowAction:
                 {
+                    // Signet: decided on the event thread (see LinuxNativeWebViewBackend.Signet.cs).
+                    if (RaisesOnOtherThread)
+                    {
+                        return DecideOnEventThread(decision, () =>
+                        {
+                            var deferredArgs = new NativeWebViewNewWindowRequestedEventArgs(uri);
+                            NewWindowRequested?.Invoke(this, deferredArgs);
+                            return deferredArgs.Handled;
+                        });
+                    }
+
                     var args = new NativeWebViewNewWindowRequestedEventArgs(uri);
                     NewWindowRequested?.Invoke(this, args);
                     if (args.Handled)
@@ -2076,6 +2101,9 @@ public sealed class LinuxNativeWebViewBackend
                         ? "GET"
                         : LinuxNativeInterop.ConvertUtf8Pointer(LinuxNativeInterop.webkit_uri_request_get_http_method(request)) ?? "GET";
 
+                    // Signet: still raised on the GTK thread (a response decision with the default "use" would lose
+                    // WebKit's own handling of the response, e.g. a download for an unsupported type). Signet does not
+                    // handle WebResourceRequested.
                     var args = new NativeWebViewResourceRequestedEventArgs(uri, method);
                     WebResourceRequested?.Invoke(this, args);
                     if (args.Handled)
@@ -2112,7 +2140,8 @@ public sealed class LinuxNativeWebViewBackend
             }
         }
 
-        WebMessageReceived?.Invoke(this, new NativeWebViewMessageReceivedEventArgs(message, json));
+        var messageArgs = new NativeWebViewMessageReceivedEventArgs(message, json);
+        RaiseEvent(() => WebMessageReceived?.Invoke(this, messageArgs));
     }
 
     private int OnContextMenu(IntPtr webView, IntPtr contextMenu, IntPtr eventHandle, IntPtr hitTestResult, IntPtr userData)
@@ -2135,6 +2164,8 @@ public sealed class LinuxNativeWebViewBackend
             _activeContextMenuTargetToken = null;
         }
 
+        // Signet: still raised on the GTK thread - WebKit builds the menu when the signal returns, so the items the
+        // handler adds cannot wait for the UI thread. Signet does not handle ContextMenuRequested.
         var args = new NativeWebViewContextMenuRequestedEventArgs(0, 0, target);
         ContextMenuRequested?.Invoke(this, args);
         if (!args.Handled && target is not null)
@@ -2170,7 +2201,7 @@ public sealed class LinuxNativeWebViewBackend
                 _contextMenuActionSubscriptions.Add(LinuxNativeInterop.ConnectSignal(
                     action,
                     "activate",
-                    new LinuxNativeInterop.ActionActivateSignal(OnContextMenuActionActivated)));
+                    new LinuxNativeInterop.ActionActivateSignal((a, p, u) => GuardCallback(() => OnContextMenuActionActivated(a, p, u)))));
                 item = LinuxNativeInterop.webkit_context_menu_item_new_from_gaction(action, descriptor.Label, IntPtr.Zero);
                 LinuxNativeInterop.g_object_unref(action);
                 break;
@@ -2188,9 +2219,8 @@ public sealed class LinuxNativeWebViewBackend
     {
         if (_contextMenuActions.TryGetValue(action, out var invocation))
         {
-            ContextMenuCommandInvoked?.Invoke(
-                this,
-                new NativeWebViewContextMenuCommandInvokedEventArgs(invocation.CommandId, invocation.Target));
+            var commandArgs = new NativeWebViewContextMenuCommandInvokedEventArgs(invocation.CommandId, invocation.Target);
+            RaiseEvent(() => ContextMenuCommandInvoked?.Invoke(this, commandArgs));
         }
     }
 
@@ -2239,7 +2269,8 @@ public sealed class LinuxNativeWebViewBackend
 
     private void OnCloseRequested(IntPtr webView, IntPtr userData)
     {
-        DestroyRequested?.Invoke(this, new NativeWebViewDestroyRequestedEventArgs("WindowCloseRequested"));
+        var destroyArgs = new NativeWebViewDestroyRequestedEventArgs("WindowCloseRequested");
+        RaiseEvent(() => DestroyRequested?.Invoke(this, destroyArgs));
     }
 
     private static string BuildDispatchScript(string payloadExpression)

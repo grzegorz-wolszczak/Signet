@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Avalonia;
+using NativeWebView.Platform.Linux;
 using Nwv = NativeWebView.Core;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
@@ -167,6 +168,10 @@ public partial class PreviewView : UserControl
         }
 
         AppTheme.Changed -= OnAppThemeChanged;
+        if (OperatingSystem.IsLinux())
+        {
+            LinuxNativeCallbackExceptions.Caught -= OnNativeCallbackException;
+        }
 
         try
         {
@@ -208,6 +213,9 @@ public partial class PreviewView : UserControl
                 // is always embedded over the control, so there is no first real frame to wait for.
                 WebView.RenderMode = Nwv.NativeWebViewRenderMode.Embedded;
                 RevealWebView();
+                // Exceptions the backend caught in its WebKitGTK callbacks (see
+                // src/Signet.NativeWebView.Platform.Linux/UPSTREAM.md): logged and shown instead of ending the application.
+                LinuxNativeCallbackExceptions.Caught += OnNativeCallbackException;
             }
             else
             {
@@ -252,6 +260,12 @@ public partial class PreviewView : UserControl
         {
             Dispatcher.UIThread.Post(RevealWebView);
         }
+    }
+
+    private void OnNativeCallbackException(Exception exception)
+    {
+        Log.Error(exception, "The preview engine caught an exception in a native callback");
+        _boundViewModel?.ReportEngineError(exception);
     }
 
     private void RevealWebView()

@@ -4018,6 +4018,9 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   <data name="Preview_ExternalNavigationBlocked" xml:space="preserve">
     <value>Podgląd: zablokowano nawigację do zewnętrznego adresu {0}</value>
   </data>
+  <data name="Preview_EngineCallbackFailed" xml:space="preserve">
+    <value>Podgląd: błąd wewnętrzny silnika WebKit ({0}). Podgląd działa dalej; szczegóły zapisano w logu — zgłoś ten błąd.</value>
+  </data>
   <data name="Preview_PrepareFailed" xml:space="preserve">
     <value>Podgląd: nie udało się przygotować treści ({0})</value>
   </data>

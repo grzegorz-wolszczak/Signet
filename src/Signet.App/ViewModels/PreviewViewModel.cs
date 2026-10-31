@@ -885,6 +885,20 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Reports an error the preview engine caught in its own native code (on Linux: in a WebKitGTK callback, see
+    /// src/Signet.NativeWebView.Platform.Linux/UPSTREAM.md): a warning in the status bar and the Notifications panel.
+    /// The preview keeps working.
+    /// </summary>
+    public void ReportEngineError(Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        _statusBar.ShowMessage(
+            Strings.Format("Preview_EngineCallbackFailed", exception.Message),
+            TimeSpan.FromSeconds(8),
+            NotificationLevel.Warning);
+    }
+
     // Source of the shown file: the tab's working text if present, otherwise the resource content.
     private string? CurrentSourceText(IReadOnlyDictionary<string, string>? overrides)
     {

@@ -4018,6 +4018,9 @@ This file type cannot be edited in Signet yet.</value>
   <data name="Preview_ExternalNavigationBlocked" xml:space="preserve">
     <value>Preview: navigation to the external address {0} was blocked</value>
   </data>
+  <data name="Preview_EngineCallbackFailed" xml:space="preserve">
+    <value>Preview: internal error in the WebKit engine ({0}). The preview keeps working; the details are in the log — please report this error.</value>
+  </data>
   <data name="Preview_PrepareFailed" xml:space="preserve">
     <value>Preview: could not prepare the content ({0})</value>
   </data>
