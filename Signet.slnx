@@ -3,6 +3,7 @@
     <Project Path="src/Signet.App/Signet.App.csproj" />
     <Project Path="src/Signet.Cli/Signet.Cli.csproj" />
     <Project Path="src/Signet.Controls.TreeDataGrid/Signet.Controls.TreeDataGrid.csproj" />
+    <Project Path="src/Signet.NativeWebView.Platform.Linux/Signet.NativeWebView.Platform.Linux.csproj" />
     <Project Path="src/Signet.Core/Signet.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">

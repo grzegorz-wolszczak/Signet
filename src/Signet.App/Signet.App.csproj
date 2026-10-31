@@ -37,7 +37,6 @@
     <PackageReference Include="NativeWebView" />
     <PackageReference Include="NativeWebView.Core" />
     <PackageReference Include="NativeWebView.Platform.Windows" />
-    <PackageReference Include="NativeWebView.Platform.Linux" />
     <PackageReference Include="NativeWebView.Platform.macOS" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
@@ -56,6 +55,8 @@
     <ProjectReference Include="..\Signet.Core\Signet.Core.csproj" />
     <!-- Virtualized trees and tables: Signet's fork of the MIT TreeDataGrid control (see its UPSTREAM.md). -->
     <ProjectReference Include="..\Signet.Controls.TreeDataGrid\Signet.Controls.TreeDataGrid.csproj" />
+    <!-- The Linux backend of the Preview's NativeWebView: Signet's fork (see its UPSTREAM.md). -->
+    <ProjectReference Include="..\Signet.NativeWebView.Platform.Linux\Signet.NativeWebView.Platform.Linux.csproj" />
   </ItemGroup>
 
   <!-- Version 0.1-<timestamp>-<build number>; the number is bumped on every App build. -->

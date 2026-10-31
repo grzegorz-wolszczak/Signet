@@ -72,11 +72,13 @@
       Native WebView for Avalonia 12 - NativeControlHost over WebView2 (Windows) /
       WebKitGTK (Linux) / WKWebView (macOS), without bundling Chromium/CEF.
       All packages are released together - keep them on the same version.
+      The Linux backend is Signet's fork (src/Signet.NativeWebView.Platform.Linux, see its UPSTREAM.md): it is built
+      against NativeWebView.Core / NativeWebView.Interop of this same version.
     -->
     <PackageVersion Include="NativeWebView" Version="12.0.4.9" />
     <PackageVersion Include="NativeWebView.Core" Version="12.0.4.9" />
+    <PackageVersion Include="NativeWebView.Interop" Version="12.0.4.9" />
     <PackageVersion Include="NativeWebView.Platform.Windows" Version="12.0.4.9" />
-    <PackageVersion Include="NativeWebView.Platform.Linux" Version="12.0.4.9" />
     <PackageVersion Include="NativeWebView.Platform.macOS" Version="12.0.4.9" />
   </ItemGroup>
 
