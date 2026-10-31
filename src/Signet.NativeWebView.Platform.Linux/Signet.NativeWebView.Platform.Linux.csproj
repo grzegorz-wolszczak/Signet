@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork of the Linux backend of the MIT-licensed NativeWebView library (see UPSTREAM.md and LICENSE).
+    The assembly keeps its upstream name: NativeWebView.Core grants its internals to "NativeWebView.Platform.Linux"
+    (InternalsVisibleTo), and the rest of the library (NativeWebView, NativeWebView.Core, NativeWebView.Interop) still
+    comes from NuGet. The code keeps its upstream style, so Signet's stricter rules from Directory.Build.props are
+    relaxed for this project only: implicit usings as upstream, no .NET analyzers / code-style enforcement and no XML
+    documentation file. Compiler warnings are still errors.
+  -->
+  <PropertyGroup>
+    <AssemblyName>NativeWebView.Platform.Linux</AssemblyName>
+    <RootNamespace>NativeWebView.Platform.Linux</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DefineConstants>$(DefineConstants);NATIVEWEBVIEW_PLATFORM_LINUX</DefineConstants>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <AnalysisLevel>none</AnalysisLevel>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Upstream declares its P/Invokes with DllImport. -->
+    <NoWarn>$(NoWarn);SYSLIB1054</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NativeWebView.Core" />
+    <PackageReference Include="NativeWebView.Interop" />
+  </ItemGroup>
+
+</Project>
