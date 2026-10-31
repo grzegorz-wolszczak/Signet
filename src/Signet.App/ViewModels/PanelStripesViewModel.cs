@@ -13,8 +13,8 @@ namespace Signet.App.ViewModels;
 
 /// <summary>
 /// The stripes of the panels along the left and the right side of the main window (IntelliJ's tool window bars): a
-/// button for every panel, grouped by its place (<see cref="PanelPlace"/>). A click opens the panel, brings it to the
-/// front of its place or closes it; the menu of a button hides it from the stripes, moves the panel to another place
+/// button for every panel, grouped by its place (<see cref="PanelPlace"/>). A click opens a closed panel or closes an
+/// open one (the buttons have no pressed look); the menu of a button hides it from the stripes, moves the panel to another place
 /// and shows or hides the names under the icons; "More Tool Windows" (…) lists the panels whose button was hidden.
 /// The buttons follow <see cref="MainDockFactory.PanelsChanged"/>.
 /// </summary>
@@ -311,14 +311,6 @@ public sealed partial class PanelStripeButtonViewModel : ObservableObject
     /// <summary>Whether the button shows the name of the panel under the icon.</summary>
     public bool ShowNames => _owner.ShowNames;
 
-    /// <summary>Whether the panel is open (shown, also behind another tab of its place, or floating).</summary>
-    [ObservableProperty]
-    private bool _isOpen;
-
-    /// <summary>Whether the panel is open in front of its place (a click closes it then).</summary>
-    [ObservableProperty]
-    private bool _isInFront;
-
     /// <summary>The unread errors of the panel (the Notifications bell); 0 = none.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasAttention))]
@@ -336,7 +328,7 @@ public sealed partial class PanelStripeButtonViewModel : ObservableObject
     /// <summary>The items of "Move To" (every place; the panel's own is disabled).</summary>
     public IReadOnlyList<PanelPlaceItemViewModel> MoveToItems { get; }
 
-    /// <summary>A click: opens the panel, brings it to the front of its place, or closes it when it is in front.</summary>
+    /// <summary>A click: opens a closed panel (making it active) or closes an open one.</summary>
     [RelayCommand]
     private void Click() => _owner.Factory.ClickStripeButton(Id);
 
@@ -361,8 +353,6 @@ public sealed partial class PanelStripeButtonViewModel : ObservableObject
 
     internal void Refresh()
     {
-        IsOpen = _owner.Factory.IsToolVisible(Id);
-        IsInFront = _owner.Factory.IsToolInFront(Id);
         AttentionCount = _owner.Factory.AttentionOf(Id);
         OnPropertyChanged(nameof(Place));
         OnPropertyChanged(nameof(Title));

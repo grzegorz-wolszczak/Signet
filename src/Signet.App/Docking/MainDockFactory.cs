@@ -828,10 +828,7 @@ public sealed class MainDockFactory : Factory
         RaisePanelsChanged();
     }
 
-    /// <summary>
-    /// Whether a panel is shown and is the one its place shows (the active tab), or floats — a click on its stripe button
-    /// then closes it.
-    /// </summary>
+    /// <summary>Whether a panel is shown and is the one its place shows (the active tab), or floats.</summary>
     public bool IsToolInFront(string id)
     {
         if (!_tools.TryGetValue(id, out Tool? tool) || _hidden.Contains(id))
@@ -843,8 +840,9 @@ public sealed class MainDockFactory : Factory
     }
 
     /// <summary>
-    /// A click on a panel's stripe button (IntelliJ's): a closed panel opens, a panel behind another tab of its place comes
-    /// to the front, a panel in front closes.
+    /// A click on a panel's stripe button: a closed panel opens and becomes active; an open one closes — also when it is
+    /// behind another tab of its place (that tab stays in front) or floats. When the closed panel was in front, Dock
+    /// brings forward the tab that takes its place.
     /// </summary>
     public void ClickStripeButton(string id)
     {
@@ -853,7 +851,7 @@ public sealed class MainDockFactory : Factory
             return;
         }
 
-        if (IsToolInFront(id))
+        if (IsToolVisible(id))
         {
             HideTool(tool);
         }

@@ -429,12 +429,12 @@ public sealed class MainDockFactoryTests
     }
 
     [Fact]
-    public void A_click_on_a_stripe_button_opens_brings_to_front_or_closes_the_panel()
+    public void A_click_on_the_stripe_button_of_a_closed_panel_opens_it_and_makes_it_active()
     {
         // Arrange
         (MainDockFactory sut, _) = NewWithRoot();
-        sut.IsToolInFront(DockableIds.Preview).Should().BeTrue();
-        sut.IsToolInFront(DockableIds.TableOfContents).Should().BeFalse("it is behind the Preview tab");
+        sut.ClickStripeButton(DockableIds.TableOfContents);
+        sut.IsToolVisible(DockableIds.TableOfContents).Should().BeFalse();
 
         // Act
         sut.ClickStripeButton(DockableIds.TableOfContents);
@@ -442,18 +442,39 @@ public sealed class MainDockFactoryTests
         // Assert
         sut.IsToolInFront(DockableIds.TableOfContents).Should().BeTrue();
         sut.IsToolInFront(DockableIds.Preview).Should().BeFalse();
+    }
+
+    [Fact]
+    public void A_click_on_the_stripe_button_of_a_panel_behind_another_tab_closes_it_and_the_tab_in_front_stays()
+    {
+        // Arrange
+        (MainDockFactory sut, _) = NewWithRoot();
+        sut.IsToolInFront(DockableIds.Preview).Should().BeTrue();
+        sut.IsToolVisible(DockableIds.TableOfContents).Should().BeTrue();
+        sut.IsToolInFront(DockableIds.TableOfContents).Should().BeFalse("it is behind the Preview tab");
 
         // Act
         sut.ClickStripeButton(DockableIds.TableOfContents);
 
         // Assert
-        sut.IsToolVisible(DockableIds.TableOfContents).Should().BeFalse("a click on the panel in front closes it");
+        sut.IsToolVisible(DockableIds.TableOfContents).Should().BeFalse("a click on an open panel closes it, also behind another tab");
+        sut.IsToolInFront(DockableIds.Preview).Should().BeTrue();
+    }
+
+    [Fact]
+    public void A_click_on_the_stripe_button_of_the_panel_in_front_closes_it_and_another_tab_comes_forward()
+    {
+        // Arrange
+        (MainDockFactory sut, _) = NewWithRoot();
+        sut.IsToolInFront(DockableIds.Preview).Should().BeTrue();
+        sut.IsToolVisible(DockableIds.TableOfContents).Should().BeTrue();
 
         // Act
-        sut.ClickStripeButton(DockableIds.TableOfContents);
+        sut.ClickStripeButton(DockableIds.Preview);
 
         // Assert
-        sut.IsToolInFront(DockableIds.TableOfContents).Should().BeTrue();
+        sut.IsToolVisible(DockableIds.Preview).Should().BeFalse();
+        sut.IsToolInFront(DockableIds.TableOfContents).Should().BeTrue("Dock brings forward the tab left in the place");
     }
 
     [Fact]

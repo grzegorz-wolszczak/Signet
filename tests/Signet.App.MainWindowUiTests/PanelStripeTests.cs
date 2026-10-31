@@ -87,9 +87,8 @@ public sealed class PanelStripeTests
         host.Left.FindControl<Button>("MoreButton")!.IsVisible.Should().BeTrue("\"More Tool Windows\" is always on the left stripe");
         host.Right.FindControl<Button>("MoreButton")!.IsVisible.Should().BeFalse();
         host.Vm.PanelStripes.MoreItems.Should().HaveCount(host.Factory.ToolIds.Count, "it lists every panel");
-        ButtonOf(host.Right, DockableIds.Preview).Classes.Should().Contain("front");
-        ButtonOf(host.Right, DockableIds.TableOfContents).Classes.Should().Contain("open").And.NotContain("front");
-        ButtonOf(host.Left, DockableIds.Clips).Classes.Should().NotContain("open");
+        ButtonOf(host.Right, DockableIds.Preview).Background.Should().Be(ButtonOf(host.Left, DockableIds.Clips).Background,
+            "the buttons are not toggles: an open panel's button looks like a closed one's");
     }
 
     [AvaloniaFact]
@@ -131,7 +130,6 @@ public sealed class PanelStripeTests
 
         // Assert
         host.Factory.IsToolInFront(DockableIds.Clips).Should().BeTrue();
-        ButtonOf(host.Left, DockableIds.Clips).Classes.Should().Contain("front");
 
         // Act
         ButtonOf(host.Left, DockableIds.Clips).Command!.Execute(null);
