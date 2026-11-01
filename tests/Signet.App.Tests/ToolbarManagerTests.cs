@@ -29,6 +29,58 @@ public sealed class ToolbarManagerTests
         host.Toolbars.IsVisible(ToolbarId.Clips).Should().BeFalse("the Clips toolbar is hidden by default");
     }
 
+    /// <summary>
+    /// The Preview panel's toolbar belongs to the panel: it is configured like the others, but it is not in a toolbar
+    /// area — it is never hidden, never placed in a row and never listed in View › Toolbars.
+    /// </summary>
+    [Fact]
+    public void The_docked_preview_toolbar_is_configured_like_the_others_but_sits_in_no_toolbar_area()
+    {
+        // Arrange
+        using TestHost host = new();
+
+        // Act & Assert
+        ToolbarManager.DockedToolbars.Should().Equal(ToolbarId.Preview);
+        ToolbarManager.AllToolbars.Should().NotContain(ToolbarId.Preview);
+        ToolbarManager.ConfigurableToolbars.Should().Contain(ToolbarId.Preview);
+        ToolbarManager.DefaultRows.SelectMany(r => r).Should().NotContain(ToolbarId.Preview);
+        host.Toolbars.GetRows(ToolbarArea.Top).SelectMany(r => r).Should().NotContain(ToolbarId.Preview);
+        host.Toolbars.IsVisible(ToolbarId.Preview).Should().BeTrue();
+        host.Toolbars.GetItems(ToolbarId.Preview).Should().Equal(
+            AppActionIds.PreviewInspect, AppActionIds.PreviewSelectAll, AppActionIds.PreviewCopy,
+            AppActionIds.PreviewReload, AppActionIds.PreviewCycleCustomCss, AppActionIds.PreviewPrint);
+    }
+
+    /// <summary>
+    /// The look of the docked Preview toolbar is its own: the panel is narrow, so its icons and texts do not follow
+    /// the main window's toolbars (and do not drag them along either).
+    /// </summary>
+    [Fact]
+    public void The_preview_toolbar_has_a_look_of_its_own()
+    {
+        // Arrange
+        using TestHost host = new();
+
+        // Act
+        host.Toolbars.SetIconSize(ToolbarId.Preview, ToolbarIconSize.Small);
+        host.Toolbars.SetTextPosition(ToolbarId.Preview, ToolbarTextPosition.TextUnderIcons);
+
+        // Assert
+        host.Toolbars.PreviewAppearance.IconSize.Should().Be(ToolbarIconSize.Small);
+        host.Toolbars.PreviewAppearance.TextPosition.Should().Be(ToolbarTextPosition.TextUnderIcons);
+        host.Toolbars.AppearanceFor(ToolbarId.Preview).Should().Be(host.Toolbars.PreviewAppearance);
+        host.Toolbars.Appearance.IconSize.Should().Be(ToolbarIconSize.Medium, "the main window's toolbars are untouched");
+        host.Toolbars.Appearance.TextPosition.Should().Be(ToolbarTextPosition.IconsOnly);
+
+        // Act
+        host.Toolbars.SetIconSize(ToolbarId.Format, ToolbarIconSize.Big);
+
+        // Assert
+        host.Toolbars.Appearance.IconSize.Should().Be(ToolbarIconSize.Big);
+        host.Toolbars.AppearanceFor(ToolbarId.Format).Should().Be(host.Toolbars.Appearance);
+        host.Toolbars.PreviewAppearance.IconSize.Should().Be(ToolbarIconSize.Small, "the Preview's toolbar is untouched");
+    }
+
     [Fact]
     public void Default_rows_break_before_Heading_and_the_clip_bars()
     {

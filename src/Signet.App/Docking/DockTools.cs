@@ -76,6 +76,31 @@ public abstract class SignetTool : Tool, IDeferredContentPresentation
     private bool _isContentEnabled = true;
 
     /// <summary>
+    /// The panel's title on the tab of a group of panels — the bare name of the panel. The Preview adds the file it
+    /// shows to its <see cref="Dock.Model.Core.IDockable.Title"/>, which the title bar of the panel shows; on the tab,
+    /// right under that title bar, it would only be said twice. Not set = the title.
+    /// </summary>
+    public string TabTitle
+    {
+        get => _tabTitle ?? Title;
+        set => SetProperty(ref _tabTitle, value);
+    }
+
+    private string? _tabTitle;
+
+    /// <inheritdoc />
+    protected override void OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+
+        // A panel without a title of its own on the tab follows its title.
+        if (_tabTitle is null && e?.PropertyName == nameof(Title))
+        {
+            OnPropertyChanged(new System.ComponentModel.PropertyChangedEventArgs(nameof(TabTitle)));
+        }
+    }
+
+    /// <summary>
     /// The number of unread items that need attention (e.g. the unread errors of the Notifications panel) — the bell
     /// gets a red dot and "[n]" while it is above 0.
     /// </summary>
@@ -131,6 +156,10 @@ public sealed class PreviewTool : SignetTool
     {
         Id = DockableIds.Preview;
         Title = Strings.Get("Panel_Preview");
+
+        // The title says which file is shown ("Preview [chapter1.xhtml]", MainDockFactory.PreviewTitle); the tab keeps
+        // the bare name of the panel.
+        TabTitle = Title;
     }
 
     /// <summary>Preview view model (embedded by <see cref="MainDockFactory"/>).</summary>

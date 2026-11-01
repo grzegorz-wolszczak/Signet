@@ -27,6 +27,63 @@ public sealed class ToolbarViewModelTests
             .Should().ContainKey(nameof(ToolbarId.Format)).WhoseValue.Should().Be("0");
     }
 
+    /// <summary>
+    /// The toolbar of the Preview panel belongs to the panel: its menu offers neither hiding it nor locking the
+    /// positions, and it has no grip.
+    /// </summary>
+    [Fact]
+    public void The_docked_preview_toolbar_can_be_neither_hidden_nor_moved()
+    {
+        // Arrange
+        using TestHost host = new();
+        ToolbarViewModel sut = new(ToolbarId.Preview, host.Toolbars, host.Registry);
+        ToolbarViewModel other = new(ToolbarId.Format, host.Toolbars, host.Registry);
+
+        // Act & Assert
+        sut.IsDocked.Should().BeTrue();
+        sut.CanHide.Should().BeFalse();
+        sut.CanMove.Should().BeFalse();
+        sut.IsMovableNow.Should().BeFalse();
+        other.IsDocked.Should().BeFalse();
+        other.CanHide.Should().BeTrue();
+        other.IsMovableNow.Should().BeTrue("the positions are not locked by default");
+    }
+
+    /// <summary>
+    /// Icon Size and Text Position in the menu of the docked Preview toolbar change that toolbar alone; in the menu of
+    /// any other they change all the main window's toolbars, as before.
+    /// </summary>
+    [Fact]
+    public void The_look_set_in_the_menu_of_the_preview_toolbar_stays_in_that_toolbar()
+    {
+        // Arrange
+        using TestHost host = new();
+        ToolbarViewModel preview = new(ToolbarId.Preview, host.Toolbars, host.Registry);
+        ToolbarViewModel format = new(ToolbarId.Format, host.Toolbars, host.Registry);
+
+        // Act
+        preview.SetIconSizeCommand.Execute(ToolbarIconSize.Small);
+        preview.SetTextPositionCommand.Execute(ToolbarTextPosition.TextBesideIcons);
+        preview.RefreshAppearance();
+        format.RefreshAppearance();
+
+        // Assert
+        preview.IsSmallIcons.Should().BeTrue();
+        preview.IsTextBesideIcons.Should().BeTrue();
+        preview.Appearance.IconSize.Should().Be(ToolbarIconSize.Small);
+        format.IsMediumIcons.Should().BeTrue("the main window's toolbars keep their own look");
+        format.IsIconsOnly.Should().BeTrue();
+
+        // Act
+        format.SetIconSizeCommand.Execute(ToolbarIconSize.Big);
+        preview.RefreshAppearance();
+        format.RefreshAppearance();
+
+        // Assert
+        format.IsBigIcons.Should().BeTrue();
+        preview.IsSmallIcons.Should().BeTrue("the Preview's toolbar keeps its own look");
+    }
+
     [Fact]
     public void Every_shown_toolbar_of_a_row_but_the_first_starts_with_a_line()
     {

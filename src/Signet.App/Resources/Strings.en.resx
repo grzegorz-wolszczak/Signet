@@ -2093,23 +2093,23 @@ Do you want to save the changes?</value>
   <data name="ClipboardHistorySelectorWindow_Prompt" xml:space="preserve">
     <value>Clipboard history (newest first):</value>
   </data>
-  <data name="PreviewView_InspectPage" xml:space="preserve">
-    <value>Inspect Page</value>
+  <data name="Action_MainWindow_Preview_Inspect" xml:space="preserve">
+    <value>&amp;Inspect Page</value>
   </data>
-  <data name="PreviewView_RefreshPreview" xml:space="preserve">
-    <value>Refresh preview</value>
+  <data name="Action_MainWindow_Preview_SelectAll" xml:space="preserve">
+    <value>Select &amp;All</value>
   </data>
-  <data name="PreviewView_SelectAll" xml:space="preserve">
-    <value>Select All</value>
+  <data name="Action_MainWindow_Preview_Copy" xml:space="preserve">
+    <value>&amp;Copy</value>
   </data>
-  <data name="PreviewView_Copy" xml:space="preserve">
-    <value>Copy</value>
+  <data name="Action_MainWindow_Preview_Reload" xml:space="preserve">
+    <value>&amp;Refresh Preview</value>
   </data>
-  <data name="PreviewView_CycleCustomCss" xml:space="preserve">
-    <value>Cycle Custom CSS Files</value>
+  <data name="Action_MainWindow_Preview_CycleCustomCss" xml:space="preserve">
+    <value>Cycle Custom CSS &amp;Files</value>
   </data>
-  <data name="PreviewView_Print" xml:space="preserve">
-    <value>Print Preview View</value>
+  <data name="Action_MainWindow_Preview_Print" xml:space="preserve">
+    <value>&amp;Print Preview View</value>
   </data>
   <data name="PreviewView_ZoomOut" xml:space="preserve">
     <value>Zoom the preview out (Ctrl+mouse wheel in the preview)</value>
@@ -2866,6 +2866,9 @@ Do you want to save the changes?</value>
   </data>
   <data name="ActionCategory_View" xml:space="preserve">
     <value>View</value>
+  </data>
+  <data name="ActionCategory_Preview" xml:space="preserve">
+    <value>Preview</value>
   </data>
   <data name="ActionCategory_Window" xml:space="preserve">
     <value>Window</value>
@@ -3960,6 +3963,9 @@ This file type cannot be edited in Signet yet.</value>
   </data>
   <data name="Toolbar_Clips2" xml:space="preserve">
     <value>Clip Bar2</value>
+  </data>
+  <data name="Toolbar_Preview" xml:space="preserve">
+    <value>Preview</value>
   </data>
   <data name="Spellcheck_NoWordsSelected" xml:space="preserve">
     <value>No words selected.</value>

@@ -223,6 +223,33 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// <summary>Whether the preview currently has something to show (an (X)HTML resource is selected).</summary>
     public bool HasContent => _currentBookPath is not null;
 
+    /// <summary>
+    /// The panel's own toolbar (<c>ToolbarId.Preview</c>), set by <see cref="MainWindowViewModel"/>; the view shows it
+    /// at the bottom of the panel, with the zoom bar after it. <see langword="null"/> in a preview without the
+    /// toolbars of the application (a test, the design-time view model) — the bar is then only the zoom.
+    /// </summary>
+    public ToolbarViewModel? Toolbar
+    {
+        get => _toolbar;
+        set => SetProperty(ref _toolbar, value);
+    }
+
+    private ToolbarViewModel? _toolbar;
+
+    /// <summary>
+    /// Whether the shown page is enabled — <see langword="false"/> (grayed out) while no book is open
+    /// (<see cref="Signet.App.Docking.MainDockFactory.SetBookOpen"/>). Only the page: the panel's own toolbar stays
+    /// enabled, so its menu (text position, icon size, configuring its buttons) can be used without a book; the
+    /// buttons themselves are actions of the book and gray out on their own.
+    /// </summary>
+    public bool IsContentEnabled
+    {
+        get => _isContentEnabled;
+        set => SetProperty(ref _isContentEnabled, value);
+    }
+
+    private bool _isContentEnabled = true;
+
     /// <summary>Whether Preview clicks on footnote and endnote references move Code View to the note.</summary>
     public bool FollowFootnotesInCodeView { get; set; } = true;
 

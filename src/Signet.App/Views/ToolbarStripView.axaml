@@ -70,7 +70,10 @@
   </UserControl.Styles>
 
   <!-- Right click anywhere on the toolbar: hide it (as View → Toolbars does), then, under a separator, the settings
-       shared by all toolbars (text position, icon size, configuring the buttons, locking the positions). -->
+       (text position, icon size, configuring the buttons, locking the positions). A docked toolbar (the Preview's,
+       ToolbarManager.DockedToolbars) belongs to its panel: it cannot be hidden or moved, so it shows neither "Hide"
+       (with the separator that followed it) nor "Lock Toolbar Positions", and the text position and the icon size it
+       sets are its own. -->
   <UserControl.ContextMenu>
     <ContextMenu x:Name="ToolbarMenu" x:DataType="vm:ToolbarViewModel">
       <ContextMenu.Styles>
@@ -101,9 +104,10 @@
           <Setter Property="Padding" Value="1" />
         </Style>
       </ContextMenu.Styles>
-      <MenuItem x:Name="HideItem" Header="{loc:Loc ToolbarStripView_Hide}" Command="{Binding HideCommand}" />
-      <!-- Below the line: the settings shared by all toolbars. -->
-      <Separator x:Name="SettingsSeparator" />
+      <MenuItem x:Name="HideItem" Header="{loc:Loc ToolbarStripView_Hide}" Command="{Binding HideCommand}"
+                IsVisible="{Binding CanHide}" />
+      <!-- Below the line: the settings of the toolbar. -->
+      <Separator x:Name="SettingsSeparator" IsVisible="{Binding CanHide}" />
       <MenuItem x:Name="TextPositionItem" Header="{loc:Loc ToolbarStripView_TextPosition}">
         <MenuItem Header="{loc:Loc ToolbarStripView_IconsOnly}" ToggleType="Radio" GroupName="ToolbarTextPosition"
                   IsChecked="{Binding IsIconsOnly, Mode=OneWay}"
@@ -132,6 +136,7 @@
       <MenuItem x:Name="ConfigureItem" Classes="withIcon" Tag="{x:Static actions:ActionIconKeys.ToolbarConfigure}"
                 Header="{loc:Loc ToolbarStripView_Configure}" Command="{Binding ConfigureCommand}" />
       <MenuItem x:Name="LockItem" Classes="withIcon" Classes.on="{Binding ArePositionsLocked}"
+                IsVisible="{Binding CanMove}"
                 Tag="{x:Static actions:ActionIconKeys.Lock}"
                 Header="{loc:Loc ToolbarStripView_LockPositions}" Command="{Binding TogglePositionsLockedCommand}" />
     </ContextMenu>
@@ -154,7 +159,7 @@
          the other toolbar area). Two columns of dots, always visible. -->
     <Border x:Name="Grip"
             DockPanel.Dock="Left"
-            IsVisible="{Binding !ArePositionsLocked}"
+            IsVisible="{Binding IsMovableNow}"
             Width="10"
             Background="Transparent"
             Cursor="SizeAll"

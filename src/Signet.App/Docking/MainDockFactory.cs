@@ -263,6 +263,13 @@ public sealed class MainDockFactory : Factory
         {
             tool.IsContentEnabled = open || tool.Id == DockableIds.Notifications;
         }
+
+        // The Preview grays out the page alone, not the whole panel: its toolbar is configured from its own context
+        // menu, which a disabled panel would not even open (PreviewViewModel.IsContentEnabled).
+        if (_preview is not null)
+        {
+            _preview.IsContentEnabled = open;
+        }
     }
 
     /// <summary>
@@ -594,6 +601,10 @@ public sealed class MainDockFactory : Factory
             if (Strings.TryGet("Panel_" + tool.Id) is { } title)
             {
                 tool.Title = title;
+                if (tool is SignetTool signet)
+                {
+                    signet.TabTitle = title;
+                }
             }
         }
 
@@ -631,7 +642,13 @@ public sealed class MainDockFactory : Factory
     {
         if (_tools.TryGetValue(DockableIds.Preview, out Tool? preview))
         {
+            // Only the title bar of the panel says which file is shown; its tab keeps the bare name of the panel
+            // (SignetTool.TabTitle) — the tab sits right under that title bar.
             preview.Title = PreviewTitle;
+            if (preview is SignetTool signet)
+            {
+                signet.TabTitle = Strings.Get("Panel_Preview");
+            }
         }
     }
 

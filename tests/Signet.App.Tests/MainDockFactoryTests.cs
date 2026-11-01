@@ -99,6 +99,86 @@ public sealed class MainDockFactoryTests
         PreviewTitleOf(root).Should().StartWith("Preview [").And.EndWith("]");
     }
 
+    /// <summary>
+    /// The tab of the Preview panel keeps the bare name of the panel: the file it shows is already in the title bar of
+    /// the panel, right above the tab.
+    /// </summary>
+    [Fact]
+    public void The_tab_of_the_preview_panel_keeps_the_bare_name_of_the_panel()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        using PreviewViewModel preview = new(new StatusBarService()) { DebounceInterval = TimeSpan.Zero };
+        MainDockFactory factory = new(preview: preview);
+        IRootDock root = factory.CreateLayout();
+        factory.InitLayout(root);
+
+        // Act
+        preview.SetBook(book);
+        preview.ShowResource(book.GetHtmlResources().First());
+
+        // Assert
+        PreviewTitleOf(root).Should().StartWith("Preview [");
+        PreviewTabTitleOf(root).Should().Be("Preview");
+
+        // Act
+        factory.RefreshTitles();
+
+        // Assert
+        PreviewTitleOf(root).Should().StartWith("Preview [");
+        PreviewTabTitleOf(root).Should().Be("Preview");
+    }
+
+    /// <summary>A panel that says nothing more in its title bar shows the same text on its tab.</summary>
+    [Fact]
+    public void A_panel_without_a_title_of_its_own_shows_its_title_on_its_tab()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        MainDockFactory factory = new();
+        IRootDock root = factory.CreateLayout();
+        factory.InitLayout(root);
+
+        // Act
+        SignetTool browser = Flatten(root).OfType<BookBrowserTool>().Single();
+
+        // Assert
+        browser.TabTitle.Should().Be(browser.Title);
+    }
+
+    /// <summary>
+    /// Without a book the Preview grays out the page alone: its toolbar belongs to the panel, and a disabled panel
+    /// would not even open the menu that configures it.
+    /// </summary>
+    [Fact]
+    public void Without_a_book_the_preview_grays_out_the_page_and_not_its_toolbar()
+    {
+        // Arrange
+        using PreviewViewModel preview = new(new StatusBarService()) { DebounceInterval = TimeSpan.Zero };
+        MainDockFactory factory = new(preview: preview);
+        IRootDock root = factory.CreateLayout();
+        factory.InitLayout(root);
+
+        // Act
+        factory.SetBookOpen(false);
+
+        // Assert
+        preview.IsContentEnabled.Should().BeFalse("the page has nothing to show");
+        Flatten(root).OfType<Signet.App.Docking.PreviewTool>().Single().IsContentEnabled.Should().BeFalse();
+
+        // Act
+        factory.SetBookOpen(true);
+
+        // Assert
+        preview.IsContentEnabled.Should().BeTrue();
+    }
+
+    // The title the Preview panel shows on its tab (SignetTool.TabTitle).
+    private static string? PreviewTabTitleOf(IDock root) =>
+        Flatten(root).OfType<Signet.App.Docking.PreviewTool>().Single().TabTitle;
+
     // The title the Preview panel shows in the layout (its tab header / title bar).
     private static string? PreviewTitleOf(IDock root) =>
         Flatten(root).OfType<Signet.App.Docking.PreviewTool>().Single().Title;

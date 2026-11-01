@@ -237,12 +237,24 @@ public sealed partial class ToolbarViewModel : ObservableObject
         _isSample = isSample;
         _name = ToolbarManager.DisplayName(id);
         _isVisible = manager.IsVisible(id);
-        _appearance = manager.Appearance;
+        _appearance = manager.AppearanceFor(id);
         Rebuild();
     }
 
     /// <summary>Toolbar identifier.</summary>
     public ToolbarId Id { get; }
+
+    /// <summary>
+    /// Whether the toolbar belongs to a panel (<see cref="ToolbarManager.DockedToolbars"/>) instead of to a toolbar
+    /// area of the main window: it cannot be hidden or moved, and its look is its own.
+    /// </summary>
+    public bool IsDocked => ToolbarManager.DockedToolbars.Contains(Id);
+
+    /// <summary>Whether the toolbar can be hidden ("Hide" in its menu, View › Toolbars) — not a docked one.</summary>
+    public bool CanHide => !IsDocked;
+
+    /// <summary>Whether the toolbar can be dragged to another place (the grip, "Lock Toolbar Positions") — not a docked one.</summary>
+    public bool CanMove => !IsDocked;
 
     /// <summary>Toolbar name.</summary>
     [ObservableProperty]
@@ -331,6 +343,16 @@ public sealed partial class ToolbarViewModel : ObservableObject
 
     private ToolbarAppearance _appearance;
 
+    /// <summary>
+    /// The look of this toolbar (<see cref="ToolbarManager.AppearanceFor"/>) — a docked toolbar's host puts it into
+    /// the resources of the panel (<see cref="ToolbarManager.ApplyResources(Avalonia.Controls.IResourceDictionary, ToolbarAppearance)"/>),
+    /// which come before the application's.
+    /// </summary>
+    public ToolbarAppearance Appearance => _appearance;
+
+    /// <summary>Raised after <see cref="Appearance"/> changed (the host of a docked toolbar re-applies it).</summary>
+    public event System.EventHandler? AppearanceUpdated;
+
     /// <summary>The buttons show icons only (a button without an icon shows its text).</summary>
     public bool IsIconsOnly => _appearance.TextPosition == ToolbarTextPosition.IconsOnly;
 
@@ -358,6 +380,9 @@ public sealed partial class ToolbarViewModel : ObservableObject
     /// <summary>The toolbars cannot be moved: their grips are hidden.</summary>
     public bool ArePositionsLocked => _appearance.PositionsLocked;
 
+    /// <summary>Whether the toolbar can be dragged right now: it is movable at all and the positions are not locked.</summary>
+    public bool IsMovableNow => CanMove && !ArePositionsLocked;
+
     /// <summary>The button texts have a font family of their own (otherwise the interface font).</summary>
     public bool HasCustomFontFamily => _appearance.FontFamily.Length > 0;
 
@@ -370,20 +395,22 @@ public sealed partial class ToolbarViewModel : ObservableObject
     /// <summary>Re-reads the shared look after <see cref="ToolbarManager.AppearanceChanged"/>.</summary>
     public void RefreshAppearance()
     {
-        _appearance = _manager.Appearance;
+        _appearance = _manager.AppearanceFor(Id);
         foreach (string name in AppearanceProperties)
         {
             OnPropertyChanged(name);
         }
+
+        AppearanceUpdated?.Invoke(this, System.EventArgs.Empty);
     }
 
-    /// <summary>Text Position › … — for all toolbars.</summary>
+    /// <summary>Text Position › … — for a docked toolbar only its own, otherwise for all the main window's toolbars.</summary>
     [RelayCommand]
-    private void SetTextPosition(ToolbarTextPosition position) => _manager.SetTextPosition(position);
+    private void SetTextPosition(ToolbarTextPosition position) => _manager.SetTextPosition(Id, position);
 
-    /// <summary>Icon Size › … — for all toolbars.</summary>
+    /// <summary>Icon Size › … — for a docked toolbar only its own, otherwise for all the main window's toolbars.</summary>
     [RelayCommand]
-    private void SetIconSize(ToolbarIconSize size) => _manager.SetIconSize(size);
+    private void SetIconSize(ToolbarIconSize size) => _manager.SetIconSize(Id, size);
 
     /// <summary>Lock Toolbar Positions — for all toolbars.</summary>
     [RelayCommand]
@@ -393,6 +420,7 @@ public sealed partial class ToolbarViewModel : ObservableObject
     {
         nameof(IsIconsOnly), nameof(IsTextOnly), nameof(IsTextBesideIcons), nameof(IsTextUnderIcons), nameof(ShowsText),
         nameof(IsSmallIcons), nameof(IsMediumIcons), nameof(IsBigIcons), nameof(ArePositionsLocked),
+        nameof(IsMovableNow),
         nameof(HasCustomFontFamily), nameof(HasCustomFontSize), nameof(HasCustomFontWeight),
     };
 

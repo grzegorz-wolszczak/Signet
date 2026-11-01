@@ -27,10 +27,11 @@
       </Panel>
     </DataTemplate>
 
+    <!-- The Preview is not wrapped in a disabled panel like the others: it grays out the page alone
+         (PreviewViewModel.IsContentEnabled), so that the toolbar at the bottom of the panel keeps its context menu
+         while no book is open. -->
     <DataTemplate DataType="docking:PreviewTool">
-      <Panel IsEnabled="{Binding IsContentEnabled}">
-        <views:PreviewView DataContext="{Binding ViewModel}" />
-      </Panel>
+      <views:PreviewView DataContext="{Binding ViewModel}" />
     </DataTemplate>
 
     <DataTemplate DataType="docking:TableOfContentsTool">
@@ -384,14 +385,17 @@
       <Setter Property="SelectionForegroundBrush" Value="{DynamicResource SignetTextSelectionForegroundBrush}" />
     </Style>
 
-    <!-- Tool tab titles: the title, followed by the notification bell for the panels that show one
-         (SignetTool.ShowsNotificationBell — the Notifications panel); unread errors (SignetTool.AttentionCount)
-         put a red dot on the bell and "[n]" after it. Dock's default header is just the title. -->
+    <!-- Tool tab titles: the title of the panel on its tab (SignetTool.TabTitle — the bare name of the panel; the
+         Preview adds the file it shows to its Title, which only its title bar says), followed by the notification bell
+         for the panels that show one (SignetTool.ShowsNotificationBell — the Notifications panel); unread errors
+         (SignetTool.AttentionCount) put a red dot on the bell and "[n]" after it. Dock's default header is just the
+         title. -->
     <Style Selector="dock|ToolControl">
       <Setter Property="HeaderTemplate">
         <DataTemplate DataType="dockCore:IDockable">
           <StackPanel Orientation="Horizontal" Spacing="5">
-            <TextBlock Text="{Binding Title}" Padding="{DynamicResource DockHeaderContentPadding}" VerticalAlignment="Center" />
+            <TextBlock x:DataType="docking:SignetTool" Text="{Binding TabTitle}"
+                       Padding="{DynamicResource DockHeaderContentPadding}" VerticalAlignment="Center" />
             <views:NotificationBell x:DataType="docking:SignetTool"
                                     IsVisible="{Binding ShowsNotificationBell, FallbackValue=False}"
                                     UnreadCount="{Binding AttentionCount, FallbackValue=0}" />

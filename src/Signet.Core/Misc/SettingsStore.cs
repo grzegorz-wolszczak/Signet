@@ -1213,6 +1213,42 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>
+    /// How the Preview panel's own toolbar looks (<see cref="ToolbarAppearance"/>). It is set from that toolbar's
+    /// context menu alone and is independent of the main window's toolbars: the panel is narrow, so it is worth giving
+    /// it icons of its own size. <see cref="Signet.Core.Misc.ToolbarAppearance.PositionsLocked"/> is not used — the
+    /// toolbar belongs to the panel and cannot be moved. Always read normalized.
+    /// </summary>
+    public ToolbarAppearance PreviewToolbarAppearance
+    {
+        get
+        {
+            ToolbarAppearance d = ToolbarAppearance.Default;
+            return new ToolbarAppearance(
+                Enum.TryParse(ReadString("preview_toolbar_text_position", d.TextPosition.ToString()), ignoreCase: true, out ToolbarTextPosition position)
+                    ? position
+                    : d.TextPosition,
+                Enum.TryParse(ReadString("preview_toolbar_icon_size", d.IconSize.ToString()), ignoreCase: true, out ToolbarIconSize size)
+                    ? size
+                    : d.IconSize,
+                PositionsLocked: false,
+                ReadString("preview_toolbar_font_family", d.FontFamily),
+                ReadInt("preview_toolbar_font_size", d.FontSize),
+                ReadInt("preview_toolbar_font_weight", d.FontWeight)).Normalized();
+        }
+
+        set
+        {
+            ToolbarAppearance v = value.Normalized();
+            WriteSilent("preview_toolbar_text_position", v.TextPosition.ToString());
+            WriteSilent("preview_toolbar_icon_size", v.IconSize.ToString());
+            WriteSilent("preview_toolbar_font_family", v.FontFamily);
+            WriteSilent("preview_toolbar_font_size", v.FontSize);
+            WriteSilent("preview_toolbar_font_weight", v.FontWeight);
+            RaiseChanged(SettingChangeKeys.PreviewToolbarAppearance);
+        }
+    }
+
     /// <summary>The fonts of the context menus (<see cref="ContextMenuAppearance"/>). Always read normalized.</summary>
     public ContextMenuAppearance ContextMenuAppearance
     {
@@ -2524,6 +2560,11 @@ public sealed class SettingsStore
         yield return "toolbar_font_family";
         yield return "toolbar_font_size";
         yield return "toolbar_font_weight";
+        yield return "preview_toolbar_text_position";
+        yield return "preview_toolbar_icon_size";
+        yield return "preview_toolbar_font_family";
+        yield return "preview_toolbar_font_size";
+        yield return "preview_toolbar_font_weight";
         yield return "notifications_timestamp_font_family";
         yield return "notifications_timestamp_font_size";
         yield return "notifications_timestamp_font_weight";

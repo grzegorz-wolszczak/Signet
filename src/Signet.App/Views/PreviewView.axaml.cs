@@ -8,6 +8,7 @@ using NativeWebView.Platform.Linux;
 using Nwv = NativeWebView.Core;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
+using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.Core.Misc;
 using Signet.Core.Themes;
@@ -92,6 +93,7 @@ public partial class PreviewView : UserControl
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
+        BindToolbarAppearance();
         if (_boundViewModel is not null)
         {
             _boundViewModel.NavigateRequested -= OnNavigateRequested;
@@ -132,6 +134,33 @@ public partial class PreviewView : UserControl
             {
                 OnNavigateRequested(_boundViewModel, current);
             }
+        }
+    }
+
+    // The panel's own toolbar has a look of its own (ToolbarManager.PreviewAppearance): it goes into the resources of
+    // the border that holds the toolbar, which come before the application's (the look of the main window's toolbars).
+    private ToolbarViewModel? _boundToolbar;
+
+    private void BindToolbarAppearance()
+    {
+        if (_boundToolbar is not null)
+        {
+            _boundToolbar.AppearanceUpdated -= OnToolbarAppearanceUpdated;
+        }
+
+        _boundToolbar = (DataContext as PreviewViewModel)?.Toolbar;
+        if (_boundToolbar is not null)
+        {
+            _boundToolbar.AppearanceUpdated += OnToolbarAppearanceUpdated;
+            ToolbarManager.ApplyResources(ToolbarHost.Resources, _boundToolbar.Appearance);
+        }
+    }
+
+    private void OnToolbarAppearanceUpdated(object? sender, EventArgs e)
+    {
+        if (_boundToolbar is not null)
+        {
+            ToolbarManager.ApplyResources(ToolbarHost.Resources, _boundToolbar.Appearance);
         }
     }
 

@@ -4,6 +4,7 @@
              xmlns:nwv="clr-namespace:NativeWebView.Controls;assembly=NativeWebView"
              xmlns:loc="using:Signet.App.Resources"
              xmlns:infra="using:Signet.App.Infrastructure"
+             xmlns:views="using:Signet.App.Views"
              x:Class="Signet.App.Views.PreviewView"
              infra:TooltipFonts.Area="Preview"
              x:DataType="vm:PreviewViewModel">
@@ -23,11 +24,13 @@
     </Style>
   </UserControl.Styles>
 
-  <!-- Layout: the page on top, a row of buttons (Inspect, Select-All,
-       Copy, Reload, Cycle CSS, Print) and the preview's own zoom bar (− NN% +) at the bottom. -->
+  <!-- Layout: the page on top, the panel's own toolbar at the bottom (ToolbarId.Preview — its buttons are configured
+       like those of any other toolbar) and, always at its end, the preview's own zoom bar (− NN% +), which is not an
+       item of the toolbar and cannot be taken off it. -->
   <Grid RowDefinitions="*,Auto">
 
-    <Panel Grid.Row="0">
+    <!-- The page: grayed out while no book is open (the toolbar under it stays enabled). -->
+    <Panel Grid.Row="0" IsEnabled="{Binding IsContentEnabled}">
       <!-- Opacity="0" until the first real frame: in GpuSurface mode the library, before WebView2
            delivers an image, shows a synthetic test frame (a colored pattern) — see PreviewView.OnRenderFrameCaptured. -->
       <nwv:NativeWebView x:Name="WebView" RenderMode="GpuSurface" Opacity="0" />
@@ -47,81 +50,29 @@
                  VerticalAlignment="Top" />
     </Panel>
 
-    <Border Grid.Row="1"
+    <!-- The look of this toolbar is its own (ToolbarManager.PreviewAppearance): the code-behind puts it into the
+         resources of this border, which come before the application's (those hold the look of the main window's
+         toolbars). -->
+    <Border x:Name="ToolbarHost"
+            Grid.Row="1"
             Padding="1"
             BorderThickness="0,1,0,0"
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-      <StackPanel Orientation="Horizontal" Spacing="2">
-        <Button Classes="previewTool" Tag="inspect" Command="{Binding InspectCommand}" ToolTip.Tip="{loc:Loc PreviewView_InspectPage}">
-          <Panel>
-            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          </Panel>
-        </Button>
-        <Button Classes="previewTool" Tag="edit-select-all" Command="{Binding SelectAllContentCommand}" ToolTip.Tip="{loc:Loc PreviewView_SelectAll}">
-          <Panel>
-            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          </Panel>
-        </Button>
-        <Button Classes="previewTool" Tag="edit-copy" Command="{Binding CopySelectionCommand}" ToolTip.Tip="{loc:Loc PreviewView_Copy}">
-          <Panel>
-            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          </Panel>
-        </Button>
-        <Button Classes="previewTool" Tag="reload-page" Command="{Binding ReloadCommand}" ToolTip.Tip="{loc:Loc PreviewView_RefreshPreview}">
-          <Panel>
-            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          </Panel>
-        </Button>
-        <Button Classes="previewTool" Tag="cycle-css" Command="{Binding CycleCustomCssCommand}" ToolTip.Tip="{loc:Loc PreviewView_CycleCustomCss}">
-          <Panel>
-            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          </Panel>
-        </Button>
-        <Button Classes="previewTool" Tag="document-print" Command="{Binding PrintCommand}" ToolTip.Tip="{loc:Loc PreviewView_Print}">
-          <Panel>
-            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          </Panel>
-        </Button>
-        <Separator Width="1" Height="16" Margin="4,0" VerticalAlignment="Center"
-                   Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
-        <Button Classes="previewTool" Content="−" Command="{Binding ZoomOutCommand}" Padding="6,0"
-                VerticalAlignment="Center" ToolTip.Tip="{loc:Loc PreviewView_ZoomOut}" />
-        <Button Classes="previewTool" Content="{Binding ZoomPercentText}" Command="{Binding ZoomResetCommand}"
-                Padding="4,0" MinWidth="44" FontSize="11" VerticalAlignment="Center"
-                HorizontalContentAlignment="Center" ToolTip.Tip="{loc:Loc PreviewView_ZoomReset}" />
-        <Button Classes="previewTool" Content="+" Command="{Binding ZoomInCommand}" Padding="6,0"
-                VerticalAlignment="Center" ToolTip.Tip="{loc:Loc PreviewView_ZoomIn}" />
-      </StackPanel>
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+          <Separator Width="1" Height="16" Margin="4,0" VerticalAlignment="Center"
+                     Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+          <Button Classes="previewTool" Content="−" Command="{Binding ZoomOutCommand}" Padding="6,0"
+                  VerticalAlignment="Center" ToolTip.Tip="{loc:Loc PreviewView_ZoomOut}" />
+          <Button Classes="previewTool" Content="{Binding ZoomPercentText}" Command="{Binding ZoomResetCommand}"
+                  Padding="4,0" MinWidth="44" FontSize="11" VerticalAlignment="Center"
+                  HorizontalContentAlignment="Center" ToolTip.Tip="{loc:Loc PreviewView_ZoomReset}" />
+          <Button Classes="previewTool" Content="+" Command="{Binding ZoomInCommand}" Padding="6,0"
+                  VerticalAlignment="Center" ToolTip.Tip="{loc:Loc PreviewView_ZoomIn}" />
+        </StackPanel>
+        <views:ToolbarStripView x:Name="Toolbar" DataContext="{Binding Toolbar}"
+                                IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
+      </DockPanel>
     </Border>
   </Grid>
 </UserControl>
