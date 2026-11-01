@@ -6269,4 +6269,37 @@
   <data name="FontRemoval_FamilyLosesFaces" xml:space="preserve">
     <value>The family "{0}" loses the faces: {1} (kept: {2}). The reader will imitate the missing ones.</value>
   </data>
+  <data name="DictionaryInstall_NotDictionaryFiles" xml:space="preserve">
+    <value>These are not dictionary files: {0}</value>
+  </data>
+  <data name="DictionaryInstall_MissingAff" xml:space="preserve">
+    <value>There is no .aff file among the chosen files — without it there is no dictionary.</value>
+  </data>
+  <data name="DictionaryInstall_MissingAff_Named" xml:space="preserve">
+    <value>The file {0} is missing.</value>
+  </data>
+  <data name="DictionaryInstall_MissingDic" xml:space="preserve">
+    <value>The file {0} is missing — a dictionary is an .aff + .dic pair with the same name.</value>
+  </data>
+  <data name="DictionaryInstall_SeveralAff" xml:space="preserve">
+    <value>More than one .aff file was chosen ({0}) — add one dictionary at a time.</value>
+  </data>
+  <data name="DictionaryInstall_AffNoDirectives" xml:space="preserve">
+    <value>The file {0} holds no Hunspell directive — it is not an .aff file.</value>
+  </data>
+  <data name="DictionaryInstall_DicNoCount" xml:space="preserve">
+    <value>The first line of {0} is not a word count — it is not a Hunspell word list.</value>
+  </data>
+  <data name="DictionaryInstall_DicNoWords" xml:space="preserve">
+    <value>The file {0} holds no word at all.</value>
+  </data>
+  <data name="DictionaryInstall_CannotLoad" xml:space="preserve">
+    <value>The dictionary could not be loaded: {0}</value>
+  </data>
+  <data name="DictionaryInstall_WordNotChecked" xml:space="preserve">
+    <value>The dictionary loaded, but does not know its own word “{0}” — its flag table or its encoding is broken.</value>
+  </data>
+  <data name="DictionaryInstall_AlreadyExists" xml:space="preserve">
+    <value>The dictionary “{0}” is already installed.</value>
+  </data>
 </root>

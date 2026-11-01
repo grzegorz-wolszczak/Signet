@@ -7648,4 +7648,128 @@ Zamknij zakładkę</value>
   <data name="PanelStripe_More" xml:space="preserve">
     <value>Więcej paneli</value>
   </data>
+  <data name="PreferencesWindow_ManageDictionaries" xml:space="preserve">
+    <value>Zarządzaj słownikami…</value>
+  </data>
+  <data name="DictionaryManager_Title" xml:space="preserve">
+    <value>Menedżer słowników</value>
+  </data>
+  <data name="DictionaryManager_DirectoryText" xml:space="preserve">
+    <value>Słowniki w {0}</value>
+  </data>
+  <data name="DictionaryManager_OpenDirectory" xml:space="preserve">
+    <value>Otwórz folder słowników</value>
+  </data>
+  <data name="DictionaryManager_ColumnName" xml:space="preserve">
+    <value>Nazwa</value>
+  </data>
+  <data name="DictionaryManager_ColumnFiles" xml:space="preserve">
+    <value>Plików</value>
+  </data>
+  <data name="DictionaryManager_ColumnState" xml:space="preserve">
+    <value>Stan</value>
+  </data>
+  <data name="DictionaryManager_FilesHeader" xml:space="preserve">
+    <value>Pliki wybranego słownika:</value>
+  </data>
+  <data name="DictionaryManager_ColumnFile" xml:space="preserve">
+    <value>Plik</value>
+  </data>
+  <data name="DictionaryManager_ColumnRole" xml:space="preserve">
+    <value>Rola</value>
+  </data>
+  <data name="DictionaryManager_StateBuiltIn" xml:space="preserve">
+    <value>wbudowany</value>
+  </data>
+  <data name="DictionaryManager_StateWorks" xml:space="preserve">
+    <value>działa</value>
+  </data>
+  <data name="DictionaryManager_StateOverridesBuiltIn" xml:space="preserve">
+    <value>zastępuje wbudowany</value>
+  </data>
+  <data name="DictionaryManager_RoleRequired" xml:space="preserve">
+    <value>wymagany</value>
+  </data>
+  <data name="DictionaryManager_RoleHyphenation" xml:space="preserve">
+    <value>dzielenie wyrazów (nieużywane przez Signet)</value>
+  </data>
+  <data name="DictionaryManager_RoleThesaurus" xml:space="preserve">
+    <value>tezaurus (nieużywany przez Signet)</value>
+  </data>
+  <data name="DictionaryManager_RoleLibreOffice" xml:space="preserve">
+    <value>LibreOffice (nieużywane przez Signet)</value>
+  </data>
+  <data name="DictionaryManager_RoleDocumentation" xml:space="preserve">
+    <value>dokumentacja (nieużywana przez Signet)</value>
+  </data>
+  <data name="DictionaryManager_AddTitle" xml:space="preserve">
+    <value>Dodaj słownik</value>
+  </data>
+  <data name="DictionaryManager_FileTypeName" xml:space="preserve">
+    <value>Pliki słownika Hunspella</value>
+  </data>
+  <data name="DictionaryManager_ReplaceTitle" xml:space="preserve">
+    <value>Zastąp słownik</value>
+  </data>
+  <data name="DictionaryManager_ReplacePrompt" xml:space="preserve">
+    <value>Słownik „{0}” jest już zainstalowany. Zastąpić go wybranymi plikami? Wszystkie pliki starego słownika zostaną usunięte.</value>
+  </data>
+  <data name="DictionaryManager_Replace" xml:space="preserve">
+    <value>Zastąp</value>
+  </data>
+  <data name="DictionaryManager_DeleteTitle" xml:space="preserve">
+    <value>Usuń słownik</value>
+  </data>
+  <data name="DictionaryManager_DeletePrompt" xml:space="preserve">
+    <value>Usunąć słownik „{0}”? Zostaną usunięte pliki:
+{1}</value>
+  </data>
+  <data name="DictionaryManager_ProblemTitle" xml:space="preserve">
+    <value>Nie udało się dodać słownika</value>
+  </data>
+  <data name="DictionaryManager_Hint" xml:space="preserve">
+    <value>Słownik to para plików .aff i .dic o tej samej nazwie. Pozostałe pliki paczki (dzielenie wyrazów, tezaurus, dokumentacja) można dodać razem z nią — Signet je przechowuje, ale ich nie czyta.</value>
+  </data>
+  <data name="StartScreen_OpenSelected" xml:space="preserve">
+    <value>Otwórz wybrany</value>
+  </data>
+  <data name="StartScreen_CopyPath" xml:space="preserve">
+    <value>Kopiuj ścieżkę</value>
+  </data>
+  <data name="StartScreen_EntryActions" xml:space="preserve">
+    <value>Akcje pliku</value>
+  </data>
+  <data name="PreferencesWindow_PreviewOptions" xml:space="preserve">
+    <value>Opcje podglądu</value>
+  </data>
+  <data name="ColorScheme_InheritedFrom" xml:space="preserve">
+    <value>Dziedziczone z: {0} — kliknij, aby tam przejść</value>
+  </data>
+  <data name="ColorScheme_FromPlatform" xml:space="preserve">
+    <value>z kontrolek</value>
+  </data>
+  <data name="ColorScheme_FromPlatformTip" xml:space="preserve">
+    <value>Tego koloru nie ustawia żaden motyw Signeta i nie pochodzi on z innego ustawienia — daje go wygląd kontrolek (Fluent, wariant jasny albo ciemny).</value>
+  </data>
+  <data name="PreferencesWindow_HistoryBack" xml:space="preserve">
+    <value>Wstecz — do poprzednio oglądanego ustawienia</value>
+  </data>
+  <data name="PreferencesWindow_HistoryForward" xml:space="preserve">
+    <value>Dalej — do ustawienia, z którego cofnięto</value>
+  </data>
+  <data name="ColorScheme_NoBackground" xml:space="preserve">
+    <value>brak</value>
+  </data>
+  <data name="ColorScheme_NoBackgroundTip" xml:space="preserve">
+    <value>Tło nie jest ustawione — nic nie jest malowane, więc widać to, co pod spodem.</value>
+  </data>
+  <data name="ColorScheme_EffectFollowsText" xml:space="preserve">
+    <value>jak kolor tekstu</value>
+  </data>
+  <data name="ColorScheme_EffectFollowsTextTip" xml:space="preserve">
+    <value>Efekt nie ma własnego koloru — jest rysowany kolorem tekstu tego klucza.</value>
+  </data>
+  <data name="ColorScheme_FromSystemAccentTip" xml:space="preserve">
+    <value>Kolor akcentu systemu. Jako jedyny nie jest zapisany w Signecie — pochodzi z ustawień systemu i zmienia się razem z nimi. Zaznacz „Własny kolor”, aby go tu nadpisać.</value>
+  </data>
 </root>

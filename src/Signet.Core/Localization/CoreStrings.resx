@@ -6269,4 +6269,37 @@
   <data name="FontRemoval_FamilyLosesFaces" xml:space="preserve">
     <value>Rodzina „{0}” straci warianty: {1} (zostają: {2}). Czytnik zasymuluje brakujące.</value>
   </data>
+  <data name="DictionaryInstall_NotDictionaryFiles" xml:space="preserve">
+    <value>To nie są pliki słownika: {0}</value>
+  </data>
+  <data name="DictionaryInstall_MissingAff" xml:space="preserve">
+    <value>Wśród wybranych plików nie ma pliku .aff — bez niego nie ma słownika.</value>
+  </data>
+  <data name="DictionaryInstall_MissingAff_Named" xml:space="preserve">
+    <value>Brakuje pliku {0}.</value>
+  </data>
+  <data name="DictionaryInstall_MissingDic" xml:space="preserve">
+    <value>Brakuje pliku {0} — słownik to para .aff + .dic o tej samej nazwie.</value>
+  </data>
+  <data name="DictionaryInstall_SeveralAff" xml:space="preserve">
+    <value>Wybrano więcej niż jeden plik .aff ({0}) — dodaj jeden słownik naraz.</value>
+  </data>
+  <data name="DictionaryInstall_AffNoDirectives" xml:space="preserve">
+    <value>Plik {0} nie zawiera żadnej dyrektywy Hunspella — to nie jest plik .aff.</value>
+  </data>
+  <data name="DictionaryInstall_DicNoCount" xml:space="preserve">
+    <value>Pierwszy wiersz pliku {0} nie jest liczbą słów — to nie jest lista słów Hunspella.</value>
+  </data>
+  <data name="DictionaryInstall_DicNoWords" xml:space="preserve">
+    <value>Plik {0} nie zawiera ani jednego słowa.</value>
+  </data>
+  <data name="DictionaryInstall_CannotLoad" xml:space="preserve">
+    <value>Nie udało się wczytać słownika: {0}</value>
+  </data>
+  <data name="DictionaryInstall_WordNotChecked" xml:space="preserve">
+    <value>Słownik wczytał się, ale nie zna własnego słowa „{0}” — jego tablica flag albo kodowanie są uszkodzone.</value>
+  </data>
+  <data name="DictionaryInstall_AlreadyExists" xml:space="preserve">
+    <value>Słownik „{0}” jest już zainstalowany.</value>
+  </data>
 </root>

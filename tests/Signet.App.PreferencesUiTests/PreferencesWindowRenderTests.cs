@@ -2480,6 +2480,314 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
+    /// The "Spellcheck" tab has the button that opens the dictionary manager, and rebuilds the two dictionary lists
+    /// when the manager says it installed or deleted something — including the fallback to the built-in dictionary
+    /// when the chosen one is gone.
+    /// </summary>
+    [AvaloniaFact]
+    public void Spellcheck_tab_opens_the_dictionary_manager_and_rebuilds_the_dictionary_lists()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow(out SettingsStore settings);
+        var vm = (PreferencesViewModel)window.DataContext!;
+        string hunspell = Path.GetDirectoryName(settings.FilePath)! + Path.DirectorySeparatorChar + "hunspell";
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        SelectTab(window.GetVisualDescendants().OfType<TabControl>().First(), "PreferencesWindow_Spellcheck");
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        Button manage = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "ManageDictionariesButton");
+
+        // Assert
+        manage.IsEffectivelyEnabled.Should().BeTrue();
+        vm.AvailableDictionaries.Select(d => d.Name).Should().BeEquivalentTo("en_US");
+
+        // Act: the manager installs a dictionary, chosen as the primary one, and then deletes it again.
+        DictionaryFixture.Write(hunspell, "pl_PL", "dom");
+        vm.DictionaryManager = _ => Task.FromResult(true);
+        manage.Command!.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        vm.AvailableDictionaries.Select(d => d.Name).Should().BeEquivalentTo("en_US", "pl_PL");
+        vm.AvailableSecondaryDictionaries.Select(d => d.Name).Should().BeEquivalentTo("en_US", "pl_PL", string.Empty);
+
+        // Act
+        vm.PrimaryDictionary = "pl_PL";
+        File.Delete(Path.Combine(hunspell, "pl_PL.dic"));
+        manage.Command.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        vm.AvailableDictionaries.Select(d => d.Name).Should().BeEquivalentTo("en_US");
+        vm.PrimaryDictionary.Should().Be("en_US", "a dictionary that is gone falls back to the built-in one");
+        window.Close();
+    }
+
+    /// <summary>
+    /// A page whose preview sits beside the settings already has a vertical splitter of its own, so it must not also
+    /// wrap its settings in a <see cref="PageWidthHost"/>: that would put two vertical splitters a few pixels apart,
+    /// and the left one does nothing the right one does not. (Found twice on Appearance › Spelling Editor — hence
+    /// this test over every page, not a fix of one page.) A preview under the settings is the other case: its
+    /// splitter is horizontal and a PageWidthHost beside it is fine.
+    /// </summary>
+    [AvaloniaFact]
+    public void A_page_with_a_preview_beside_the_settings_has_no_second_vertical_splitter()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1600;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
+        List<string> offenders = new();
+
+        // Act
+        // Only the selected page is in the visual tree, so each one is shown and then looked at through the window.
+        foreach (TabItem page in tabs.Items.OfType<TabItem>().ToList())
+        {
+            tabs.SelectedItem = page;
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+            Dispatcher.UIThread.RunJobs();
+
+            Grid? host = window.GetVisualDescendants().OfType<Grid>()
+                .FirstOrDefault(g => g.IsEffectivelyVisible && g.Name?.EndsWith("PreviewHost", StringComparison.Ordinal) == true);
+            if (host is null || host.ColumnDefinitions.Count <= 1)
+            {
+                continue;
+            }
+
+            if (window.GetVisualDescendants().OfType<PageWidthHost>().Any(h => h.IsEffectivelyVisible))
+            {
+                offenders.Add(page.Name ?? host.Name!);
+            }
+        }
+
+        // Assert
+        offenders.Should().BeEmpty("a page whose preview is beside the settings already has the only splitter it needs");
+        window.Close();
+    }
+
+    /// <summary>
+    /// A color a panel owns and does not set shows the color it actually ends up drawn in, taken from the setting it
+    /// falls back to: the hex is a link to that setting, the swatch is painted in it, and the swatch button stays
+    /// switched off (the color is not this key's to change). A color whose chain ends at the theme of the system has
+    /// no value to show and says so instead.
+    /// </summary>
+    [AvaloniaFact]
+    public void An_inherited_color_shows_the_color_it_comes_from_and_links_to_its_setting()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "NotificationsAppearancePage");
+        var vm = (PreferencesViewModel)window.DataContext!;
+
+        ColorKeyEditorViewModel list = vm.NotificationsBackgroundColor;
+        ColorKeyEditorViewModel timestamp = vm.NotificationsTimestampBackgroundColor;
+
+        // Assert
+        list.IsInherited.Should().BeTrue("nothing sets the background of the list to start with");
+        list.HasInheritedColor.Should().BeTrue("the chain reaches the Fluent palette, which Signet writes down");
+        list.HasInheritedSource.Should().BeTrue();
+        list.IsFromPlatform.Should().BeFalse("there is a setting behind it now, not an unnamed color of the controls");
+        timestamp.HasInheritedColor.Should().BeTrue("its chain runs through the list to the palette");
+
+        // Act: the list gets a color of its own, so the columns below it inherit it instead of the palette.
+        list.Color = "#FF102030";
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        timestamp.IsInherited.Should().BeTrue("the column still has no color of its own");
+        timestamp.HasInheritedColor.Should().BeTrue();
+        timestamp.InheritedColor.Should().Be("#102030");
+        timestamp.SwatchColor.Should().Be("#102030", "the swatch shows the color actually used");
+        timestamp.IsFromPlatform.Should().BeFalse();
+        timestamp.InheritedFromText.Should().Contain(
+            Strings.Get("ThemeKey_" + ThemeKeys.UiNotificationsBackground.Id.Replace('.', '_')),
+            "the tip names the setting the color comes from");
+
+        // Act: the color is one control — a button filled with the color, its hex written on it — and next to it a
+        // link to the setting the color comes from.
+        ColorKeyEditorView editor = window.GetVisualDescendants().OfType<ColorKeyEditorView>()
+            .Single(v => ReferenceEquals(v.DataContext, timestamp));
+        Button field = editor.GetVisualDescendants().OfType<Button>().Single(b => b.Classes.Contains("colorField"));
+        Button link = editor.GetVisualDescendants().OfType<Button>().Single(b => b.Classes.Contains("sourceLink"));
+
+        // Assert
+        editor.GetVisualDescendants().OfType<TextBox>().Should().BeEmpty("the hex field and the swatch are one control now");
+        field.Content.Should().Be("#102030", "the field writes the hex of the color on the color itself");
+        ((ISolidColorBrush)field.Background!).Color.Should().Be(Color.Parse("#102030"));
+        timestamp.FieldTextColor.Should().Be("#FFFFFF", "white is the readable text on this dark color");
+        field.IsEffectivelyEnabled.Should().BeFalse("an inherited color is not this key's to change");
+        link.IsVisible.Should().BeTrue();
+
+        // Act
+        link.Command!.Execute(link.CommandParameter);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        window.GetVisualDescendants().OfType<ColorKeyEditorView>()
+            .Should().Contain(v => v.IsEffectivelyVisible && ReferenceEquals(v.DataContext, list),
+                "the link lands on the page that holds the setting the color came from");
+        window.Close();
+    }
+
+    /// <summary>
+    /// A text attributes key says what each of its colors does while it is unset, instead of showing an empty field:
+    /// the text color is the one of what is around it (the theme of the system), a background that is not set is no
+    /// background at all, and an effect with no color of its own is drawn in the text color. Three different things,
+    /// so three different notes.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_unset_colors_of_a_text_attributes_key_say_what_they_fall_back_to()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "AppearanceGeneralPage");
+        AppearanceGeneralTabs(window);
+        ThemeKeysView view = window.GetVisualDescendants().OfType<ThemeKeysView>()
+            .Single(v => v.IsEffectivelyVisible);
+        var page = (ThemeKeysPageViewModel)view.DataContext!;
+
+        // Act: the document tabs — text attributes whose three colors are all unset ("nothing set = the colors of
+        // the controls"), which is the shape this note is for.
+        page.Selected = page.Roots.SelectMany(Descendants)
+            .First(n => ReferenceEquals(n.Key, ThemeKeys.UiDocumentTab));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        Button foreground = view.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "ForegroundField");
+        Button background = view.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "BackgroundField");
+
+        // Assert
+        page.IsAttributesKey.Should().BeTrue();
+        page.HasForeground.Should().BeFalse();
+        foreground.Content.Should().Be(Strings.Get("ColorScheme_FromPlatform"));
+        foreground.Classes.Should().Contain("empty", "a field with no color is not filled with one");
+        background.Content.Should().Be(Strings.Get("ColorScheme_NoBackground"), "no background is not a color of the theme");
+        view.GetVisualDescendants().OfType<Control>().Select(c => c.Name).Should().NotContain(
+            OldHexFieldNames,
+            "the hex field and the swatch of each color are one control now");
+
+        // Act: the key gets a text color of its own — the field shows its hex, filled with it.
+        page.HasForeground = true;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        page.ForegroundFieldText.Should().Be(page.Foreground).And.StartWith("#");
+        page.ForegroundFieldTextColor.Should().BeOneOf("#000000", "#FFFFFF");
+        foreground.Classes.Should().NotContain("empty");
+        page.BackgroundFieldText.Should().Be(Strings.Get("ColorScheme_NoBackground"), "the background is still not set");
+
+        // Act: an effect without a color of its own follows the text color.
+        page.HasEffect = true;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        page.EffectColorFieldText.Should().Be(Strings.Get("ColorScheme_EffectFollowsText"));
+        window.Close();
+    }
+
+    // The hex fields each color used to have next to its swatch, before the two became one control.
+    private static readonly string[] OldHexFieldNames = { "ForegroundText", "BackgroundText", "EffectColorText" };
+
+    // The nodes of a key tree, flattened.
+    private static IEnumerable<ThemeKeyNode> Descendants(ThemeKeyNode node) =>
+        new[] { node }.Concat(node.Children.SelectMany(Descendants));
+
+    // Appearance › Appearance › Interface Colors, where the shared key tree of the interface lives.
+    private static void AppearanceGeneralTabs(PreferencesWindow window)
+    {
+        TabControl tabs = window.FindControl<TabControl>("AppearanceGeneralTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => t.Name == "InterfaceColorsTab");
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+    }
+
+    /// <summary>
+    /// The back and forward arrows walk the sections visited in this window: back is dead until somewhere has been
+    /// left, forward only after going back, and going somewhere new drops what was ahead.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_arrows_walk_the_sections_visited_in_the_window()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        Button back = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "HistoryBackButton");
+        Button forward = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "HistoryForwardButton");
+
+        // Assert
+        back.IsEffectivelyEnabled.Should().BeFalse("nowhere has been left yet");
+        forward.IsEffectivelyEnabled.Should().BeFalse();
+
+        // Act
+        PreferencesSectionNode first = window.Sections.Selected!;
+        ShowPage(window, "NotificationsAppearancePage");
+        PreferencesSectionNode notifications = window.Sections.Selected!;
+        ShowPage(window, "SpellcheckEditorPage");
+        PreferencesSectionNode spelling = window.Sections.Selected!;
+
+        // Assert
+        notifications.Should().NotBeSameAs(first);
+        back.IsEffectivelyEnabled.Should().BeTrue();
+        forward.IsEffectivelyEnabled.Should().BeFalse();
+
+        // Act
+        window.GoBack();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        window.Sections.Selected.Should().BeSameAs(notifications);
+        forward.IsEffectivelyEnabled.Should().BeTrue();
+
+        // Act
+        window.GoForward();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        window.Sections.Selected.Should().BeSameAs(spelling);
+        forward.IsEffectivelyEnabled.Should().BeFalse();
+
+        // Act: back, then somewhere new — what was ahead is dropped.
+        window.GoBack();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "FindUsagesPage");
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        window.CanGoForward.Should().BeFalse("going somewhere new drops the way forward, as in a browser");
+        window.CanGoBack.Should().BeTrue();
+
+        // Act
+        window.GoBack();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        window.Sections.Selected.Should().BeSameAs(notifications);
+        window.Close();
+    }
+
+    /// <summary>
     /// The font picker window: every name in the list is rendered in its own font,
     /// and the current font is selected.
     /// </summary>
@@ -3078,7 +3386,10 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.Close();
     }
 
-    /// <summary>"Wrap lines" under a preview wraps the text sample, of that row only.</summary>
+    /// <summary>
+    /// "Wrap lines" lives in the menu of the button in the top right corner of a preview (it used to be a check box
+    /// under every preview, a row that made each box of the page taller) and wraps the sample of that row only.
+    /// </summary>
     [AvaloniaFact]
     public void Wrapping_the_lines_of_a_preview_is_a_choice_of_its_row()
     {
@@ -3096,8 +3407,18 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         first.TextWrapping.Should().Be(TextWrapping.NoWrap);
         second.TextWrapping.Should().Be(TextWrapping.NoWrap);
 
+        rows[0].GetVisualDescendants().OfType<CheckBox>().Should().NotContain(
+            c => c.Name == "WrapPreviewBox", "the choice moved from a row under the preview into its menu");
+
         // Act
-        rows[0].FindControl<CheckBox>("WrapPreviewBox")!.IsChecked = true;
+        Button options = rows[0].FindControl<Button>("PreviewOptionsButton")!;
+        MenuFlyout menu = (MenuFlyout)options.Flyout!;
+        menu.ShowAt(options);
+        Dispatcher.UIThread.RunJobs();
+        MenuItem wrap = menu.Items.OfType<MenuItem>().Single();
+        wrap.IsChecked = true;
+        Dispatcher.UIThread.RunJobs();
+        menu.Hide();
         Dispatcher.UIThread.RunJobs();
 
         // Assert

@@ -9,6 +9,15 @@ public static class ActionIconKeys
     /// <summary>The delete/trash icon.</summary>
     public const string Delete = "delete";
 
+    /// <summary>The copy icon ("Copy Path" of a recent file).</summary>
+    public const string Copy = "edit-copy";
+
+    /// <summary>Back, in the history of the places visited in the Preferences window.</summary>
+    public const string Back = "back";
+
+    /// <summary>Forward, in the history of the places visited in the Preferences window.</summary>
+    public const string Forward = "forward";
+
     /// <summary>The "Configure Toolbars…" icon of a toolbar's context menu.</summary>
     public const string ToolbarConfigure = "toolbar-configure";
 

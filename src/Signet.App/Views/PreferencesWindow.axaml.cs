@@ -53,6 +53,11 @@ public partial class PreferencesWindow : Window
     private readonly TreeSelectionSync<PreferencesSectionNode> _selection;
     private readonly List<Control> _framed = new();
     private readonly HashSet<int> _linkPages = new();
+    // The sections visited in this window, and where in them the user is: Back and Forward walk this list and do not
+    // add to it; selecting a section any other way cuts off what was ahead and appends, as a browser does.
+    private readonly List<PreferencesSectionNode> _history = new();
+    private int _historyIndex = -1;
+    private bool _walkingHistory;
     private bool _closeConfirmed;
     private bool _askingAboutChanges;
 
@@ -103,6 +108,8 @@ public partial class PreferencesWindow : Window
             (DataContext as PreferencesViewModel)?.Dispose();
         };
 
+        HistoryBackButton.IsEnabled = false;
+        HistoryForwardButton.IsEnabled = false;
         ShowSelectedSection();
     }
 
@@ -411,6 +418,7 @@ public partial class PreferencesWindow : Window
             vm.ColorPicker = (title, initial) => ColorPickerWindow.AskAsync(this, title, initial);
             vm.TextPrompt = (title, prompt, initial) => TextPromptWindow.AskAsync(this, title, prompt, initial);
             vm.ErrorMessage = (title, message) => MessageDialog.ShowAsync(this, title, message);
+            vm.DictionaryManager = manager => DictionaryManagerWindow.ShowAsync(this, manager);
 
             // Set here, not bound in the XAML: a binding on the content of a page that is not shown does not resolve,
             // and the search must find the font settings of every page.
@@ -539,6 +547,14 @@ public partial class PreferencesWindow : Window
     // A link to a key (e.g. the base of an inherited key, or from the look of a part of the application): its page is shown.
     private void OnThemeKeyRequested(object? sender, ThemeKey key)
     {
+        // A key a panel owns is not in the shared tree: it is edited on that panel's own page, by the small editor
+        // whose view model holds it. The pages that are not shown are in the logical tree, so it can be found.
+        if (key.OwnedByPanel && FindPanelColorEditor(key) is { } editor)
+        {
+            RevealControl(editor);
+            return;
+        }
+
         if (key.Page == ThemePage.Interface)
         {
             if (_sections.All.FirstOrDefault(n => ReferenceEquals(Pages.Items[n.PageIndex], AppearanceGeneralPage)) is { } appearance)
@@ -555,6 +571,39 @@ public partial class PreferencesWindow : Window
         {
             RevealSection(node);
         }
+    }
+
+    // The small color editor of a key owned by a panel, wherever on the pages it sits.
+    private ColorKeyEditorView? FindPanelColorEditor(ThemeKey key) =>
+        Pages.Items.OfType<TabItem>()
+            .Select(t => t.Content)
+            .OfType<ILogical>()
+            .SelectMany(SelfAndLogicalDescendants)
+            .OfType<ColorKeyEditorView>()
+            .FirstOrDefault(v => v.DataContext is ColorKeyEditorViewModel vm && ReferenceEquals(vm.Key, key));
+
+    // Shows the page (and the tab of it) that holds the control, and brings the control into view.
+    private void RevealControl(Control control)
+    {
+        if (control.GetLogicalAncestors().OfType<TabItem>().LastOrDefault(Pages.Items.Contains) is not { } page
+            || _sections.FindByPage(Pages.Items.IndexOf(page)) is not { } node)
+        {
+            return;
+        }
+
+        RevealSection(node);
+
+        // The tab bars between the page and the control (e.g. Notifications › General) are switched to the tabs the
+        // control is under; the outermost one first, so the inner ones exist by the time they are set.
+        foreach (TabItem tab in control.GetLogicalAncestors().OfType<TabItem>().Reverse())
+        {
+            if (tab.Parent is TabControl tabs && !ReferenceEquals(tabs, Pages))
+            {
+                tabs.SelectedItem = tab;
+            }
+        }
+
+        Dispatcher.UIThread.Post(control.BringIntoView, DispatcherPriority.Loaded);
     }
 
     private static FilePickerFileType ThemeFileType(ThemeDocumentViewModel document) =>
@@ -658,8 +707,72 @@ public partial class PreferencesWindow : Window
     {
         if (e.PropertyName == nameof(PreferencesSectionsViewModel.Selected))
         {
+            RecordHistory();
             ShowSelectedSection();
         }
+    }
+
+    /// <summary>Whether there is a section to go back to (for the tests).</summary>
+    public bool CanGoBack => _historyIndex > 0;
+
+    /// <summary>Whether there is a section to go forward to (for the tests).</summary>
+    public bool CanGoForward => _historyIndex >= 0 && _historyIndex < _history.Count - 1;
+
+    /// <summary>Goes back to the section visited before this one.</summary>
+    public void GoBack() => WalkHistory(-1);
+
+    /// <summary>Goes forward again, after <see cref="GoBack"/>.</summary>
+    public void GoForward() => WalkHistory(1);
+
+    private void OnHistoryBackClicked(object? sender, RoutedEventArgs e) => GoBack();
+
+    private void OnHistoryForwardClicked(object? sender, RoutedEventArgs e) => GoForward();
+
+    private void WalkHistory(int step)
+    {
+        int target = _historyIndex + step;
+        if (target < 0 || target >= _history.Count)
+        {
+            return;
+        }
+
+        _walkingHistory = true;
+        try
+        {
+            _historyIndex = target;
+            _sections.Selected = _history[target];
+        }
+        finally
+        {
+            _walkingHistory = false;
+        }
+
+        UpdateHistoryButtons();
+    }
+
+    // The section just selected goes on the history, unless Back/Forward put it there or it is where we already are.
+    private void RecordHistory()
+    {
+        if (_walkingHistory || _sections.Selected is not { } node)
+        {
+            return;
+        }
+
+        if (_historyIndex >= 0 && ReferenceEquals(_history[_historyIndex], node))
+        {
+            return;
+        }
+
+        _history.RemoveRange(_historyIndex + 1, _history.Count - _historyIndex - 1);
+        _history.Add(node);
+        _historyIndex = _history.Count - 1;
+        UpdateHistoryButtons();
+    }
+
+    private void UpdateHistoryButtons()
+    {
+        HistoryBackButton.IsEnabled = CanGoBack;
+        HistoryForwardButton.IsEnabled = CanGoForward;
     }
 
     // The selected section: its page, its path above the page, its row in the tree and the search frames on the page.

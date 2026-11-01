@@ -67,6 +67,22 @@ public sealed class ResolvedTheme
     /// <summary>The color of a color key; <c>null</c> = the platform's.</summary>
     public Color? Color(ThemeKey key) => ColorOf(key) is { } c ? ToColor(c) : null;
 
+    /// <summary>
+    /// The key the color of <paramref name="key"/> comes from: the key itself when it has one, otherwise the first of
+    /// its fallback chain (<see cref="ThemeKey.FallbackId"/>) that has one. <c>null</c> = none of them has a color,
+    /// so the platform decides.
+    /// </summary>
+    public ThemeKey? ColorSource(ThemeKey key) =>
+        key.Document == ThemeDocumentKind.Theme ? ThemeResolver.ColorSource(Theme, key) : SchemeResolver.ColorSource(Scheme, key);
+
+    /// <summary>
+    /// The color a color key ends up drawn in, following its fallback chain; <c>null</c> = the platform's.
+    /// </summary>
+    public ThemeColor? EffectiveColorOf(ThemeKey key) => ColorSource(key) is { } source ? ColorOf(source) : null;
+
+    /// <summary>The color a color key ends up drawn in, as an Avalonia color; <c>null</c> = the platform's.</summary>
+    public Color? EffectiveColor(ThemeKey key) => EffectiveColorOf(key) is { } c ? ToColor(c) : null;
+
     /// <summary>The attributes of a text attributes key.</summary>
     public TextAttributes Attributes(ThemeKey key) =>
         key.Document == ThemeDocumentKind.Theme ? ThemeResolver.Attributes(Theme, key) : SchemeResolver.Attributes(Scheme, key);
@@ -128,11 +144,37 @@ public static class AppTheme
     /// <summary>Raised after a theme or a color scheme was applied.</summary>
     public static event EventHandler? Changed;
 
+    /// <summary>
+    /// The accent of the system, read before Signet lays its own over it; <c>null</c> before a theme was applied.
+    /// Unlike the colors of the Fluent palette this one is not written down anywhere: it is the user's accent color,
+    /// which follows the system and is theirs to change there. The editor shows it so that the one key Signet cannot
+    /// make explicit still has a value the user can read.
+    /// </summary>
+    public static ThemeColor? SystemAccent { get; private set; }
+
+    // The shade of the accent the title of a context menu takes while the theme sets no color of its own: lighter on
+    // a light theme, darker on a dark one, as Apply uses it below.
+    private static ThemeColor? _accentShade;
+
+    /// <summary>
+    /// The color of a key that comes from the system rather than from any setting of Signet — the accent and the
+    /// shade of it the title of a context menu uses. <c>null</c> for every other key: the rest either have a value
+    /// of their own or fall back to one (<see cref="ThemeKey.FallbackId"/>).
+    /// </summary>
+    public static ThemeColor? SystemColorOf(ThemeKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        return ReferenceEquals(key, ThemeKeys.UiAccent) ? SystemAccent
+            : ReferenceEquals(key, ThemeKeys.UiContextMenuTitleBackground) ? _accentShade
+            : null;
+    }
+
     /// <summary>Applies a theme and a color scheme to the application and makes them <see cref="Current"/>.</summary>
     public static void Apply(Application app, ResolvedTheme theme)
     {
         ArgumentNullException.ThrowIfNull(app);
         ArgumentNullException.ThrowIfNull(theme);
+        ReadSystemAccent(app);
         Current = theme;
         app.RequestedThemeVariant = theme.Variant;
         ApplyPalette(app, theme);
@@ -159,26 +201,41 @@ public static class AppTheme
         SetBrush(app, "SignetTextSelectionBrush", theme.Background(ThemeKeys.UiTextSelection));
         SetBrush(app, "SignetTextSelectionForegroundBrush", theme.Foreground(ThemeKeys.UiTextSelection));
 
-        // The two columns of the Notifications panel: each background unset = the list background
-        // (ui.notifications.background); the warning message foreground unset = the error notification color; the rest
-        // unset = the normal text color.
-        Color? notificationsBackground = theme.Color(ThemeKeys.UiNotificationsBackground);
-        SetBrush(app, "SignetNotificationsTimestampBackgroundBrush",
-            theme.Color(ThemeKeys.UiNotificationsTimestampBackground) ?? notificationsBackground);
-        SetBrush(app, "SignetNotificationsTimestampForegroundBrush", theme.Color(ThemeKeys.UiNotificationsTimestampForeground));
-        SetBrush(app, "SignetNotificationsMessageInfoBackgroundBrush",
-            theme.Color(ThemeKeys.UiNotificationsMessageInfoBackground) ?? notificationsBackground);
-        SetBrush(app, "SignetNotificationsMessageInfoForegroundBrush", theme.Color(ThemeKeys.UiNotificationsMessageInfoForeground));
-        SetBrush(app, "SignetNotificationsMessageWarningBackgroundBrush",
-            theme.Color(ThemeKeys.UiNotificationsMessageWarningBackground) ?? notificationsBackground);
-        SetBrush(app, "SignetNotificationsMessageWarningForegroundBrush",
-            theme.Color(ThemeKeys.UiNotificationsMessageWarningForeground) ?? theme.Color(ThemeKeys.UiErrorNotification));
+        // The two columns of the Notifications panel: which key each falls back to while it is unset is written on
+        // the keys themselves (ThemeKey.FallbackId), so the editor can name the source of the color it shows.
+        SetBrush(app, "SignetNotificationsTimestampBackgroundBrush", theme.EffectiveColor(ThemeKeys.UiNotificationsTimestampBackground));
+        SetBrush(app, "SignetNotificationsTimestampForegroundBrush", theme.EffectiveColor(ThemeKeys.UiNotificationsTimestampForeground));
+        SetBrush(app, "SignetNotificationsMessageInfoBackgroundBrush", theme.EffectiveColor(ThemeKeys.UiNotificationsMessageInfoBackground));
+        SetBrush(app, "SignetNotificationsMessageInfoForegroundBrush", theme.EffectiveColor(ThemeKeys.UiNotificationsMessageInfoForeground));
+        SetBrush(app, "SignetNotificationsMessageWarningBackgroundBrush", theme.EffectiveColor(ThemeKeys.UiNotificationsMessageWarningBackground));
+        SetBrush(app, "SignetNotificationsMessageWarningForegroundBrush", theme.EffectiveColor(ThemeKeys.UiNotificationsMessageWarningForeground));
         app.Resources[FolderIconKey] = FolderIcon(theme);
         app.Resources[FileIconKey] = FileIcon(theme);
         ActionIcons.SetStateColors(
             theme.Color(ThemeKeys.UiIconInactive) ?? ActionIcons.DefaultInactiveColor,
             theme.Color(ThemeKeys.UiIconAttention) ?? ActionIcons.DefaultAttentionColor);
         Changed?.Invoke(null, EventArgs.Empty);
+    }
+
+    // The accent as the system gives it, and the shade of it a context menu title takes — read once, before a theme
+    // writes its own over the resources.
+    private static void ReadSystemAccent(Application app)
+    {
+        if (SystemAccent is null
+            && app.TryGetResource(FluentResourceKeys.SystemAccentColor, app.ActualThemeVariant, out object? value)
+            && value is Color accent)
+        {
+            SystemAccent = new ThemeColor(accent.A, accent.R, accent.G, accent.B);
+        }
+
+        string shade = app.ActualThemeVariant == ThemeVariant.Dark
+            ? FluentResourceKeys.SystemAccentColorDark2
+            : FluentResourceKeys.SystemAccentColorLight2;
+        if (_accentShade is null && app.TryGetResource(shade, app.ActualThemeVariant, out object? shadeValue)
+            && shadeValue is Color color)
+        {
+            _accentShade = new ThemeColor(color.A, color.R, color.G, color.B);
+        }
     }
 
     // The accent and the colors of the Fluent palette the theme sets, for its variant; the rest stays Fluent's.

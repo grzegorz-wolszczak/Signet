@@ -7648,4 +7648,128 @@ Close the tab</value>
   <data name="PanelStripe_More" xml:space="preserve">
     <value>More Tool Windows</value>
   </data>
+  <data name="PreferencesWindow_ManageDictionaries" xml:space="preserve">
+    <value>Manage dictionaries…</value>
+  </data>
+  <data name="DictionaryManager_Title" xml:space="preserve">
+    <value>Dictionary manager</value>
+  </data>
+  <data name="DictionaryManager_DirectoryText" xml:space="preserve">
+    <value>Dictionaries in {0}</value>
+  </data>
+  <data name="DictionaryManager_OpenDirectory" xml:space="preserve">
+    <value>Open the dictionaries folder</value>
+  </data>
+  <data name="DictionaryManager_ColumnName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="DictionaryManager_ColumnFiles" xml:space="preserve">
+    <value>Files</value>
+  </data>
+  <data name="DictionaryManager_ColumnState" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="DictionaryManager_FilesHeader" xml:space="preserve">
+    <value>Files of the selected dictionary:</value>
+  </data>
+  <data name="DictionaryManager_ColumnFile" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="DictionaryManager_ColumnRole" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="DictionaryManager_StateBuiltIn" xml:space="preserve">
+    <value>built-in</value>
+  </data>
+  <data name="DictionaryManager_StateWorks" xml:space="preserve">
+    <value>works</value>
+  </data>
+  <data name="DictionaryManager_StateOverridesBuiltIn" xml:space="preserve">
+    <value>overrides the built-in one</value>
+  </data>
+  <data name="DictionaryManager_RoleRequired" xml:space="preserve">
+    <value>required</value>
+  </data>
+  <data name="DictionaryManager_RoleHyphenation" xml:space="preserve">
+    <value>hyphenation (not used by Signet)</value>
+  </data>
+  <data name="DictionaryManager_RoleThesaurus" xml:space="preserve">
+    <value>thesaurus (not used by Signet)</value>
+  </data>
+  <data name="DictionaryManager_RoleLibreOffice" xml:space="preserve">
+    <value>LibreOffice (not used by Signet)</value>
+  </data>
+  <data name="DictionaryManager_RoleDocumentation" xml:space="preserve">
+    <value>documentation (not used by Signet)</value>
+  </data>
+  <data name="DictionaryManager_AddTitle" xml:space="preserve">
+    <value>Add a dictionary</value>
+  </data>
+  <data name="DictionaryManager_FileTypeName" xml:space="preserve">
+    <value>Hunspell dictionary files</value>
+  </data>
+  <data name="DictionaryManager_ReplaceTitle" xml:space="preserve">
+    <value>Replace the dictionary</value>
+  </data>
+  <data name="DictionaryManager_ReplacePrompt" xml:space="preserve">
+    <value>The dictionary “{0}” is already installed. Replace it with the chosen files? Every file of the old dictionary will be removed.</value>
+  </data>
+  <data name="DictionaryManager_Replace" xml:space="preserve">
+    <value>Replace</value>
+  </data>
+  <data name="DictionaryManager_DeleteTitle" xml:space="preserve">
+    <value>Delete the dictionary</value>
+  </data>
+  <data name="DictionaryManager_DeletePrompt" xml:space="preserve">
+    <value>Delete the dictionary “{0}”? These files will be removed:
+{1}</value>
+  </data>
+  <data name="DictionaryManager_ProblemTitle" xml:space="preserve">
+    <value>The dictionary could not be added</value>
+  </data>
+  <data name="DictionaryManager_Hint" xml:space="preserve">
+    <value>A dictionary is an .aff and a .dic file with the same name. The other files of the package (hyphenation, a thesaurus, documentation) may be added along with it — Signet keeps them, but never reads them.</value>
+  </data>
+  <data name="StartScreen_OpenSelected" xml:space="preserve">
+    <value>Open Selected</value>
+  </data>
+  <data name="StartScreen_CopyPath" xml:space="preserve">
+    <value>Copy Path</value>
+  </data>
+  <data name="StartScreen_EntryActions" xml:space="preserve">
+    <value>Actions for this file</value>
+  </data>
+  <data name="PreferencesWindow_PreviewOptions" xml:space="preserve">
+    <value>Options of the preview</value>
+  </data>
+  <data name="ColorScheme_InheritedFrom" xml:space="preserve">
+    <value>Inherited from: {0} — click to go there</value>
+  </data>
+  <data name="ColorScheme_FromPlatform" xml:space="preserve">
+    <value>from the controls</value>
+  </data>
+  <data name="ColorScheme_FromPlatformTip" xml:space="preserve">
+    <value>No Signet theme sets this color and it comes from no other setting — the look of the controls (Fluent, the light or the dark variant) gives it.</value>
+  </data>
+  <data name="PreferencesWindow_HistoryBack" xml:space="preserve">
+    <value>Back — to the setting looked at before</value>
+  </data>
+  <data name="PreferencesWindow_HistoryForward" xml:space="preserve">
+    <value>Forward — to the setting gone back from</value>
+  </data>
+  <data name="ColorScheme_NoBackground" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="ColorScheme_NoBackgroundTip" xml:space="preserve">
+    <value>The background is not set — nothing is painted, so what is behind shows through.</value>
+  </data>
+  <data name="ColorScheme_EffectFollowsText" xml:space="preserve">
+    <value>as the text color</value>
+  </data>
+  <data name="ColorScheme_EffectFollowsTextTip" xml:space="preserve">
+    <value>The effect has no color of its own — it is drawn in the text color of this key.</value>
+  </data>
+  <data name="ColorScheme_FromSystemAccentTip" xml:space="preserve">
+    <value>The accent color of the system. It is the one color Signet does not write down — it comes from the system settings and changes with them. Tick "Own color" to override it here.</value>
+  </data>
 </root>

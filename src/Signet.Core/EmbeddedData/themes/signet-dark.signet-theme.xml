@@ -1,9 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Signet Dark: dark controls, after Visual Studio Code's Dark+ and Rider's Darcula. It sets every interface key that has
-     a default; the keys without one (the Fluent palette and the accent) are left to the dark variant of the controls. The
+<!-- Signet Dark: dark controls, after Visual Studio Code's Dark+ and Rider's Darcula. It sets every interface key that
+     has a default, the colors of the Fluent palette among them (the registry holds their light values, this file their
+     dark ones). The accent is the only one left to the system, because that is what it is: the user's accent color. The
      colors of the editors are in the color scheme of the same name. -->
 <signet-theme version="1" id="signet-dark" name="Signet Dark" variant="Dark">
   <colors>
+    <!-- The Fluent palette in its dark variant; the registry holds the light one. -->
+    <color key="fluent.altHigh" value="#FF000000" />
+    <color key="fluent.altLow" value="#33000000" />
+    <color key="fluent.altMedium" value="#99000000" />
+    <color key="fluent.altMediumHigh" value="#CC000000" />
+    <color key="fluent.altMediumLow" value="#66000000" />
+    <color key="fluent.baseHigh" value="#FFFFFFFF" />
+    <color key="fluent.baseLow" value="#33FFFFFF" />
+    <color key="fluent.baseMedium" value="#99FFFFFF" />
+    <color key="fluent.baseMediumHigh" value="#CCFFFFFF" />
+    <color key="fluent.baseMediumLow" value="#66FFFFFF" />
+    <color key="fluent.chromeAltLow" value="#FFF2F2F2" />
+    <color key="fluent.chromeBlackHigh" value="#FF000000" />
+    <color key="fluent.chromeBlackLow" value="#33000000" />
+    <color key="fluent.chromeBlackMedium" value="#CC000000" />
+    <color key="fluent.chromeBlackMediumLow" value="#66000000" />
+    <color key="fluent.chromeDisabledHigh" value="#FF333333" />
+    <color key="fluent.chromeDisabledLow" value="#FF858585" />
+    <color key="fluent.chromeGray" value="#FF767676" />
+    <color key="fluent.chromeHigh" value="#FF767676" />
+    <color key="fluent.chromeLow" value="#FF171717" />
+    <color key="fluent.chromeMedium" value="#FF1F1F1F" />
+    <color key="fluent.chromeMediumLow" value="#FF2B2B2B" />
+    <color key="fluent.chromeWhite" value="#FFFFFFFF" />
+    <color key="fluent.errorText" value="#FFFFF000" />
+    <color key="fluent.listLow" value="#19FFFFFF" />
+    <color key="fluent.listMedium" value="#33FFFFFF" />
+    <color key="fluent.regionColor" value="#FF000000" />
+
     <color key="ui.dangerButton" value="#C42B1C" />
     <color key="ui.dangerButton.hover" value="#A82315" />
     <color key="ui.dangerButton.pressed" value="#8E1D11" />

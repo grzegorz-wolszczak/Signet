@@ -175,14 +175,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _spellCheckEnabled = _settings.SpellCheck;
         _spellCheckNumbers = _settings.SpellCheckNumbers;
         _debugLogging = _settings.DebugLogging;
-        AvailableDictionaries = _spellChecker.Dictionaries()
-            .Select(name => new DictionaryOption(name, SpellChecker.DisplayName(name)))
-            .ToList();
-        AvailableSecondaryDictionaries = AvailableDictionaries
-            .Append(new DictionaryOption(string.Empty, Strings.Get("PreferencesWindow_NoSecondaryDictionary")))
-            .ToList();
         _primaryDictionary = _settings.Dictionary;
         _secondaryDictionary = _settings.SecondaryDictionary;
+        RefreshAvailableDictionaries();
         RefreshUserDictionaries(_settings.DefaultUserDictionary);
 
         // ---- Keyboard Shortcuts (keymap) ----
@@ -1219,10 +1214,66 @@ public sealed partial class PreferencesViewModel : ObservableObject
     }
 
     /// <summary>Available dictionaries (built-in + installed) with readable language names.</summary>
-    public IReadOnlyList<DictionaryOption> AvailableDictionaries { get; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedPrimaryDictionary))]
+    private IReadOnlyList<DictionaryOption> _availableDictionaries = Array.Empty<DictionaryOption>();
 
     /// <summary>Dictionaries to choose from as the secondary one — with a "none" item at the end.</summary>
-    public IReadOnlyList<DictionaryOption> AvailableSecondaryDictionaries { get; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedSecondaryDictionary))]
+    private IReadOnlyList<DictionaryOption> _availableSecondaryDictionaries = Array.Empty<DictionaryOption>();
+
+    /// <summary>
+    /// A window that manages the installed Hunspell dictionaries, shown over this one — attached by the view;
+    /// it answers whether anything was installed or deleted. <see langword="null"/> (tests without a UI) = the
+    /// command does nothing.
+    /// </summary>
+    public Func<DictionaryManagerViewModel, Task<bool>>? DictionaryManager { get; set; }
+
+    /// <summary>
+    /// Opens the dictionary manager and, when it changed the dictionaries folder, rebuilds the two lists above.
+    /// The manager works on the application's settings, not on this window's draft (the spell checker reads those),
+    /// so the draft is brought in step with them afterwards.
+    /// </summary>
+    [RelayCommand]
+    private async Task ManageDictionaries()
+    {
+        if (DictionaryManager is not { } show)
+        {
+            return;
+        }
+
+        DictionaryManagerViewModel manager = new(_spellChecker, _appSettings);
+        if (await show(manager).ConfigureAwait(true))
+        {
+            RefreshAvailableDictionaries();
+        }
+    }
+
+    /// <summary>
+    /// Reads the available dictionaries again (the manager may have installed or deleted one), keeping the chosen
+    /// primary and secondary dictionary when they are still there and falling back to the built-in one when they
+    /// are not.
+    /// </summary>
+    public void RefreshAvailableDictionaries()
+    {
+        AvailableDictionaries = _spellChecker.Dictionaries()
+            .Select(name => new DictionaryOption(name, SpellChecker.DisplayName(name)))
+            .ToList();
+        AvailableSecondaryDictionaries = AvailableDictionaries
+            .Append(new DictionaryOption(string.Empty, Strings.Get("PreferencesWindow_NoSecondaryDictionary")))
+            .ToList();
+
+        if (AvailableDictionaries.All(d => d.Name != PrimaryDictionary))
+        {
+            PrimaryDictionary = SpellChecker.BuiltInDictionaryName;
+        }
+
+        if (SecondaryDictionary.Length > 0 && AvailableSecondaryDictionaries.All(d => d.Name != SecondaryDictionary))
+        {
+            SecondaryDictionary = string.Empty;
+        }
+    }
 
     /// <summary>Primary spelling dictionary (file name).</summary>
     [ObservableProperty]

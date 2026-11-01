@@ -37,6 +37,17 @@
     <Style Selector="TextBlock.topSection">
       <Setter Property="FontWeight" Value="Bold" />
     </Style>
+    <!-- The back/forward arrows: flat, quiet, and dimmed while there is nowhere to go. -->
+    <Style Selector="Button.historyNav">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="6,4" />
+      <Setter Property="MinWidth" Value="0" />
+    </Style>
+    <Style Selector="Button.historyNav:disabled">
+      <Setter Property="Opacity" Value="0.35" />
+    </Style>
+
     <!-- Close: only a frame, next to the filled (accent) Save button, as in Rider. -->
     <Style Selector="Button.outline">
       <Setter Property="Background" Value="Transparent" />
@@ -157,6 +168,19 @@
                 MinWidth="90" HorizontalContentAlignment="Center" />
       </StackPanel>
     </Grid>
+
+    <!-- Back and forward through the places visited in this window (a link to another setting jumps far, and the way
+         back is otherwise a hunt through the tree). The arrows are above both the tree and the page, as in a browser. -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="2" Margin="0,0,0,6">
+      <Button x:Name="HistoryBackButton" Classes="historyNav" Click="OnHistoryBackClicked"
+              ToolTip.Tip="{loc:Loc PreferencesWindow_HistoryBack}">
+        <Image Width="16" Height="16" Source="{DynamicResource back}" />
+      </Button>
+      <Button x:Name="HistoryForwardButton" Classes="historyNav" Click="OnHistoryForwardClicked"
+              ToolTip.Tip="{loc:Loc PreferencesWindow_HistoryForward}">
+        <Image Width="16" Height="16" Source="{DynamicResource forward}" />
+      </Button>
+    </StackPanel>
 
     <!-- The splitter between the sections and the page moves; the window remembers the width (SplitterSizes). -->
     <Grid x:Name="Body">
@@ -1270,21 +1294,21 @@
         <Grid x:Name="SpellcheckEditorPreviewHost" ColumnDefinitions="*,12,380">
         <TabControl x:Name="SpellcheckEditorTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_General}">
-            <views:PageWidthHost x:Name="SpellcheckEditorGeneralWidth">
-              <ScrollViewer>
-                <StackPanel Spacing="10" Margin="8">
-                  <Border Classes="section">
-                    <StackPanel Spacing="6">
-                      <TextBlock Text="{loc:Loc PreferencesWindow_SpellcheckEditorColors}" FontWeight="Bold" />
-                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_SpellcheckEditorHeaderBackground}" />
-                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding SpellcheckEditorHeaderBackgroundColor}" />
-                      </Grid>
-                    </StackPanel>
-                  </Border>
-                </StackPanel>
-              </ScrollViewer>
-            </views:PageWidthHost>
+            <!-- No PageWidthHost here: the preview is beside the settings, so the page already has a splitter of its
+                 own; a second vertical one would be two splitters next to each other. -->
+            <ScrollViewer>
+              <StackPanel Spacing="10" Margin="8">
+                <Border Classes="section">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="{loc:Loc PreferencesWindow_SpellcheckEditorColors}" FontWeight="Bold" />
+                    <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_SpellcheckEditorHeaderBackground}" />
+                      <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding SpellcheckEditorHeaderBackgroundColor}" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
           </TabItem>
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="SpellcheckEditorFontsView" />
@@ -1778,7 +1802,7 @@
         <views:PageWidthHost x:Name="SpellcheckWidth">
           <DockPanel Margin="8">
             <StackPanel DockPanel.Dock="Top" Spacing="10">
-              <Grid Classes="labeled" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+              <Grid Classes="labeled" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PrimaryDictionary}" />
                 <ComboBox Grid.Row="0" Grid.Column="1" x:Name="PrimaryDictionaryBox" MinWidth="260"
                           ItemsSource="{Binding AvailableDictionaries}"
@@ -1789,6 +1813,9 @@
                           ItemsSource="{Binding AvailableSecondaryDictionaries}"
                           SelectedItem="{Binding SelectedSecondaryDictionary}"
                           DisplayMemberBinding="{Binding DisplayName, DataType=vm:DictionaryOption}" />
+                <Button Grid.Row="2" Grid.Column="1" x:Name="ManageDictionariesButton" HorizontalAlignment="Right"
+                        Content="{loc:Loc PreferencesWindow_ManageDictionaries}"
+                        Command="{Binding ManageDictionariesCommand}" />
               </Grid>
               <CheckBox Content="{loc:Loc PreferencesWindow_EnableSpellCheck}" IsChecked="{Binding SpellCheckEnabled}" />
               <CheckBox Content="{loc:Loc PreferencesWindow_CheckWordsWithNumbers}" IsChecked="{Binding SpellCheckNumbers}" />

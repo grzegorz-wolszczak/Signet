@@ -62,6 +62,10 @@ public sealed record ThemeKey
     /// <param name="group">The group in the tree of the page (an English identifier, e.g. <c>Errors</c>); empty = none.</param>
     /// <param name="kind">What the key holds.</param>
     /// <param name="baseId">The key whose values this one can inherit ("Inherit values from"); <c>null</c> = none.</param>
+    /// <param name="fallbackId">The key the value is taken from when this one is set nowhere and has no default of its
+    /// own ("unset = the list background"); <c>null</c> = none, and the platform decides. Unlike
+    /// <paramref name="baseId"/> this needs no entry in the theme: it is what the application does anyway when it
+    /// finds no color, written down so the editor can say where the color comes from.</param>
     /// <param name="defaultColor">For a color key: the value when no theme sets it; <c>null</c> = the platform's
     /// (e.g. the system accent).</param>
     /// <param name="defaultAttributes">For a text attributes key: the value when no theme sets it.</param>
@@ -78,7 +82,8 @@ public sealed record ThemeKey
         string? baseId,
         ThemeColor? defaultColor,
         TextAttributes? defaultAttributes,
-        bool ownedByPanel = false)
+        bool ownedByPanel = false,
+        string? fallbackId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         Id = id;
@@ -89,6 +94,7 @@ public sealed record ThemeKey
         DefaultColor = defaultColor;
         DefaultAttributes = kind == ThemeKeyKind.TextAttributes ? defaultAttributes ?? TextAttributes.Empty : null;
         OwnedByPanel = ownedByPanel;
+        FallbackId = fallbackId;
     }
 
     /// <summary>The identifier, e.g. <c>xhtml.attribute.name</c>.</summary>
@@ -120,4 +126,10 @@ public sealed record ThemeKey
     /// key sitting in the shared tree of its page.
     /// </summary>
     public bool OwnedByPanel { get; }
+
+    /// <summary>
+    /// The key the color is taken from while this one is set nowhere; <c>null</c> = none (the platform decides, and
+    /// the editor has no value to show). See the constructor on how this differs from <see cref="BaseId"/>.
+    /// </summary>
+    public string? FallbackId { get; }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,8 +18,9 @@ namespace Signet.App.ViewModels;
 /// <param name="OpenCommand">Opens the file.</param>
 /// <param name="RemoveCommand">Removes the file from the list of recent files (the context menu of the entry).</param>
 /// <param name="OpenFolderCommand">
-/// "Open File Location" (the context menu of the entry): shows the file selected in the system file manager.
+/// "Show in Explorer" (the menu of the entry): shows the file selected in the system file manager.
 /// </param>
+/// <param name="CopyPathCommand">"Copy Path" (the menu of the entry): puts <paramref name="Path"/> on the clipboard.</param>
 /// <param name="IsHighlighted">Whether the entry is drawn as if the pointer were on it (the sample in Preferences only).</param>
 /// <param name="IsMissing">
 /// Whether the file is no longer on disk: the entry is drawn dimmed and its tooltip says why it cannot be opened, but it
@@ -27,7 +29,7 @@ namespace Signet.App.ViewModels;
 /// <param name="ToolTip">The tooltip of the entry: the full path, and the reason when <paramref name="IsMissing"/>.</param>
 public sealed record StartScreenRecentFile(
     string Name, string Folder, string Path, ICommand OpenCommand, ICommand RemoveCommand, ICommand OpenFolderCommand,
-    bool IsHighlighted = false, bool IsMissing = false, string ToolTip = "");
+    ICommand CopyPathCommand, bool IsHighlighted = false, bool IsMissing = false, string ToolTip = "");
 
 /// <summary>
 /// The start screen shown in the empty document area while no book is open: "Open…", "New book" and the recent files.
@@ -112,6 +114,13 @@ public sealed partial class StartScreenViewModel : ObservableObject, IDisposable
         return sample;
     }
 
+    /// <summary>
+    /// Puts the path of a recent file on the clipboard ("Copy Path") — attached by the view, which is the one with a
+    /// top level and therefore a clipboard. <see langword="null"/> (tests without a UI, the sample) = the command
+    /// does nothing.
+    /// </summary>
+    public Func<string, Task>? CopyPath { get; set; }
+
     /// <summary>Whether this is the sample start screen of the Preferences window.</summary>
     public bool IsSample { get; private init; }
 
@@ -177,6 +186,7 @@ public sealed partial class StartScreenViewModel : ObservableObject, IDisposable
                     new RelayCommand(() => _openRecent(path)),
                     new RelayCommand(() => _removeRecent?.Invoke(path), () => _removeRecent is not null),
                     new RelayCommand(() => ExternalOpen.TryShowInFolder(path, out _), () => !missing && !IsSample),
+                    new AsyncRelayCommand(() => CopyPath?.Invoke(path) ?? Task.CompletedTask),
                     IsSample && index == SampleHighlightedIndex,
                     missing,
                     missing ? path + Environment.NewLine + Strings.Get("RecentFiles_FileMissingTooltip") : path);
