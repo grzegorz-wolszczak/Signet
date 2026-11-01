@@ -43,6 +43,37 @@ public sealed class SpellCheckerTests : EnglishUiCultureTest
         sut.Suggest("helllo").Should().Contain("hello");
     }
 
+    /// <summary>
+    /// A dictionary in a code page encoding is read in that encoding: its <c>.aff</c> says which one in its
+    /// <c>SET</c> line, and most non-Unicode dictionaries (the Polish one among them) say <c>ISO8859-2</c>. .NET knows
+    /// such encodings only after the code page provider is registered (<see cref="LegacyEncodings"/>) — without it the
+    /// library fell back to Latin-1 and read every Polish letter wrong, so correct words were reported as misspelled
+    /// and the suggestions came out as mojibake ("ksi±¿ki"). Found in November 2026 with the Polish dictionary from
+    /// LibreOffice.
+    /// </summary>
+    [Fact]
+    public void A_dictionary_in_a_code_page_encoding_is_read_in_that_encoding()
+    {
+        // Arrange
+        using TempDir dicts = new();
+        using TempDir userDicts = new();
+        WriteIso88592Dictionary(dicts.Path, "pl_PL", "książki", "żółw", "dom");
+        SettingsStore settings = NewSettings(dicts, "pl_PL");
+
+        SpellChecker sut = new(settings, dicts.Path, userDicts.Path);
+
+        // Act & Assert
+        sut.Check("książki").Should().BeTrue();
+        sut.Check("żółw").Should().BeTrue();
+        sut.Check("dom").Should().BeTrue();
+
+        // Act & Assert
+        sut.Check("ksi±¿ki").Should().BeFalse("that is what the word looks like when read as Latin-1");
+
+        // Act & Assert
+        sut.Suggest("ksiazki").Should().Contain("książki");
+    }
+
     [Fact]
     public void Embedded_en_US_dictionary_detects_errors_and_suggests()
     {
@@ -500,4 +531,7 @@ public sealed class SpellCheckerTests : EnglishUiCultureTest
 
     private static void WriteDictionary(string directory, string name, params string[] words) =>
         DictionaryFixture.Write(directory, name, words);
+
+    private static void WriteIso88592Dictionary(string directory, string name, params string[] words) =>
+        DictionaryFixture.WriteIso88592(directory, name, words);
 }

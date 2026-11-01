@@ -16,8 +16,6 @@ namespace Signet.Core;
 /// </remarks>
 public static partial class HtmlEncodingResolver
 {
-    private static readonly bool CodePagesRegistered = RegisterCodePages();
-
     [GeneratedRegex("encoding\\s*=\\s*(?:\"|')([^\"']+)(?:\"|')")]
     private static partial Regex EncodingAttribute();
 
@@ -173,13 +171,13 @@ public static partial class HtmlEncodingResolver
 
     /// <summary>
     /// Tries to resolve an encoding name (after mapping <c>cp125x</c> -&gt; <c>windows-125x</c>),
-    /// registering <see cref="CodePagesEncodingProvider"/> if needed. Returns <c>false</c>
+    /// registering the code page encodings if needed (<see cref="LegacyEncodings"/>). Returns <c>false</c>
     /// for unknown names; <paramref name="encoding"/> is then UTF-8 without BOM.
     /// </summary>
     public static bool TryGetEncoding(string name, out Encoding encoding)
     {
         ArgumentNullException.ThrowIfNull(name);
-        EnsureCodePagesRegistered();
+        LegacyEncodings.Ensure();
         try
         {
             encoding = Encoding.GetEncoding(FixupCodePageMapping(name.Trim()));
@@ -190,20 +188,6 @@ public static partial class HtmlEncodingResolver
             encoding = Utility.Utf8NoBom;
             return false;
         }
-    }
-
-    private static void EnsureCodePagesRegistered()
-    {
-        // Forces one-time static initialization (thread-safe, completed before the
-        // first read of the field) — otherwise parallel tests could reach
-        // Encoding.GetEncoding before RegisterProvider has finished.
-        _ = CodePagesRegistered;
-    }
-
-    private static bool RegisterCodePages()
-    {
-        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-        return true;
     }
 
     private static byte[] StripBom(byte[] data)
