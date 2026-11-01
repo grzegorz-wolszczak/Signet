@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Signet.App.ViewModels"
         xmlns:loc="using:Signet.App.Resources"
+        xmlns:views="using:Signet.App.Views"
         x:Class="Signet.App.Views.SpellcheckEditorWindow"
         x:DataType="vm:SpellcheckEditorViewModel"
         Title="{loc:Loc SpellcheckEditorWindow_Title}"
@@ -35,8 +36,8 @@
 
     <Grid Grid.Row="1" ColumnDefinitions="*,220" ColumnSpacing="10">
 
-      <!-- Source and columns (Word, Count, Language, Misspelled?) are built in the code-behind. -->
-      <TreeDataGrid Grid.Column="0" x:Name="WordsGrid" Classes="gridLines" />
+      <!-- The table itself (its source, columns and look) is the view the preview of Preferences shows too. -->
+      <views:SpellcheckWordsView Grid.Column="0" x:Name="WordsView" />
 
       <StackPanel Grid.Column="1" Spacing="8">
         <Button Content="{loc:Loc SpellcheckEditorWindow_Ignore}" Command="{Binding IgnoreCommand}" HorizontalAlignment="Stretch" />
@@ -51,6 +52,10 @@
         <AutoCompleteBox Text="{Binding ChangeAllText, Mode=TwoWay}" ItemsSource="{Binding Suggestions}"
                           FilterMode="None" MinimumPrefixLength="0" HorizontalAlignment="Stretch" />
         <Button Content="{loc:Loc SpellcheckEditorWindow_ChangeAll}" Command="{Binding ChangeAllCommand}" HorizontalAlignment="Stretch" />
+        <!-- One occurrence only: available while the selected row is one place in the book (an occurrence under a
+             word, or a word that occurs once). -->
+        <Button Content="{loc:Loc SpellcheckEditorWindow_Replace}" Command="{Binding ReplaceOneCommand}" HorizontalAlignment="Stretch"
+                ToolTip.Tip="{loc:Loc SpellcheckEditorWindow_ReplaceTip}" />
       </StackPanel>
     </Grid>
 

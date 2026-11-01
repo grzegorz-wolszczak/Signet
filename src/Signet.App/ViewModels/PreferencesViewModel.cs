@@ -114,6 +114,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _warningFontSize = warnings.FontSize;
 
         _extendedHighlighting = _settings.CodeEditorExtendedHighlighting;
+        InvisibleCharacterAppearance invisibleFont = _settings.InvisibleCharacterAppearance;
+        _invisibleCharacterFontFamily = invisibleFont.FontFamily;
+        _invisibleCharacterFontSize = invisibleFont.FontSize;
+        _invisibleCharacterFontWeight = invisibleFont.FontWeight;
+        _showSoftHyphens = _settings.CodeEditorShowSoftHyphens;
+        _showNonBreakingSpaces = _settings.CodeEditorShowNonBreakingSpaces;
+        _showZeroWidth = _settings.CodeEditorShowZeroWidth;
         _bookBrowserFollowsActiveTab = _settings.BookBrowserFollowsActiveTab;
         _multilineTabs = _settings.CodeEditorMultilineTabs;
         _enableAltGr = _settings.EnableAltGr;
@@ -129,6 +136,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadContextMenuAppearance();
         LoadPanelStripeAppearance();
         LoadFindUsagesFonts();
+        LoadSpellcheckEditorFonts();
         LoadSearchEditorFonts();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
@@ -746,6 +754,24 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnExtendedHighlightingChanged(bool value) => _settings.CodeEditorExtendedHighlighting = value;
 
+    /// <summary>Code Editor marks the soft hyphens (U+00AD), which are otherwise drawn as nothing.</summary>
+    [ObservableProperty]
+    private bool _showSoftHyphens;
+
+    partial void OnShowSoftHyphensChanged(bool value) => _settings.CodeEditorShowSoftHyphens = value;
+
+    /// <summary>Code Editor marks the non-breaking spaces (U+00A0), which look exactly like a space.</summary>
+    [ObservableProperty]
+    private bool _showNonBreakingSpaces;
+
+    partial void OnShowNonBreakingSpacesChanged(bool value) => _settings.CodeEditorShowNonBreakingSpaces = value;
+
+    /// <summary>Code Editor marks the characters of zero width (U+200B–U+200D, U+2060, U+FEFF).</summary>
+    [ObservableProperty]
+    private bool _showZeroWidth;
+
+    partial void OnShowZeroWidthChanged(bool value) => _settings.CodeEditorShowZeroWidth = value;
+
     /// <summary>The Book Browser selects the file of the active tab (also after a tab in a window of its own got the focus).</summary>
     [ObservableProperty]
     private bool _bookBrowserFollowsActiveTab;
@@ -811,6 +837,55 @@ public sealed partial class PreferencesViewModel : ObservableObject
             });
     }
 
+    /// <summary>Font of the marks of the invisible characters; empty = the Code Editor font.</summary>
+    [ObservableProperty]
+    private string _invisibleCharacterFontFamily = string.Empty;
+
+    /// <summary>Font size (px) of the marks; 0 = the Code Editor size.</summary>
+    [ObservableProperty]
+    private int _invisibleCharacterFontSize;
+
+    /// <summary>Font weight of the marks; 0 = the Code Editor weight.</summary>
+    [ObservableProperty]
+    private int _invisibleCharacterFontWeight;
+
+    partial void OnInvisibleCharacterFontFamilyChanged(string value) => PersistInvisibleCharacterAppearance();
+
+    partial void OnInvisibleCharacterFontSizeChanged(int value) => PersistInvisibleCharacterAppearance();
+
+    partial void OnInvisibleCharacterFontWeightChanged(int value) => PersistInvisibleCharacterAppearance();
+
+    private void PersistInvisibleCharacterAppearance() =>
+        _settings.InvisibleCharacterAppearance = new InvisibleCharacterAppearance(
+            InvisibleCharacterFontFamily, InvisibleCharacterFontSize, InvisibleCharacterFontWeight);
+
+    /// <summary>"Choose…" — the font picker for the marks, starting from the font in use (or the editor font).</summary>
+    [RelayCommand]
+    private async Task ChooseInvisibleCharacterFont()
+    {
+        CodeEditorAppearance editor = _settings.CodeEditorAppearance;
+        string family = InvisibleCharacterFontFamily.Length > 0 ? InvisibleCharacterFontFamily : editor.FontFamily;
+        int size = InvisibleCharacterFontSize > 0 ? InvisibleCharacterFontSize : editor.FontSize;
+        await PickFontAsync(
+            new FontPickRequest(family, size, false, InvisibleCharacterFontWeight > 0 ? InvisibleCharacterFontWeight : CodeEditor.FontWeight),
+            new FontPickResult(InvisibleCharacterFontFamily, InvisibleCharacterFontSize, InvisibleCharacterFontWeight),
+            result =>
+            {
+                InvisibleCharacterFontFamily = result.Family;
+                InvisibleCharacterFontSize = result.Size;
+                InvisibleCharacterFontWeight = result.Weight;
+            });
+    }
+
+    /// <summary>"Default" — the marks use the editor font and size again.</summary>
+    [RelayCommand]
+    private void ResetInvisibleCharacterFont()
+    {
+        InvisibleCharacterFontFamily = string.Empty;
+        InvisibleCharacterFontSize = 0;
+        InvisibleCharacterFontWeight = 0;
+    }
+
     /// <summary>"Default" — the hint uses the editor font and size again.</summary>
     [RelayCommand]
     private void ResetOpenTagHintFont()
@@ -870,12 +945,20 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
         FindUsagesFitUsageColumn = _settings.FindUsagesFitUsageColumn;
         FindUsagesRowSpacing = _settings.FindUsagesRowSpacing;
+        InvisibleCharacterAppearance invisibleDefaults = _settings.InvisibleCharacterAppearance;
+        InvisibleCharacterFontFamily = invisibleDefaults.FontFamily;
+        InvisibleCharacterFontSize = invisibleDefaults.FontSize;
+        InvisibleCharacterFontWeight = invisibleDefaults.FontWeight;
+        ShowSoftHyphens = _settings.CodeEditorShowSoftHyphens;
+        ShowNonBreakingSpaces = _settings.CodeEditorShowNonBreakingSpaces;
+        ShowZeroWidth = _settings.CodeEditorShowZeroWidth;
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
         LoadToolbarAppearance();
         LoadContextMenuAppearance();
         LoadPanelStripeAppearance();
         LoadFindUsagesFonts();
+        LoadSpellcheckEditorFonts();
         LoadSearchEditorFonts();
         LoadLineNumbersFont();
         LoadDocumentTabFont();

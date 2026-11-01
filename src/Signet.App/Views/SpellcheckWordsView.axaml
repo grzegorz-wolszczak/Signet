@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             x:Class="Signet.App.Views.SpellcheckWordsView"
+             x:DataType="vm:SpellcheckEditorViewModel">
+
+  <!-- The words table of the Spelling Editor: the source, the columns and the look are built in the code-behind, so
+       that the window and the preview of Preferences › Appearance › Spelling Editor show exactly the same table. -->
+  <TreeDataGrid x:Name="WordsGrid" Classes="gridLines" />
+</UserControl>

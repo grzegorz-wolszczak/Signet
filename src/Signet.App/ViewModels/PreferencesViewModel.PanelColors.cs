@@ -48,6 +48,10 @@ public sealed partial class PreferencesViewModel
     /// <summary>Find Usages Window: the background of the "Context" column.</summary>
     public ColorKeyEditorViewModel FindUsagesContextBackgroundColor => PanelColor(ThemeKeys.UiFindUsagesContextBackground);
 
+    /// <summary>Spelling Editor: the background of the column headers.</summary>
+    public ColorKeyEditorViewModel SpellcheckEditorHeaderBackgroundColor =>
+        PanelColor(ThemeKeys.UiSpellcheckEditorHeaderBackground);
+
     /// <summary>Saved Searches: the background of the tree.</summary>
     public ColorKeyEditorViewModel SearchEditorBackgroundColor => PanelColor(ThemeKeys.UiSearchEditorBackground);
 

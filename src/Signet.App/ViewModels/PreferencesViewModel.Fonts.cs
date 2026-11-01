@@ -45,6 +45,9 @@ public sealed partial class PreferencesViewModel
     /// <summary>Appearance › Find Usages Window › Fonts: the column headers, the "Context" column and the other cells.</summary>
     public FontPageViewModel FindUsagesFonts { get; private set; } = null!;
 
+    /// <summary>Appearance › Spelling Editor › Fonts: the column headers, the "Word" column and the other cells.</summary>
+    public FontPageViewModel SpellcheckEditorFonts { get; private set; } = null!;
+
     /// <summary>
     /// Appearance › Saved Searches › Fonts: the "Name" column header, and the tree rows / Details preview / Name field.
     /// </summary>
@@ -149,6 +152,22 @@ public sealed partial class PreferencesViewModel
                     placeholder: () => CodeEditor.FontFamily,
                     previewForeground: () => AppTheme.Current.Foreground(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
                     previewBackground: () => AppTheme.Current.Background(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
+                    sizeHint: Strings.Get("PreferencesWindow_FontSizeZeroAsEditor")),
+                new FontSettingViewModel(
+                    "InvisibleCharacters",
+                    Strings.Get("PreferencesWindow_InvisibleCharactersFont"),
+                    Strings.Get("FontPreview_InvisibleCharacters"),
+                    (() => InvisibleCharacterFontFamily, v => InvisibleCharacterFontFamily = v),
+                    (() => InvisibleCharacterFontSize, v => InvisibleCharacterFontSize = v, 0, InvisibleCharacterAppearance.FontSizeMax),
+                    (() => InvisibleCharacterFontFamily.Length > 0 ? InvisibleCharacterFontFamily : CodeEditor.FontFamily,
+                     () => InvisibleCharacterFontSize > 0 ? InvisibleCharacterFontSize : CodeEditor.FontSize),
+                    ResetInvisibleCharacterFont,
+                    ChooseInvisibleCharacterFontCommand,
+                    weight: (() => InvisibleCharacterFontWeight, v => InvisibleCharacterFontWeight = v),
+                    effectiveWeight: () => InvisibleCharacterFontWeight > 0 ? InvisibleCharacterFontWeight : CodeEditor.FontWeight,
+                    placeholder: () => CodeEditor.FontFamily,
+                    previewForeground: () => AppTheme.Current.Foreground(Signet.Core.Themes.ThemeKeys.EditorInvisibleCharacters)?.ToString(),
+                    previewBackground: () => AppTheme.Current.Background(Signet.Core.Themes.ThemeKeys.EditorInvisibleCharacters)?.ToString(),
                     sizeHint: Strings.Get("PreferencesWindow_FontSizeZeroAsEditor")),
                 DocumentTabFontRow(),
             },
@@ -267,6 +286,45 @@ public sealed partial class PreferencesViewModel
                 },
                 ChooseFindUsagesCellsFontCommand,
                 () => FindUsagesCellsFontWeight, v => FindUsagesCellsFontWeight = v),
+        });
+        SpellcheckEditorFonts = new FontPageViewModel(new[]
+        {
+            InterfaceFontRow(
+                "SpellcheckEditorHeader", "PreferencesWindow_SpellcheckEditorHeaderFont", "FontPreview_SpellcheckEditorHeader",
+                () => SpellcheckEditorHeaderFontFamily, v => SpellcheckEditorHeaderFontFamily = v,
+                () => SpellcheckEditorHeaderFontSize, v => SpellcheckEditorHeaderFontSize = v,
+                () =>
+                {
+                    SpellcheckEditorHeaderFontFamily = string.Empty;
+                    SpellcheckEditorHeaderFontSize = 0;
+                    SpellcheckEditorHeaderFontWeight = 0;
+                },
+                ChooseSpellcheckEditorHeaderFontCommand,
+                () => SpellcheckEditorHeaderFontWeight, v => SpellcheckEditorHeaderFontWeight = v),
+            InterfaceFontRow(
+                "SpellcheckEditorWord", "PreferencesWindow_SpellcheckEditorWordFont", "FontPreview_SpellcheckEditorWord",
+                () => SpellcheckEditorWordFontFamily, v => SpellcheckEditorWordFontFamily = v,
+                () => SpellcheckEditorWordFontSize, v => SpellcheckEditorWordFontSize = v,
+                () =>
+                {
+                    SpellcheckEditorWordFontFamily = string.Empty;
+                    SpellcheckEditorWordFontSize = 0;
+                    SpellcheckEditorWordFontWeight = 0;
+                },
+                ChooseSpellcheckEditorWordFontCommand,
+                () => SpellcheckEditorWordFontWeight, v => SpellcheckEditorWordFontWeight = v),
+            InterfaceFontRow(
+                "SpellcheckEditorCells", "PreferencesWindow_SpellcheckEditorCellsFont", "FontPreview_SpellcheckEditorCells",
+                () => SpellcheckEditorCellsFontFamily, v => SpellcheckEditorCellsFontFamily = v,
+                () => SpellcheckEditorCellsFontSize, v => SpellcheckEditorCellsFontSize = v,
+                () =>
+                {
+                    SpellcheckEditorCellsFontFamily = string.Empty;
+                    SpellcheckEditorCellsFontSize = 0;
+                    SpellcheckEditorCellsFontWeight = 0;
+                },
+                ChooseSpellcheckEditorCellsFontCommand,
+                () => SpellcheckEditorCellsFontWeight, v => SpellcheckEditorCellsFontWeight = v),
         });
         SearchEditorFonts = new FontPageViewModel(new[]
         {

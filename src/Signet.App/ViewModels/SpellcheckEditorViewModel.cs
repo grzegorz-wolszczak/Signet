@@ -16,21 +16,77 @@ namespace Signet.App.ViewModels;
 /// spelling status as text).
 /// </summary>
 public sealed record SpellcheckWordRow(
-    string Word, string LangCode, string LanguageName, int Count, bool Misspelled, string BookPath, int Position)
+    string Word, string LangCode, string LanguageName, int Count, bool Misspelled, string BookPath, int Position,
+    int Line = 0, int OccurrenceNumber = 0)
 {
-    /// <summary>Text of the "Misspelled?" column (<c>"Yes"</c>/<c>"No"</c>).</summary>
-    public string MisspelledDisplay => Strings.Get(Misspelled ? "Common_Yes" : "Common_No");
+    /// <summary>
+    /// The occurrences of the word under its row — one per place it stands in the book, so that each can be gone to
+    /// and replaced on its own. Empty for a word that occurs once (its own row is that occurrence) and for the
+    /// occurrence rows themselves.
+    /// </summary>
+    public IReadOnlyList<SpellcheckWordRow> Occurrences { get; private init; } = Array.Empty<SpellcheckWordRow>();
 
-    /// <summary>Builds the display row from the raw <see cref="SpellcheckWord"/>.</summary>
-    public static SpellcheckWordRow From(SpellcheckWord word) => new(
-        word.Text,
-        word.Lang,
-        Signet.Core.Semantics.Language.GetLanguageName(word.Lang, word.Lang),
-        word.Count,
-        word.Misspelled,
-        word.BookPath,
-        word.Position);
+    /// <summary>Whether this row is one occurrence of a word rather than the word itself.</summary>
+    public bool IsOccurrence => OccurrenceNumber > 0;
+
+    /// <summary>
+    /// The "Word" column: the word itself, or — for an occurrence — the file and the line it stands in.
+    /// </summary>
+    public string Display => IsOccurrence
+        ? string.Create(System.Globalization.CultureInfo.CurrentCulture, $"{BookPath} : {Line}")
+        : Word;
+
+    /// <summary>The "Count" column: how many occurrences the word has, or which occurrence this row is.</summary>
+    public string CountDisplay => (IsOccurrence ? OccurrenceNumber : Count).ToString(System.Globalization.CultureInfo.CurrentCulture);
+
+    /// <summary>The "Language" column — empty on an occurrence row, where it would only repeat the word's own.</summary>
+    public string LanguageDisplay => IsOccurrence ? string.Empty : LanguageName;
+
+    /// <summary>Text of the "Misspelled?" column (<c>"Yes"</c>/<c>"No"</c>); empty on an occurrence row.</summary>
+    public string MisspelledDisplay => IsOccurrence
+        ? string.Empty
+        : Strings.Get(Misspelled ? "Common_Yes" : "Common_No");
+
+    /// <summary>
+    /// Whether this row is one place in the book: an occurrence, or a word that occurs once. Only such a row can be
+    /// gone to and replaced by itself ("Replace").
+    /// </summary>
+    public bool IsSinglePlace => IsOccurrence || Count == 1;
+
+    /// <summary>Builds the display row (with its occurrences) from the raw <see cref="SpellcheckWord"/>.</summary>
+    public static SpellcheckWordRow From(SpellcheckWord word)
+    {
+        string languageName = Signet.Core.Semantics.Language.GetLanguageName(word.Lang, word.Lang);
+        SpellcheckWordRow row = new(
+            word.Text, word.Lang, languageName, word.Count, word.Misspelled, word.BookPath, word.Position);
+
+        // A word that occurs once is its own occurrence: it needs no expander and no child that repeats it.
+        if (word.Count <= 1)
+        {
+            return row;
+        }
+
+        List<SpellcheckWordRow> occurrences = new(word.Occurrences.Count);
+        for (int i = 0; i < word.Occurrences.Count; i++)
+        {
+            SpellcheckOccurrence occurrence = word.Occurrences[i];
+            occurrences.Add(new SpellcheckWordRow(
+                word.Text, word.Lang, languageName, word.Count, word.Misspelled,
+                occurrence.BookPath, occurrence.Position, occurrence.Line, OccurrenceNumber: i + 1));
+        }
+
+        return row with { Occurrences = occurrences };
+    }
 }
+
+/// <summary>One occurrence to replace: which word (and language) stands where, and what takes its place.</summary>
+/// <param name="Word">The word as it stands in the book.</param>
+/// <param name="Lang">The language the word was found with.</param>
+/// <param name="BookPath">The file the occurrence is in.</param>
+/// <param name="Position">The 0-based offset of the occurrence in that file.</param>
+/// <param name="NewText">What takes its place.</param>
+public readonly record struct SpellcheckOccurrenceReplacement(
+    string Word, string Lang, string BookPath, int Position, string NewText);
 
 /// <summary>
 /// View model of the "Spellcheck Editor" dialog: a table of the unique words of the whole book
@@ -48,7 +104,7 @@ public sealed record SpellcheckWordRow(
 /// file exists, so that "Add to Dictionary" works without creating the dictionary first
 /// (consistent with "Add To Default Dictionary" in the Code Editor context menu).
 /// </remarks>
-public sealed class SpellcheckEditorViewModel : ViewModelBase
+public sealed class SpellcheckEditorViewModel : ViewModelBase, IDisposable
 {
     private readonly SpellChecker _spellChecker;
     private readonly SettingsStore _settings;
@@ -73,16 +129,37 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
     {
         _spellChecker = spellChecker ?? throw new ArgumentNullException(nameof(spellChecker));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _settings.SettingChanged += OnSettingChanged;
 
         RefreshCommand = new RelayCommand(() => Refresh(_book));
         IgnoreCommand = new RelayCommand(Ignore);
         AddCommand = new RelayCommand(Add);
         ChangeAllCommand = new RelayCommand(ChangeAll, () => !IsBookOperationBusy);
+        ReplaceOneCommand = new RelayCommand(ReplaceOne, () => !IsBookOperationBusy && SingleSelectedRow is { IsSinglePlace: true });
         ExportCsvCommand = new RelayCommand(() => ExportCsvRequested?.Invoke(this, EventArgs.Empty));
     }
 
     /// <summary>Raised by "Export CSV…" — the view asks for the file and writes <see cref="BuildCsv"/> to it.</summary>
     public event EventHandler? ExportCsvRequested;
+
+    /// <summary>
+    /// The fonts of the window (Preferences › Appearance › Spelling Editor › Fonts): the column headers, the "Word"
+    /// column and the other cells.
+    /// </summary>
+    public SpellcheckEditorAppearance Appearance => _settings.SpellcheckEditorAppearance;
+
+    /// <summary>Raised after <see cref="Appearance"/> changed — the window applies the fonts again.</summary>
+    public event EventHandler? AppearanceChanged;
+
+    private void OnSettingChanged(object? sender, SettingChangedEventArgs e)
+    {
+        if (SettingChangeKeys.Is(e, SettingChangeKeys.SpellcheckEditorAppearance)
+            || SettingChangeKeys.Is(e, SettingChangeKeys.AppearanceSettingsCleared))
+        {
+            OnPropertyChanged(nameof(Appearance));
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     private bool _isBookOperationBusy;
 
@@ -99,6 +176,7 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
             if (SetProperty(ref _isBookOperationBusy, value))
             {
                 ChangeAllCommand.NotifyCanExecuteChanged();
+                ReplaceOneCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -202,6 +280,12 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
     /// <summary>Raised by "Change All to..." — the actual replacement needs access to the tabs/book from <c>MainWindowViewModel</c>.</summary>
     public event Action<string, string, string>? ChangeAllRequested;
 
+    /// <summary>
+    /// Raised by "Replace" — one occurrence (word, bookpath, offset, the new text). Like
+    /// <see cref="ChangeAllRequested"/>, the replacement itself belongs to <c>MainWindowViewModel</c>.
+    /// </summary>
+    public event Action<SpellcheckOccurrenceReplacement>? ReplaceOneRequested;
+
     /// <summary>Raised on a row double-click — navigation to the first occurrence (book path, offset).</summary>
     public event Action<string, int>? NavigationRequested;
 
@@ -214,6 +298,9 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
     /// so the next word moves under it (the last row when the table got shorter).
     /// </summary>
     public event EventHandler<int>? SelectRowRequested;
+
+    /// <summary>Stops following the look settings (the sample of the Preferences preview, when the window closes).</summary>
+    public void Dispose() => _settings.SettingChanged -= OnSettingChanged;
 
     /// <summary>Visible (filtered) table rows.</summary>
     public ObservableCollection<SpellcheckWordRow> Words { get; } = new();
@@ -235,6 +322,12 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
 
     /// <summary>Replaces the single selected word with <see cref="ChangeAllText"/> in all files.</summary>
     public IRelayCommand ChangeAllCommand { get; }
+
+    /// <summary>
+    /// Replaces one occurrence with <see cref="ChangeAllText"/>: the selected occurrence row, or a word that occurs
+    /// only once. Available only then — with a whole word selected there is nothing to tell which place is meant.
+    /// </summary>
+    public IRelayCommand ReplaceOneCommand { get; }
 
     /// <summary>Filter text (shows only words containing this text).</summary>
     public string FilterText
@@ -287,7 +380,13 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
     public SpellcheckWordRow? SingleSelectedRow
     {
         get => _singleSelectedRow;
-        private set => SetProperty(ref _singleSelectedRow, value);
+        private set
+        {
+            if (SetProperty(ref _singleSelectedRow, value))
+            {
+                ReplaceOneCommand.NotifyCanExecuteChanged();
+            }
+        }
     }
 
     /// <summary>Sets the currently selected rows (called from the view when the table selection changes).</summary>
@@ -431,6 +530,44 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
         Refresh(_book);
     }
 
+    // The new text of a replacement, or the message saying why there is none.
+    private bool TryReadReplacement(out string newWord)
+    {
+        newWord = _changeAllText.Trim();
+        if (newWord.Length == 0)
+        {
+            Message = Strings.Get("Spellcheck_EnterReplacement");
+            return false;
+        }
+
+        if (newWord.Contains('<') || newWord.Contains('>') || newWord.Contains('&'))
+        {
+            Message = Strings.Get("Spellcheck_InvalidReplacement");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ReplaceOne()
+    {
+        if (SingleSelectedRow is not { IsSinglePlace: true } row)
+        {
+            Message = Strings.Get("Spellcheck_SelectOneOccurrence");
+            return;
+        }
+
+        if (!TryReadReplacement(out string newWord))
+        {
+            return;
+        }
+
+        // The host replaces the occurrence and refreshes the table synchronously; without a refresh nothing is reselected.
+        _reselectIndex = FirstSelectedIndex();
+        ReplaceOneRequested?.Invoke(new SpellcheckOccurrenceReplacement(row.Word, row.LangCode, row.BookPath, row.Position, newWord));
+        _reselectIndex = -1;
+    }
+
     private void ChangeAll()
     {
         if (SingleSelectedRow is not { } row)
@@ -439,16 +576,8 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
             return;
         }
 
-        string newWord = _changeAllText.Trim();
-        if (newWord.Length == 0)
+        if (!TryReadReplacement(out string newWord))
         {
-            Message = Strings.Get("Spellcheck_EnterReplacement");
-            return;
-        }
-
-        if (newWord.Contains('<') || newWord.Contains('>') || newWord.Contains('&'))
-        {
-            Message = Strings.Get("Spellcheck_InvalidReplacement");
             return;
         }
 

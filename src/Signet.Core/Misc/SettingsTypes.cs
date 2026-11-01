@@ -222,6 +222,32 @@ public readonly record struct TooltipFont(string FontFamily, int FontSize, int F
 }
 
 /// <summary>
+/// Font of the marks Code Editor draws in place of the characters that have no shape of their own (the soft hyphen,
+/// the non-breaking space, the characters of zero width). Their colors come from the color scheme
+/// (<c>editor.invisibleCharacters</c>).
+/// </summary>
+/// <param name="FontFamily">Font family; empty = the editor font.</param>
+/// <param name="FontSize">Font size (px); 0 = the editor size.</param>
+/// <param name="FontWeight">Weight of the font (<see cref="FontWeightScale"/>); 0 = the editor weight.</param>
+public readonly record struct InvisibleCharacterAppearance(string FontFamily, int FontSize, int FontWeight = 0)
+{
+    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: the editor font.</summary>
+    public static InvisibleCharacterAppearance Default => new(string.Empty, 0);
+
+    /// <summary>A copy with the size clamped (0 stays "as the editor").</summary>
+    public InvisibleCharacterAppearance Normalized() => new(
+        FontFamily?.Trim() ?? string.Empty,
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FontWeight));
+}
+
+/// <summary>
 /// Font of the Code Editor opening tag hint (the tooltip shown over a closing tag); its colors come from the theme
 /// (<c>hints.openTag</c>).
 /// </summary>
@@ -672,6 +698,48 @@ public readonly record struct StartScreenAppearance(
 /// The fonts of the "Find Usages" panel: the column headers, the "Context" column (e.g. a fixed-width font for the code)
 /// and the rest of the panel (the other cells and the heading). An empty typeface and a size of 0 stay "as the interface".
 /// </summary>
+/// <summary>
+/// The fonts of the "Spellcheck Editor" window: the column headers, the "Word" column (the one the eye goes to) and
+/// the other cells. The background of the column headers is a color of the theme
+/// (<c>ui.spellcheckEditor.header.background</c>), not a setting.
+/// </summary>
+/// <param name="HeaderFontFamily">Typeface of the column headers; empty = the interface font.</param>
+/// <param name="HeaderFontSize">Size (px) of the column headers; 0 = the interface size.</param>
+/// <param name="WordFontFamily">Typeface of the "Word" column; empty = the interface font.</param>
+/// <param name="WordFontSize">Size (px) of the "Word" column; 0 = the interface size.</param>
+/// <param name="CellsFontFamily">Typeface of the other cells; empty = the interface font.</param>
+/// <param name="CellsFontSize">Size (px) of the other cells; 0 = the interface size.</param>
+/// <param name="HeaderFontWeight">Weight of the column headers (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="WordFontWeight">Weight of the "Word" column (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="CellsFontWeight">Weight of the other cells (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct SpellcheckEditorAppearance(
+    string HeaderFontFamily, int HeaderFontSize, string WordFontFamily, int WordFontSize,
+    string CellsFontFamily, int CellsFontSize, int HeaderFontWeight = 0, int WordFontWeight = 0, int CellsFontWeight = 0)
+{
+    /// <summary>Lower bound of an explicit font size.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit font size.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: the interface font everywhere.</summary>
+    public static SpellcheckEditorAppearance Default => new(string.Empty, 0, string.Empty, 0, string.Empty, 0);
+
+    /// <summary>A copy with the sizes clamped (a font size of 0 stays "as the interface") and the typefaces trimmed.</summary>
+    public SpellcheckEditorAppearance Normalized() => new(
+        HeaderFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(HeaderFontSize),
+        WordFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(WordFontSize),
+        CellsFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(CellsFontSize),
+        FontWeightScale.Normalize(HeaderFontWeight),
+        FontWeightScale.Normalize(WordFontWeight),
+        FontWeightScale.Normalize(CellsFontWeight));
+
+    private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
+}
+
 /// <param name="HeaderFontFamily">Typeface of the column headers.</param>
 /// <param name="HeaderFontSize">Size (px) of the column headers.</param>
 /// <param name="ContextFontFamily">Typeface of the "Context" column.</param>

@@ -101,6 +101,31 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     /// </summary>
     public bool ExtendedHighlighting => _settings.CodeEditorExtendedHighlighting;
 
+    /// <summary>Whether Code Editor marks the soft hyphens (<see cref="SettingsStore.CodeEditorShowSoftHyphens"/>).</summary>
+    public bool ShowSoftHyphens => _settings.CodeEditorShowSoftHyphens;
+
+    /// <summary>Whether Code Editor marks the non-breaking spaces (<see cref="SettingsStore.CodeEditorShowNonBreakingSpaces"/>).</summary>
+    public bool ShowNonBreakingSpaces => _settings.CodeEditorShowNonBreakingSpaces;
+
+    /// <summary>Whether Code Editor marks the characters of zero width (<see cref="SettingsStore.CodeEditorShowZeroWidth"/>).</summary>
+    public bool ShowZeroWidth => _settings.CodeEditorShowZeroWidth;
+
+    /// <summary>The font of the marks of the invisible characters (<see cref="SettingsStore.InvisibleCharacterAppearance"/>).</summary>
+    public InvisibleCharacterAppearance InvisibleCharacterFont => _settings.InvisibleCharacterAppearance;
+
+    /// <summary>Raised after one of the three settings above changed — the view redraws the marks.</summary>
+    public event Action? InvisibleCharactersChanged;
+
+    /// <summary>Called after a setting of the invisible characters changed (Preferences) — tells the view to redraw.</summary>
+    public void NotifyInvisibleCharactersSettingChanged()
+    {
+        OnPropertyChanged(nameof(ShowSoftHyphens));
+        OnPropertyChanged(nameof(ShowNonBreakingSpaces));
+        OnPropertyChanged(nameof(ShowZeroWidth));
+        OnPropertyChanged(nameof(InvisibleCharacterFont));
+        InvisibleCharactersChanged?.Invoke();
+    }
+
     /// <summary>
     /// Checks whether a book path exists in the book — set by <c>TabManager</c> (the tab
     /// does not know the book). <c>null</c> — link targets are not checked.
@@ -109,6 +134,27 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
 
     /// <summary>Book files for link completion — set by <c>TabManager</c>.</summary>
     public Func<IReadOnlyList<LinkCompletionFile>>? BookFiles { get; set; }
+
+    /// <summary>
+    /// The language of the book (<c>dc:language</c> of the OPF) — set by <c>TabManager</c>, since the tab does not
+    /// know the book. It is the language of every word that no <c>lang</c>/<c>xml:lang</c> in the file gives one of
+    /// its own, exactly as in the Spelling editor; <see langword="null"/> or empty falls back to the default metadata
+    /// language of the settings.
+    /// </summary>
+    public Func<string>? BookLanguage
+    {
+        get => _bookLanguage;
+
+        // Set after the constructor (an object initializer in TabManager), which has already checked the spelling of
+        // the file without knowing the language: check it again.
+        set
+        {
+            _bookLanguage = value;
+            RefreshSpellcheck();
+        }
+    }
+
+    private Func<string>? _bookLanguage;
 
     /// <summary>
     /// Text of the book document with the given book path (from the open tab, if any) — for <c>#id</c>
@@ -1121,12 +1167,18 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     private void RefreshSpellcheck()
     {
         IReadOnlyList<HtmlWord> next = SupportsSpellcheck && _settings.SpellCheck
-            ? HtmlSpellCheck.GetMisspelledWords(_spellChecker, _settings, _model.Text)
+            ? HtmlSpellCheck.GetMisspelledWords(_spellChecker, _settings, _model.Text, DefaultSpellcheckLanguage())
             : Array.Empty<HtmlWord>();
 
         _misspelledWords = next;
         MisspelledWordsChanged?.Invoke();
     }
+
+    // The language the words of this file are checked in while nothing in the file says otherwise: the book's own
+    // (found in October 2026 — a Polish book whose files carry no lang attribute had every word underlined, because
+    // the fallback was the default metadata language of the settings, "en").
+    private string DefaultSpellcheckLanguage() =>
+        _bookLanguage?.Invoke() is { Length: > 0 } language ? language.Replace('_', '-') : string.Empty;
 
     /// <summary>
     /// Called after the global "Highlight Misspelled Words" setting changes — recomputes

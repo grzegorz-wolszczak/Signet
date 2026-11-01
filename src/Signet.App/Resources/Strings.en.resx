@@ -1835,6 +1835,15 @@ Do you want to save the changes?</value>
   <data name="SpellcheckEditorWindow_ChangeAll" xml:space="preserve">
     <value>Change All</value>
   </data>
+  <data name="SpellcheckEditorWindow_Replace" xml:space="preserve">
+    <value>Replace</value>
+  </data>
+  <data name="SpellcheckEditorWindow_ReplaceTip" xml:space="preserve">
+    <value>Replaces the selected occurrence only (expand a word to choose one)</value>
+  </data>
+  <data name="Spellcheck_SelectOneOccurrence" xml:space="preserve">
+    <value>Select one occurrence of a word</value>
+  </data>
   <data name="TableOfContentsView_Edit" xml:space="preserve">
     <value>Edit…</value>
   </data>
@@ -2161,6 +2170,24 @@ Do you want to save the changes?</value>
   </data>
   <data name="PreferencesWindow_MultilineTabs" xml:space="preserve">
     <value>Lay out the tabs that do not fit in several rows (instead of scrolling them with arrows)</value>
+  </data>
+  <data name="PreferencesWindow_InvisibleCharacters" xml:space="preserve">
+    <value>Show invisible characters:</value>
+  </data>
+  <data name="PreferencesWindow_ShowSoftHyphens" xml:space="preserve">
+    <value>soft hyphens (U+00AD) as ¬</value>
+  </data>
+  <data name="PreferencesWindow_ShowNonBreakingSpaces" xml:space="preserve">
+    <value>non-breaking spaces (U+00A0) as °</value>
+  </data>
+  <data name="PreferencesWindow_ShowZeroWidth" xml:space="preserve">
+    <value>zero-width characters (U+200B–U+200D, U+2060, U+FEFF) as ·</value>
+  </data>
+  <data name="PreferencesWindow_InvisibleCharactersFont" xml:space="preserve">
+    <value>Invisible characters</value>
+  </data>
+  <data name="FontPreview_InvisibleCharacters" xml:space="preserve">
+    <value>Light­house, 5 km</value>
   </data>
   <data name="PreferencesWindow_BookBrowserFollowsTab" xml:space="preserve">
     <value>Select the file of the active tab in the Book Browser</value>
@@ -5271,6 +5298,33 @@ It does not change the files, their names or their IDs.</value>
   <data name="PreferencesWindow_FindUsagesWindow" xml:space="preserve">
     <value>Find Usages Window</value>
   </data>
+  <data name="PreferencesWindow_SpellcheckEditorWindow" xml:space="preserve">
+    <value>Spelling Editor</value>
+  </data>
+  <data name="PreferencesWindow_SpellcheckEditorHeaderFont" xml:space="preserve">
+    <value>Column headers</value>
+  </data>
+  <data name="PreferencesWindow_SpellcheckEditorWordFont" xml:space="preserve">
+    <value>"Word" column</value>
+  </data>
+  <data name="PreferencesWindow_SpellcheckEditorCellsFont" xml:space="preserve">
+    <value>Other cells</value>
+  </data>
+  <data name="FontPreview_SpellcheckEditorHeader" xml:space="preserve">
+    <value>Word   Count   Language   Misspelled?</value>
+  </data>
+  <data name="FontPreview_SpellcheckEditorWord" xml:space="preserve">
+    <value>lighthouse</value>
+  </data>
+  <data name="FontPreview_SpellcheckEditorCells" xml:space="preserve">
+    <value>47   Polish   Yes</value>
+  </data>
+  <data name="PreferencesWindow_SpellcheckEditorColors" xml:space="preserve">
+    <value>Colors</value>
+  </data>
+  <data name="PreferencesWindow_SpellcheckEditorHeaderBackground" xml:space="preserve">
+    <value>Background of the column headers:</value>
+  </data>
   <data name="PreferencesWindow_FindUsagesColumns" xml:space="preserve">
     <value>Columns</value>
   </data>
@@ -6687,6 +6741,12 @@ Close the tab</value>
   </data>
   <data name="ThemeKey_editor_tagPair" xml:space="preserve">
     <value>Tag pair</value>
+  </data>
+  <data name="ThemeKey_editor_invisibleCharacters" xml:space="preserve">
+    <value>Invisible characters</value>
+  </data>
+  <data name="ThemeKey_ui_spellcheckEditor_header_background" xml:space="preserve">
+    <value>Spelling Editor: background of the column headers</value>
   </data>
   <data name="ThemeKey_search_match" xml:space="preserve">
     <value>Search match</value>

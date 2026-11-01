@@ -14,6 +14,9 @@ public static class SettingChangeKeys
     /// <summary>The look of the Preview panel's own toolbar (<see cref="SettingsStore.PreviewToolbarAppearance"/>).</summary>
     public const string PreviewToolbarAppearance = "preview_toolbar_appearance";
 
+    /// <summary>The fonts of the "Spellcheck Editor" window (<see cref="SettingsStore.SpellcheckEditorAppearance"/>).</summary>
+    public const string SpellcheckEditorAppearance = "spellcheck_editor_appearance";
+
     /// <summary>The fonts of the context menus (<see cref="SettingsStore.ContextMenuAppearance"/>).</summary>
     public const string ContextMenuAppearance = "context_menu_appearance";
 

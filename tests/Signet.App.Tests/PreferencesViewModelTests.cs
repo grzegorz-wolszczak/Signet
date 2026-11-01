@@ -1829,7 +1829,8 @@ public sealed class PreferencesViewModelTests : IDisposable
         FontSettingViewModel row = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "LineNumbers");
 
         // Act & Assert
-        vm.CodeEditorFonts.Fonts.Select(f => f.Key).Should().Equal("CodeEditorText", "LineNumbers", "OpenTagHint", "DocumentTabs");
+        vm.CodeEditorFonts.Fonts.Select(f => f.Key).Should().Equal(
+            "CodeEditorText", "LineNumbers", "OpenTagHint", "InvisibleCharacters", "DocumentTabs");
         row.HasInheritance.Should().BeTrue();
         row.InheritFromParent.Should().BeTrue("by default the numbers have the font of the editor");
         row.EffectiveFamily.Should().Be(vm.CodeEditor.FontFamily);

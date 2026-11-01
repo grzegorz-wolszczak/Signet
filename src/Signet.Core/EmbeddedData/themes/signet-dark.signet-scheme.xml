@@ -12,6 +12,7 @@
     <attribute key="editor.currentLineNumber" foreground="#C6C6C6" />
     <attribute key="editor.selection" background="#264F78" />
     <attribute key="editor.tagPair" background="#40A0A0A0" />
+    <attribute key="editor.invisibleCharacters" foreground="#B0B0B0" background="#3A3D41" />
     <attribute key="search.match" background="#623315" />
     <attribute key="search.marked" background="#304D9BFF" effect="box" effect-color="#C04D9BFF" />
     <attribute key="errors.wellFormed" effect="wave" effect-color="#F14C4C" />

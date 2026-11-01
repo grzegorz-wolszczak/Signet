@@ -8,17 +8,34 @@ using Signet.Core.Resources;
 
 namespace Signet.Core.Spellcheck;
 
+/// <summary>One occurrence of a word in the book — where it is, for "go to" navigation and for replacing it alone.</summary>
+/// <param name="BookPath">The bookpath of the file it is in.</param>
+/// <param name="Position">Its 0-based offset in that file.</param>
+/// <param name="Line">The 1-based line of that offset — what the list of occurrences shows beside the file.</param>
+public readonly record struct SpellcheckOccurrence(string BookPath, int Position, int Line);
+
 /// <summary>
-/// A single unique word from the "Spellcheck Editor" dialog table — the number of occurrences in the whole book,
-/// the spelling status and the position of the first occurrence (for "go to" navigation).
+/// A single unique word from the "Spellcheck Editor" dialog table — every occurrence of it in the book and the
+/// spelling status.
 /// </summary>
 /// <param name="Text">The word text.</param>
 /// <param name="Lang">The language code the word was found with (see <see cref="HtmlWord.Lang"/>).</param>
-/// <param name="Count">The number of occurrences of this (Text, Lang) pair across all (X)HTML files of the book.</param>
 /// <param name="Misspelled">Whether the word is misspelled.</param>
-/// <param name="BookPath">The bookpath of the file with the first occurrence (for navigation).</param>
-/// <param name="Position">The 0-based offset of the first occurrence in <paramref name="BookPath"/>.</param>
-public readonly record struct SpellcheckWord(string Text, string Lang, int Count, bool Misspelled, string BookPath, int Position);
+/// <param name="Occurrences">
+/// Every occurrence of this (Text, Lang) pair across all (X)HTML files of the book, in reading order.
+/// </param>
+public readonly record struct SpellcheckWord(
+    string Text, string Lang, bool Misspelled, IReadOnlyList<SpellcheckOccurrence> Occurrences)
+{
+    /// <summary>The number of occurrences in the whole book.</summary>
+    public int Count => Occurrences.Count;
+
+    /// <summary>The bookpath of the file with the first occurrence (empty when there is none).</summary>
+    public string BookPath => Occurrences.Count > 0 ? Occurrences[0].BookPath : string.Empty;
+
+    /// <summary>The offset of the first occurrence.</summary>
+    public int Position => Occurrences.Count > 0 ? Occurrences[0].Position : 0;
+}
 
 /// <summary>
 /// The data engine for the "Spellcheck Editor" dialog: the unique words of the whole book with the number of
@@ -38,29 +55,43 @@ public static class SpellcheckEditorEngine
 
         string defaultLang = book.GetOpf().GetPrimaryBookLanguage().Replace('_', '-');
 
-        Dictionary<(string Text, string Lang), Accumulator> aggregate = new();
+        Dictionary<(string Text, string Lang), List<SpellcheckOccurrence>> aggregate = new();
+        string[] langBuffer = new string[1];
         foreach (HtmlResource html in book.GetHtmlResources())
         {
-            foreach (HtmlWord word in HtmlSpellCheck.GetAllWords(spellChecker, settings, html.GetText(), defaultLang))
+            string text = html.GetText();
+
+            // The words come in reading order, so the line of each is counted on from the previous one instead of
+            // walking the file again for every word.
+            int line = 1;
+            int counted = 0;
+            foreach (HtmlWord word in HtmlSpellCheck.GetAllWords(spellChecker, settings, text, defaultLang))
             {
+                for (; counted < word.Offset && counted < text.Length; counted++)
+                {
+                    if (text[counted] == '\n')
+                    {
+                        line++;
+                    }
+                }
+
                 (string Text, string Lang) key = (word.Text, word.Lang);
-                if (aggregate.TryGetValue(key, out Accumulator? existing))
+                if (!aggregate.TryGetValue(key, out List<SpellcheckOccurrence>? occurrences))
                 {
-                    existing.Count++;
+                    occurrences = new List<SpellcheckOccurrence>();
+                    aggregate[key] = occurrences;
                 }
-                else
-                {
-                    aggregate[key] = new Accumulator(html.BookPath, word.Offset);
-                }
+
+                occurrences.Add(new SpellcheckOccurrence(html.BookPath, word.Offset, line));
             }
         }
 
         List<SpellcheckWord> result = new(aggregate.Count);
-        foreach (KeyValuePair<(string Text, string Lang), Accumulator> entry in aggregate)
+        foreach (KeyValuePair<(string Text, string Lang), List<SpellcheckOccurrence>> entry in aggregate)
         {
-            bool misspelled = !spellChecker.Check(entry.Key.Text, new[] { entry.Key.Lang });
-            result.Add(new SpellcheckWord(
-                entry.Key.Text, entry.Key.Lang, entry.Value.Count, misspelled, entry.Value.BookPath, entry.Value.Position));
+            langBuffer[0] = entry.Key.Lang;
+            bool misspelled = !spellChecker.Check(entry.Key.Text, langBuffer);
+            result.Add(new SpellcheckWord(entry.Key.Text, entry.Key.Lang, misspelled, entry.Value));
         }
 
         return result;
@@ -112,19 +143,31 @@ public static class SpellcheckEditorEngine
         return totalReplacements;
     }
 
-    private sealed class Accumulator
+    /// <summary>
+    /// Replaces one occurrence of a word: the one at <paramref name="position"/> of <paramref name="bookPath"/>, and
+    /// only when exactly <paramref name="wordText"/> stands there (the file may have changed since the table was
+    /// built). Returns whether it was replaced.
+    /// </summary>
+    public static bool ReplaceOccurrence(Book book, string bookPath, int position, string wordText, string newText)
     {
-        public Accumulator(string bookPath, int position)
+        ArgumentNullException.ThrowIfNull(book);
+        ArgumentNullException.ThrowIfNull(bookPath);
+        ArgumentNullException.ThrowIfNull(wordText);
+        ArgumentNullException.ThrowIfNull(newText);
+
+        if (book.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath) is not HtmlResource html)
         {
-            Count = 1;
-            BookPath = bookPath;
-            Position = position;
+            return false;
         }
 
-        public int Count { get; set; }
+        string text = html.GetText();
+        if (position < 0 || position + wordText.Length > text.Length
+            || !string.Equals(text.Substring(position, wordText.Length), wordText, StringComparison.Ordinal))
+        {
+            return false;
+        }
 
-        public string BookPath { get; }
-
-        public int Position { get; }
+        html.SetText(text[..position] + newText + text[(position + wordText.Length)..]);
+        return true;
     }
 }

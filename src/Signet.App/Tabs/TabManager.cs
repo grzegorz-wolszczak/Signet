@@ -351,6 +351,7 @@ public sealed class TabManager : IDisposable
                 BookFiles = () => _book is { } book
                     ? book.GetAllResources().Select(r => new LinkCompletionFile(r.BookPath, r.MediaType)).ToList()
                     : Array.Empty<LinkCompletionFile>(),
+                BookLanguage = () => _book?.GetOpf().GetPrimaryBookLanguage() ?? string.Empty,
                 DocumentTextOf = DocumentTextOf,
                 Host = CodeTabHost,
             };

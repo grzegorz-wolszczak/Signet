@@ -31,7 +31,7 @@ public sealed class SpellcheckEditorViewModelTests : IDisposable
         HtmlResource html = book.GetHtmlResources()[0];
         html.SetText(text);
 
-        SpellcheckEditorViewModel editor = new(spellChecker, settings);
+        SpellcheckEditorViewModel editor = _disposables.Add(new SpellcheckEditorViewModel(spellChecker, settings));
         editor.Refresh(book);
         return (editor, book, html);
     }
@@ -44,6 +44,70 @@ public sealed class SpellcheckEditorViewModelTests : IDisposable
 
         // Act & Assert
         editor.Words.Select(w => w.Word).Should().Equal("wrold");
+    }
+
+    /// <summary>
+    /// A word that stands in the book more than once has a row per occurrence under it, so that each can be gone to
+    /// and replaced on its own; a word that stands there once is its own occurrence and gets no expander.
+    /// </summary>
+    [Fact]
+    public void A_word_of_several_occurrences_has_a_row_for_each_of_them()
+    {
+        // Arrange
+        (SpellcheckEditorViewModel editor, _, HtmlResource html) = New("<p>wrold and wrold</p>\n<p>tzzz</p>");
+
+        // Act
+        SpellcheckWordRow repeated = editor.Words.Single(w => w.Word == "wrold");
+        SpellcheckWordRow once = editor.Words.Single(w => w.Word == "tzzz");
+
+        // Assert
+        once.Occurrences.Should().BeEmpty();
+        once.IsSinglePlace.Should().BeTrue();
+        repeated.Occurrences.Should().HaveCount(2);
+        repeated.IsSinglePlace.Should().BeFalse("a word of several occurrences is no single place in the book");
+        repeated.Occurrences.Select(o => o.OccurrenceNumber).Should().Equal(1, 2);
+        repeated.Occurrences.Should().OnlyContain(o => o.Word == "wrold" && o.IsOccurrence && o.IsSinglePlace);
+        repeated.Occurrences[1].Position.Should().Be(html.GetText().LastIndexOf("wrold", StringComparison.Ordinal));
+        repeated.Occurrences[0].Display.Should().Be(html.BookPath + " : 1");
+        repeated.Occurrences[1].CountDisplay.Should().Be("2", "an occurrence row counts itself, not the word");
+    }
+
+    /// <summary>
+    /// "Replace" works on one place in the book: an occurrence row, or a word that occurs once. With a word of several
+    /// occurrences selected there is nothing to say which place is meant, so it is unavailable.
+    /// </summary>
+    [Fact]
+    public void Replace_works_on_one_occurrence_only()
+    {
+        // Arrange
+        (SpellcheckEditorViewModel editor, _, HtmlResource html) = New("<p>wrold and wrold</p>");
+        SpellcheckWordRow word = editor.Words.Single(w => w.Word == "wrold");
+        SpellcheckOccurrenceReplacement? asked = null;
+        editor.ReplaceOneRequested += replacement => asked = replacement;
+
+        // Act
+        editor.SetSelectedWords(new[] { word });
+        editor.ChangeAllText = "world";
+
+        // Assert
+        editor.ReplaceOneCommand.CanExecute(null).Should().BeFalse("the word stands in two places");
+
+        // Act
+        editor.SetSelectedWords(new[] { word.Occurrences[1] });
+        editor.ChangeAllText = "world";
+
+        // Assert
+        editor.ReplaceOneCommand.CanExecute(null).Should().BeTrue();
+
+        // Act
+        editor.ReplaceOneCommand.Execute(null);
+
+        // Assert
+        asked.Should().NotBeNull();
+        asked!.Value.Word.Should().Be("wrold");
+        asked.Value.NewText.Should().Be("world");
+        asked.Value.BookPath.Should().Be(html.BookPath);
+        asked.Value.Position.Should().Be(html.GetText().LastIndexOf("wrold", StringComparison.Ordinal));
     }
 
     [Fact]
