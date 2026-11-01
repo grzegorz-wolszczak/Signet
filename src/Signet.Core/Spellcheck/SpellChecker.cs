@@ -517,6 +517,11 @@ public sealed class SpellChecker
             throw new InvalidOperationException(CoreStrings.Format("Error_UnknownDictionary", name));
         }
 
+        // A dictionary says its encoding in the SET line of its .aff file, and most non-Unicode ones name a code page
+        // encoding (the Polish dictionary: ISO8859-2). Without the provider the library cannot resolve the name, falls
+        // back to Latin-1 and reads every word with a Polish letter wrong — see LegacyEncodings.
+        LegacyEncodings.Ensure();
+
         WordList wordList = source.Kind == DictionarySourceKind.Embedded
             ? EmbeddedDictionary.Load(name)
             : WordList.CreateFromFiles(source.DicPath!, source.AffPath!);
