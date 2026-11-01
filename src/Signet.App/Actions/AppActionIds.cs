@@ -249,6 +249,21 @@ public static class AppActionIds
     public const string ToggleNotifications = "MainWindow.NotificationsWindow";
     public const string ToggleFindReplace = "MainWindow.FindReplaceWindow";
 
+    // The buttons of the Preview panel's own toolbar (ToolbarId.Preview) — the actions of the shown page.
+    public const string PreviewInspect = "MainWindow.Preview.Inspect";
+    public const string PreviewSelectAll = "MainWindow.Preview.SelectAll";
+    public const string PreviewCopy = "MainWindow.Preview.Copy";
+    public const string PreviewReload = "MainWindow.Preview.Reload";
+    public const string PreviewCycleCustomCss = "MainWindow.Preview.CycleCustomCss";
+    public const string PreviewPrint = "MainWindow.Preview.Print";
+
+    /// <summary>
+    /// Category of the actions of the Preview panel's own toolbar. Not a panel category
+    /// (<see cref="IsPanelCategory"/>): their shortcuts, if the user gives them any, work in the whole window, as the
+    /// Preview shows the file that is being edited.
+    /// </summary>
+    public const string PreviewCategory = "Preview";
+
     /// <summary>
     /// Category of the Book Browser panel context menu actions. Shortcuts of these actions work
     /// only when the focus is in the panel (<c>BookBrowserView</c> registers them as its own

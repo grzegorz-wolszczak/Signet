@@ -67,7 +67,8 @@ public sealed partial class ToolbarCustomizeViewModel : ObservableObject
             .ToList();
 
         AvailableActions = new ObservableCollection<ToolbarEntry>(_allActions);
-        Toolbars = new ObservableCollection<ToolbarId>(ToolbarManager.AllToolbars);
+        // The docked toolbars too (the Preview's): their buttons are configured here like any other toolbar's.
+        Toolbars = new ObservableCollection<ToolbarId>(ToolbarManager.ConfigurableToolbars);
         _selectedToolbar = Toolbars[0];
         LoadCurrent();
     }

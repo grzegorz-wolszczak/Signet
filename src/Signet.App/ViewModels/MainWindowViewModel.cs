@@ -277,12 +277,18 @@ public sealed partial class MainWindowViewModel
             toolbar.ConfigureRequested += (_, _) => CustomizeToolbarRequested?.Invoke(this, toolbar.Id);
         }
 
+        // The Preview panel's own toolbar: not in a toolbar area, so not in Toolbars (View › Toolbars, the drag
+        // targets) — the panel shows it itself (PreviewView).
+        PreviewToolbar = new ToolbarViewModel(ToolbarId.Preview, _toolbarManager, _actions);
+        PreviewToolbar.ConfigureRequested += (_, _) => CustomizeToolbarRequested?.Invoke(this, ToolbarId.Preview);
+        _preview.Toolbar = PreviewToolbar;
+
         TopToolbars = new ToolbarAreaViewModel(ToolbarArea.Top, _toolbarManager, Toolbars);
         BottomToolbars = new ToolbarAreaViewModel(ToolbarArea.Bottom, _toolbarManager, Toolbars);
         Strings.RegisterLanguageAware(this);
         _toolbarManager.Changed += (_, id) =>
         {
-            ToolbarViewModel? vm = Toolbars.FirstOrDefault(t => t.Id == id);
+            ToolbarViewModel? vm = id == ToolbarId.Preview ? PreviewToolbar : Toolbars.FirstOrDefault(t => t.Id == id);
             vm?.Refresh();
         };
         _toolbarManager.AppearanceChanged += (_, _) =>
@@ -291,6 +297,8 @@ public sealed partial class MainWindowViewModel
             {
                 toolbar.RefreshAppearance();
             }
+
+            PreviewToolbar.RefreshAppearance();
         };
 
         _statusBar.PropertyChanged += OnStatusBarPropertyChanged;
@@ -474,6 +482,19 @@ public sealed partial class MainWindowViewModel
         // Print / Print Preview of the active resource through the native WebView API.
         _actions.SetHandler(AppActionIds.Print, () => _preview.RequestPrint());
         _actions.SetHandler(AppActionIds.PrintPreview, () => _preview.RequestPrintPreview());
+
+        // The buttons of the Preview panel's own toolbar (ToolbarId.Preview). "Cycle Custom CSS Files" works only
+        // when a custom stylesheet was found in the prefs directory — the files are read once, at startup.
+        _actions.SetHandler(AppActionIds.PreviewInspect, () => _preview.InspectCommand.Execute(null));
+        _actions.SetHandler(AppActionIds.PreviewSelectAll, () => _preview.SelectAllContentCommand.Execute(null));
+        _actions.SetHandler(AppActionIds.PreviewCopy, () => _preview.CopySelectionCommand.Execute(null));
+        _actions.SetHandler(AppActionIds.PreviewReload, () => _preview.ReloadCommand.Execute(null));
+        _actions.SetHandler(AppActionIds.PreviewCycleCustomCss, () => _preview.CycleCustomCssCommand.Execute(null));
+        _actions.SetHandler(AppActionIds.PreviewPrint, () => _preview.PrintCommand.Execute(null));
+        if (_actions.Get(AppActionIds.PreviewCycleCustomCss) is { } cycleCss)
+        {
+            cycleCss.IsEnabled = _preview.HasCustomCss;
+        }
         _preview.AttachExternalFileOpener(path => _externalFileOpener(path));
         _preview.AttachWorkingTextProvider(_tabManager.ModifiedCodeTexts);
         // The "live" preview delay from Preferences (uiPreviewTimeout) — a change takes effect immediately.
@@ -905,6 +926,12 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>Configurable toolbars.</summary>
     public ObservableCollection<ToolbarViewModel> Toolbars { get; }
+
+    /// <summary>
+    /// The toolbar of the Preview panel, shown at the bottom of the panel itself: it is not in a toolbar area, so it
+    /// is not among <see cref="Toolbars"/>.
+    /// </summary>
+    public ToolbarViewModel PreviewToolbar { get; }
 
     /// <summary>The toolbar rows under the menu.</summary>
     public ToolbarAreaViewModel TopToolbars { get; }
@@ -4339,6 +4366,8 @@ public sealed partial class MainWindowViewModel
         {
             toolbar.RefreshTexts();
         }
+
+        PreviewToolbar.RefreshTexts();
 
         _dockFactory.RefreshTitles();
         _findReplace.RefreshLocalizedTexts();

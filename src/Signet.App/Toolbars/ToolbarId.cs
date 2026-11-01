@@ -1,7 +1,8 @@
 namespace Signet.App.Toolbars;
 
 /// <summary>
-/// Main window toolbars, in display order.
+/// The toolbars, in display order: those of the main window's toolbar areas, then the docked ones
+/// (<see cref="ToolbarManager.DockedToolbars"/>), which belong to a panel.
 /// </summary>
 public enum ToolbarId
 {
@@ -61,4 +62,11 @@ public enum ToolbarId
 
     /// <summary>"Clip Bar2": clips 31–60 (own row, hidden by default).</summary>
     Clips2,
+
+    /// <summary>
+    /// The toolbar of the Preview panel, at the bottom of the panel. Unlike the others it is docked
+    /// (<see cref="ToolbarManager.DockedToolbars"/>): it belongs to the panel, so it is never hidden, never moved and
+    /// has a look of its own (<see cref="ToolbarManager.AppearanceFor"/>).
+    /// </summary>
+    Preview,
 }

@@ -296,6 +296,27 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.BottomToolbars.HasVisibleToolbars.Should().BeFalse();
     }
 
+    /// <summary>
+    /// The Preview panel's own toolbar is not in a toolbar area — the panel shows it itself — and its buttons are the
+    /// actions of the preview, so that they can be configured and given shortcuts like any other.
+    /// </summary>
+    [Fact]
+    public void The_preview_panel_gets_its_own_toolbar()
+    {
+        // Arrange
+        MainWindowViewModel sut = NewWithBook();
+
+        // Act & Assert
+        sut.Toolbars.Should().NotContain(t => t.Id == ToolbarId.Preview);
+        sut.PreviewToolbar.Id.Should().Be(ToolbarId.Preview);
+        sut.Preview.Toolbar.Should().BeSameAs(sut.PreviewToolbar);
+        sut.PreviewToolbar.Items.Select(i => i.Action?.Id).Should().Equal(
+            AppActionIds.PreviewInspect, AppActionIds.PreviewSelectAll, AppActionIds.PreviewCopy,
+            AppActionIds.PreviewReload, AppActionIds.PreviewCycleCustomCss, AppActionIds.PreviewPrint);
+        sut.PreviewToolbar.Items.Where(i => i.Action?.Id != AppActionIds.PreviewCycleCustomCss)
+            .Should().OnlyContain(i => i.Action!.IsEnabled, "every button has a handler and a book is open");
+    }
+
     [Fact]
     public void Dock_layout_contains_a_documents_area()
     {

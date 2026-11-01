@@ -2093,23 +2093,23 @@ Czy chcesz zapisać zmiany?</value>
   <data name="ClipboardHistorySelectorWindow_Prompt" xml:space="preserve">
     <value>Historia schowka (najnowsze pierwsze):</value>
   </data>
-  <data name="PreviewView_InspectPage" xml:space="preserve">
-    <value>Zbadaj stronę</value>
+  <data name="Action_MainWindow_Preview_Inspect" xml:space="preserve">
+    <value>&amp;Zbadaj stronę</value>
   </data>
-  <data name="PreviewView_RefreshPreview" xml:space="preserve">
-    <value>Odśwież podgląd</value>
+  <data name="Action_MainWindow_Preview_SelectAll" xml:space="preserve">
+    <value>Zaznacz &amp;wszystko</value>
   </data>
-  <data name="PreviewView_SelectAll" xml:space="preserve">
-    <value>Zaznacz wszystko</value>
+  <data name="Action_MainWindow_Preview_Copy" xml:space="preserve">
+    <value>&amp;Kopiuj</value>
   </data>
-  <data name="PreviewView_Copy" xml:space="preserve">
-    <value>Kopiuj</value>
+  <data name="Action_MainWindow_Preview_Reload" xml:space="preserve">
+    <value>&amp;Odśwież podgląd</value>
   </data>
-  <data name="PreviewView_CycleCustomCss" xml:space="preserve">
-    <value>Przełącz niestandardowy CSS</value>
+  <data name="Action_MainWindow_Preview_CycleCustomCss" xml:space="preserve">
+    <value>Przełącz niestandardowy &amp;CSS</value>
   </data>
-  <data name="PreviewView_Print" xml:space="preserve">
-    <value>Drukuj podgląd</value>
+  <data name="Action_MainWindow_Preview_Print" xml:space="preserve">
+    <value>&amp;Drukuj podgląd</value>
   </data>
   <data name="PreviewView_ZoomOut" xml:space="preserve">
     <value>Pomniejsz podgląd (Ctrl+kółko myszy w podglądzie)</value>
@@ -2866,6 +2866,9 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="ActionCategory_View" xml:space="preserve">
     <value>Widok</value>
+  </data>
+  <data name="ActionCategory_Preview" xml:space="preserve">
+    <value>Podgląd</value>
   </data>
   <data name="ActionCategory_Window" xml:space="preserve">
     <value>Okno</value>
@@ -3960,6 +3963,9 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   </data>
   <data name="Toolbar_Clips2" xml:space="preserve">
     <value>Pasek wycinków 2</value>
+  </data>
+  <data name="Toolbar_Preview" xml:space="preserve">
+    <value>Podgląd</value>
   </data>
   <data name="Spellcheck_NoWordsSelected" xml:space="preserve">
     <value>Nie zaznaczono żadnych słów.</value>

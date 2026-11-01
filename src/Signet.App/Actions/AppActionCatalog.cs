@@ -223,6 +223,15 @@ public static class AppActionCatalog
         new("MainWindow.FocusOnTOC", "Focus on Table Of Contents", "", "focus-toc", "View"),
         new("MainWindow.FocusOnClips", "Focus on Clips", "", "focus-clips", "View"),
 
+        // The Preview panel's own toolbar (ToolbarId.Preview) — its buttons are actions like any other, so that the
+        // toolbar can be configured in "Configure Toolbars" and the actions can be given shortcuts.
+        new(AppActionIds.PreviewInspect, "&Inspect Page", "", "inspect", AppActionIds.PreviewCategory),
+        new(AppActionIds.PreviewSelectAll, "Select &All", "", "edit-select-all", AppActionIds.PreviewCategory),
+        new(AppActionIds.PreviewCopy, "&Copy", "", "edit-copy", AppActionIds.PreviewCategory),
+        new(AppActionIds.PreviewReload, "&Refresh Preview", "", "reload-page", AppActionIds.PreviewCategory),
+        new(AppActionIds.PreviewCycleCustomCss, "Cycle Custom CSS &Files", "", "cycle-css", AppActionIds.PreviewCategory),
+        new(AppActionIds.PreviewPrint, "&Print Preview View", "", "document-print", AppActionIds.PreviewCategory),
+
         // Book Browser panel context menu, exposed here so that every item can be bound to a shortcut.
         // These shortcuts work ONLY when the focus is in the panel — BookBrowserView registers them
         // as its own KeyBindings (widget-scoped shortcuts), unlike the other actions, which are

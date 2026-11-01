@@ -11,6 +11,9 @@ public static class SettingChangeKeys
     /// <summary>The look of the main window's toolbars (<see cref="SettingsStore.ToolbarAppearance"/>).</summary>
     public const string ToolbarAppearance = "toolbar_appearance";
 
+    /// <summary>The look of the Preview panel's own toolbar (<see cref="SettingsStore.PreviewToolbarAppearance"/>).</summary>
+    public const string PreviewToolbarAppearance = "preview_toolbar_appearance";
+
     /// <summary>The fonts of the context menus (<see cref="SettingsStore.ContextMenuAppearance"/>).</summary>
     public const string ContextMenuAppearance = "context_menu_appearance";
 

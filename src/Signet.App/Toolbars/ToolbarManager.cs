@@ -94,7 +94,23 @@ public sealed class ToolbarManager
         // SelectClip at the start of the Clip Bar (see AppActionIds.SelectClip).
         [ToolbarId.Clips] = new[] { AppActionIds.SelectClip, Separator }.Concat(ClipSlotIds(1, 30)).ToArray(),
         [ToolbarId.Clips2] = ClipSlotIds(31, 60).ToArray(),
+
+        // The toolbar of the Preview panel: the actions of the shown page. The zoom (− 100 % +) is not an item of it —
+        // the panel keeps it at the end of the bar, where it cannot be taken away (PreviewView).
+        [ToolbarId.Preview] = new[]
+        {
+            AppActionIds.PreviewInspect, AppActionIds.PreviewSelectAll, AppActionIds.PreviewCopy,
+            AppActionIds.PreviewReload, AppActionIds.PreviewCycleCustomCss, AppActionIds.PreviewPrint,
+        },
     };
+
+    /// <summary>
+    /// The toolbars that belong to a panel instead of to the toolbar areas of the main window. They are never hidden
+    /// (View › Toolbars does not list them), never moved (no grip, no placement of their own) and the panel gives them
+    /// a look of its own (<see cref="AppearanceFor"/>); what they do share with the others is the layout of their
+    /// buttons and the window that configures it.
+    /// </summary>
+    public static IReadOnlyCollection<ToolbarId> DockedToolbars { get; } = new HashSet<ToolbarId> { ToolbarId.Preview };
 
     /// <summary>
     /// Settings group of the one-off changes made to a saved layout when a version moves buttons between toolbars
@@ -139,7 +155,8 @@ public sealed class ToolbarManager
     {
         List<IReadOnlyList<ToolbarId>> rows = new();
         List<ToolbarId> current = new();
-        foreach (ToolbarId id in Enum.GetValues<ToolbarId>())
+        // Not AllToolbars: it is built from this same static state, after DefaultRows (DockedToolbars comes before both).
+        foreach (ToolbarId id in Enum.GetValues<ToolbarId>().Where(id => !DockedToolbars.Contains(id)))
         {
             if (RowBreaks.Contains(id) && current.Count > 0)
             {
@@ -204,14 +221,59 @@ public sealed class ToolbarManager
     /// </summary>
     public event EventHandler? AppearanceChanged;
 
-    /// <summary>The look of the toolbars, shared by all of them (kept in the settings).</summary>
+    /// <summary>The look of the main window's toolbars, shared by all of them (kept in the settings).</summary>
     public ToolbarAppearance Appearance => _settings.ToolbarAppearance;
 
-    /// <summary>Sets where the buttons show their text (saved at once).</summary>
+    /// <summary>
+    /// The look of the Preview panel's toolbar — its own, so that the narrow panel is not bound to the icon size and
+    /// the texts of the main window's toolbars (kept in the settings).
+    /// </summary>
+    public ToolbarAppearance PreviewAppearance => _settings.PreviewToolbarAppearance;
+
+    /// <summary>
+    /// The look of one toolbar: <see cref="PreviewAppearance"/> for a docked one
+    /// (<see cref="DockedToolbars"/>), <see cref="Appearance"/> for the rest.
+    /// </summary>
+    public ToolbarAppearance AppearanceFor(ToolbarId toolbar) =>
+        DockedToolbars.Contains(toolbar) ? PreviewAppearance : Appearance;
+
+    /// <summary>Sets where the buttons show their text, for all the main window's toolbars (saved at once).</summary>
     public void SetTextPosition(ToolbarTextPosition position) => SetAppearance(Appearance with { TextPosition = position });
 
-    /// <summary>Sets the size of the icons (saved at once).</summary>
+    /// <summary>Sets the size of the icons of all the main window's toolbars (saved at once).</summary>
     public void SetIconSize(ToolbarIconSize size) => SetAppearance(Appearance with { IconSize = size });
+
+    /// <summary>
+    /// Sets where the buttons of <paramref name="toolbar"/> show their text: for a docked toolbar only its own look,
+    /// for any other the look shared by the main window's toolbars (saved at once).
+    /// </summary>
+    public void SetTextPosition(ToolbarId toolbar, ToolbarTextPosition position)
+    {
+        if (DockedToolbars.Contains(toolbar))
+        {
+            SetPreviewAppearance(PreviewAppearance with { TextPosition = position });
+        }
+        else
+        {
+            SetTextPosition(position);
+        }
+    }
+
+    /// <summary>
+    /// Sets the size of the icons of <paramref name="toolbar"/>: for a docked toolbar only its own look, for any other
+    /// the look shared by the main window's toolbars (saved at once).
+    /// </summary>
+    public void SetIconSize(ToolbarId toolbar, ToolbarIconSize size)
+    {
+        if (DockedToolbars.Contains(toolbar))
+        {
+            SetPreviewAppearance(PreviewAppearance with { IconSize = size });
+        }
+        else
+        {
+            SetIconSize(size);
+        }
+    }
 
     /// <summary>Locks or unlocks the positions of the toolbars: locked toolbars have no grip (saved at once).</summary>
     public void SetPositionsLocked(bool locked) => SetAppearance(Appearance with { PositionsLocked = locked });
@@ -271,6 +333,19 @@ public sealed class ToolbarManager
         }
     }
 
+    private void SetPreviewAppearance(ToolbarAppearance look)
+    {
+        if (look == PreviewAppearance)
+        {
+            return;
+        }
+
+        // The settings raise SettingChanged, which raises AppearanceChanged (OnSettingChanged); the look of this
+        // toolbar goes into the resources of the panel that holds it, not into the application's (PreviewView).
+        _settings.PreviewToolbarAppearance = look;
+        _settings.Save();
+    }
+
     private void SetAppearance(ToolbarAppearance look)
     {
         if (look == Appearance)
@@ -286,6 +361,12 @@ public sealed class ToolbarManager
     // The look changes from this manager, from Preferences (the draft committed) and with the appearance defaults restored.
     private void OnSettingChanged(object? sender, SettingChangedEventArgs e)
     {
+        if (SettingChangeKeys.Is(e, SettingChangeKeys.PreviewToolbarAppearance))
+        {
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
         if (SettingChangeKeys.Is(e, SettingChangeKeys.ToolbarAppearance)
             || SettingChangeKeys.Is(e, SettingChangeKeys.AppearanceSettingsCleared))
         {
@@ -347,9 +428,15 @@ public sealed class ToolbarManager
         return CommitPlacement(snapshot);
     }
 
-    /// <summary>All toolbar identifiers in a fixed order.</summary>
+    /// <summary>
+    /// The toolbars of the main window's toolbar areas, in a fixed order — those that can be hidden, moved and placed
+    /// in rows. The docked ones (<see cref="DockedToolbars"/>) are not among them.
+    /// </summary>
     public static IReadOnlyList<ToolbarId> AllToolbars { get; } =
-        Enum.GetValues<ToolbarId>();
+        Enum.GetValues<ToolbarId>().Where(id => !DockedToolbars.Contains(id)).ToList();
+
+    /// <summary>Every toolbar whose buttons can be configured: <see cref="AllToolbars"/> and the docked ones.</summary>
+    public static IReadOnlyList<ToolbarId> ConfigurableToolbars { get; } = Enum.GetValues<ToolbarId>();
 
     /// <summary>Toolbar items (action ids or <see cref="Separator"/>).</summary>
     public IReadOnlyList<string> GetItems(ToolbarId toolbar) => _layout[toolbar];
@@ -410,7 +497,7 @@ public sealed class ToolbarManager
     /// <summary>Restores the factory layout and visibility of all toolbars.</summary>
     public void ResetToDefaults()
     {
-        foreach (ToolbarId toolbar in AllToolbars)
+        foreach (ToolbarId toolbar in ConfigurableToolbars)
         {
             _layout[toolbar] = DefaultLayout[toolbar].ToList();
             _visible[toolbar] = DefaultVisibility[toolbar];
@@ -423,7 +510,7 @@ public sealed class ToolbarManager
         _settings.SetStringMap(PlacementGroup, new Dictionary<string, string>());
         _settings.Save();
 
-        foreach (ToolbarId toolbar in AllToolbars)
+        foreach (ToolbarId toolbar in ConfigurableToolbars)
         {
             Changed?.Invoke(this, toolbar);
         }
@@ -496,7 +583,8 @@ public sealed class ToolbarManager
                 List<ToolbarId> row = new();
                 foreach (string name in rowText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 {
-                    if (Enum.TryParse(name, out ToolbarId id) && Enum.IsDefined(id) && placed.Add(id))
+                    if (Enum.TryParse(name, out ToolbarId id) && Enum.IsDefined(id)
+                        && !DockedToolbars.Contains(id) && placed.Add(id))
                     {
                         row.Add(id);
                     }
@@ -563,7 +651,7 @@ public sealed class ToolbarManager
         IReadOnlyDictionary<string, string> storedVisibility = _settings.GetStringMap(VisibilityGroup);
         LoadPlacement(_settings.GetStringMap(PlacementGroup));
 
-        foreach (ToolbarId toolbar in AllToolbars)
+        foreach (ToolbarId toolbar in ConfigurableToolbars)
         {
             _layout[toolbar] = storedLayout.TryGetValue(toolbar.ToString(), out string? raw)
                 ? raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
@@ -616,7 +704,7 @@ public sealed class ToolbarManager
     private void PersistLayout()
     {
         Dictionary<string, string> map = new(StringComparer.Ordinal);
-        foreach (ToolbarId toolbar in AllToolbars)
+        foreach (ToolbarId toolbar in ConfigurableToolbars)
         {
             if (!_layout[toolbar].SequenceEqual(DefaultLayout[toolbar]))
             {
@@ -631,7 +719,7 @@ public sealed class ToolbarManager
     private void PersistVisibility()
     {
         Dictionary<string, string> map = new(StringComparer.Ordinal);
-        foreach (ToolbarId toolbar in AllToolbars)
+        foreach (ToolbarId toolbar in ConfigurableToolbars)
         {
             if (_visible[toolbar] != DefaultVisibility[toolbar])
             {
