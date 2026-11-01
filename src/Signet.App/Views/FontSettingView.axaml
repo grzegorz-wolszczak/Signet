@@ -7,6 +7,22 @@
              xmlns:views="using:Signet.App.Views"
              x:Class="Signet.App.Views.FontSettingView"
              x:DataType="vm:FontSettingViewModel">
+  <UserControl.Styles>
+    <!-- The button of the options of a preview: flat and quiet, so it does not compete with the sample it sits over. -->
+    <Style Selector="Button.previewOptions">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="5,0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="Opacity" Value="0.55" />
+    </Style>
+    <Style Selector="Button.previewOptions:pointerover, Button.previewOptions:flyout-open">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+  </UserControl.Styles>
+
   <!-- One font setting of a "Fonts" page: the font as one line (typeface, size, weight) and "Choose…" (the font picker
        window with a search). A setting that is only a size has a size field. -->
   <!-- Every setting is a box of its own (the "section" card style of the Preferences window), so that the settings are told apart. -->
@@ -53,12 +69,20 @@
             </Border>
           </ScrollViewer>
           <cv:CodePreviewEditor x:Name="CodePreview" IsVisible="False" />
+          <!-- The options of the preview, in the top right corner of it: a check box under every preview was a row of
+               its own in each of the boxes of a Fonts page, and made them all taller for a setting rarely touched. -->
+          <Button x:Name="PreviewOptionsButton" Classes="noSearch previewOptions" Content="⋮"
+                  HorizontalAlignment="Right" VerticalAlignment="Top"
+                  ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewOptions}">
+            <Button.Flyout>
+              <MenuFlyout Placement="BottomEdgeAlignedRight">
+                <MenuItem x:Name="WrapPreviewItem" Header="{loc:Loc PreferencesWindow_WrapPreview}"
+                          ToggleType="CheckBox" IsChecked="{Binding WrapPreview, Mode=TwoWay}" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
         </Panel>
-        <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
-          <CheckBox x:Name="WrapPreviewBox" Classes="noSearch" Content="{loc:Loc PreferencesWindow_WrapPreview}"
-                    IsChecked="{Binding WrapPreview}" MinHeight="0" Padding="6,0,0,0" />
-          <views:HeightResizeGrip x:Name="PreviewGrip" Grid.Column="1" Target="{Binding #PreviewArea}" MinTargetHeight="28" />
-        </Grid>
+        <views:HeightResizeGrip x:Name="PreviewGrip" Grid.Row="1" Target="{Binding #PreviewArea}" MinTargetHeight="28" />
       </Grid>
     </Border>
   </StackPanel>

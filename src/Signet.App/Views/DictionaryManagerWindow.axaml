@@ -1,0 +1,49 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.DictionaryManagerWindow"
+        x:DataType="vm:DictionaryManagerViewModel"
+        Width="640" Height="440" MinWidth="520" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc DictionaryManager_Title}">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.note">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="12">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
+      <Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" IsCancel="True" MinWidth="80" />
+    </StackPanel>
+
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+      <TextBlock Grid.Column="0" x:Name="DirectoryText" Text="{Binding DirectoryText}" FontWeight="SemiBold"
+                 VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                 ToolTip.Tip="{Binding DictionariesDirectory}" />
+      <Button Grid.Column="1" x:Name="OpenDirectoryButton" Content="↗" Margin="8,0,0,0"
+              ToolTip.Tip="{loc:Loc DictionaryManager_OpenDirectory}"
+              Command="{Binding OpenDirectoryCommand}" />
+    </Grid>
+
+    <Grid RowDefinitions="2*,Auto,Auto,3*" ColumnDefinitions="*,Auto">
+      <TreeDataGrid Grid.Row="0" Grid.Column="0" x:Name="DictionariesGrid" Classes="gridLines" />
+      <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6" Margin="8,0,0,0" MinWidth="96">
+        <Button x:Name="AddButton" Content="{loc:Loc Common_Add}" HorizontalAlignment="Stretch"
+                Command="{Binding AddCommand}" />
+        <Button x:Name="DeleteButton" Classes="danger" Content="{loc:Loc Common_Delete}" HorizontalAlignment="Stretch"
+                Command="{Binding DeleteCommand}" />
+      </StackPanel>
+
+      <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Classes="note"
+                 Text="{loc:Loc DictionaryManager_Hint}" Margin="0,8,0,0" />
+      <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Text="{loc:Loc DictionaryManager_FilesHeader}"
+                 FontWeight="SemiBold" Margin="0,10,0,4" />
+      <TreeDataGrid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:Name="FilesGrid" Classes="gridLines" />
+    </Grid>
+  </DockPanel>
+</Window>

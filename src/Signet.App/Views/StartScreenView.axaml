@@ -17,11 +17,34 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
-      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="Padding" Value="8,4" />
     </Style>
     <!-- The sample of the preview draws one entry as if the pointer were on it. -->
     <Style Selector="Button.recentFile.highlighted /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}" />
+    </Style>
+    <!-- The button of the actions of an entry (and the ✕ of a file that is gone): flat, inside the entry button. -->
+    <Style Selector="Button.entryMenu">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Right" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="14" />
+      <!-- Off the right edge of the entry, so it does not sit against the scroll bar of a long list. -->
+      <Setter Property="Margin" Value="0,0,3,0" />
+      <!-- Hidden until the pointer is on the entry; Opacity, not IsVisible, so the row does not change width. -->
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <!-- The entry under the pointer (and the one the sample of Preferences draws as if it were), and an open menu. -->
+    <Style Selector="Button.recentFile:pointerover Button.entryMenu, Button.recentFile.highlighted Button.entryMenu, Button.entryMenu:flyout-open">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+    <Style Selector="Button.entryMenu:pointerover /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}" />
     </Style>
     <Style Selector="TextBlock.recentTitle">
@@ -60,38 +83,52 @@
           <DataTemplate x:DataType="vm:StartScreenRecentFile">
             <Button Classes="recentFile" Classes.highlighted="{Binding IsHighlighted}" Classes.missing="{Binding IsMissing}"
                     Command="{Binding OpenCommand}" ToolTip.Tip="{Binding ToolTip}">
-              <Button.ContextMenu>
-                <ContextMenu>
-                  <ContextMenu.Styles>
-                    <!-- The icon key of an item is its Tag, as on the toolbar buttons. -->
-                    <Style Selector="MenuItem.withIcon">
-                      <Setter Property="Icon">
-                        <Template>
-                          <Panel>
-                            <Image Width="16" Height="16"
-                                   Source="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                            <PathIcon Width="16" Height="16"
-                                      Data="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                          </Panel>
-                        </Template>
-                      </Setter>
-                    </Style>
-                  </ContextMenu.Styles>
-                  <MenuItem Classes="menuTitle" Header="{Binding Name, Converter={x:Static infra:MenuTitle.EscapeConverter}}" />
-                  <Separator />
-                  <MenuItem Classes="withIcon" Tag="{x:Static actions:ActionIconKeys.Open}"
-                            Header="{loc:Loc Menu_OpenFileLocation}" Command="{Binding OpenFolderCommand}"
-                            IsVisible="{Binding !IsMissing}" />
-                  <MenuItem Classes="withIcon" Tag="{x:Static actions:ActionIconKeys.Delete}"
-                            Header="{loc:Loc Menu_RemoveFromRecentFiles}" Command="{Binding RemoveCommand}" />
-                </ContextMenu>
-              </Button.ContextMenu>
-              <StackPanel>
-                <TextBlock Classes="recentTitle" Text="{Binding Name}" />
-                <TextBlock Classes="recentLocation" Text="{Binding Folder}" TextTrimming="CharacterEllipsis" />
-              </StackPanel>
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0">
+                  <TextBlock Classes="recentTitle" Text="{Binding Name}" />
+                  <TextBlock Classes="recentLocation" Text="{Binding Folder}" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+
+                <!-- A file that is still there: the actions of the entry, as in Rider — the menu opens on the button,
+                     not on the right mouse button. -->
+                <Button Grid.Column="1" Classes="entryMenu" Content="⋮" IsVisible="{Binding !IsMissing}"
+                        ToolTip.Tip="{loc:Loc StartScreen_EntryActions}">
+                  <Button.Flyout>
+                    <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                      <MenuFlyout.ItemContainerTheme>
+                        <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                          <!-- The icon key of an item is its Tag, as on the toolbar buttons. -->
+                          <Setter Property="Icon">
+                            <Template>
+                              <Panel>
+                                <Image Width="16" Height="16"
+                                       Source="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                                       IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                <PathIcon Width="16" Height="16"
+                                          Data="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                                          IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                              </Panel>
+                            </Template>
+                          </Setter>
+                        </ControlTheme>
+                      </MenuFlyout.ItemContainerTheme>
+                      <MenuItem Header="{loc:Loc StartScreen_OpenSelected}" Command="{Binding OpenCommand}" />
+                      <MenuItem Tag="{x:Static actions:ActionIconKeys.Open}"
+                                Header="{loc:Loc Menu_OpenFileLocation}" Command="{Binding OpenFolderCommand}" />
+                      <MenuItem Tag="{x:Static actions:ActionIconKeys.Copy}"
+                                Header="{loc:Loc StartScreen_CopyPath}" Command="{Binding CopyPathCommand}" />
+                      <Separator />
+                      <MenuItem Tag="{x:Static actions:ActionIconKeys.Delete}"
+                                Header="{loc:Loc Menu_RemoveFromRecentFiles}" Command="{Binding RemoveCommand}" />
+                    </MenuFlyout>
+                  </Button.Flyout>
+                </Button>
+
+                <!-- A file that is gone: one button, which takes it off the list straight away. -->
+                <Button Grid.Column="1" Classes="entryMenu" Content="✕" IsVisible="{Binding IsMissing}"
+                        Command="{Binding RemoveCommand}"
+                        ToolTip.Tip="{loc:Loc Menu_RemoveFromRecentFiles}" />
+              </Grid>
             </Button>
           </DataTemplate>
         </ItemsControl.ItemTemplate>

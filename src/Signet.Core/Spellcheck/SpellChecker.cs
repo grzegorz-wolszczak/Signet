@@ -64,6 +64,17 @@ public sealed class SpellChecker
     public const string DefaultUserDictionaryName = "default";
 
     /// <summary>
+    /// The name of the built-in dictionary: it is always available and cannot be removed, and the settings fall back
+    /// to it when the chosen dictionary is gone. An installed dictionary of the same name overrides it.
+    /// </summary>
+    public const string BuiltInDictionaryName = EmbeddedDictionary.EnUsName;
+
+    /// <summary>
+    /// The folder the installed dictionaries are read from (the dictionary manager writes into it).
+    /// </summary>
+    public string HunspellDictionariesDirectory => _hunspellDictionariesDirectory;
+
+    /// <summary>
     /// A readable name of a Hunspell dictionary from its file name, e.g. <c>en_GB</c> → "English - Great Britain",
     /// <c>de_DE_frami</c> → "German - Germany - frami". An unknown code — the file name unchanged.
     /// </summary>

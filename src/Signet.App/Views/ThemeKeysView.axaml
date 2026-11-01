@@ -19,19 +19,40 @@
     <Style Selector="TextBlock.modified">
       <Setter Property="FontWeight" Value="Bold" />
     </Style>
-    <!-- The button next to a color field: a swatch of the color; it opens the color picker. -->
-    <Style Selector="Button.swatch">
-      <Setter Property="Padding" Value="2" />
-      <Setter Property="Width" Value="30" />
+    <!-- The color as one control: a button filled with the color, with its hex written on it, which opens the color
+         picker. There is no hex field to type into — a color is chosen in the picker. -->
+    <Style Selector="Button.colorField">
+      <Setter Property="Width" Value="150" />
       <Setter Property="Height" Value="26" />
+      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-    <Style Selector="Button.swatch > Border">
       <Setter Property="BorderBrush" Value="{DynamicResource SignetFrameBrush}" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
-    <Style Selector="TextBox.hex">
-      <Setter Property="Width" Value="110" />
+    <!-- A color that is only shown (inherited, or the accent of the system) keeps its color on a switched-off
+         button: a grayed-out one would hide the very thing it shows. -->
+    <Style Selector="Button.colorField:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <!-- A field with no color at all says what it falls back to instead of a hex. -->
+    <Style Selector="Button.colorField.empty">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="FontStyle" Value="Italic" />
+      <Setter Property="Opacity" Value="0.7" />
+    </Style>
+    <!-- The link to the key an inherited color comes from. -->
+    <Style Selector="Button.sourceLink">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Opacity" Value="0.75" />
+    </Style>
+    <Style Selector="Button.sourceLink:pointerover">
+      <Setter Property="Opacity" Value="1" />
     </Style>
   </UserControl.Styles>
 
@@ -72,21 +93,21 @@
             <Grid ColumnDefinitions="Auto,Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
               <CheckBox x:Name="ForegroundBox" Grid.Row="0" Grid.Column="0" Content="{loc:Loc ColorScheme_Foreground}"
                         IsChecked="{Binding HasForeground}" />
-              <TextBox x:Name="ForegroundText" Grid.Row="0" Grid.Column="1" Classes="hex" IsEnabled="{Binding HasForeground}"
-                       Text="{Binding Foreground, UpdateSourceTrigger=LostFocus}" />
-              <Button Grid.Row="0" Grid.Column="2" Classes="swatch" IsEnabled="{Binding HasForeground}"
-                      Command="{Binding PickForegroundCommand}" ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
-                <Border Background="{Binding Foreground, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
-              </Button>
+              <!-- Unset: the text keeps the color of what is around it, which the theme of the controls gives. -->
+              <Button x:Name="ForegroundField" Grid.Row="0" Grid.Column="1" Classes="colorField" Classes.empty="{Binding !HasForeground}"
+                      IsEnabled="{Binding HasForeground}" Content="{Binding ForegroundFieldText}" Command="{Binding PickForegroundCommand}"
+                      ToolTip.Tip="{loc:Loc ColorScheme_PickColor}"
+                      Background="{Binding Foreground, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}"
+                      Foreground="{Binding ForegroundFieldTextColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
 
               <CheckBox x:Name="BackgroundBox" Grid.Row="1" Grid.Column="0" Content="{loc:Loc ColorScheme_Background}"
                         IsChecked="{Binding HasBackground}" />
-              <TextBox x:Name="BackgroundText" Grid.Row="1" Grid.Column="1" Classes="hex" IsEnabled="{Binding HasBackground}"
-                       Text="{Binding Background, UpdateSourceTrigger=LostFocus}" />
-              <Button Grid.Row="1" Grid.Column="2" Classes="swatch" IsEnabled="{Binding HasBackground}"
-                      Command="{Binding PickBackgroundCommand}" ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
-                <Border Background="{Binding Background, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
-              </Button>
+              <!-- Unset: no background is painted at all, so what is behind shows through. -->
+              <Button x:Name="BackgroundField" Grid.Row="1" Grid.Column="1" Classes="colorField" Classes.empty="{Binding !HasBackground}"
+                      IsEnabled="{Binding HasBackground}" Content="{Binding BackgroundFieldText}" Command="{Binding PickBackgroundCommand}"
+                      ToolTip.Tip="{loc:Loc ColorScheme_PickColor}"
+                      Background="{Binding Background, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}"
+                      Foreground="{Binding BackgroundFieldTextColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
 
               <CheckBox x:Name="EffectBox" Grid.Row="2" Grid.Column="0" Content="{loc:Loc ColorScheme_Effects}"
                         IsChecked="{Binding HasEffect}" />
@@ -96,12 +117,12 @@
 
               <CheckBox x:Name="EffectColorBox" Grid.Row="3" Grid.Column="0" Content="{loc:Loc ColorScheme_EffectColor}"
                         IsEnabled="{Binding HasEffect}" IsChecked="{Binding HasEffectColor}" Margin="20,0,0,0" />
-              <TextBox x:Name="EffectColorText" Grid.Row="3" Grid.Column="1" Classes="hex" IsEnabled="{Binding HasEffectColor}"
-                       Text="{Binding EffectColor, UpdateSourceTrigger=LostFocus}" />
-              <Button Grid.Row="3" Grid.Column="2" Classes="swatch" IsEnabled="{Binding HasEffectColor}"
-                      Command="{Binding PickEffectColorCommand}" ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
-                <Border Background="{Binding EffectColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
-              </Button>
+              <!-- Unset: the effect is drawn in the text color, the field two rows above. -->
+              <Button x:Name="EffectColorField" Grid.Row="3" Grid.Column="1" Classes="colorField" Classes.empty="{Binding !HasEffectColor}"
+                      IsEnabled="{Binding HasEffectColor}" Content="{Binding EffectColorFieldText}" Command="{Binding PickEffectColorCommand}"
+                      ToolTip.Tip="{loc:Loc ColorScheme_PickColor}"
+                      Background="{Binding EffectColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}"
+                      Foreground="{Binding EffectColorFieldTextColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
             </Grid>
           </StackPanel>
 
@@ -111,12 +132,14 @@
                       IsVisible="{Binding CanBeEmpty}" />
             <StackPanel Orientation="Horizontal" Spacing="8">
               <TextBlock Text="{loc:Loc ColorScheme_Color}" VerticalAlignment="Center" />
-              <TextBox x:Name="ColorText" Classes="hex" IsEnabled="{Binding HasColor}"
-                       Text="{Binding Color, UpdateSourceTrigger=LostFocus}" />
-              <Button Classes="swatch" IsEnabled="{Binding HasColor}" Command="{Binding PickColorCommand}"
-                      ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
-                <Border Background="{Binding Color, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
-              </Button>
+              <Button x:Name="ColorField" Classes="colorField" Classes.empty="{Binding !HasColorFieldColor}"
+                      IsEnabled="{Binding HasColor}" Content="{Binding ColorFieldText}" Command="{Binding PickColorCommand}"
+                      ToolTip.Tip="{loc:Loc ColorScheme_PickColor}"
+                      Background="{Binding SwatchColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}"
+                      Foreground="{Binding ColorFieldTextColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
+              <!-- Inherited from another key: a link that goes there (the field itself cannot, it is switched off). -->
+              <Button x:Name="InheritedColorLink" Classes="sourceLink" Content="↗" IsVisible="{Binding HasInheritedSource}"
+                      Command="{Binding GoToColorSourceCommand}" ToolTip.Tip="{Binding InheritedFromText}" />
             </StackPanel>
             <TextBlock Text="{loc:Loc ColorScheme_OwnColorNote}" IsVisible="{Binding CanBeEmpty}" Opacity="0.7" TextWrapping="Wrap" />
           </StackPanel>

@@ -270,6 +270,21 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Whether the key sets no text color: the text keeps the color of what is around it, which the theme of the
+    /// system gives and which is no value of this theme.
+    /// </summary>
+    public bool IsForegroundUnset => IsAttributesKey && IsEditable && !HasForeground;
+
+    /// <summary>
+    /// Whether the key sets no background: there is no background at all (what is behind shows through), which is
+    /// not the same as "a color from the theme".
+    /// </summary>
+    public bool IsBackgroundUnset => IsAttributesKey && IsEditable && !HasBackground;
+
+    /// <summary>Whether the effect has no color of its own: it is drawn in the text color.</summary>
+    public bool IsEffectColorUnset => IsAttributesKey && IsEditable && HasEffect && !HasEffectColor;
+
     // ---- Color ----
 
     /// <summary>
@@ -301,6 +316,90 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
             {
                 _owner.SetKey(key, ThemeEntry.Of(color));
             }
+        }
+    }
+
+    /// <summary>
+    /// Whether the selected color key has no color of its own and takes one from somewhere else.
+    /// </summary>
+    public bool IsColorInherited => IsColorKey && !HasColor;
+
+    // The key the color of the selected one comes from while it is unset.
+    private ThemeKey? ColorFallbackSource =>
+        Key is { Kind: ThemeKeyKind.Color } key && !HasColor ? _owner.Resolved?.ColorSource(key) : null;
+
+    /// <summary>Whether the inherited color is known — it comes from another key, which the editor can name.</summary>
+    public bool HasInheritedColor => ColorFallbackSource is not null || SystemAccentValue is not null;
+
+    /// <summary>Whether the inherited color links to another key (the accent of the system links nowhere).</summary>
+    public bool HasInheritedSource => ColorFallbackSource is not null;
+
+    /// <summary>Whether the color comes from the theme of the system: no value to show and nowhere to go.</summary>
+    public bool IsColorFromPlatform => IsColorInherited && ColorFallbackSource is null && SystemAccentValue is null;
+
+    /// <summary>Whether the value shown is the accent of the system (no setting of Signet holds it).</summary>
+    public bool IsSystemAccent => SystemAccentValue is not null;
+
+    /// <summary>The inherited color as a hex (empty when it is not known).</summary>
+    public string InheritedColor =>
+        ColorFallbackSource is { } source ? _owner.Resolved?.ColorOf(source)?.ToString() ?? string.Empty
+            : SystemAccentValue?.ToString() ?? string.Empty;
+
+    // The colors the system gives and Signet writes down nowhere (the accent, the shade of it a context menu title
+    // takes): no setting holds them, but they still have a value to show.
+    private ThemeColor? SystemAccentValue => !HasColor && Key is { } key ? AppTheme.SystemColorOf(key) : null;
+
+    /// <summary>"Inherited from ‹key›" — the tip of the link that goes to the key the color comes from.</summary>
+    public string InheritedFromText =>
+        ColorFallbackSource is { } source ? Strings.Format("ColorScheme_InheritedFrom", KeyName(source)) : string.Empty;
+
+    /// <summary>The color the field of the single color is filled with: the key's own, or the one it inherits.</summary>
+    public string SwatchColor => HasColor ? Color : InheritedColor;
+
+    /// <summary>Whether the field of the single color has a color to be filled with (its own or an inherited one).</summary>
+    public bool HasColorFieldColor => SwatchColor.Length > 0;
+
+    /// <summary>What the field of the single color says: its hex, or what the color falls back to instead.</summary>
+    public string ColorFieldText => FieldText(SwatchColor, IsColorFromPlatform ? "ColorScheme_FromPlatform" : null);
+
+    /// <summary>The readable text color of the field of the single color.</summary>
+    public string ColorFieldTextColor => FieldTextColor(SwatchColor);
+
+    /// <summary>What the text color field says: its hex, or that the text keeps the color around it.</summary>
+    public string ForegroundFieldText => FieldText(Foreground, "ColorScheme_FromPlatform");
+
+    /// <summary>The readable text color of the text color field.</summary>
+    public string ForegroundFieldTextColor => FieldTextColor(Foreground);
+
+    /// <summary>What the background field says: its hex, or that there is no background at all.</summary>
+    public string BackgroundFieldText => FieldText(Background, "ColorScheme_NoBackground");
+
+    /// <summary>The readable text color of the background field.</summary>
+    public string BackgroundFieldTextColor => FieldTextColor(Background);
+
+    /// <summary>What the effect color field says: its hex, or that the effect follows the text color.</summary>
+    public string EffectColorFieldText => FieldText(EffectColor, "ColorScheme_EffectFollowsText");
+
+    /// <summary>The readable text color of the effect color field.</summary>
+    public string EffectColorFieldTextColor => FieldTextColor(EffectColor);
+
+    // A field shows the hex of its color; with no color it says what the color falls back to instead.
+    private static string FieldText(string hex, string? emptyKey) =>
+        hex.Length > 0 ? hex : emptyKey is null ? string.Empty : Strings.Get(emptyKey);
+
+    // Black or white, whichever is readable on the color the field is filled with (the hex is written on it).
+    private string FieldTextColor(string hex) =>
+        ThemeColor.TryParse(hex, out ThemeColor color)
+            ? ColorContrast.ReadableOn(color, _owner.Resolved?.Variant == Avalonia.Styling.ThemeVariant.Dark).ToString()
+            : string.Empty;
+
+    /// <summary>Goes to the key the inherited color comes from.</summary>
+    [RelayCommand]
+    private void GoToColorSource()
+    {
+        if (ColorFallbackSource is { } source)
+        {
+            _owner.RequestKey(source);
         }
     }
 
@@ -467,8 +566,11 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
         OnPropertyChanged(nameof(Italic));
         OnPropertyChanged(nameof(HasForeground));
         OnPropertyChanged(nameof(Foreground));
+        OnPropertyChanged(nameof(IsForegroundUnset));
         OnPropertyChanged(nameof(HasBackground));
         OnPropertyChanged(nameof(Background));
+        OnPropertyChanged(nameof(IsBackgroundUnset));
+        OnPropertyChanged(nameof(IsEffectColorUnset));
         OnPropertyChanged(nameof(HasEffect));
         OnPropertyChanged(nameof(Effect));
         OnPropertyChanged(nameof(HasEffectColor));
@@ -476,6 +578,23 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
         OnPropertyChanged(nameof(CanBeEmpty));
         OnPropertyChanged(nameof(HasColor));
         OnPropertyChanged(nameof(Color));
+        OnPropertyChanged(nameof(IsColorInherited));
+        OnPropertyChanged(nameof(HasInheritedColor));
+        OnPropertyChanged(nameof(IsColorFromPlatform));
+        OnPropertyChanged(nameof(IsSystemAccent));
+        OnPropertyChanged(nameof(HasInheritedSource));
+        OnPropertyChanged(nameof(InheritedColor));
+        OnPropertyChanged(nameof(InheritedFromText));
+        OnPropertyChanged(nameof(SwatchColor));
+        OnPropertyChanged(nameof(HasColorFieldColor));
+        OnPropertyChanged(nameof(ColorFieldText));
+        OnPropertyChanged(nameof(ColorFieldTextColor));
+        OnPropertyChanged(nameof(ForegroundFieldText));
+        OnPropertyChanged(nameof(ForegroundFieldTextColor));
+        OnPropertyChanged(nameof(BackgroundFieldText));
+        OnPropertyChanged(nameof(BackgroundFieldTextColor));
+        OnPropertyChanged(nameof(EffectColorFieldText));
+        OnPropertyChanged(nameof(EffectColorFieldTextColor));
         OnPropertyChanged(nameof(IsModified));
         OnPropertyChanged(nameof(RestoreText));
     }

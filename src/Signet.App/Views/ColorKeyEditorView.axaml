@@ -10,28 +10,53 @@
        the swatch), for a panel's own Preferences section to embed a color that only it uses, instead of sending the
        user to the shared Interface Colors tree. -->
   <UserControl.Styles>
-    <Style Selector="Button.swatch">
-      <Setter Property="Padding" Value="2" />
-      <Setter Property="Width" Value="30" />
+    <!-- The color as one control: a button filled with the color, with its hex written on it, which opens the color
+         picker. There is no hex field to type into — a color is chosen in the picker. -->
+    <Style Selector="Button.colorField">
+      <Setter Property="Width" Value="136" />
       <Setter Property="Height" Value="26" />
+      <Setter Property="Padding" Value="6,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
-    <Style Selector="Button.swatch > Border">
       <Setter Property="BorderBrush" Value="{DynamicResource SignetFrameBrush}" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
-    <Style Selector="TextBox.hex">
-      <Setter Property="Width" Value="100" />
+    <!-- An inherited color is shown, not editable: the button keeps its color (a grayed-out one would hide the very
+         thing it shows) but does nothing. -->
+    <Style Selector="Button.colorField:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <!-- A field with no color at all says what it falls back to instead of a hex. -->
+    <Style Selector="Button.colorField.empty">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="FontStyle" Value="Italic" />
+      <Setter Property="Opacity" Value="0.7" />
+    </Style>
+    <!-- The link to the setting an inherited color comes from. -->
+    <Style Selector="Button.sourceLink">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Opacity" Value="0.75" />
+    </Style>
+    <Style Selector="Button.sourceLink:pointerover">
+      <Setter Property="Opacity" Value="1" />
     </Style>
   </UserControl.Styles>
 
   <StackPanel Orientation="Horizontal" Spacing="6">
     <CheckBox IsChecked="{Binding HasColor}" IsVisible="{Binding CanBeEmpty}"
               ToolTip.Tip="{loc:Loc ColorScheme_OwnColor}" />
-    <TextBox Classes="hex" IsEnabled="{Binding HasColor}" Text="{Binding Color, UpdateSourceTrigger=LostFocus}" />
-    <Button Classes="swatch" IsEnabled="{Binding HasColor}" Command="{Binding PickColorCommand}"
-            ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
-      <Border Background="{Binding Color, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
-    </Button>
+    <Button Classes="colorField" Classes.empty="{Binding !HasFieldColor}" IsEnabled="{Binding HasColor}"
+            Content="{Binding FieldText}" Command="{Binding PickColorCommand}"
+            ToolTip.Tip="{loc:Loc ColorScheme_PickColor}"
+            Background="{Binding SwatchColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}"
+            Foreground="{Binding FieldTextColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
+    <!-- Inherited from another setting: a link that goes there (the field itself cannot, it is switched off). -->
+    <Button Classes="sourceLink" Content="↗" IsVisible="{Binding HasInheritedSource}"
+            Command="{Binding GoToSourceCommand}" ToolTip.Tip="{Binding InheritedFromText}" />
   </StackPanel>
 </UserControl>

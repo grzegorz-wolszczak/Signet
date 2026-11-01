@@ -1,6 +1,8 @@
 using System;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input.Platform;
 using Avalonia.Controls.Presenters;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -47,6 +49,10 @@ public partial class StartScreenView : UserControl
         if (_boundViewModel is not null)
         {
             _boundViewModel.AppearanceChanged += OnAppearanceChanged;
+
+            // "Copy Path" needs a clipboard, and only the top level has one; the view is where it can be reached.
+            _boundViewModel.CopyPath = path =>
+                TopLevel.GetTopLevel(this)?.Clipboard is { } clipboard ? clipboard.SetTextAsync(path) : Task.CompletedTask;
         }
 
         ApplyAppearance();

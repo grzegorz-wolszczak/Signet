@@ -54,6 +54,28 @@ public sealed class ThemeResolver
     }
 
     /// <summary>
+    /// The key the color of <paramref name="key"/> actually comes from while nothing sets it: <paramref name="key"/>
+    /// itself when it resolves to a color, otherwise the first key of its fallback chain
+    /// (<see cref="ThemeKey.FallbackId"/>) that does. <c>null</c> = no key in the chain has a color, so the platform
+    /// decides and there is no value to show.
+    /// </summary>
+    /// <exception cref="ArgumentException">The key is not a color key.</exception>
+    public ThemeKey? ColorSource(Theme theme, ThemeKey key)
+    {
+        RequireKind(key, ThemeKeyKind.Color);
+        HashSet<string> seen = new(StringComparer.Ordinal);
+        for (ThemeKey? k = key; k is not null && seen.Add(k.Id); k = k.FallbackId is { } next ? ThemeKeys.Get(next) : null)
+        {
+            if (Resolve(theme, k).Color is not null)
+            {
+                return k;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// The theme the value of the key comes from: the theme asked about or one of its parents — for the editor (whether
     /// the user changed the key in this theme).
     /// </summary>
