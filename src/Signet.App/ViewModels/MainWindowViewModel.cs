@@ -221,6 +221,7 @@ public sealed partial class MainWindowViewModel
         _spellcheckEditor = new SpellcheckEditorViewModel(_spellChecker, _settings);
         _spellcheckEditor.NavigationRequested += NavigateToBookPathAtOffset;
         _spellcheckEditor.ChangeAllRequested += (word, lang, newWord) => RunAsyncAction(() => ApplySpellcheckChangeAllAsync(word, lang, newWord));
+        _spellcheckEditor.ReplaceOneRequested += replacement => RunAsyncAction(() => ApplySpellcheckReplaceOneAsync(replacement));
         _spellcheckEditor.DictionaryStateChanged += (_, _) => RefreshOpenTabsSpellcheck();
 
         InitCheckpoints();
@@ -535,6 +536,20 @@ public sealed partial class MainWindowViewModel
             else if (e.QualifiedKey.EndsWith("/code_editor_multiline_tabs", StringComparison.Ordinal))
             {
                 OnPropertyChanged(nameof(MultilineTabs));
+            }
+            else if (e.QualifiedKey.EndsWith("/code_editor_show_soft_hyphens", StringComparison.Ordinal)
+                || e.QualifiedKey.EndsWith("/code_editor_show_non_breaking_spaces", StringComparison.Ordinal)
+                || e.QualifiedKey.EndsWith("/code_editor_show_zero_width", StringComparison.Ordinal)
+                || SettingChangeKeys.Is(e, SettingChangeKeys.AppearanceSettingsCleared))
+            {
+                // The marks of the characters that are drawn as nothing — the open tabs redraw them at once.
+                foreach (ContentTabViewModel view in _tabManager.OpenTabViews)
+                {
+                    if (view is CodeTabViewModel codeTab)
+                    {
+                        codeTab.NotifyInvisibleCharactersSettingChanged();
+                    }
+                }
             }
         };
 
@@ -2030,6 +2045,57 @@ public sealed partial class MainWindowViewModel
         _tabManager.SaveAllTabs();
         _spellcheckEditor.Refresh(_currentBook);
         return _spellcheckEditor;
+    }
+
+    /// <summary>
+    /// Performs "Replace" from the Spellcheck Editor: one occurrence of a word, in the file and at the offset the
+    /// selected row names. Everything else is as in <see cref="ApplySpellcheckChangeAllAsync"/> — the open tabs are
+    /// flushed first and reloaded afterwards, and a checkpoint is offered.
+    /// </summary>
+    private async Task ApplySpellcheckReplaceOneAsync(SpellcheckOccurrenceReplacement replacement)
+    {
+        if (_currentBook is not { } book)
+        {
+            return;
+        }
+
+        if (!TryEnterBookOperation())
+        {
+            return;
+        }
+
+        try
+        {
+            _tabManager.SaveAllTabs();
+            string title = Strings.Get("CheckpointOp_SpellCheck");
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(title).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
+            bool replaced = SpellcheckEditorEngine.ReplaceOccurrence(
+                book, replacement.BookPath, replacement.Position, replacement.Word, replacement.NewText);
+            if (!replaced)
+            {
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                _spellcheckEditor.Refresh(book);
+                return;
+            }
+
+            book.Modified = true;
+            RefreshAfterMaintenanceOperation();
+            _spellcheckEditor.Refresh(book);
+            _statusBar.ShowMessage(Strings.Get("Status_WordUpdated"), TimeSpan.FromSeconds(4));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <summary>

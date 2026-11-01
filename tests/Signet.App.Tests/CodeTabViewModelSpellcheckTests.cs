@@ -68,6 +68,36 @@ public sealed class CodeTabViewModelSpellcheckTests : IDisposable
         sut.Document.GetText(start, end - start).Should().Be("wrold");
     }
 
+    /// <summary>
+    /// A file that says nothing about its language has its words checked in the language of the book, exactly as the
+    /// Spelling editor checks them. Found in November 2026: the files of a Polish book carried no
+    /// <c>lang</c>/<c>xml:lang</c>, so the words fell back to the default metadata language of the settings ("en")
+    /// and the editor underlined almost every word of the book.
+    /// </summary>
+    [Fact]
+    public void The_words_of_a_file_without_a_lang_attribute_are_checked_in_the_language_of_the_book()
+    {
+        // Arrange
+        SpellCheckSetup spell = _disposables.Add(SpellCheckTestFactory.New());
+        (SettingsStore settings, SpellChecker spellChecker) = spell;
+        settings.SpellCheck = true;
+        settings.DefaultMetadataLang = "en";
+        DictionaryFixture.Write(spell.HunspellDirectory, "pl_PL", "książki");
+        spellChecker.Reload();
+        const string polish = "<html><body><p>książki</p></body></html>";
+
+        CodeTabViewModel sut = NewTab(polish, settings, spellChecker);
+
+        // Assert
+        sut.MisspelledWordHighlights.Should().ContainSingle("without the book's language the word is checked in English");
+
+        // Act
+        sut.BookLanguage = () => "pl";
+
+        // Assert
+        sut.MisspelledWordHighlights.Should().BeEmpty();
+    }
+
     [Fact]
     public void GetMisspelledWordAtCaret_matches_only_strictly_inside_the_word()
     {

@@ -59,6 +59,74 @@ public sealed class SpellcheckEditorEngineTests : IDisposable
         words.Single(w => w.Text == "there").Count.Should().Be(1);
     }
 
+    /// <summary>
+    /// Every occurrence of a word is kept, with the file and the line it stands in: the Spelling Editor shows them
+    /// under the word, so that each can be gone to and replaced on its own.
+    /// </summary>
+    [Fact]
+    public void GetUniqueWords_records_every_occurrence_with_its_file_and_line()
+    {
+        // Arrange
+        using TempDir dicts = new();
+        using TempDir userDicts = new();
+        (SettingsStore settings, SpellChecker spellChecker) = NewEngine(dicts, userDicts, "hello", "world");
+        (Book book, HtmlResource first, HtmlResource second) = NewTwoFileBook();
+        first.SetText("<p>hello world</p>\n<p>hello again</p>");
+        second.SetText("<p>hello there</p>");
+
+        // Act
+        SpellcheckWord hello = SpellcheckEditorEngine.GetUniqueWords(book, spellChecker, settings)
+            .Single(w => w.Text == "hello");
+
+        // Assert
+        hello.Occurrences.Should().HaveCount(3);
+        hello.Occurrences.Select(o => o.Line).Should().Equal(1, 2, 1);
+        hello.Occurrences.Select(o => o.BookPath).Should().Equal(first.BookPath, first.BookPath, second.BookPath);
+        hello.Occurrences[0].Position.Should().Be(first.GetText().IndexOf("hello", StringComparison.Ordinal));
+        hello.BookPath.Should().Be(first.BookPath, "the word's own place is its first occurrence");
+        hello.Position.Should().Be(hello.Occurrences[0].Position);
+    }
+
+    /// <summary>"Replace" in the Spelling Editor changes one occurrence and leaves the others alone.</summary>
+    [Fact]
+    public void ReplaceOccurrence_replaces_only_the_occurrence_at_the_given_place()
+    {
+        // Arrange
+        using TempDir dicts = new();
+        using TempDir userDicts = new();
+        (SettingsStore settings, SpellChecker spellChecker) = NewEngine(dicts, userDicts, "world");
+        (Book book, HtmlResource first, _) = NewTwoFileBook();
+        first.SetText("<p>wrold and wrold</p>");
+        int second = first.GetText().LastIndexOf("wrold", StringComparison.Ordinal);
+
+        // Act
+        bool replaced = SpellcheckEditorEngine.ReplaceOccurrence(book, first.BookPath, second, "wrold", "world");
+
+        // Assert
+        replaced.Should().BeTrue();
+        first.GetText().Should().Be("<p>wrold and world</p>");
+    }
+
+    /// <summary>
+    /// A place that no longer holds the word is left alone: the file may have changed since the table was built.
+    /// </summary>
+    [Fact]
+    public void ReplaceOccurrence_does_nothing_when_the_word_is_not_at_that_place()
+    {
+        // Arrange
+        using TempDir dicts = new();
+        using TempDir userDicts = new();
+        (SettingsStore settings, SpellChecker spellChecker) = NewEngine(dicts, userDicts, "world");
+        (Book book, HtmlResource first, _) = NewTwoFileBook();
+        first.SetText("<p>wrold</p>");
+
+        // Act & Assert
+        SpellcheckEditorEngine.ReplaceOccurrence(book, first.BookPath, 0, "wrold", "world").Should().BeFalse();
+        SpellcheckEditorEngine.ReplaceOccurrence(book, "Text/missing.xhtml", 3, "wrold", "world").Should().BeFalse();
+        SpellcheckEditorEngine.ReplaceOccurrence(book, first.BookPath, 9999, "wrold", "world").Should().BeFalse();
+        first.GetText().Should().Be("<p>wrold</p>");
+    }
+
     [Fact]
     public void GetUniqueWords_marks_misspelled_words()
     {

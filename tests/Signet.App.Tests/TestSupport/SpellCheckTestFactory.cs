@@ -27,8 +27,15 @@ internal sealed class SpellCheckSetup : IDisposable
     public SpellCheckSetup()
     {
         Settings = new SettingsStore(_folder.Combine("settings.xml"));
-        SpellChecker = new SpellChecker(Settings, _folder.Combine("hunspell_dictionaries"), _folder.Combine("user_dictionaries"));
+        HunspellDirectory = _folder.Combine("hunspell_dictionaries");
+        SpellChecker = new SpellChecker(Settings, HunspellDirectory, _folder.Combine("user_dictionaries"));
     }
+
+    /// <summary>
+    /// The directory the engine looks for installed dictionaries in — a test that needs one of its own writes it
+    /// there (<c>DictionaryFixture</c>) and calls <see cref="SpellChecker.Reload"/>.
+    /// </summary>
+    public string HunspellDirectory { get; }
 
     /// <summary>The settings.</summary>
     public SettingsStore Settings { get; }

@@ -82,6 +82,59 @@ public sealed class CodeTabViewRenderTests : IDisposable
     }
 
     /// <summary>
+    /// The characters that are drawn as nothing (here a soft hyphen, which a hyphenated book is full of) get a mark of
+    /// their own, and the setting of Code Editor takes it away again. Found in November 2026: a word with a soft
+    /// hyphen looked like two words (the line may break there) with nothing to say why.
+    /// </summary>
+    [AvaloniaFact]
+    public void A_soft_hyphen_is_drawn_as_a_mark_of_its_own_while_the_setting_is_on()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+
+        var tabModel = new TabManagerModel();
+        OpenTab tab = tabModel.OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        settings.CodeEditorShowSoftHyphens = true;
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+
+        // Act
+        window.Show();
+        vm.Document.Text = "<p>kra\u00adw\u0119\u00addzi</p>";
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        TextView textView = window.GetVisualDescendants().OfType<TextEditor>().Single().TextArea.TextView;
+
+        // Assert
+        MarksOf(textView).Should().HaveCount(2, "each of the two soft hyphens is drawn as a mark");
+
+        // Act
+        settings.CodeEditorShowSoftHyphens = false;
+        vm.NotifyInvisibleCharactersSettingChanged();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        MarksOf(textView).Should().BeEmpty();
+
+        window.Close();
+    }
+
+    // The marks drawn in place of the characters that have no shape of their own: the elements a visual line is built
+    // of that stand for one character each and are not the text itself (InvisibleCharacterGenerator).
+    private static List<FormattedTextElement> MarksOf(TextView textView) =>
+        textView.VisualLines
+            .SelectMany(line => line.Elements)
+            .OfType<FormattedTextElement>()
+            .ToList();
+
+    /// <summary>
     /// Regression: updating the well-formed error highlight must not throw
     /// <c>NullReferenceException</c> when the <c>TextEditor.Document</c> binding is not resolved yet.
     /// This happened when Dock re-materialized the tab through <c>DeferredContentControl</c> while

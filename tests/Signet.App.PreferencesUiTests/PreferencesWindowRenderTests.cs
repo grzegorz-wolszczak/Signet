@@ -602,7 +602,8 @@ public sealed class PreferencesWindowRenderTests : IDisposable
                 .Concat(new[]
                 {
                     codeEditor, Strings.Get("PreferencesWindow_PreviewPanel"), Strings.Get("PreferencesWindow_FindUsagesWindow"),
-                    Strings.Get("PreferencesWindow_SearchEditorWindow"), Strings.Get("PreferencesWindow_Footnotes"),
+                    Strings.Get("PreferencesWindow_SpellcheckEditorWindow"), Strings.Get("PreferencesWindow_SearchEditorWindow"),
+                    Strings.Get("PreferencesWindow_Footnotes"),
                 }));
         root.Children.Single(n => n.Title == appearance).Children.Should().BeEmpty("the parts have sections of their own");
         window.Sections.All.Where(n => PartsWithFonts.Any(p => n.Id == p + "AppearancePage"))
@@ -1248,7 +1249,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         pane.IsEffectivelyVisible.Should().BeTrue("the same panel stays while the Fonts tab is selected");
         FontsPageView fonts = window.FindControl<FontsPageView>("CodeEditorFontsView")!;
         FontSettingView[] rows = fonts.GetVisualDescendants().OfType<FontSettingView>().ToArray();
-        rows.Select(r => r.Name).Should().Equal("FontCodeEditorText", "FontLineNumbers", "FontOpenTagHint", "FontDocumentTabs");
+        rows.Select(r => r.Name).Should().Equal("FontCodeEditorText", "FontLineNumbers", "FontOpenTagHint", "FontInvisibleCharacters", "FontDocumentTabs");
         rows.Should().OnlyContain(r => !r.FindControl<Border>("PreviewFrame")!.IsVisible && r.Bounds.Width > fonts.Bounds.Width - 60);
 
         // Act

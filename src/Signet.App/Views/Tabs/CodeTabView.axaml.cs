@@ -48,6 +48,7 @@ public partial class CodeTabView : UserControl
     private readonly SearchHighlightRenderer _searchRenderer = new();
     private readonly SpellCheckHighlightRenderer _spellRenderer = new();
     private readonly SyntaxIssueRenderer _issueRenderer = new();
+    private readonly InvisibleCharacterGenerator _invisibleCharacters = new();
     private readonly ContextMenu _contextMenu = new();
     private readonly ShortcutKeyBindings _codeEditorShortcuts;
 
@@ -93,6 +94,8 @@ public partial class CodeTabView : UserControl
         Editor.TextArea.TextView.BackgroundRenderers.Add(_errorRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_spellRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_issueRenderer);
+        // The characters that are drawn as nothing (soft hyphen, non-breaking space, zero width) get a mark of their own.
+        Editor.TextArea.TextView.ElementGenerators.Add(_invisibleCharacters);
         Editor.TextArea.TextView.AddHandler(TextView.PointerHoverEvent, OnTextViewPointerHover);
         Editor.TextArea.TextView.AddHandler(TextView.PointerHoverStoppedEvent, OnTextViewPointerHoverStopped);
         InitializeOpenTagHint();
@@ -266,6 +269,7 @@ public partial class CodeTabView : UserControl
             _boundViewModel.SearchHighlightsChanged -= OnSearchHighlightsChanged;
             _boundViewModel.MarkedTextChanged -= OnMarkedTextChanged;
             _boundViewModel.MisspelledWordsChanged -= OnMisspelledWordsChanged;
+            _boundViewModel.InvisibleCharactersChanged -= OnInvisibleCharactersChanged;
             _boundViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _boundViewModel.ExternalLinkRequested -= OnExternalLinkRequested;
             _boundViewModel.RenameClassRequested -= OnRenameClassRequested;
@@ -291,6 +295,7 @@ public partial class CodeTabView : UserControl
         _boundViewModel.SearchHighlightsChanged += OnSearchHighlightsChanged;
         _boundViewModel.MarkedTextChanged += OnMarkedTextChanged;
         _boundViewModel.MisspelledWordsChanged += OnMisspelledWordsChanged;
+        _boundViewModel.InvisibleCharactersChanged += OnInvisibleCharactersChanged;
         _boundViewModel.PropertyChanged += OnViewModelPropertyChanged;
         _boundViewModel.ExternalLinkRequested += OnExternalLinkRequested;
         _boundViewModel.RenameClassRequested += OnRenameClassRequested;
@@ -304,6 +309,7 @@ public partial class CodeTabView : UserControl
         UpdateTagRenderer();
         UpdateSearchRenderer();
         UpdateSpellRenderer();
+        UpdateInvisibleCharacters();
         InstallFolding();
     }
 
@@ -671,6 +677,19 @@ public partial class CodeTabView : UserControl
     }
 
     private void OnMisspelledWordsChanged() => UpdateSpellRenderer();
+
+    private void OnInvisibleCharactersChanged() => UpdateInvisibleCharacters();
+
+    // The marks of the characters that are drawn as nothing: the three settings of Code Editor. Changing them changes
+    // the elements of every line, so the whole view is laid out again.
+    private void UpdateInvisibleCharacters()
+    {
+        _invisibleCharacters.ShowSoftHyphens = _boundViewModel?.ShowSoftHyphens ?? false;
+        _invisibleCharacters.ShowNonBreakingSpaces = _boundViewModel?.ShowNonBreakingSpaces ?? false;
+        _invisibleCharacters.ShowZeroWidth = _boundViewModel?.ShowZeroWidth ?? false;
+        _invisibleCharacters.Font = _boundViewModel?.InvisibleCharacterFont ?? InvisibleCharacterAppearance.Default;
+        Editor.TextArea.TextView.Redraw();
+    }
 
     private void UpdateSpellRenderer()
     {
@@ -1588,6 +1607,10 @@ public partial class CodeTabView : UserControl
 
         ApplyFont();
         ApplyGrammar(_boundViewModel.Syntax);
+
+        // The marks of the characters that are drawn as nothing follow the settings of the preview too (the three
+        // checkboxes of Code Editor › Appearance).
+        UpdateInvisibleCharacters();
     }
 
     private CodeEditorAppearance CurrentAppearance() =>
@@ -1603,6 +1626,7 @@ public partial class CodeTabView : UserControl
         _tagRenderer.Theme = theme;
         _searchRenderer.Theme = theme;
         _spellRenderer.Theme = theme;
+        _invisibleCharacters.Theme = theme;
         EditorTheming.Apply(Editor, theme);
 
         // The theme may bring its own editor font (Appearance › Color Scheme › Fonts).

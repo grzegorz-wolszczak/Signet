@@ -537,6 +537,34 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether Code Editor shows the soft hyphens (U+00AD) it would otherwise draw as nothing at all. Enabled by
+    /// default: a hyphenated book is full of them, and without a mark of their own a word looks as if it were two
+    /// (the line may also break there).
+    /// </summary>
+    public bool CodeEditorShowSoftHyphens
+    {
+        get => ReadBool("code_editor_show_soft_hyphens", true);
+        set => Write("code_editor_show_soft_hyphens", value);
+    }
+
+    /// <summary>Whether Code Editor marks the non-breaking spaces (U+00A0), which look exactly like a space. Enabled by default.</summary>
+    public bool CodeEditorShowNonBreakingSpaces
+    {
+        get => ReadBool("code_editor_show_non_breaking_spaces", true);
+        set => Write("code_editor_show_non_breaking_spaces", value);
+    }
+
+    /// <summary>
+    /// Whether Code Editor marks the characters of zero width (U+200B–U+200D, U+2060, U+FEFF), which take no room at
+    /// all and are seen only by what reads the file. Enabled by default.
+    /// </summary>
+    public bool CodeEditorShowZeroWidth
+    {
+        get => ReadBool("code_editor_show_zero_width", true);
+        set => Write("code_editor_show_zero_width", value);
+    }
+
+    /// <summary>
     /// Whether the Book Browser selects the file of the tab that became the active one (also by focusing a tab in a window
     /// of its own). Enabled by default.
     /// </summary>
@@ -671,6 +699,31 @@ public sealed class SettingsStore
     /// Look of the opening tag tooltip (<see cref="CodeEditorOpenTagHint"/>): font and colors. Always
     /// read normalized (<see cref="OpenTagHintAppearance.Normalized"/>).
     /// </summary>
+    /// <summary>
+    /// The font of the marks drawn in place of the characters that have no shape of their own (empty / 0 = the editor
+    /// font). Always read normalized.
+    /// </summary>
+    public InvisibleCharacterAppearance InvisibleCharacterAppearance
+    {
+        get
+        {
+            InvisibleCharacterAppearance d = InvisibleCharacterAppearance.Default;
+            return new InvisibleCharacterAppearance(
+                ReadString("code_editor_invisible_font_family", d.FontFamily),
+                ReadInt("code_editor_invisible_font_size", d.FontSize),
+                ReadInt("code_editor_invisible_font_weight", d.FontWeight)).Normalized();
+        }
+
+        set
+        {
+            InvisibleCharacterAppearance v = value.Normalized();
+            WriteSilent("code_editor_invisible_font_family", v.FontFamily);
+            WriteSilent("code_editor_invisible_font_size", v.FontSize);
+            WriteSilent("code_editor_invisible_font_weight", v.FontWeight);
+            RaiseChanged("code_editor_invisible_appearance");
+        }
+    }
+
     public OpenTagHintAppearance OpenTagHintAppearance
     {
         get
@@ -1710,6 +1763,43 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// The fonts of the "Spellcheck Editor" window (<see cref="SpellcheckEditorAppearance"/>): the column headers, the
+    /// "Word" column and the other cells. Always read normalized.
+    /// </summary>
+    public SpellcheckEditorAppearance SpellcheckEditorAppearance
+    {
+        get
+        {
+            SpellcheckEditorAppearance d = SpellcheckEditorAppearance.Default;
+            return new SpellcheckEditorAppearance(
+                ReadString("spellcheck_editor_font_header_family", d.HeaderFontFamily),
+                ReadInt("spellcheck_editor_font_header_size", d.HeaderFontSize),
+                ReadString("spellcheck_editor_font_word_family", d.WordFontFamily),
+                ReadInt("spellcheck_editor_font_word_size", d.WordFontSize),
+                ReadString("spellcheck_editor_font_cells_family", d.CellsFontFamily),
+                ReadInt("spellcheck_editor_font_cells_size", d.CellsFontSize),
+                ReadInt("spellcheck_editor_font_header_weight", d.HeaderFontWeight),
+                ReadInt("spellcheck_editor_font_word_weight", d.WordFontWeight),
+                ReadInt("spellcheck_editor_font_cells_weight", d.CellsFontWeight)).Normalized();
+        }
+
+        set
+        {
+            SpellcheckEditorAppearance v = value.Normalized();
+            WriteSilent("spellcheck_editor_font_header_family", v.HeaderFontFamily);
+            WriteSilent("spellcheck_editor_font_header_size", v.HeaderFontSize);
+            WriteSilent("spellcheck_editor_font_word_family", v.WordFontFamily);
+            WriteSilent("spellcheck_editor_font_word_size", v.WordFontSize);
+            WriteSilent("spellcheck_editor_font_cells_family", v.CellsFontFamily);
+            WriteSilent("spellcheck_editor_font_cells_size", v.CellsFontSize);
+            WriteSilent("spellcheck_editor_font_header_weight", v.HeaderFontWeight);
+            WriteSilent("spellcheck_editor_font_word_weight", v.WordFontWeight);
+            WriteSilent("spellcheck_editor_font_cells_weight", v.CellsFontWeight);
+            RaiseChanged(SettingChangeKeys.SpellcheckEditorAppearance);
+        }
+    }
+
+    /// <summary>
     /// The fonts of the "Find Usages" panel (<see cref="FindUsagesAppearance"/>): the column headers, the "Context" column
     /// and the other cells. Always read normalized.
     /// </summary>
@@ -2515,6 +2605,15 @@ public sealed class SettingsStore
         yield return "search_editor_font_rows_family";
         yield return "search_editor_font_rows_size";
         yield return "search_editor_font_rows_weight";
+        yield return "spellcheck_editor_font_header_family";
+        yield return "spellcheck_editor_font_header_size";
+        yield return "spellcheck_editor_font_header_weight";
+        yield return "spellcheck_editor_font_word_family";
+        yield return "spellcheck_editor_font_word_size";
+        yield return "spellcheck_editor_font_word_weight";
+        yield return "spellcheck_editor_font_cells_family";
+        yield return "spellcheck_editor_font_cells_size";
+        yield return "spellcheck_editor_font_cells_weight";
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             yield return TooltipFontKey(area, "family");
@@ -2529,6 +2628,12 @@ public sealed class SettingsStore
             yield return BookBrowserExpandKey(kind);
         }
 
+        yield return "code_editor_invisible_font_family";
+        yield return "code_editor_invisible_font_size";
+        yield return "code_editor_invisible_font_weight";
+        yield return "code_editor_show_soft_hyphens";
+        yield return "code_editor_show_non_breaking_spaces";
+        yield return "code_editor_show_zero_width";
         yield return "code_editor_font_family_standard";
         yield return "code_editor_font_size";
         yield return "code_editor_font_weight";

@@ -478,6 +478,9 @@ public partial class PreferencesWindow : Window
             BookBrowserPreview.DataContext = vm.BookBrowserSample;
             BookBrowserSampleTip.DataContext = vm.BookBrowserFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.BookBrowser);
             TableOfContentsFontsView.DataContext = vm.TableOfContentsFonts;
+            SpellcheckEditorFontsView.DataContext = vm.SpellcheckEditorFonts;
+            SpellcheckEditorPreview.IsSample = true;
+            SpellcheckEditorPreview.DataContext = vm.SpellcheckEditorSample;
             FindReplaceFontsView.DataContext = vm.FindReplaceFonts;
             FindUsagesFontsView.DataContext = vm.FindUsagesFonts;
             SearchEditorFontsView.DataContext = vm.SearchEditorFonts;

@@ -20,8 +20,9 @@ public static class SampleBook
     private static readonly string[] Chapters = { "Titlepage.xhtml", "Chapter01.xhtml", "Chapter02.xhtml", "Chapter03.xhtml" };
 
     // What the first chapter shows in the sample of Code Editor: headings, a class, links (one of them broken, so the highlighting
-    // of a broken link shows), an image and a style sheet, written the way a book is.
-    private const string FirstChapterText = """
+    // of a broken link shows), an image, a style sheet and a line with the characters that are drawn as nothing
+    // (so that the three settings of Preferences show what they do), written the way a book is.
+    private const string FirstChapterTemplate = """
         <?xml version="1.0" encoding="utf-8"?>
         <!DOCTYPE html>
         <html xmlns="http://www.w3.org/1999/xhtml">
@@ -36,10 +37,20 @@ public static class SampleBook
           <div class="note">
             <p>A <span class="small">short</span> note under the light.</p>
           </div>
+          <!-- Characters that are drawn as nothing (Code Editor can mark them): a word hyphenated with soft
+               hyphens, a non-breaking space and a zero-width space. -->
+          <p>Light{SHY}house{SHY}keeper, 5{NBSP}km away{ZWSP}.</p>
           <img src="../Images/Figure01.png" alt="The lighthouse"/>
         </body>
         </html>
         """;
+
+    // The first chapter as the book holds it: the placeholders of the template stand for the characters that are drawn
+    // as nothing, which would be invisible (and easy to lose) in the source of this file.
+    private static string FirstChapterText => FirstChapterTemplate
+        .Replace("{SHY}", "\u00ad", StringComparison.Ordinal)
+        .Replace("{NBSP}", "\u00a0", StringComparison.Ordinal)
+        .Replace("{ZWSP}", "\u200b", StringComparison.Ordinal);
 
     // What the second chapter holds for the sample of Cleanup: nested divs with the same attributes, empty elements and a bare span.
     private const string SecondChapterText = """

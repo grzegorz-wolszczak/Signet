@@ -33,6 +33,14 @@ public static class ThemeKeys
     public static readonly ThemeKey EditorSelection = Attributes("editor.selection", ThemePage.General, "Editor",
         new TextAttributes { Background = Rgb(0xADD6FF) });
 
+    /// <summary>
+    /// The marks of the characters that are not drawn (the soft hyphen, the non-breaking space, the characters of
+    /// zero width) — what Code Editor shows in their place
+    /// (<see cref="Signet.Core.Misc.SettingsStore.CodeEditorShowSoftHyphens"/> and its neighbours).
+    /// </summary>
+    public static readonly ThemeKey EditorInvisibleCharacters = Attributes("editor.invisibleCharacters", ThemePage.General, "Editor",
+        new TextAttributes { Foreground = Rgb(0x5A5A5A), Background = Rgb(0xD8D8D8) });
+
     /// <summary>The pair of tags around the caret.</summary>
     public static readonly ThemeKey EditorTagPair = Attributes("editor.tagPair", ThemePage.General, "Editor",
         new TextAttributes { Background = Argb(0x40808080) });
@@ -263,6 +271,10 @@ public static class ThemeKeys
 
     /// <summary>The background of the Book Browser tree; unset = the background of the panel.</summary>
     public static readonly ThemeKey UiBookBrowserBackground = Color("ui.bookBrowser.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
+
+    /// <summary>The background of the column headers of the "Spellcheck Editor" window; unset = the usual one.</summary>
+    public static readonly ThemeKey UiSpellcheckEditorHeaderBackground =
+        Color("ui.spellcheckEditor.header.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the Saved Searches window's tree; unset = the background of the panel.</summary>
     public static readonly ThemeKey UiSearchEditorBackground = Color("ui.searchEditor.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);

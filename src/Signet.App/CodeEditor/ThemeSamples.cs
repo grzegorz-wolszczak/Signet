@@ -18,6 +18,7 @@ public static class ThemeSamples
           <p>An «errors.wellFormed|<span>» element that is never closed.</p>
           «errors.wellFormedWarning|<p>A warning about the document.</p>»
           <p>Fish & chips, an unescaped ampersand.</p>
+          <p>A soft hyphen is shown as «editor.invisibleCharacters|¬», a non-breaking space as «editor.invisibleCharacters|°».</p>
           «hints.openTag|<section id="chapter-1">»
         </body>
         </html>

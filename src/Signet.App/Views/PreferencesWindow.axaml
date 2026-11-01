@@ -971,6 +971,15 @@
                                     IsChecked="{Binding ExtendedHighlighting}" />
                           <!-- The document tabs: several rows when they do not fit. -->
                           <CheckBox x:Name="MultilineTabsBox" Content="{loc:Loc PreferencesWindow_MultilineTabs}" IsChecked="{Binding MultilineTabs}" />
+                          <!-- The characters that are drawn as nothing get a mark of their own (their color is in the
+                               color scheme, "Invisible characters"). -->
+                          <TextBlock Text="{loc:Loc PreferencesWindow_InvisibleCharacters}" Margin="0,6,0,0" />
+                          <CheckBox x:Name="ShowSoftHyphensBox" Margin="12,0,0,0"
+                                    Content="{loc:Loc PreferencesWindow_ShowSoftHyphens}" IsChecked="{Binding ShowSoftHyphens}" />
+                          <CheckBox x:Name="ShowNonBreakingSpacesBox" Margin="12,0,0,0"
+                                    Content="{loc:Loc PreferencesWindow_ShowNonBreakingSpaces}" IsChecked="{Binding ShowNonBreakingSpaces}" />
+                          <CheckBox x:Name="ShowZeroWidthBox" Margin="12,0,0,0"
+                                    Content="{loc:Loc PreferencesWindow_ShowZeroWidth}" IsChecked="{Binding ShowZeroWidth}" />
                           <!-- The colors of the editor and of the hint are in the color scheme, the colors of the tabs in the theme. -->
                           <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Padding="0"
                                            views:PreferencesPage.Target="ColorSchemePage" />
@@ -1252,6 +1261,46 @@
               </Border>
             </DockPanel>
           </Border>
+        </Grid>
+      </TabItem>
+
+      <!-- Appearance & Behavior › Spelling Editor: the background of the column headers and the fonts of the window
+           (the column headers, the "Word" column and the other cells). -->
+      <TabItem x:Name="SpellcheckEditorPage" Header="{loc:Loc PreferencesWindow_SpellcheckEditorWindow}" views:PreferencesPage.Parent="AppearancePage">
+        <Grid x:Name="SpellcheckEditorPreviewHost" ColumnDefinitions="*,12,380">
+        <TabControl x:Name="SpellcheckEditorTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_General}">
+            <views:PageWidthHost x:Name="SpellcheckEditorGeneralWidth">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_SpellcheckEditorColors}" FontWeight="Bold" />
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_SpellcheckEditorHeaderBackground}" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding SpellcheckEditorHeaderBackgroundColor}" />
+                      </Grid>
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </views:PageWidthHost>
+          </TabItem>
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="SpellcheckEditorFontsView" />
+          </TabItem>
+        </TabControl>
+        <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+        <!-- The preview, common to the tabs of the page: the real words table over the words of the sample book, in the
+             look the settings give it now (the unsaved ones too). Only to look at. Not searched: it holds no settings. -->
+        <Border x:Name="SpellcheckEditorPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+            <Border Classes="listFrame previewFrame">
+              <views:SpellcheckWordsView x:Name="SpellcheckEditorPreview" IsHitTestVisible="False" />
+            </Border>
+          </DockPanel>
+        </Border>
         </Grid>
       </TabItem>
 
