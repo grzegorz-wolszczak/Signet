@@ -87,8 +87,14 @@ When there are several doubts, collect them and ask all at once, not one by one.
     GC.
   - Embedding the GTK window under Avalonia's X11 host: show it only after it is reparented, with the web view already in
     it; GTK frame sync is off for it. Otherwise a compositor shows a transparent hole, or the view stays blank.
+  - A `GError` (or any pointer) a GObject signal hands to a handler belongs to the emitter: never free it there. Upstream
+    freed the one of `load-failed`, and WebKit's own handler then read freed memory — a `SIGSEGV` on the GTK thread
+    whenever a page in the Preview failed to load (e.g. after merging files).
+  - "stack smashing detected" is not always a managed exception through native frames: an abort from
+    `SwitchStackAndExecuteHandler` (libcoreclr) is the runtime handling a native `SIGSEGV`.
   - Diagnose native crashes with `coredumpctl` and the runtime's crash report (`DOTNET_EnableCrashReport=1`), not by
-    guessing — see the fork's `UPSTREAM.md`.
+    guessing — see the fork's `UPSTREAM.md`. Signet logs at startup the variables it was started with, so the log shows
+    whether they reached it.
 
 ## Running the GUI
 

@@ -96,6 +96,19 @@ same book looked right on Windows (found in November 2026). `LinuxNativeWebViewB
 `default-charset` to `utf-8` once the web view's settings exist (`InitializeRuntimeOnGtkThread`). A page that declares
 its encoding keeps it.
 
+### 6. A signal's GError is not freed
+
+The handlers of `load-failed` and of a download's `failed` signal freed the `GError` the signal hands them
+(`GetErrorMessageAndFree`). That error belongs to the emitter (transfer none): WebKit frees it itself, and first runs
+its own class handler of `load-failed` (`webkitWebViewLoadFail`) after the application's handlers return `FALSE`. That
+handler builds its error page with `g_strdup_printf("…%s…", error->message)` — from freed memory, where glibc's tcache
+had written its key over `message`: a `SIGSEGV` (general protection fault) in `strlen` on the GTK thread. In Signet it
+came every time a page shown in the Preview failed to load — after merging HTML files in the Book Browser with the
+Preview open, the shown file left the preview mirror (found in November 2026). The handlers now read the message with
+`GetErrorMessage`, which does not free it; `GetErrorMessageAndFree` stays for the errors returned through an
+`out GError` parameter (`*_finish`), which belong to the caller. Covered by `LoadFailedTests` (without the fix it ends
+the test process).
+
 ### From upstream since 12.0.4.8
 
 12.0.4.9 brings `gdk_x11_window_set_frame_sync_enabled(gdkWindow, false)` for the embedded window: an embedded window
@@ -122,6 +135,14 @@ stayed blank (and did not repaint on scrolling or selecting) until it was hidden
   for the native stacks; for the managed ones run Signet with
   `DOTNET_DbgEnableMiniDump=1 DOTNET_EnableCrashReport=1 DOTNET_DbgMiniDumpName=<path>` — the runtime writes
   `<path>.crashreport.json` with the managed frames of every thread (the full dump is large: put it on a disk with room).
+- **"stack smashing detected" is not always a managed exception.** When the abort comes from
+  `SwitchStackAndExecuteHandler` in `libcoreclr.so` (symbols: `dotnet-symbol --symbols libcoreclr.so`), the runtime was
+  handling a **native signal** (`SIGSEGV`) raised in native code on that thread, and the canary check failed in its
+  handler. The faulting place is in the signal frame: find `__restore_rt` on the thread's stack (`x/6000a $sp` in
+  `coredumpctl debug`); the `ucontext_t` follows its address + 8, its `gregs` at + 40 (`REG_RIP` 16, `REG_RSP` 15,
+  `REG_TRAPNO` 20). The return addresses above that `RSP` give the native callers; WebKitGTK's debug info comes from
+  `https://debuginfod.ubuntu.com/buildid/<build id>/debuginfo` (`readelf -n` gives the build id), then `addr2line -f -C -i`.
+  This is how change 6 was found; the crash report showed only `RunGtkLoop` and no managed exception.
 - **WebKitGTK alone**: a minimal GTK 3 + `WebKit2 4.1` window (Python `gi`) tells whether the engine renders on the
   machine at all, apart from the embedding.
 - Environment variables such as `WEBKIT_DISABLE_DMABUF_RENDERER=1` or `WEBKIT_DISABLE_COMPOSITING_MODE=1` did **not**
