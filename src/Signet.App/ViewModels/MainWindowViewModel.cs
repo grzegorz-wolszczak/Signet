@@ -1105,10 +1105,13 @@ public sealed partial class MainWindowViewModel
 
     /// <inheritdoc />
     void IMultiFileSearchHost.ShowTextUsages(
-        Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun)
+        Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun, bool reveal)
     {
         _findUsages.LoadText(header, usages, rerun);
-        ShowFindUsagesTool();
+        if (reveal)
+        {
+            ShowFindUsagesTool();
+        }
     }
 
     /// <inheritdoc />

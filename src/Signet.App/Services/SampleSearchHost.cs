@@ -33,7 +33,7 @@ public sealed class SampleSearchHost : IMultiFileSearchHost
     }
 
     /// <inheritdoc />
-    public void ShowTextUsages(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun)
+    public void ShowTextUsages(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun, bool reveal)
     {
     }
 

@@ -40,12 +40,14 @@ public interface IMultiFileSearchHost
     void OpenResourceAtMatch(string bookPath, int startOffset, int endOffset);
 
     /// <summary>
-    /// Shows the matches of a "Count All" in the "Find Usages" window (shown and focused).
+    /// Shows the matches of a "Count All" in the "Find Usages" window.
     /// </summary>
     /// <param name="header">The description of the search (built in the current language).</param>
-    /// <param name="usages">The matches.</param>
+    /// <param name="usages">The matches (none when nothing was found: the window then shows 0).</param>
     /// <param name="rerun">Runs the search again, for the window's "Refresh".</param>
-    void ShowTextUsages(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun);
+    /// <param name="reveal">Whether the window is shown and focused; <c>false</c> only changes what it holds, so a hidden
+    /// window stays hidden (a search that found nothing).</param>
+    void ShowTextUsages(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun, bool reveal);
 
     /// <summary>
     /// Creates an automatic "Before: <paramref name="operation"/>" checkpoint, off the UI thread under a progress window the user can
