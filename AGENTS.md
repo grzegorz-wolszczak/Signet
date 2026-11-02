@@ -217,6 +217,10 @@ Rules:
   `Directory.Build.props`; their severity is set in `.editorconfig`). While a feature is being developed do **not**
   stop to fix them. Fix all warnings (the `IDExxxx` ones and any other) at the very end of the task, right
   before the final run of all tests — never in the middle of development.
+- **Line endings** follow Microsoft's .NET repositories: `* text=auto` in `.gitattributes` — LF in git, the
+  platform's line endings on disk (LF on Linux, CRLF on Windows). No `eol`/`end_of_line` is forced for `.cs`,
+  `.csproj` or other source files; only `*.sh` (LF) and `*.cmd`/`*.bat` (CRLF). Byte-stable exceptions:
+  `tests/corpus/` (its own `.gitattributes`) and `src/Signet.Core/EmbeddedData/` (LF).
 - `Directory.Packages.props` — Central Package Management. A package version change = a separate
   `build` commit.
 - **Versioning:** `<VersionPrefix>-<yyyyMMddHHmm UTC>`, e.g. `0.8.0-202610021432`

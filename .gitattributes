@@ -1,14 +1,14 @@
-# Set the default behavior, in case people don't have core.autocrlf set.
-#* text=auto
+# Line endings as in Microsoft's .NET repositories (dotnet/runtime, roslyn, aspnetcore, sdk): text files are stored
+# with LF and checked out with the platform's line endings (LF on Linux, CRLF on Windows). No eol is forced for
+# C# or project files; .editorconfig sets no end_of_line for them either.
+* text=auto
 
+*.cs text diff=csharp
 
-# Declare files that will always have CRLF line endings on checkout.
-*.sln text eol=crlf
-*.csproj text eol=crlf
-*.cs text eol=crlf
-*.ps1 text eol=crlf
-
+# Scripts that only work with one kind of line ending.
 *.sh text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
 
 *.bin binary
 
