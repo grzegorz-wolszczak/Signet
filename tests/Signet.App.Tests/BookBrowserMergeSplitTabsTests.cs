@@ -111,4 +111,29 @@ public sealed class BookBrowserMergeSplitTabsTests
             tab.IsModified.Should().BeFalse();
         });
     }
+
+    [Theory]
+    [AutoData]
+    public async Task Merge_selects_the_target_file_in_the_Book_Browser(string secondPart)
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange: the merged file goes with its node, and the tree was left with nothing selected (found in
+            // November 2026)
+            using TempDir temp = new();
+            using Session s = new(temp);
+            CodeTabViewModel tab = s.OpenChapter();
+            HtmlResource second = await s.SplitChapter(tab, secondPart);
+            s.Select(s.Chapter, second);
+            BookBrowserNode[]? requested = null;
+            s.Vm.BookBrowser.TreeSelectionRequested += (_, nodes) => requested = nodes.ToArray();
+
+            // Act
+            await s.Vm.BookBrowser.MergeSelectedCommand.ExecuteAsync(null);
+
+            // Assert
+            requested.Should().ContainSingle().Which.Entry!.Resource.Should().BeSameAs(s.Chapter);
+            s.Vm.BookBrowser.MergeSelectedCommand.CanExecute(null).Should().BeFalse("only the target is selected now");
+        });
+    }
 }

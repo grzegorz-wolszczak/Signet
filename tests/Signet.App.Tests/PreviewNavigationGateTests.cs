@@ -71,4 +71,70 @@ public sealed class PreviewNavigationGateTests
         sut.Attached().Should().BeNull();
         sut.Initialized().Should().BeNull();
     }
+
+    // A shown preview whose engine is ready (the panel open).
+    private static PreviewNavigationGate Ready()
+    {
+        PreviewNavigationGate gate = new();
+        gate.Attached();
+        gate.Initialized();
+        return gate;
+    }
+
+    [Fact]
+    public void A_reload_while_a_page_is_loading_loads_that_page_again()
+    {
+        // Arrange: the shown file was merged into another (found in November 2026) - the tab of the target becomes active
+        // and its page is asked for; the reload after the merge comes before the engine has loaded it
+        PreviewNavigationGate sut = Ready();
+        Uri merged = Page();
+        Uri target = Page();
+        sut.Request(merged);
+        sut.Completed(merged);
+
+        // Act
+        sut.Request(target);
+
+        // Assert
+        sut.ForReload().Should().Be(target, "the engine would reload the merged file, gone from the mirror");
+
+        // Act
+        sut.Completed(target);
+
+        // Assert
+        sut.ForReload().Should().BeNull("the page is shown: the engine's own reload is right");
+    }
+
+    [Fact]
+    public void The_completion_of_an_older_load_leaves_the_page_still_loading()
+    {
+        // Arrange
+        PreviewNavigationGate sut = Ready();
+        Uri older = Page();
+        Uri newer = Page();
+        sut.Request(older);
+
+        // Act
+        sut.Request(newer);
+        sut.Completed(older);
+
+        // Assert
+        sut.ForReload().Should().Be(newer);
+    }
+
+    [Fact]
+    public void Another_place_in_the_page_shown_is_not_a_load()
+    {
+        // Arrange: the engine scrolls to a fragment of the page it shows without reporting a completion
+        PreviewNavigationGate sut = Ready();
+        Uri page = Page();
+        sut.Request(page);
+        sut.Completed(page);
+
+        // Act
+        sut.Request(new UriBuilder(page) { Fragment = Any.Create<string>() }.Uri);
+
+        // Assert
+        sut.ForReload().Should().BeNull("a reload must still refresh the page");
+    }
 }
