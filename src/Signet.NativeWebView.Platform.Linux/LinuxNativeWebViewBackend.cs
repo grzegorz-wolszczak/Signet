@@ -1381,6 +1381,9 @@ public sealed partial class LinuxNativeWebViewBackend
             throw new InvalidOperationException("Unable to access WebKitGTK settings.");
         }
 
+        // Signet: UTF-8 for pages that declare no encoding (UPSTREAM.md, "UTF-8 as the default encoding").
+        ApplySignetDefaultCharset(_settings);
+
         if (_userContentManager == IntPtr.Zero)
         {
             throw new InvalidOperationException("Unable to access WebKitGTK user content manager.");

@@ -86,6 +86,16 @@ event; written to stderr when there is no UI thread.
 marshaller kept alive only for the call itself, while WebKit calls it later (a garbage-collected delegate called from
 native code crashes the process). It is now a `static readonly` field, like the snapshot and Cairo callbacks.
 
+### 5. UTF-8 as the default encoding
+
+WebKitGTK's `default-charset` setting is ISO-8859-1. Signet's preview mirror writes every text file in UTF-8 and serves
+it through `file://`; a chapter with an `.html` extension is then parsed as HTML, where the XML declaration's
+`encoding="utf-8"` counts for nothing, and without a `<meta charset>` or a BOM WebKit read it as ISO-8859-1 — every
+Polish letter showed as two or three Latin-1 characters (`sÅ‚oneczny`). WebView2 on Windows detects UTF-8 there, so the
+same book looked right on Windows (found in November 2026). `LinuxNativeWebViewBackend.Charset.Signet.cs` sets
+`default-charset` to `utf-8` once the web view's settings exist (`InitializeRuntimeOnGtkThread`). A page that declares
+its encoding keeps it.
+
 ### From upstream since 12.0.4.8
 
 12.0.4.9 brings `gdk_x11_window_set_frame_sync_enabled(gdkWindow, false)` for the embedded window: an embedded window
