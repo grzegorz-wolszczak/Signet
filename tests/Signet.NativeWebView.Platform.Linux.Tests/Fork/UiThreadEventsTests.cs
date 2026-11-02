@@ -12,8 +12,20 @@ namespace Signet.NativeWebView.Platform.Linux.Tests.Fork;
 [Collection(ForkStaticStateCollection.Name)]
 public sealed class UiThreadEventsTests
 {
+    // Runs the action on a thread of its own and waits for it. Not Task.Run: xUnit runs a test on a thread of the pool,
+    // which goes back to the pool at an await and may then run the very work it waits for — the "other" thread was then
+    // the thread the backend was created on, and the event was raised at once (found in November 2026: the first test
+    // failed about one run in three). The UI thread of the application never runs work of the pool, so the backend
+    // telling threads apart by their id is right; the tests have to use a thread that is surely another one.
+    private static void RunOnAnotherThread(Action action)
+    {
+        var thread = new Thread(() => action()) { IsBackground = true };
+        thread.Start();
+        thread.Join();
+    }
+
     [Fact]
-    public async Task An_event_raised_on_another_thread_is_posted_to_the_context_the_backend_was_created_on()
+    public void An_event_raised_on_another_thread_is_posted_to_the_context_the_backend_was_created_on()
     {
         // Arrange
         var uiContext = new RecordingSynchronizationContext();
@@ -21,9 +33,7 @@ public sealed class UiThreadEventsTests
         var raisedOnThread = -1;
 
         // Act
-        await Task.Run(
-            () => backend.RaiseEvent(() => raisedOnThread = Environment.CurrentManagedThreadId),
-            TestContext.Current.CancellationToken);
+        RunOnAnotherThread(() => backend.RaiseEvent(() => raisedOnThread = Environment.CurrentManagedThreadId));
 
         // Assert
         raisedOnThread.Should().Be(-1, "the event waits for the UI thread");
@@ -74,7 +84,7 @@ public sealed class UiThreadEventsTests
     }
 
     [Fact]
-    public async Task Events_raised_on_another_thread_reach_the_UI_thread_in_the_order_they_were_raised()
+    public void Events_raised_on_another_thread_reach_the_UI_thread_in_the_order_they_were_raised()
     {
         // Arrange
         var uiContext = new RecordingSynchronizationContext();
@@ -83,13 +93,17 @@ public sealed class UiThreadEventsTests
         var raised = new List<string>();
 
         // Act
-        await Task.Run(
-            () =>
-            {
-                foreach (var name in names)
-                    backend.RaiseEvent(() => raised.Add(name));
-            },
-            TestContext.Current.CancellationToken);
+        RunOnAnotherThread(() =>
+        {
+            foreach (var name in names)
+                backend.RaiseEvent(() => raised.Add(name));
+        });
+
+        // Assert
+        raised.Should().BeEmpty("the events wait for the UI thread");
+        uiContext.PostedCount.Should().Be(names.Length);
+
+        // Act
         uiContext.RunPosted();
 
         // Assert
