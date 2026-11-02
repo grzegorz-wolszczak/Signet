@@ -152,8 +152,7 @@ Rules:
   A document tab can be opened in the main window's `DocumentDock` under headless
   (`WindowRenderTests`; this used to hang with earlier versions). Tab logic that needs no UI
   stays in `TabManagerModelTests` / `TabManagerTests`.
-- `Catastrophic failure: Call from invalid thread` lines printed during a full `dotnet test` run are
-  known noise from the headless UI tests; they do not fail the run.
+
 
 ### A case found is a case written into a book
 
