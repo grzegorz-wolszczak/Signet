@@ -46,7 +46,8 @@ public sealed class SoftHyphensWindowTests : IDisposable
             string.Empty);
         SoftHyphensViewModel vm = new(
             survey, () => new HyphenationPatternFiles(patterns.Path), (_, _) => { },
-            _ => Task.FromResult<SoftHyphenSurvey?>(null), _ => Task.FromResult<SoftHyphenSurvey?>(null));
+            _ => Task.FromResult<SoftHyphenSurvey?>(null), _ => Task.FromResult<SoftHyphenSurvey?>(null),
+            _ => Task.FromResult<SoftHyphenSurvey?>(null), SoftHyphenForm.Character, _ => { });
         SoftHyphensWindow window = SoftHyphensWindow.Create(vm);
 
         // Act
@@ -69,6 +70,16 @@ public sealed class SoftHyphensWindowTests : IDisposable
         window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "EmptyText").IsEffectivelyVisible.Should().BeTrue();
         window.GetVisualDescendants().OfType<NumericUpDown>().Single(n => n.Name == "MinWordLengthBox").IsEffectivelyVisible
             .Should().BeFalse("the shortest word is about adding");
+        window.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Name == "FormPanel").IsEffectivelyVisible
+            .Should().BeFalse("removing writes no soft hyphen");
+
+        // Act
+        vm.IsConvertMode = true;
+        Settle(window);
+
+        // Assert
+        window.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Name == "FormPanel").IsEffectivelyVisible.Should().BeTrue();
+        window.GetVisualDescendants().OfType<RadioButton>().Single(b => b.Name == "CharacterFormButton").IsChecked.Should().BeTrue();
 
         window.Close();
     }

@@ -1253,7 +1253,8 @@ public sealed class Book : IDisposable
                 html.GetText(),
                 language,
                 key => plan.Chosen.Contains((html.BookPath, key)) ? plan.Patterns.GetValueOrDefault(key) : null,
-                plan.MinWordLength),
+                plan.MinWordLength,
+                plan.Form),
             run);
     }
 
@@ -1278,6 +1279,32 @@ public sealed class Book : IDisposable
                 language,
                 key => plan.Chosen.Contains((html.BookPath, key)),
                 outside.TryGetValue(html.BookPath, out HashSet<int>? offsets) ? offsets : new HashSet<int>()),
+            run);
+    }
+
+    /// <summary>
+    /// Converting soft hyphens: those in the text of the chosen languages in the chosen files and in the chosen places
+    /// outside the text are written in the form of the plan (<see cref="SoftHyphenInserter.ConvertSoftHyphens"/>). A file
+    /// that is not well-formed is skipped (left unchanged) and the rest is processed; the skipped files are listed in
+    /// the result.
+    /// </summary>
+    /// <param name="plan">The files and languages, the soft hyphens outside the text, and the form.</param>
+    /// <param name="run">Reports the progress and can stop it.</param>
+    public FileBatchResult ConvertSoftHyphens(SoftHyphenConvertPlan plan, FileBatchRun run = default)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        string language = BookLanguageOrUnknown();
+        Dictionary<string, HashSet<int>> outside = plan.OutsideText
+            .GroupBy(p => p.BookPath, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Select(p => p.Offset).ToHashSet(), StringComparer.Ordinal);
+        return ReplaceInEachWellFormed(
+            PlannedFiles(plan.Chosen.Select(c => c.BookPath).Concat(outside.Keys)),
+            html => SoftHyphenInserter.ConvertSoftHyphens(
+                html.GetText(),
+                language,
+                key => plan.Chosen.Contains((html.BookPath, key)),
+                outside.TryGetValue(html.BookPath, out HashSet<int>? offsets) ? offsets : new HashSet<int>(),
+                plan.Form),
             run);
     }
 

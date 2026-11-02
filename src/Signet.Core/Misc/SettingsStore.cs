@@ -547,6 +547,19 @@ public sealed class SettingsStore
         set => Write("code_editor_show_soft_hyphens", value);
     }
 
+    /// <summary>
+    /// How "Hyphenation" writes the soft hyphens it adds or converts to, as chosen last in its dialog: the character
+    /// U+00AD by default (an unknown value reads as it).
+    /// </summary>
+    public BookManipulation.SoftHyphenForm SoftHyphenForm
+    {
+        get => Enum.TryParse(ReadString("soft_hyphen_form", nameof(BookManipulation.SoftHyphenForm.Character)), ignoreCase: true,
+                out BookManipulation.SoftHyphenForm form) && Enum.IsDefined(form)
+            ? form
+            : BookManipulation.SoftHyphenForm.Character;
+        set => Write("soft_hyphen_form", value.ToString());
+    }
+
     /// <summary>Whether Code Editor marks the non-breaking spaces (U+00A0), which look exactly like a space. Enabled by default.</summary>
     public bool CodeEditorShowNonBreakingSpaces
     {

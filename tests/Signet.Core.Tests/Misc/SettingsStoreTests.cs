@@ -1199,6 +1199,24 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void SoftHyphenForm_defaults_to_the_character_and_is_remembered()
+    {
+        // Arrange
+        using TempDir dir = new();
+        SettingsStore sut = NewStore(dir);
+
+        // Act & Assert
+        sut.SoftHyphenForm.Should().Be(SoftHyphenForm.Character);
+
+        // Act
+        sut.SoftHyphenForm = SoftHyphenForm.Reference;
+        sut.Save();
+
+        // Assert
+        NewStore(dir).SoftHyphenForm.Should().Be(SoftHyphenForm.Reference, "the value goes to the settings file");
+    }
+
+    [Fact]
     public void PreviewHighlight_defaults_to_a_background_45_percent_persistent()
     {
         // Arrange

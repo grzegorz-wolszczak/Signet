@@ -7901,4 +7901,40 @@ Zamknij zakładkę</value>
   <data name="SoftHyphens_NothingToRemove" xml:space="preserve">
     <value>Książka nie ma miękkich łączników.</value>
   </data>
+  <data name="SoftHyphens_ModeConvert" xml:space="preserve">
+    <value>Zamiana formy miękkich łączników</value>
+  </data>
+  <data name="SoftHyphens_ConvertIntro" xml:space="preserve">
+    <value>Miękkie łączniki zapisane inaczej niż w wybranej formie (&amp;shy;, &amp;#xAD;, &amp;#173; albo sam znak) zostaną w niej zapisane — w tekście zaznaczonych języków w zaznaczonych plikach oraz w zaznaczonych miejscach poza tekstem.</value>
+  </data>
+  <data name="SoftHyphens_Convert" xml:space="preserve">
+    <value>Zamień</value>
+  </data>
+  <data name="SoftHyphens_NothingToConvert" xml:space="preserve">
+    <value>Wszystkie miękkie łączniki książki są już zapisane w wybranej formie.</value>
+  </data>
+  <data name="SoftHyphens_ColumnToConvert" xml:space="preserve">
+    <value>Do zamiany</value>
+  </data>
+  <data name="SoftHyphens_Form" xml:space="preserve">
+    <value>Zapis miękkiego łącznika:</value>
+  </data>
+  <data name="SoftHyphens_FormCharacter" xml:space="preserve">
+    <value>znak U+00AD</value>
+  </data>
+  <data name="SoftHyphens_FormCharacterTip" xml:space="preserve">
+    <value>Sam znak: najkrótszy zapis, w kodzie niewidoczny — Code Editor może go pokazywać jako ¬ (Preferencje › Appearance &amp; Behavior › Code Editor).</value>
+  </data>
+  <data name="SoftHyphens_FormReference" xml:space="preserve">
+    <value>&amp;#173;</value>
+  </data>
+  <data name="SoftHyphens_FormReferenceTip" xml:space="preserve">
+    <value>Odwołanie do znaku: widoczne w kodzie jako tekst.</value>
+  </data>
+  <data name="Operation_ConvertSoftHyphens" xml:space="preserve">
+    <value>Zamiana formy miękkich łączników</value>
+  </data>
+  <data name="Status_SoftHyphensConverted" xml:space="preserve">
+    <value>Zamieniono formę miękkich łączników.</value>
+  </data>
 </root>

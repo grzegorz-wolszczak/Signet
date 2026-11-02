@@ -3090,18 +3090,24 @@ public sealed partial class MainWindowViewModel
             run.Result!,
             ReadHyphenationPatternFiles,
             NavigateToBookPathAtOffset,
-            plan => ApplyHyphenationAsync(book, plan, null, runWithProgress),
-            plan => ApplyHyphenationAsync(book, null, plan, runWithProgress));
+            plan => ApplyHyphenationAsync(
+                book, "Operation_AddSoftHyphens", "Status_SoftHyphensAdded", (b, batch) => b.AddSoftHyphens(plan, batch), runWithProgress),
+            plan => ApplyHyphenationAsync(
+                book, "Operation_RemoveSoftHyphens", "Status_SoftHyphensRemoved", (b, batch) => b.RemoveSoftHyphens(plan, batch), runWithProgress),
+            plan => ApplyHyphenationAsync(
+                book, "Operation_ConvertSoftHyphens", "Status_SoftHyphensConverted", (b, batch) => b.ConvertSoftHyphens(plan, batch), runWithProgress),
+            _settings.SoftHyphenForm,
+            form => _settings.SoftHyphenForm = form);
     }
 
     /// <summary>
-    /// "Add" or "Remove" of the "Hyphenation" dialog: the plan is applied file by file and the book surveyed anew, both
+    /// "Add", "Remove" or "Convert" of the "Hyphenation" dialog: the plan is applied file by file and the book surveyed anew, both
     /// off the UI thread under the progress window over the dialog; the skipped files are reported as for every
     /// operation applied file by file. Returns the new survey for the dialog, or <c>null</c> when it did not run (another
     /// book is open now, or another operation is running).
     /// </summary>
     private async Task<SoftHyphenSurvey?> ApplyHyphenationAsync(
-        Book book, SoftHyphenAddPlan? add, SoftHyphenRemovePlan? remove, ProgressRunner? runWithProgress)
+        Book book, string operation, string doneStatus, Func<Book, FileBatchRun, FileBatchResult> apply, ProgressRunner? runWithProgress)
     {
         if (!ReferenceEquals(book, _currentBook))
         {
@@ -3109,13 +3115,12 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
-        string operation = add is not null ? "Operation_AddSoftHyphens" : "Operation_RemoveSoftHyphens";
         BookOperationOutcome<(FileBatchResult Result, SoftHyphenSurvey Survey)> run = await RunBookOperationAsync(
             Strings.Get(operation), checkpointName: null, editsBook: true,
             (progress, cancel) =>
             {
                 FileBatchRun batch = new(new FileBatchProgressMap(progress), cancel);
-                FileBatchResult result = add is not null ? book.AddSoftHyphens(add, batch) : book.RemoveSoftHyphens(remove!, batch);
+                FileBatchResult result = apply(book, batch);
                 return (result, book.SurveySoftHyphens(batch));
             },
             runWithProgress)
@@ -3125,7 +3130,7 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        FinishFileBatch(run.Result.Result, checkpoint: false, operation, add is not null ? "Status_SoftHyphensAdded" : "Status_SoftHyphensRemoved");
+        FinishFileBatch(run.Result.Result, checkpoint: false, operation, doneStatus);
         return run.Result.Survey;
     }
 

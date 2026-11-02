@@ -16,9 +16,14 @@ namespace Signet.Core.BookManipulation;
 /// <param name="Context">The line around it, for the list.</param>
 /// <param name="ContextMatchStart">Where the soft hyphen is in <paramref name="Context"/>.</param>
 /// <param name="ContextMatchLength">Its length in <paramref name="Context"/>.</param>
+/// <param name="Text">How it is written (<c>&amp;#173;</c>, <c>&amp;shy;</c>, the character…).</param>
 public sealed record SoftHyphenPlace(
     string BookPath, int Offset, int Length, int Line, int Column, SoftHyphenPlaceKind Kind, string Name,
-    string Context, int ContextMatchStart, int ContextMatchLength);
+    string Context, int ContextMatchStart, int ContextMatchLength, string Text)
+{
+    /// <summary>Whether it is written in <paramref name="form"/> already.</summary>
+    public bool IsIn(SoftHyphenForm form) => SoftHyphenInserter.FormOf(Text) == form;
+}
 
 /// <summary>A language in one file: its words and soft hyphens there, and where the file says the language.</summary>
 public sealed class SoftHyphenLanguageInFile
@@ -27,6 +32,7 @@ public sealed class SoftHyphenLanguageInFile
     public const int LongestCountedWord = 64;
 
     private readonly int[] _wordsByLength = new int[LongestCountedWord + 1];
+    private readonly int[] _softHyphensByForm = new int[2];
     private readonly HashSet<LanguageSource> _sources = new();
 
     internal SoftHyphenLanguageInFile(string bookPath)
@@ -39,6 +45,9 @@ public sealed class SoftHyphenLanguageInFile
 
     /// <summary>The soft hyphens in the text of the language in this file.</summary>
     public int SoftHyphens { get; private set; }
+
+    /// <summary>The soft hyphens in the text of the language in this file not written in <paramref name="form"/>.</summary>
+    public int SoftHyphensNotIn(SoftHyphenForm form) => SoftHyphens - _softHyphensByForm[(int)form];
 
     /// <summary>Where the file says the language (an element with <c>lang</c>, the OPF…).</summary>
     public IReadOnlyCollection<LanguageSource> Sources => _sources;
@@ -60,7 +69,14 @@ public sealed class SoftHyphenLanguageInFile
 
     internal void AddWord(int letters) => _wordsByLength[Math.Min(letters, LongestCountedWord)]++;
 
-    internal void AddSoftHyphens(int count) => SoftHyphens += count;
+    internal void AddSoftHyphen(string text)
+    {
+        SoftHyphens++;
+        if (SoftHyphenInserter.FormOf(text) is { } form)
+        {
+            _softHyphensByForm[(int)form]++;
+        }
+    }
 
     internal void AddSource(LanguageSource source) => _sources.Add(source);
 }
@@ -93,6 +109,9 @@ public sealed class SoftHyphenLanguage
 
     /// <summary>The soft hyphens in the text of the language.</summary>
     public int SoftHyphens => Files.Sum(f => f.SoftHyphens);
+
+    /// <summary>The soft hyphens in the text of the language not written in <paramref name="form"/>.</summary>
+    public int SoftHyphensNotIn(SoftHyphenForm form) => Files.Sum(f => f.SoftHyphensNotIn(form));
 
     /// <summary>Where the book says the language, and in how many files each.</summary>
     public IReadOnlyList<(LanguageSource Source, int Files)> Sources =>
@@ -163,7 +182,8 @@ public sealed class SoftHyphenSurvey
                         (int line, int column) = lines.LocationOf(offset);
                         (string context, int matchStart, int matchLength) = ClassUsageFinder.Context(text, offset, column, length);
                         outside.Add(new SoftHyphenPlace(
-                            bookPath, offset, length, line, column, segment.Kind, segment.Name, context, matchStart, matchLength));
+                            bookPath, offset, length, line, column, segment.Kind, segment.Name, context, matchStart, matchLength,
+                            text.Substring(offset, length)));
                     }
 
                     continue;
@@ -195,7 +215,11 @@ public sealed class SoftHyphenSurvey
                     }
                 }
 
-                usage.AddSoftHyphens(SoftHyphenScanner.SoftHyphens(text, segment.Start, segment.End).Count());
+                foreach ((int offset, int length) in SoftHyphenScanner.SoftHyphens(text, segment.Start, segment.End))
+                {
+                    usage.AddSoftHyphen(text.Substring(offset, length));
+                }
+
                 if (hasLetters)
                 {
                     usage.AddSource(segment.Source);
