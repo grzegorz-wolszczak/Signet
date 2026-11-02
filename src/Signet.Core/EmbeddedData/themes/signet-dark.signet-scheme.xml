@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Signet Dark: dark editors, after Visual Studio Code's Dark+ and Rider's Darcula. It sets every key of the editors
-     that has a default; the colors forced on the book in the Preview are left to the book. -->
+     that has a default. -->
 <signet-scheme version="1" id="signet-dark" name="Signet Dark">
   <colors>
     <color key="editor.currentLine" value="#2A2D2E" />
-    <color key="preview.highlight" value="#FFEB3B" />
   </colors>
   <attributes>
     <attribute key="editor.text" foreground="#D4D4D4" background="#1E1E1E" />

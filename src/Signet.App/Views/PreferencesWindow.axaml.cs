@@ -540,7 +540,6 @@ public partial class PreferencesWindow : Window
         (ThemePage.Css, ThemeCssView),
         (ThemePage.JavaScriptJson, ThemeJavaScriptJsonView),
         (ThemePage.Diff, ThemeDiffView),
-        (ThemePage.Preview, ThemePreviewView),
         (ThemePage.Interface, ThemeInterfaceView),
     };
 

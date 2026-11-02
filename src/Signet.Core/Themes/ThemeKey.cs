@@ -43,9 +43,6 @@ public enum ThemePage
     /// <summary>The comparison of checkpoints.</summary>
     Diff,
 
-    /// <summary>The Preview panel.</summary>
-    Preview,
-
     /// <summary>The interface of the application.</summary>
     Interface,
 }

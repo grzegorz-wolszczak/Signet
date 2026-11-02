@@ -76,6 +76,62 @@ public sealed class ResolvedTheme
         key.Document == ThemeDocumentKind.Theme ? ThemeResolver.ColorSource(Theme, key) : SchemeResolver.ColorSource(Scheme, key);
 
     /// <summary>
+    /// The setting an unset color key says it inherits from — what its "inherited from" link names and goes to: the next
+    /// key of its fallback chain (<see cref="ThemeKey.FallbackId"/>), even when that one has no color of its own either.
+    /// The chain is followed a step at a time, as each setting tells what it falls back to; jumping to the key that
+    /// finally has a color (<see cref="ColorSource"/>) skipped the settings in between, so a column that inherits the
+    /// list background led past that background to the palette. <c>null</c> = no key of the chain has a color (the
+    /// platform decides, there is nothing to link to).
+    /// </summary>
+    public ThemeKey? InheritedFrom(ThemeKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        return key.FallbackId is { } parentId && ThemeKeys.TryGet(parentId, out ThemeKey? parent) ? parent : null;
+    }
+
+    /// <summary>
+    /// The color an unset color key is drawn in, for the editor to show: the first color along its fallback chain — one
+    /// the theme sets, or one the system gives and no setting holds (the accent and its shades,
+    /// <see cref="AppTheme.SystemColorOf"/>). <c>null</c> = nothing along the chain has one.
+    /// </summary>
+    public ThemeColor? InheritedColorOf(ThemeKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        HashSet<string> seen = new(StringComparer.Ordinal);
+        double opacity = 1.0;
+        for (ThemeKey? k = key; k is not null && seen.Add(k.Id); k = InheritedFrom(k))
+        {
+            if (((k.Kind == ThemeKeyKind.Color ? ColorOf(k) : null) ?? AppTheme.SystemColorOf(k)) is { } color)
+            {
+                return WithOpacity(color, opacity);
+            }
+
+            opacity *= ThemeKeys.FallbackOpacity(k);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// What one color of an unset text attributes key comes from (<see cref="ThemeKeys.AttributesFallback"/>): the
+    /// setting and the color it ends up in; <c>null</c> = nothing gives it one.
+    /// </summary>
+    public (ThemeKey Source, ThemeColor? Color)? InheritedPartOf(ThemeKey key, bool background)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        if (ThemeKeys.AttributesFallback(key, background) is not { } fallback)
+        {
+            return null;
+        }
+
+        return (fallback.Key, InheritedColorOf(fallback.Key) is { } color ? WithOpacity(color, fallback.Opacity) : null);
+    }
+
+    // The color drawn at a part of its opacity (a see-through color the controls draw).
+    private static ThemeColor WithOpacity(ThemeColor color, double opacity) =>
+        opacity >= 1.0 ? color : color with { A = (byte)Math.Round(color.A * opacity, MidpointRounding.AwayFromZero) };
+
+    /// <summary>
     /// The color a color key ends up drawn in, following its fallback chain; <c>null</c> = the platform's.
     /// </summary>
     public ThemeColor? EffectiveColorOf(ThemeKey key) => ColorSource(key) is { } source ? ColorOf(source) : null;
@@ -156,6 +212,10 @@ public static class AppTheme
     // a light theme, darker on a dark one, as Apply uses it below.
     private static ThemeColor? _accentShade;
 
+    // The accent code in a formatted tooltip takes while the theme sets no color for it: the accent on a light theme, a
+    // lighter shade of it on a dark one, as Apply uses it below.
+    private static ThemeColor? _tooltipCodeAccent;
+
     /// <summary>
     /// The color of a key that comes from the system rather than from any setting of Signet — the accent and the
     /// shade of it the title of a context menu uses. <c>null</c> for every other key: the rest either have a value
@@ -166,6 +226,7 @@ public static class AppTheme
         ArgumentNullException.ThrowIfNull(key);
         return ReferenceEquals(key, ThemeKeys.UiAccent) ? SystemAccent
             : ReferenceEquals(key, ThemeKeys.UiContextMenuTitleBackground) ? _accentShade
+            : ReferenceEquals(key, ThemeKeys.UiTooltipCode) ? _tooltipCodeAccent
             : null;
     }
 
@@ -235,6 +296,16 @@ public static class AppTheme
             && shadeValue is Color color)
         {
             _accentShade = new ThemeColor(color.A, color.R, color.G, color.B);
+        }
+
+        // The accent code in a tooltip is drawn in while ui.tooltip.code is unset (see Apply).
+        string codeAccent = app.ActualThemeVariant == ThemeVariant.Dark
+            ? FluentResourceKeys.SystemAccentColorLight2
+            : FluentResourceKeys.SystemAccentColor;
+        if (_tooltipCodeAccent is null && app.TryGetResource(codeAccent, app.ActualThemeVariant, out object? codeValue)
+            && codeValue is Color code)
+        {
+            _tooltipCodeAccent = new ThemeColor(code.A, code.R, code.G, code.B);
         }
     }
 

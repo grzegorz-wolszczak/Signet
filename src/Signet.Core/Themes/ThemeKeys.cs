@@ -226,15 +226,20 @@ public static class ThemeKeys
         new TextAttributes { Background = Argb(0x8043A047) });
 
     // ---- Preview ----
+    // The colors of the Preview panel are the interface's (the theme), not the editors' (the color scheme): the panel is not
+    // a code editor. Only that panel uses them, so they are edited on its own Preferences page (Preview Panel › Appearance).
 
     /// <summary>The highlight of the element clicked in Code Editor.</summary>
-    public static readonly ThemeKey PreviewHighlight = Color("preview.highlight", ThemePage.Preview, string.Empty, Rgb(0xFFEB3B));
+    public static readonly ThemeKey PreviewHighlight =
+        Color("preview.highlight", ThemePage.Interface, "Controls", Rgb(0xFFEB3B), ownedByPanel: true);
 
     /// <summary>The background the preview forces on the book (e.g. a dark page); unset = the book's own.</summary>
-    public static readonly ThemeKey PreviewBackground = Color("preview.background", ThemePage.Preview, "Book", null);
+    public static readonly ThemeKey PreviewBackground =
+        Color("preview.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The text color the preview forces on the book; unset = the book's own.</summary>
-    public static readonly ThemeKey PreviewText = Color("preview.text", ThemePage.Preview, "Book", null);
+    public static readonly ThemeKey PreviewText =
+        Color("preview.text", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     // ---- Interface ----
 
@@ -347,17 +352,29 @@ public static class ThemeKeys
             fallbackId: "fluent.baseHigh");
 
     /// <summary>
-    /// The background of the recent file under the pointer on the start screen; unset = the colors of the controls.
-    /// Measured: the button under the pointer is black at a tenth of its opacity (#1A000000), which is no color of
-    /// the palette — so this key names no fallback and the editor says the controls give it.
+    /// The background of the recent file under the pointer on the start screen; unset = the background the controls
+    /// give a button under the pointer: the BaseHigh color of the Fluent palette (black, white on a dark theme) at a
+    /// tenth of its opacity (<see cref="FallbackOpacity"/>; measured #1A000000).
     /// </summary>
-    public static readonly ThemeKey UiStartScreenHighlight = Color("ui.startScreen.highlight", ThemePage.Interface, "Controls", null, ownedByPanel: true);
+    public static readonly ThemeKey UiStartScreenHighlight = Color(
+            "ui.startScreen.highlight", ThemePage.Interface, "Controls", null, ownedByPanel: true,
+            fallbackId: "fluent.baseHigh");
 
-    /// <summary>The color of code in a formatted tooltip (a CSS keyword, a property name…); unset = the accent color.</summary>
-    public static readonly ThemeKey UiTooltipCode = Color("ui.tooltip.code", ThemePage.Interface, "Controls", null);
+    /// <summary>
+    /// The color of code in a formatted tooltip (a CSS keyword, a property name…); unset = the accent color (a lighter
+    /// shade of it on a dark theme, to be readable — the value the editor shows is that shade).
+    /// </summary>
+    public static readonly ThemeKey UiTooltipCode = Color(
+            "ui.tooltip.code", ThemePage.Interface, "Controls", null,
+            fallbackId: "ui.accent");
 
-    /// <summary>The background of the title of a context menu (the line naming what was clicked); unset = a light shade of the accent color.</summary>
-    public static readonly ThemeKey UiContextMenuTitleBackground = Color("ui.contextMenu.title.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
+    /// <summary>
+    /// The background of the title of a context menu (the line naming what was clicked); unset = a light shade of the
+    /// accent color (the value the editor shows is that shade).
+    /// </summary>
+    public static readonly ThemeKey UiContextMenuTitleBackground = Color(
+            "ui.contextMenu.title.background", ThemePage.Interface, "Controls", null, ownedByPanel: true,
+            fallbackId: "ui.accent");
 
     /// <summary>The background of the "Usage" column of the Find Usages window; unset = the column paints nothing
     /// and the background of the window shows through it (in a selected row, the color of the selection).</summary>
@@ -520,6 +537,38 @@ public static class ThemeKeys
     /// (<see cref="ThemeKey.OwnedByPanel"/>) is left out, since it lives in that panel's own Preferences section
     /// instead; it still resolves, serializes and inherits like any other key through <see cref="Get"/> / <see cref="All"/>.</summary>
     public static IEnumerable<ThemeKey> On(ThemePage page) => AllKeys.Where(k => k.Page == page && !k.OwnedByPanel);
+
+    /// <summary>
+    /// The opacity the color of a key takes from the key it falls back to (<see cref="ThemeKey.FallbackId"/>): 1 for
+    /// most, less where the controls draw a palette color see-through (the start screen's highlight is BaseHigh at a
+    /// tenth). Only what the editor shows follows it; the panels draw an unset key the way the controls do.
+    /// </summary>
+    public static double FallbackOpacity(ThemeKey key) => ReferenceEquals(key, UiStartScreenHighlight) ? 0.1 : 1.0;
+
+    /// <summary>
+    /// The key one color of a text attributes key comes from while it is unset, with the opacity it is drawn in — what
+    /// the controls give it (a text attributes key has no fallback chain of its own); <c>null</c> = nothing (the text
+    /// keeps the color around it, a background is not painted). The selected row of the Book Browser is the
+    /// TreeDataGrid's: its background is the accent at 40 % opacity, its text the BaseHigh color of the palette.
+    /// </summary>
+    public static (ThemeKey Key, double Opacity)? AttributesFallback(ThemeKey key, bool background)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        if (!ReferenceEquals(key, UiBookBrowserSelection))
+        {
+            return null;
+        }
+
+        return background ? (UiAccent, 0.4) : (Get("fluent.baseHigh"), 1.0);
+    }
+
+    /// <summary>
+    /// Whether the key is a color the Preview forces on the book (<see cref="PreviewBackground"/>,
+    /// <see cref="PreviewText"/>): unset, the book keeps its own color — no setting and no control gives one, so the
+    /// editor says so instead of naming a source.
+    /// </summary>
+    public static bool IsLeftToTheBook(ThemeKey key) =>
+        ReferenceEquals(key, PreviewBackground) || ReferenceEquals(key, PreviewText);
 
     private static ThemeKey Color(
         string id, ThemePage page, string group, ThemeColor? value, bool ownedByPanel = false, string? fallbackId = null) =>

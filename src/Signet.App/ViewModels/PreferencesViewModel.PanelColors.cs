@@ -52,6 +52,15 @@ public sealed partial class PreferencesViewModel
     public ColorKeyEditorViewModel SpellcheckEditorHeaderBackgroundColor =>
         PanelColor(ThemeKeys.UiSpellcheckEditorHeaderBackground);
 
+    /// <summary>Preview Panel › Appearance: the highlight of the caret location.</summary>
+    public ColorKeyEditorViewModel PreviewHighlightColor => PanelColor(ThemeKeys.PreviewHighlight);
+
+    /// <summary>Preview Panel › Appearance: the background forced on the book.</summary>
+    public ColorKeyEditorViewModel PreviewBackgroundColor => PanelColor(ThemeKeys.PreviewBackground);
+
+    /// <summary>Preview Panel › Appearance: the text color forced on the book.</summary>
+    public ColorKeyEditorViewModel PreviewTextColor => PanelColor(ThemeKeys.PreviewText);
+
     /// <summary>Saved Searches: the background of the tree.</summary>
     public ColorKeyEditorViewModel SearchEditorBackgroundColor => PanelColor(ThemeKeys.UiSearchEditorBackground);
 
