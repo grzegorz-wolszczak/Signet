@@ -137,7 +137,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void CountAll_WithoutMatches_DoesNotOpenTheWindow()
+    public void CountAll_WithoutMatches_ShowsZeroInTheWindowWithoutOpeningIt()
     {
         // Arrange
         HtmlResource a = Html("<p>dog</p>");
@@ -154,8 +154,31 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.Count().Should().Be(0);
 
         // Assert
-        host.ShownUsages.Should().BeEmpty();
+        host.ShownUsages.Should().ContainSingle();
+        host.ShownUsages[0].Usages.Should().BeEmpty("the window shows the new search with 0 matches");
+        host.ShownUsages[0].Reveal.Should().BeFalse("a hidden window is not brought up for nothing found");
         panel.Message.Should().Be(Strings.Get("FindReplace_NotFoundInScope"));
+    }
+
+    [Fact]
+    public void CountAll_InASingleFile_WithoutMatches_ShowsZeroInTheWindowWithoutOpeningIt()
+    {
+        // Arrange
+        HtmlResource a = Html("<p>dog</p>");
+        CodeTabViewModel tab = OpenTab(a);
+        var host = new FakeMultiFileSearchHost { BookLoaded = true };
+        host.OpenTabs.Add(tab);
+        FindReplaceViewModel panel = NewPanel(host, () => tab, out _);
+        panel.LookWhereIndex = (int)LookWhere.CurrentFile;
+        panel.FindText = "cat";
+
+        // Act & Assert
+        panel.Count().Should().Be(0);
+
+        // Assert
+        host.ShownUsages.Should().ContainSingle();
+        host.ShownUsages[0].Usages.Should().BeEmpty();
+        host.ShownUsages[0].Reveal.Should().BeFalse();
     }
 
     [Fact]
@@ -175,6 +198,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
 
         // Assert
         host.ShownUsages.Should().ContainSingle();
+        host.ShownUsages[0].Reveal.Should().BeTrue();
         host.ShownUsages[0].Usages.Should().ContainSingle().Which.BookPath.Should().Be(a.BookPath);
         host.ShownUsages[0].Header().Should().Contain(Strings.Get("FindReplace_LookInCurrentFile"));
     }

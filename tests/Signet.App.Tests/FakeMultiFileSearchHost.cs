@@ -50,11 +50,11 @@ internal sealed class FakeMultiFileSearchHost : IMultiFileSearchHost
     public CodeTabViewModel? FindOpenTab(TextResource resource) =>
         OpenTabs.FirstOrDefault(t => ReferenceEquals(t.Resource, resource));
 
-    /// <summary>The searches shown in the "Find Usages" window (by "Count All"), in order.</summary>
-    public List<(Func<string> Header, IReadOnlyList<ClassUsage> Usages, Func<IReadOnlyList<ClassUsage>> Rerun)> ShownUsages { get; } = new();
+    /// <summary>The searches put into the "Find Usages" window (by "Count All"), in order, and whether it was shown.</summary>
+    public List<(Func<string> Header, IReadOnlyList<ClassUsage> Usages, Func<IReadOnlyList<ClassUsage>> Rerun, bool Reveal)> ShownUsages { get; } = new();
 
-    public void ShowTextUsages(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun) =>
-        ShownUsages.Add((header, usages, rerun));
+    public void ShowTextUsages(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun, bool reveal) =>
+        ShownUsages.Add((header, usages, rerun, reveal));
 
     /// <summary>Called on a "jump", e.g. to activate the tab of the matched file.</summary>
     public Action<string, int, int>? OnJump { get; set; }

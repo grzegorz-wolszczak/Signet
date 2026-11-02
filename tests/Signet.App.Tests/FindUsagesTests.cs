@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Actions;
+using Signet.App.Docking;
 using Signet.App.Resources;
 using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
@@ -449,7 +450,7 @@ public sealed class FindUsagesTests : IDisposable
     }
 
     [Fact]
-    public void Count_All_without_matches_leaves_the_window_alone()
+    public void Count_All_without_matches_shows_zero_in_the_window()
     {
         // Arrange
         _sut.FindClassUsages("note");
@@ -458,8 +459,33 @@ public sealed class FindUsagesTests : IDisposable
         CountAllInAllHtml("no such text anywhere").Should().Be(0);
 
         // Assert
-        _sut.FindUsages.HasTextSearch.Should().BeFalse();
-        _sut.FindUsages.ClassName.Should().Be("note");
+        _sut.FindUsages.HasTextSearch.Should().BeTrue("the search shown is the one that found nothing");
+        _sut.FindUsages.ClassName.Should().BeNull();
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("0 results in 0 files");
+        _sut.FindUsages.Roots.Single().Children.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Count_All_without_matches_does_not_bring_up_a_hidden_window()
+    {
+        // Arrange
+        MainDockFactory dock = (MainDockFactory)_sut.DockFactory;
+        _sut.FindClassUsages("note");
+        _sut.Actions.Require(AppActionIds.ToggleFindUsages).Execute(null);
+        dock.IsToolVisible(DockableIds.FindUsages).Should().BeFalse();
+
+        // Act & Assert
+        CountAllInAllHtml("no such text anywhere").Should().Be(0);
+
+        // Assert
+        dock.IsToolVisible(DockableIds.FindUsages).Should().BeFalse();
+        _sut.FindUsages.HasTextSearch.Should().BeTrue("it holds the new search for when it is shown");
+
+        // Act & Assert
+        CountAllInAllHtml("note").Should().Be(2);
+
+        // Assert
+        dock.IsToolVisible(DockableIds.FindUsages).Should().BeTrue("matches bring it up as before");
     }
 
     [Fact]

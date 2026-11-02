@@ -758,7 +758,8 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
             ? Strings.Get("FindReplace_NotFound")
             : Strings.Format("FindReplace_MatchCount", count));
 
-        if (showUsages && count > 0 && tab.Resource is TextResource resource)
+        // Nothing found still replaces the search in the window (it shows 0), without bringing a hidden window up.
+        if (showUsages && tab.Resource is TextResource resource)
         {
             IReadOnlyList<ClassUsage> usages = ClassUsageFinder.FromTextMatches(tab.ResourceBookPath, tab.DocumentText, matches);
             _host.ShowTextUsages(
@@ -773,7 +774,8 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
                             resource.BookPath, open.DocumentText, open.FindAllMatches(pattern, direction, wrap))
                         : ClassUsageFinder.FromTextMatches(
                             resource.BookPath, resource.GetText(), SearchOperations.FindInText(pattern, resource.GetText()));
-                });
+                },
+                reveal: count > 0);
         }
 
         return count;
@@ -1266,7 +1268,8 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
             : Strings.Format("FindReplace_MatchesInFiles", total, fileCount);
         SetMessage(summary);
 
-        if (showUsages && total > 0)
+        // Nothing found still replaces the search in the window (it shows 0), without bringing a hidden window up.
+        if (showUsages)
         {
             _host.ShowTextUsages(
                 TextUsagesHeader(selection: false),
@@ -1275,7 +1278,8 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
                 {
                     _host.FlushOpenTabs();
                     return FindMatchesInFiles(pattern, files);
-                });
+                },
+                reveal: total > 0);
         }
 
         return total;
