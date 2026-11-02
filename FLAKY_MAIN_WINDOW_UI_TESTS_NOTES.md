@@ -139,6 +139,35 @@ Results, in order:
 5. **`WindowRenderTests.Opening_a_resource_renders_a_code_editor_tab_in_the_document_dock`** failed once in the same
    kind of run; its message was not kept. Probably the same cause (a view of the layout not realized).
 
+## Second attempt (same day, later) — no longer reproducible, investigation closed
+
+The `Diag` code above, with the `Tree()` measurement, was put back and the loop was run again. **The failure never
+came back**:
+
+| Code | Conditions | Runs | Failures |
+|---|---|---|---|
+| `2f059ba` (current) | alone | 25 | 0 |
+| `2f059ba` | `Signet.Core.Tests` and `Signet.App.Tests` running at the same time | 25 | 0 |
+| `f8373d1` (worktree) | alone | 25 | 0 |
+| `2f059ba` | `DOTNET_GCgen0size=0x20000` (very frequent GCs) | 10 | 0 |
+
+The working tree while the failures were seen (rebuilt from the session transcript) was practically `f8373d1`, plus
+untracked files under `src/Signet.Core/Hyphenation/` that nothing used yet. At roughly one failure in 10 runs then,
+75 clean runs of the same code would be very unlikely by chance — so what changed was **the machine, not the code**.
+The loops then ran one at a time, and nothing was built under a running loop.
+
+The most likely difference: the user often has the real Signet application open, and probably had it open then. Under
+WSL it shares memory and CPU with the tests. That changes timing and the moment the GC runs. The measured symptom (the
+model of the layout right, the whole view of the layout missing from the window) would fit a weak reference or a
+leftover of a previous test collected at an unlucky moment. **Not proven**: neither parallel test load nor GC stress
+alone reproduced it, and running the tests next to an open Signet was not tried.
+
+The investigation was closed here at the user's request. If it comes back:
+
+- Run the loop above while Signet is open, and put the `Diag` code back first, so the first failure is measured.
+- Still worth doing: dispose the `MainWindowViewModel` in `PanelCloseReopenTests` and `PanelStripeTests.Host` (an
+  AGENTS.md rule they break), and get the whole stack of the cleanup failure (open point 2).
+
 ## Where things are
 
 - The test: `tests/Signet.App.MainWindowUiTests/PanelCloseReopenTests.cs`.
