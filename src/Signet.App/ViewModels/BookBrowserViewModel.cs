@@ -289,6 +289,13 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return;
         }
 
+        SelectNodeOf(resource);
+    }
+
+    // Selects the node of the file in the tree, whatever is selected now, and expands its folder. updateSelection: the
+    // view model's selection changes at once too (it would hold nodes that are gone otherwise, until the tree echoes it).
+    private void SelectNodeOf(Resource resource, bool updateSelection = false)
+    {
         foreach (BookBrowserNode root in Nodes)
         {
             BookBrowserNode? node = root.IsFolder
@@ -302,6 +309,11 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             if (root.IsFolder)
             {
                 root.IsExpanded = true;
+            }
+
+            if (updateSelection)
+            {
+                UpdateSelection(new object?[] { node });
             }
 
             TreeSelectionRequested?.Invoke(this, new[] { node });
@@ -1491,6 +1503,9 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
         _model?.Refresh();
         ReloadOpenTabs?.Invoke();
+
+        // The merged files are gone from the tree with their nodes: the target, which holds them now, is selected.
+        SelectNodeOf(resources[0], updateSelection: true);
     }
 
     [RelayCommand(CanExecute = nameof(CanSplitText))]

@@ -341,7 +341,15 @@ public partial class PreviewView : UserControl
         {
             try
             {
-                WebView.Reload();
+                // A page asked for and not loaded yet is asked for again: the engine would reload the previous one.
+                if (_gate.ForReload() is { } loading)
+                {
+                    Navigate(loading);
+                }
+                else
+                {
+                    WebView.Reload();
+                }
             }
             catch (Exception)
             {
@@ -535,6 +543,7 @@ public partial class PreviewView : UserControl
 
     private void OnNavigationCompleted(object? sender, Nwv.NativeWebViewNavigationCompletedEventArgs e)
     {
+        _gate.Completed(e.Uri);
         ApplyCustomCss();
         ApplyThemeColors();
         ApplyFonts();
