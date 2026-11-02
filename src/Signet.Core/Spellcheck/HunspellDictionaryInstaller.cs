@@ -81,7 +81,8 @@ public sealed record DictionaryInstallResult(
 /// <para>A dictionary is the pair <c>&lt;name&gt;.aff</c> + <c>&lt;name&gt;.dic</c>; that is all
 /// <see cref="SpellChecker"/> reads. The companion files of a LibreOffice dictionary package (hyphenation patterns,
 /// a thesaurus, <c>dictionaries.xcu</c>, readmes and licences) may be chosen along with the pair and are then kept
-/// next to it — Signet never reads them, but deleting a dictionary takes them with it.</para>
+/// next to it — the spell checker never reads them (the hyphenation patterns, <c>hyph_*.dic</c>, are read by "Add Soft
+/// Hyphens", <see cref="Hyphenation.HyphenationPatternFiles"/>), and deleting a dictionary takes them with it.</para>
 /// <para>A candidate is checked in three steps — by name, by shape, by content (the pair is actually loaded before
 /// anything is copied) — and the first failure stops the install, so a refused add leaves both the source files and
 /// the target folder exactly as they were.</para>

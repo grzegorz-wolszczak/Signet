@@ -1,28 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Text.RegularExpressions;
+using Signet.Core.Hyphenation;
 
 namespace Signet.Core.BookManipulation;
 
 /// <summary>
-/// "Add soft hyphens". Inserts the numeric character reference <c>&amp;#173;</c> (U+00AD, a soft hyphen) into
-/// sufficiently long words of the
-/// XHTML content, so that readers without support for automatic CSS hyphenation can justify
-/// text better. Works on the raw source text (like <see cref="TagLister"/>), NOT on a
-/// parsed/re-serialized DOM — so the change is minimal (only the inserted
-/// entities), without reformatting the rest of the document (unlike
-/// <see cref="Book.PrettyPrintAllHtml"/>, which deliberately reformats everything).
+/// "Add / Remove Soft Hyphens" in one XHTML file: soft hyphens (<c>&amp;#173;</c>, U+00AD) are added where the
+/// hyphenation patterns of the language of the text allow a break, and removed from the text of chosen languages and
+/// from chosen places outside the text. Works on the raw source (<see cref="SoftHyphenScanner"/>), so nothing but the
+/// soft hyphens changes — the rest of the file is not reformatted.
 /// </summary>
 /// <remarks>
-/// <b>A deliberate simplification:</b> words are not split using per-language dictionary hyphenation
-/// patterns (the TeX/Franklin format) — no maintained, ready-made .NET package implementing that format
-/// is available (and <c>WeCantSpell.Hunspell</c>, already used for spellchecking, uses an entirely different data
-/// format, not meant for hyphenation). Instead of building a separate per-language pattern subsystem
-/// from scratch, a simple, language-independent phonetic heuristic is used: a break is inserted after a vowel
-/// that directly precedes a single consonant (the "V C" pattern → a break between V and C), keeping a
-/// minimum fragment length on both sides of every break. This is NOT linguistically
-/// correct syllabification, only a "better than nothing" approximation — a documented limitation.
+/// A word is only ever broken by the patterns of its language (<see cref="HyphenationPatterns"/>, read from the
+/// <c>hyph_*.dic</c> files of the installed dictionaries); a language without patterns is not hyphenated at all. There
+/// is deliberately no language-independent guess: a wrong break in a printed word is worse than none.
 /// </remarks>
 public static class SoftHyphenInserter
 {
@@ -36,229 +28,133 @@ public static class SoftHyphenInserter
     /// <summary>The literal soft hyphen character (U+00AD), in case it occurs outside an entity.</summary>
     public const char SoftHyphenChar = '­';
 
-    private static readonly Regex SoftHyphenEntityRegex = new(
-        "&shy;|&#0*173;|&#[xX]0*[aA][dD];",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-    // Any form of a soft hyphen (named/decimal/hex reference or the literal character) exactly at a position.
-    private static readonly Regex SoftHyphenAtPosition = new(
-        "\\G(?:&shy;|&#0*173;|&#[xX]0*[aA][dD];|\u00AD)",
-        RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-    private const int DefaultMinWordLength = 8;
-    private const int DefaultMinSegmentLength = 3;
-
-    private static readonly HashSet<string> SkippedTags = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "pre", "code", "script", "style", "textarea", "title",
-    };
-
-    private static readonly HashSet<char> Vowels = new("aeiouyąęóAEIOUYĄĘÓ");
+    /// <summary>The shortest word that is hyphenated, unless the user chooses otherwise.</summary>
+    public const int DefaultMinWordLength = 8;
 
     /// <summary>
-    /// Returns a copy of <paramref name="htmlSource"/> with soft hyphens inserted in the content
-    /// (outside tags, attributes, comments and elements from <see cref="SkippedTags"/>).
-    /// Idempotent — a word that already contains a soft hyphen (in any form: <see cref="SoftHyphenEntity"/>,
-    /// <c>&amp;shy;</c>, <c>&amp;#xAD;</c> or the literal character) is not split again.
+    /// Adds soft hyphens to the words of the text whose language has patterns. A word that already has a soft hyphen
+    /// (in any form) is left as it is, so running it again adds nothing; so are words shorter than
+    /// <paramref name="minWordLength"/> letters, and the text of elements that are not prose (<c>pre</c>, <c>code</c>…),
+    /// of the head, of attributes and of comments.
     /// </summary>
+    /// <param name="html">The source of the file.</param>
+    /// <param name="defaultLanguage">The language of text no element states one for (the OPF's); empty = unknown.</param>
+    /// <param name="patternsFor">
+    /// The patterns of a language, by its key (<see cref="SoftHyphenLanguage.KeyOf"/>); <c>null</c> = the language is not
+    /// hyphenated (no patterns, or not chosen).
+    /// </param>
+    /// <param name="minWordLength">The fewest letters of a word that is hyphenated.</param>
     public static string InsertSoftHyphens(
-        string htmlSource,
-        int minWordLength = DefaultMinWordLength,
-        int minSegmentLength = DefaultMinSegmentLength)
+        string html, string defaultLanguage, Func<string, HyphenationPatterns?> patternsFor, int minWordLength = DefaultMinWordLength)
     {
-        ArgumentNullException.ThrowIfNull(htmlSource);
+        ArgumentNullException.ThrowIfNull(html);
+        ArgumentNullException.ThrowIfNull(defaultLanguage);
+        ArgumentNullException.ThrowIfNull(patternsFor);
 
-        TagLister lister = TagLister.For(htmlSource);
-        List<(int Pos, string Text)> insertions = new();
-        Stack<string> openTags = new();
-
-        for (int i = 0; i < lister.Count; i++)
+        List<int> insertions = new();
+        Dictionary<string, HyphenationPatterns?> patterns = new(StringComparer.Ordinal);
+        foreach (SoftHyphenSegment segment in SoftHyphenScanner.Scan(html, defaultLanguage))
         {
-            TagLister.TagInfo tag = lister.At(i);
-            UpdateStack(openTags, tag);
-
-            if (i + 1 >= lister.Count)
-            {
-                break;
-            }
-
-            TagLister.TagInfo next = lister.At(i + 1);
-            int gapStart = tag.Pos + tag.Len;
-            int gapEnd = next.Pos;
-            if (gapEnd <= gapStart || !lister.IsPositionInBody(gapStart))
+            if (!segment.IsText)
             {
                 continue;
             }
 
-            if (IsInsideSkippedTag(openTags))
+            string key = SoftHyphenLanguage.KeyOf(segment.Language);
+            if (!patterns.TryGetValue(key, out HyphenationPatterns? language))
+            {
+                language = patternsFor(key);
+                patterns[key] = language;
+            }
+
+            if (language is null)
             {
                 continue;
             }
 
-            string gap = htmlSource.Substring(gapStart, gapEnd - gapStart);
-            CollectInsertionsForGap(gap, gapStart, minWordLength, minSegmentLength, insertions);
+            foreach (SoftHyphenWord word in SoftHyphenScanner.Words(html, segment))
+            {
+                if (word.HasSoftHyphen || word.Letters < minWordLength || word.Letters != word.End - word.Start)
+                {
+                    continue;
+                }
+
+                foreach (int offset in language.BreakPoints(html.Substring(word.Start, word.End - word.Start)))
+                {
+                    insertions.Add(word.Start + offset);
+                }
+            }
         }
 
         if (insertions.Count == 0)
         {
-            return htmlSource;
+            return html;
         }
 
-        insertions.Sort((a, b) => b.Pos.CompareTo(a.Pos));
-        StringBuilder result = new(htmlSource);
-        foreach ((int pos, string text) in insertions)
+        StringBuilder result = new(html.Length + (insertions.Count * SoftHyphenEntity.Length));
+        int copied = 0;
+        foreach (int at in insertions)
         {
-            result.Insert(pos, text);
+            result.Append(html, copied, at - copied).Append(SoftHyphenEntity);
+            copied = at;
         }
 
-        return result.ToString();
-    }
-
-    private static void UpdateStack(Stack<string> openTags, TagLister.TagInfo tag)
-    {
-        switch (tag.Kind)
-        {
-            case TagKind.Begin:
-                openTags.Push(tag.TagName);
-                break;
-            case TagKind.End:
-                if (openTags.Count > 0
-                    && string.Equals(openTags.Peek(), tag.TagName, StringComparison.OrdinalIgnoreCase))
-                {
-                    openTags.Pop();
-                }
-
-                break;
-        }
-    }
-
-    private static bool IsInsideSkippedTag(Stack<string> openTags)
-    {
-        foreach (string tagName in openTags)
-        {
-            if (SkippedTags.Contains(tagName))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static void CollectInsertionsForGap(
-        string gap,
-        int gapStart,
-        int minWordLength,
-        int minSegmentLength,
-        List<(int Pos, string Text)> insertions)
-    {
-        // The "&"/";" characters inside an already present soft hyphen reference do NOT end a "word" run — so
-        // a previously split word is seen as a single run on a re-run
-        // (idempotence, see the SoftHyphenEntity check in CollectInsertionsForWord) instead of
-        // falling apart into short fragments between entities that could be split further.
-        int wordStart = -1;
-        int i = 0;
-        while (i <= gap.Length)
-        {
-            int softHyphenLength = i < gap.Length ? SoftHyphenLengthAt(gap, i) : 0;
-            if (softHyphenLength > 0)
-            {
-                if (wordStart < 0)
-                {
-                    wordStart = i;
-                }
-
-                i += softHyphenLength;
-                continue;
-            }
-
-            bool isLetter = i < gap.Length && char.IsLetter(gap[i]);
-            if (isLetter)
-            {
-                if (wordStart < 0)
-                {
-                    wordStart = i;
-                }
-
-                i++;
-                continue;
-            }
-
-            if (wordStart >= 0)
-            {
-                CollectInsertionsForWord(gap, wordStart, i - wordStart, gapStart, minWordLength, minSegmentLength, insertions);
-                wordStart = -1;
-            }
-
-            i++;
-        }
-    }
-
-    private static int SoftHyphenLengthAt(string gap, int index)
-    {
-        Match match = SoftHyphenAtPosition.Match(gap, index);
-        return match.Success ? match.Length : 0;
-    }
-
-    private static void CollectInsertionsForWord(
-        string gap,
-        int wordStart,
-        int wordLength,
-        int gapStart,
-        int minWordLength,
-        int minSegmentLength,
-        List<(int Pos, string Text)> insertions)
-    {
-        if (wordLength < minWordLength)
-        {
-            return;
-        }
-
-        string word = gap.Substring(wordStart, wordLength);
-        if (SoftHyphenEntityRegex.IsMatch(word) || word.Contains(SoftHyphenChar, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        int lastBreak = 0;
-        for (int i = 0; i < word.Length - 1; i++)
-        {
-            bool current = Vowels.Contains(word[i]);
-            bool next = Vowels.Contains(word[i + 1]);
-            if (!current || next)
-            {
-                continue;
-            }
-
-            int breakOffset = i + 1;
-            if (breakOffset < minSegmentLength
-                || word.Length - breakOffset < minSegmentLength
-                || breakOffset - lastBreak < minSegmentLength)
-            {
-                continue;
-            }
-
-            insertions.Add((gapStart + wordStart + breakOffset, SoftHyphenEntity));
-            lastBreak = breakOffset;
-        }
+        return result.Append(html, copied, html.Length - copied).ToString();
     }
 
     /// <summary>
-    /// "Remove soft hyphens" — the inverse of <see cref="InsertSoftHyphens"/>.
-    /// Removes all soft hyphens from <paramref name="htmlSource"/>: the <see cref="SoftHyphenEntity"/> entity
-    /// (together with its numeric variants <c>&amp;#173;</c>/<c>&amp;#xAD;</c>) and the literal
-    /// <see cref="SoftHyphenChar"/> character (U+00AD), regardless of whether they were inserted by
-    /// <see cref="InsertSoftHyphens"/> or come from another source (e.g. an import). A purely
-    /// textual operation — no markup awareness is needed (the removed characters are never part of a valid
-    /// tag/attribute name).
+    /// Removes soft hyphens (any form: <c>&amp;shy;</c>, <c>&amp;#173;</c>, <c>&amp;#xAD;</c>, the character) from the
+    /// text of the chosen languages and from the chosen places outside the text; the others stay.
     /// </summary>
-    public static string RemoveSoftHyphens(string htmlSource)
+    /// <param name="html">The source of the file.</param>
+    /// <param name="defaultLanguage">The language of text no element states one for (the OPF's); empty = unknown.</param>
+    /// <param name="removeInLanguage">Whether to remove them from the text of a language, by its key (empty = unknown).</param>
+    /// <param name="outsideOffsets">The offsets of the soft hyphens outside the text to remove (<see cref="SoftHyphenPlace.Offset"/>).</param>
+    public static string RemoveSoftHyphens(
+        string html, string defaultLanguage, Func<string, bool> removeInLanguage, IReadOnlySet<int> outsideOffsets)
     {
-        ArgumentNullException.ThrowIfNull(htmlSource);
+        ArgumentNullException.ThrowIfNull(html);
+        ArgumentNullException.ThrowIfNull(defaultLanguage);
+        ArgumentNullException.ThrowIfNull(removeInLanguage);
+        ArgumentNullException.ThrowIfNull(outsideOffsets);
 
-        string withoutEntities = SoftHyphenEntityRegex.Replace(htmlSource, string.Empty);
-        return withoutEntities.IndexOf(SoftHyphenChar) < 0
-            ? withoutEntities
-            : withoutEntities.Replace(SoftHyphenChar.ToString(), string.Empty);
+        List<(int Offset, int Length)> removals = new();
+        foreach (SoftHyphenSegment segment in SoftHyphenScanner.Scan(html, defaultLanguage))
+        {
+            bool inText = segment.IsText && removeInLanguage(SoftHyphenLanguage.KeyOf(segment.Language));
+            if (segment.IsText && !inText)
+            {
+                continue;
+            }
+
+            foreach ((int offset, int length) in SoftHyphenScanner.SoftHyphens(html, segment.Start, segment.End))
+            {
+                if (inText || outsideOffsets.Contains(offset))
+                {
+                    removals.Add((offset, length));
+                }
+            }
+        }
+
+        if (removals.Count == 0)
+        {
+            return html;
+        }
+
+        removals.Sort((a, b) => a.Offset.CompareTo(b.Offset));
+        StringBuilder result = new(html.Length);
+        int copied = 0;
+        foreach ((int offset, int length) in removals)
+        {
+            if (offset < copied)
+            {
+                continue;
+            }
+
+            result.Append(html, copied, offset - copied);
+            copied = offset + length;
+        }
+
+        return result.Append(html, copied, html.Length - copied).ToString();
     }
 }

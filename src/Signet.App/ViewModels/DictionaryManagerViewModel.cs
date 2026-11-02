@@ -43,7 +43,7 @@ public sealed record DictionaryRow(InstalledDictionary Dictionary)
 
 /// <summary>One file of the selected dictionary, with what it is.</summary>
 /// <param name="FileName">The file name.</param>
-/// <param name="RoleText">What the file is — required, or a companion Signet keeps but never reads.</param>
+/// <param name="RoleText">What the file is — required, or a companion the spell checker does not read.</param>
 public sealed record DictionaryFileRow(string FileName, string RoleText);
 
 /// <summary>

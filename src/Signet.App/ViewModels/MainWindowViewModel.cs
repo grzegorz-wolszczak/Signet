@@ -20,6 +20,7 @@ using Signet.App.Toolbars;
 using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
 using Signet.Core.Diff;
+using Signet.Core.Hyphenation;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.MiscEditors;
@@ -447,8 +448,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.MendCurrentHtml, () => RunAsyncAction(MendCurrentFileAsync));
         _actions.SetHandler(AppActionIds.PrettifyCurrentCss, () => ActiveCodeTab?.ReformatCss(multipleLineFormat: true));
         _actions.SetHandler(AppActionIds.PrettifyAllCss, () => RunAsyncAction(PrettifyAllCssAsync));
-        _actions.SetHandler(AppActionIds.AddSoftHyphens, () => RunAsyncAction(AddSoftHyphensAsync));
-        _actions.SetHandler(AppActionIds.RemoveSoftHyphens, () => RunAsyncAction(RemoveSoftHyphensAsync));
+        _actions.SetHandler(AppActionIds.Hyphenation, () => HyphenationRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.StandardizeEpub, () => StandardizeEpubRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.UseStandardFileExtensions, () => RunAsyncAction(UseStandardFileExtensionsAsync));
         _actions.SetHandler(AppActionIds.RebaseManifestIds, () => RunAsyncAction(RebaseManifestIdsAsync));
@@ -3051,49 +3051,86 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    /// <summary>"Add Soft Hyphens".</summary>
-    private async Task AddSoftHyphensAsync()
+    /// <summary>
+    /// Raised by "Hyphenation…" — the view calls <see cref="PrepareHyphenationAsync"/> and shows the dialog, which adds and
+    /// removes soft hyphens and stays open until it is closed.
+    /// </summary>
+    public event EventHandler? HyphenationRequested;
+
+    /// <summary>
+    /// The "Hyphenation" dialog for the open book: the open tabs are saved, and the book is surveyed (every XHTML file —
+    /// its languages, words and soft hyphens) off the UI thread under a progress window, which can be cancelled.
+    /// <c>null</c> without a book, when the user stopped at the missing DOCTYPE question or cancelled the survey.
+    /// </summary>
+    /// <param name="runWithProgress">Shows the progress of the operations of the dialog over it (the survey goes over the main window).</param>
+    public async Task<SoftHyphensViewModel?> PrepareHyphenationAsync(ProgressRunner? runWithProgress = null)
     {
         if (_currentBook is null)
         {
-            return;
+            return null;
         }
 
         _tabManager.SaveAllTabs();
-        if (!await ConfirmMissingDoctypeAsync("Operation_AddSoftHyphens").ConfigureAwait(true))
+        if (!await ConfirmMissingDoctypeAsync("Operation_Hyphenation").ConfigureAwait(true))
         {
-            return;
+            return null;
         }
 
         Book book = _currentBook;
-        BookOperationOutcome<FileBatchResult> run = await RunBookOperationAsync(
-            ActionLabel(AppActionIds.AddSoftHyphens), checkpointName: null, editsBook: true,
-            (progress, cancel) => book.AddSoftHyphens(new FileBatchRun(new FileBatchProgressMap(progress), cancel)))
+        BookOperationOutcome<SoftHyphenSurvey> run = await RunBookOperationAsync(
+            Strings.Get("Operation_Hyphenation"), checkpointName: null, editsBook: false,
+            (progress, cancel) => book.SurveySoftHyphens(new FileBatchRun(new FileBatchProgressMap(progress), cancel)))
             .ConfigureAwait(true);
-        FinishFileBatch(run.Result!, checkpoint: false, "Operation_AddSoftHyphens", "Status_SoftHyphensAdded");
+        if (!run.Completed)
+        {
+            return null;
+        }
+
+        return new SoftHyphensViewModel(
+            run.Result!,
+            ReadHyphenationPatternFiles,
+            NavigateToBookPathAtOffset,
+            plan => ApplyHyphenationAsync(book, plan, null, runWithProgress),
+            plan => ApplyHyphenationAsync(book, null, plan, runWithProgress));
     }
 
-    /// <summary>"Remove Soft Hyphens" — the inverse of <see cref="AddSoftHyphensAsync"/>.</summary>
-    private async Task RemoveSoftHyphensAsync()
+    /// <summary>
+    /// "Add" or "Remove" of the "Hyphenation" dialog: the plan is applied file by file and the book surveyed anew, both
+    /// off the UI thread under the progress window over the dialog; the skipped files are reported as for every
+    /// operation applied file by file. Returns the new survey for the dialog, or <c>null</c> when it did not run (another
+    /// book is open now, or another operation is running).
+    /// </summary>
+    private async Task<SoftHyphenSurvey?> ApplyHyphenationAsync(
+        Book book, SoftHyphenAddPlan? add, SoftHyphenRemovePlan? remove, ProgressRunner? runWithProgress)
     {
-        if (_currentBook is null)
+        if (!ReferenceEquals(book, _currentBook))
         {
-            return;
+            return null;
         }
 
         _tabManager.SaveAllTabs();
-        if (!await ConfirmMissingDoctypeAsync("Operation_RemoveSoftHyphens").ConfigureAwait(true))
+        string operation = add is not null ? "Operation_AddSoftHyphens" : "Operation_RemoveSoftHyphens";
+        BookOperationOutcome<(FileBatchResult Result, SoftHyphenSurvey Survey)> run = await RunBookOperationAsync(
+            Strings.Get(operation), checkpointName: null, editsBook: true,
+            (progress, cancel) =>
+            {
+                FileBatchRun batch = new(new FileBatchProgressMap(progress), cancel);
+                FileBatchResult result = add is not null ? book.AddSoftHyphens(add, batch) : book.RemoveSoftHyphens(remove!, batch);
+                return (result, book.SurveySoftHyphens(batch));
+            },
+            runWithProgress)
+            .ConfigureAwait(true);
+        if (!run.Completed)
         {
-            return;
+            return null;
         }
 
-        Book book = _currentBook;
-        BookOperationOutcome<FileBatchResult> run = await RunBookOperationAsync(
-            ActionLabel(AppActionIds.RemoveSoftHyphens), checkpointName: null, editsBook: true,
-            (progress, cancel) => book.RemoveSoftHyphens(new FileBatchRun(new FileBatchProgressMap(progress), cancel)))
-            .ConfigureAwait(true);
-        FinishFileBatch(run.Result!, checkpoint: false, "Operation_RemoveSoftHyphens", "Status_SoftHyphensRemoved");
+        FinishFileBatch(run.Result.Result, checkpoint: false, operation, add is not null ? "Status_SoftHyphensAdded" : "Status_SoftHyphensRemoved");
+        return run.Result.Survey;
     }
+
+    // The hyphenation patterns installed with the dictionaries (read anew: the dictionary manager may have changed them).
+    private HyphenationPatternFiles ReadHyphenationPatternFiles() => new(_spellChecker.HunspellDictionariesDirectory);
 
     /// <summary>
     /// "Live CSS Panel": computes the CSS cascade (<see cref="CssCascadeResolver"/>) for the element

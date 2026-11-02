@@ -218,11 +218,11 @@ public static class AppActionIds
     /// <summary>Tools → Footnotes → Change Footnote Placement (the dialog that moves footnotes of Signet between local and global).</summary>
     public const string ChangeFootnotePlacement = "MainWindow.ChangeFootnotePlacement";
 
-    /// <summary>Add soft hyphens.</summary>
-    public const string AddSoftHyphens = "MainWindow.AddSoftHyphens";
-
-    /// <summary>Remove soft hyphens.</summary>
-    public const string RemoveSoftHyphens = "MainWindow.RemoveSoftHyphens";
+    /// <summary>
+    /// Tools → Hyphenation: the dialog that adds soft hyphens by the hyphenation patterns of each language of the book,
+    /// and removes them (it replaced "Add Soft Hyphens" and "Remove Soft Hyphens" in November 2026).
+    /// </summary>
+    public const string Hyphenation = "MainWindow.Hyphenation";
     public const string SpellcheckEditor = "MainWindow.SpellcheckEditor";
     public const string AutoSpellCheck = "MainWindow.AutoSpellCheck";
     public const string Spellcheck = "MainWindow.Spellcheck";

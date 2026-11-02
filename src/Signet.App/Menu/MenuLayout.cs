@@ -190,7 +190,7 @@ public static class MenuLayout
             A("MainWindow.ClipEditor"), A("MainWindow.SelectClip"), A("MainWindow.SearchEditor"),
             Sep,
             A("MainWindow.Cleanup"), A("MainWindow.ManageFonts"),
-            A("MainWindow.AddSoftHyphens"), A("MainWindow.RemoveSoftHyphens"),
+            A(AppActionIds.Hyphenation),
             Sep, A("MainWindow.LiveCssPanel")),
 
         MenuNode.Sub("&View",

@@ -351,7 +351,7 @@ public sealed class HunspellDictionaryInstallerTests : EnglishUiCultureTest
     private static List<string> PairIn(TempDir directory, string name) =>
         new() { directory.Combine(name + ".aff"), directory.Combine(name + ".dic") };
 
-    // The companion files a LibreOffice dictionary package ships next to the pair; Signet keeps them, never reads them.
+    // The companion files a LibreOffice dictionary package ships next to the pair; the spell checker never reads them.
     private static void WritePackageFiles(TempDir directory)
     {
         File.WriteAllText(directory.Combine("hyph_pl_PL.dic"), "ISO8859-2\ndo1m\n");
