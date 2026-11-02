@@ -148,7 +148,8 @@ public sealed class SoftHyphenSurveyTests
         using Book book = LoadLanguages(temp);
         HtmlResource languages = File(book, "languages.xhtml");
         string before = languages.GetText();
-        SoftHyphenAddPlan plan = SoftHyphenAddPlan.ForEveryLanguageWithPatterns(book.SurveySoftHyphens(), TestHyphenation.EnglishAndPolish);
+        SoftHyphenAddPlan plan = SoftHyphenAddPlan.ForEveryLanguageWithPatterns(
+            book.SurveySoftHyphens(), TestHyphenation.EnglishAndPolish, form: SoftHyphenForm.Reference);
 
         // Act
         FileBatchResult result = book.AddSoftHyphens(plan);
@@ -182,6 +183,40 @@ public sealed class SoftHyphenSurveyTests
 
         // Assert
         languages.GetText().Should().Be(before);
+    }
+
+    [Fact]
+    public void The_soft_hyphens_are_counted_by_the_form_they_are_written_in()
+    {
+        // Act
+        SoftHyphenSurvey sut = Survey("<p lang=\"en\">a&shy;b&#173;c\u00ADd&#xAD;e</p><p lang=\"en\" title=\"x\u00ADy\">z</p>");
+
+        // Assert
+        SoftHyphenLanguage english = sut.Languages.Single();
+        english.SoftHyphens.Should().Be(4);
+        english.SoftHyphensNotIn(SoftHyphenForm.Character).Should().Be(3);
+        english.SoftHyphensNotIn(SoftHyphenForm.Reference).Should().Be(3);
+        sut.OutsideText.Single().IsIn(SoftHyphenForm.Character).Should().BeTrue();
+        sut.OutsideText.Single().Text.Should().Be("\u00AD");
+    }
+
+    [Fact]
+    public void Converting_everything_writes_every_soft_hyphen_of_the_book_in_one_form()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadLanguages(temp);
+
+        // Act
+        FileBatchResult result = book.ConvertSoftHyphens(SoftHyphenConvertPlan.Everything(book.SurveySoftHyphens(), SoftHyphenForm.Character));
+
+        // Assert
+        result.Modified.Should().BeTrue();
+        SoftHyphenSurvey after = book.SurveySoftHyphens();
+        after.Languages.Should().OnlyContain(l => l.SoftHyphensNotIn(SoftHyphenForm.Character) == 0);
+        after.OutsideText.Should().OnlyContain(p => p.IsIn(SoftHyphenForm.Character));
+        after.OutsideText.Should().HaveCount(7, "converting keeps every soft hyphen");
+        File(book, "outside.xhtml").GetText().Should().Contain("<pre>kod\u00ADźródłowy</pre>");
     }
 
     [Fact]

@@ -7901,4 +7901,40 @@ Close the tab</value>
   <data name="SoftHyphens_NothingToRemove" xml:space="preserve">
     <value>The book has no soft hyphens.</value>
   </data>
+  <data name="SoftHyphens_ModeConvert" xml:space="preserve">
+    <value>Convert soft hyphens</value>
+  </data>
+  <data name="SoftHyphens_ConvertIntro" xml:space="preserve">
+    <value>Soft hyphens written otherwise than in the chosen form (&amp;shy;, &amp;#xAD;, &amp;#173; or the character itself) are rewritten in it — in the text of the checked languages in the checked files, and in the checked places outside the text.</value>
+  </data>
+  <data name="SoftHyphens_Convert" xml:space="preserve">
+    <value>Convert</value>
+  </data>
+  <data name="SoftHyphens_NothingToConvert" xml:space="preserve">
+    <value>Every soft hyphen of the book is written in the chosen form already.</value>
+  </data>
+  <data name="SoftHyphens_ColumnToConvert" xml:space="preserve">
+    <value>To convert</value>
+  </data>
+  <data name="SoftHyphens_Form" xml:space="preserve">
+    <value>Write a soft hyphen as:</value>
+  </data>
+  <data name="SoftHyphens_FormCharacter" xml:space="preserve">
+    <value>the character U+00AD</value>
+  </data>
+  <data name="SoftHyphens_FormCharacterTip" xml:space="preserve">
+    <value>The character itself: the shortest, invisible in the source — Code Editor can show it as ¬ (Preferences › Appearance &amp; Behavior › Code Editor).</value>
+  </data>
+  <data name="SoftHyphens_FormReference" xml:space="preserve">
+    <value>&amp;#173;</value>
+  </data>
+  <data name="SoftHyphens_FormReferenceTip" xml:space="preserve">
+    <value>A character reference: visible in the source as text.</value>
+  </data>
+  <data name="Operation_ConvertSoftHyphens" xml:space="preserve">
+    <value>Convert Soft Hyphens</value>
+  </data>
+  <data name="Status_SoftHyphensConverted" xml:space="preserve">
+    <value>Soft hyphens converted.</value>
+  </data>
 </root>

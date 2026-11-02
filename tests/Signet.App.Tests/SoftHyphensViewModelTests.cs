@@ -52,6 +52,7 @@ public sealed class SoftHyphensViewModelTests : IDisposable
 
     // The plans applied, and the survey each answers (null = it did not run).
     private readonly List<object> _applied = new();
+    private readonly List<SoftHyphenForm> _remembered = new();
     private SoftHyphenSurvey? _afterApply;
 
     private SoftHyphensViewModel New(SoftHyphensMode mode, SoftHyphenSurvey? survey = null) =>
@@ -65,7 +66,14 @@ public sealed class SoftHyphensViewModelTests : IDisposable
             {
                 _applied.Add(plan);
                 return Task.FromResult(_afterApply);
-            })
+            },
+            plan =>
+            {
+                _applied.Add(plan);
+                return Task.FromResult(_afterApply);
+            },
+            SoftHyphenForm.Character,
+            _remembered.Add)
         {
             Mode = mode,
         };
@@ -346,6 +354,64 @@ public sealed class SoftHyphensViewModelTests : IDisposable
 
         // Assert
         sut.ApplyCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Converting_lists_the_soft_hyphens_not_written_in_the_chosen_form()
+    {
+        // Arrange
+        SoftHyphenSurvey survey = SoftHyphenSurvey.Of(
+            [(Polish, Page("<p>a&shy;b \u00ADc</p><p><img alt=\"x&#173;y\" title=\"p\u00ADq\" src=\"i.png\"/></p>", "pl"))],
+            string.Empty);
+
+        // Act
+        SoftHyphensViewModel sut = New(SoftHyphensMode.Convert, survey);
+
+        // Assert
+        sut.ShowsForm.Should().BeTrue();
+        Language(sut, "pl").Count.Should().Be(1.ToString(CultureInfo.CurrentCulture), "&shy; is not the character; the character is");
+        sut.ConvertRoots.OfType<SoftHyphensGroupNode>().Single().Children.SelectMany(c => c.Children).OfType<SoftHyphensPlaceNode>()
+            .Select(p => p.Place.Name).Should().Equal("alt");
+        sut.ConvertPlan().Form.Should().Be(SoftHyphenForm.Character);
+
+        // Act
+        sut.IsReferenceForm = true;
+
+        // Assert
+        _remembered.Should().Equal(SoftHyphenForm.Reference);
+        Language(sut, "pl").Count.Should().Be(2.ToString(CultureInfo.CurrentCulture), "now &shy; and the character are both to convert");
+        sut.ConvertRoots.OfType<SoftHyphensGroupNode>().Single().Children.SelectMany(c => c.Children).OfType<SoftHyphensPlaceNode>()
+            .Select(p => p.Place.Name).Should().Equal("title");
+        sut.ConvertPlan().Form.Should().Be(SoftHyphenForm.Reference);
+        sut.AddPlan().Form.Should().Be(SoftHyphenForm.Reference, "adding writes in the same form");
+    }
+
+    [Fact]
+    public void Removing_does_not_offer_the_form()
+    {
+        // Act
+        SoftHyphensViewModel sut = New(SoftHyphensMode.Remove);
+
+        // Assert
+        sut.ShowsForm.Should().BeFalse();
+        sut.CountHeaderKey.Should().Be("SoftHyphens_ColumnSoftHyphens");
+    }
+
+    [Fact]
+    public async Task Converting_applies_the_plan_of_converting()
+    {
+        // Arrange
+        SoftHyphensViewModel sut = New(SoftHyphensMode.Remove);
+        sut.IsConvertMode = true;
+        sut.IsReferenceForm = true;
+
+        // Act
+        await sut.ApplyCommand.ExecuteAsync(null);
+
+        // Assert
+        _applied.Should().ContainSingle().Which.Should().BeOfType<SoftHyphenConvertPlan>()
+            .Which.Form.Should().Be(SoftHyphenForm.Reference);
+        sut.ApplyText.Should().Be(Strings.Get("SoftHyphens_Convert"));
     }
 
     [Fact]

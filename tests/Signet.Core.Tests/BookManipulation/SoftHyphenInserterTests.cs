@@ -30,8 +30,9 @@ public sealed class SoftHyphenInserterTests
     private static HyphenationPatterns? EnglishAndPolish(string key) =>
         TestHyphenation.EnglishAndPolish.TryGetValue(key, out HyphenationPatterns? patterns) ? patterns : null;
 
+    // Written as &#173; — visible in the expected strings.
     private static string Add(string html, string defaultLanguage = "", int minWordLength = SoftHyphenInserter.DefaultMinWordLength) =>
-        SoftHyphenInserter.InsertSoftHyphens(html, defaultLanguage, EnglishAndPolish, minWordLength);
+        SoftHyphenInserter.InsertSoftHyphens(html, defaultLanguage, EnglishAndPolish, minWordLength, SoftHyphenForm.Reference);
 
     [Fact]
     public void A_word_is_broken_where_the_patterns_of_its_language_allow()
@@ -103,7 +104,7 @@ public sealed class SoftHyphenInserterTests
         {
             asked.Add(k);
             return TestHyphenation.Liang;
-        });
+        }, form: SoftHyphenForm.Reference);
 
         // Assert
         asked.Should().Contain(key);
@@ -263,6 +264,48 @@ public sealed class SoftHyphenInserterTests
 
         // Assert
         result.Should().Be(Page($"<p>{word}</p>", htmlLang: string.Empty));
+    }
+
+    [Fact]
+    public void Soft_hyphens_are_written_as_the_character_unless_the_reference_is_asked_for()
+    {
+        // Arrange
+        string html = Page("<p>hyphenation</p>");
+
+        // Act
+        string result = SoftHyphenInserter.InsertSoftHyphens(html, string.Empty, EnglishAndPolish);
+
+        // Assert
+        result.Should().Be(Page("<p>hy\u00ADphen\u00ADation</p>"));
+    }
+
+    [Theory]
+    [InlineData(SoftHyphenForm.Character, "\u00AD")]
+    [InlineData(SoftHyphenForm.Reference, "&#173;")]
+    public void Converting_writes_every_form_of_the_chosen_languages_in_the_chosen_form(SoftHyphenForm form, string written)
+    {
+        // Arrange
+        string html = Page("<p>a&shy;b&#173;c&#xAD;d\u00ADe <span lang=\"pl\">x&shy;y</span></p>");
+
+        // Act
+        string result = SoftHyphenInserter.ConvertSoftHyphens(html, string.Empty, key => key == "en", NoPlaces, form);
+
+        // Assert
+        result.Should().Be(Page($"<p>a{written}b{written}c{written}d{written}e <span lang=\"pl\">x&shy;y</span></p>"));
+    }
+
+    [Fact]
+    public void Converting_takes_from_outside_the_text_only_the_places_chosen()
+    {
+        // Arrange
+        string html = Page("<p title=\"t&shy;u\" class=\"c&shy;d\">x</p>");
+        int inTitle = html.IndexOf("&shy;", StringComparison.Ordinal);
+
+        // Act
+        string result = SoftHyphenInserter.ConvertSoftHyphens(html, string.Empty, _ => true, new HashSet<int> { inTitle }, SoftHyphenForm.Reference);
+
+        // Assert
+        result.Should().Be(Page("<p title=\"t&#173;u\" class=\"c&shy;d\">x</p>"));
     }
 
     [Fact]

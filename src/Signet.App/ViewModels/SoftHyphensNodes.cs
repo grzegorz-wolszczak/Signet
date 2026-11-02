@@ -19,10 +19,10 @@ public abstract partial class SoftHyphensNode : ObservableObject
     private bool _isChecked;
 
     /// <summary>Creates a row.</summary>
-    protected SoftHyphensNode(SoftHyphensViewModel owner, bool forAdding, string title, bool hasCheckBox)
+    protected SoftHyphensNode(SoftHyphensViewModel owner, SoftHyphensMode tree, string title, bool hasCheckBox)
     {
         Owner = owner;
-        ForAdding = forAdding;
+        Tree = tree;
         Title = title;
         HasCheckBox = hasCheckBox;
         _isChecked = hasCheckBox;
@@ -31,8 +31,11 @@ public abstract partial class SoftHyphensNode : ObservableObject
     /// <summary>The dialog.</summary>
     protected SoftHyphensViewModel Owner { get; }
 
-    /// <summary>Whether the row is in the tree of adding (or of removing).</summary>
-    protected bool ForAdding { get; }
+    /// <summary>The tree the row is in (adding, removing or converting).</summary>
+    protected SoftHyphensMode Tree { get; }
+
+    /// <summary>Whether the row is in the tree of adding.</summary>
+    protected bool ForAdding => Tree == SoftHyphensMode.Add;
 
     /// <summary>The row above, or <c>null</c> for a row at the top.</summary>
     public SoftHyphensNode? Parent { get; private set; }
@@ -119,7 +122,7 @@ public abstract partial class SoftHyphensNode : ObservableObject
     /// <summary>Opens the place of the row in the code (a double click); <c>false</c> = the row has no place.</summary>
     public virtual bool Navigate() => false;
 
-    /// <summary>Announces that the count column changed (the shortest hyphenated word did).</summary>
+    /// <summary>Announces that the count column changed (the shortest hyphenated word, or the form, did).</summary>
     internal void RefreshCount()
     {
         OnPropertyChanged(nameof(Count));
@@ -157,8 +160,8 @@ public abstract partial class SoftHyphensNode : ObservableObject
 public sealed class SoftHyphensLanguageNode : SoftHyphensNode
 {
     internal SoftHyphensLanguageNode(
-        SoftHyphensViewModel owner, bool forAdding, SoftHyphenLanguage language, HyphenationMatch? match, string? unreadable, bool hasCheckBox)
-        : base(owner, forAdding, language.IsUnknown ? Strings.Get("SoftHyphens_UnknownLanguage") : language.Language, hasCheckBox)
+        SoftHyphensViewModel owner, SoftHyphensMode tree, SoftHyphenLanguage language, HyphenationMatch? match, string? unreadable, bool hasCheckBox)
+        : base(owner, tree, language.IsUnknown ? Strings.Get("SoftHyphens_UnknownLanguage") : language.Language, hasCheckBox)
     {
         Language = language;
         Match = match;
@@ -195,9 +198,12 @@ public sealed class SoftHyphensLanguageNode : SoftHyphensNode
     public override string Source => SoftHyphensViewModel.SourcesText(Language.Sources);
 
     /// <inheritdoc />
-    public override string Count => ForAdding
-        ? Language.WordsToHyphenate(Owner.MinWordLength).ToString(CultureInfo.CurrentCulture)
-        : Language.SoftHyphens.ToString(CultureInfo.CurrentCulture);
+    public override string Count => (Tree switch
+    {
+        SoftHyphensMode.Add => Language.WordsToHyphenate(Owner.MinWordLength),
+        SoftHyphensMode.Convert => Language.SoftHyphensNotIn(Owner.Form),
+        _ => Language.SoftHyphens,
+    }).ToString(CultureInfo.CurrentCulture);
 
     private string PatternsText()
     {
@@ -225,8 +231,8 @@ public sealed class SoftHyphensLanguageNode : SoftHyphensNode
 public sealed class SoftHyphensFileNode : SoftHyphensNode
 {
     internal SoftHyphensFileNode(
-        SoftHyphensViewModel owner, bool forAdding, SoftHyphenLanguage language, SoftHyphenLanguageInFile file, bool hasCheckBox)
-        : base(owner, forAdding, file.BookPath, hasCheckBox)
+        SoftHyphensViewModel owner, SoftHyphensMode tree, SoftHyphenLanguage language, SoftHyphenLanguageInFile file, bool hasCheckBox)
+        : base(owner, tree, file.BookPath, hasCheckBox)
     {
         Language = language;
         File = file;
@@ -242,9 +248,12 @@ public sealed class SoftHyphensFileNode : SoftHyphensNode
     public override string Source => SoftHyphensViewModel.SourcesText(File.Sources.Select(s => (s, 1)).ToList(), withFiles: false);
 
     /// <inheritdoc />
-    public override string Count => ForAdding
-        ? File.WordsToHyphenate(Owner.MinWordLength).ToString(CultureInfo.CurrentCulture)
-        : File.SoftHyphens.ToString(CultureInfo.CurrentCulture);
+    public override string Count => (Tree switch
+    {
+        SoftHyphensMode.Add => File.WordsToHyphenate(Owner.MinWordLength),
+        SoftHyphensMode.Convert => File.SoftHyphensNotIn(Owner.Form),
+        _ => File.SoftHyphens,
+    }).ToString(CultureInfo.CurrentCulture);
 
     /// <inheritdoc />
     public override bool Navigate()
@@ -257,8 +266,8 @@ public sealed class SoftHyphensFileNode : SoftHyphensNode
 /// <summary>A group of rows that only gathers others: "Outside the text", or one kind of place in it.</summary>
 public sealed class SoftHyphensGroupNode : SoftHyphensNode
 {
-    internal SoftHyphensGroupNode(SoftHyphensViewModel owner, string title, string? tip = null)
-        : base(owner, forAdding: false, title, hasCheckBox: true)
+    internal SoftHyphensGroupNode(SoftHyphensViewModel owner, SoftHyphensMode tree, string title, string? tip = null)
+        : base(owner, tree, title, hasCheckBox: true)
     {
         TitleTipText = tip;
     }
@@ -275,8 +284,8 @@ public sealed class SoftHyphensGroupNode : SoftHyphensNode
 /// <summary>A soft hyphen outside the text of any language.</summary>
 public sealed class SoftHyphensPlaceNode : SoftHyphensNode
 {
-    internal SoftHyphensPlaceNode(SoftHyphensViewModel owner, SoftHyphenPlace place, string title)
-        : base(owner, forAdding: false, title, hasCheckBox: true)
+    internal SoftHyphensPlaceNode(SoftHyphensViewModel owner, SoftHyphensMode tree, SoftHyphenPlace place, string title)
+        : base(owner, tree, title, hasCheckBox: true)
     {
         Place = place;
     }
