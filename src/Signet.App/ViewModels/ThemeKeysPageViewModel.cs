@@ -190,11 +190,30 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
         set => SetAttributes(Attributes with { Italic = value });
     }
 
+    // The color an "own color" check box of the selected key leaves: switched on, the color it has, else the one it had
+    // when it was switched off (not saved yet), else the start color; switched off, none — the color is remembered until
+    // Save, so that checking the box again gives it back.
+    private ThemeColor? Switched(bool on, ThemeColor? current, OwnColorPart part, ThemeColor start)
+    {
+        if (Key is not { } key)
+        {
+            return on ? current ?? start : null;
+        }
+
+        if (on)
+        {
+            return current ?? _owner.SwitchedOffColor(key, part) ?? start;
+        }
+
+        _owner.RememberSwitchedOff(key, part, current);
+        return null;
+    }
+
     /// <summary>Whether the key sets the text color.</summary>
     public bool HasForeground
     {
         get => Attributes.Foreground is not null;
-        set => SetAttributes(Attributes with { Foreground = value ? Attributes.Foreground ?? TextColor : null });
+        set => SetAttributes(Attributes with { Foreground = Switched(value, Attributes.Foreground, OwnColorPart.Foreground, TextColor) });
     }
 
     /// <summary>The text color (<c>#RRGGBB</c> / <c>#AARRGGBB</c>); a text that is not a color is ignored.</summary>
@@ -214,7 +233,7 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
     public bool HasBackground
     {
         get => Attributes.Background is not null;
-        set => SetAttributes(Attributes with { Background = value ? Attributes.Background ?? BackgroundColor : null });
+        set => SetAttributes(Attributes with { Background = Switched(value, Attributes.Background, OwnColorPart.Background, BackgroundColor) });
     }
 
     /// <summary>The background (<c>#RRGGBB</c> / <c>#AARRGGBB</c>); a text that is not a color is ignored.</summary>
@@ -254,7 +273,7 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
     public bool HasEffectColor
     {
         get => Attributes.EffectColor is not null;
-        set => SetAttributes(Attributes with { EffectColor = value ? Attributes.EffectColor ?? Attributes.Foreground ?? TextColor : null });
+        set => SetAttributes(Attributes with { EffectColor = Switched(value, Attributes.EffectColor, OwnColorPart.Effect, Attributes.Foreground ?? TextColor) });
     }
 
     /// <summary>The color of the effect (<c>#RRGGBB</c> / <c>#AARRGGBB</c>); a text that is not a color is ignored.</summary>
@@ -301,7 +320,7 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
         {
             if (Key is { Kind: ThemeKeyKind.Color } key && value != HasColor)
             {
-                _owner.SetKey(key, ThemeEntry.Of(value ? ColorValue ?? TextColor : null));
+                _owner.SetKey(key, ThemeEntry.Of(Switched(value, ColorValue, OwnColorPart.Color, TextColor)));
             }
         }
     }
@@ -324,26 +343,28 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
     /// </summary>
     public bool IsColorInherited => IsColorKey && !HasColor;
 
-    // The key the color of the selected one comes from while it is unset.
-    private ThemeKey? ColorFallbackSource =>
-        Key is { Kind: ThemeKeyKind.Color } key && !HasColor ? _owner.Resolved?.ColorSource(key) : null;
+    // The color the selected key takes while unset: the first one along its fallback chain, the system's included.
+    private ThemeColor? InheritedValue =>
+        Key is { Kind: ThemeKeyKind.Color } key && !HasColor ? _owner.Resolved?.InheritedColorOf(key) : null;
+
+    // The key the link names and goes to: the one the selected key falls back to directly (it may inherit in turn).
+    private ThemeKey? ColorLinkTarget =>
+        Key is { Kind: ThemeKeyKind.Color } key && !HasColor ? _owner.Resolved?.InheritedFrom(key) : null;
 
     /// <summary>Whether the inherited color is known — it comes from another key, which the editor can name.</summary>
-    public bool HasInheritedColor => ColorFallbackSource is not null || SystemAccentValue is not null;
+    public bool HasInheritedColor => InheritedValue is not null;
 
     /// <summary>Whether the inherited color links to another key (the accent of the system links nowhere).</summary>
-    public bool HasInheritedSource => ColorFallbackSource is not null;
+    public bool HasInheritedSource => ColorLinkTarget is not null;
 
-    /// <summary>Whether the color comes from the theme of the system: no value to show and nowhere to go.</summary>
-    public bool IsColorFromPlatform => IsColorInherited && ColorFallbackSource is null && SystemAccentValue is null;
+    /// <summary>Whether nothing tells where the color comes from: no value to show and no key to go to.</summary>
+    public bool IsColorFromPlatform => IsColorInherited && InheritedValue is null && ColorLinkTarget is null;
 
     /// <summary>Whether the value shown is the accent of the system (no setting of Signet holds it).</summary>
     public bool IsSystemAccent => SystemAccentValue is not null;
 
     /// <summary>The inherited color as a hex (empty when it is not known).</summary>
-    public string InheritedColor =>
-        ColorFallbackSource is { } source ? _owner.Resolved?.ColorOf(source)?.ToString() ?? string.Empty
-            : SystemAccentValue?.ToString() ?? string.Empty;
+    public string InheritedColor => InheritedValue?.ToString() ?? string.Empty;
 
     // The colors the system gives and Signet writes down nowhere (the accent, the shade of it a context menu title
     // takes): no setting holds them, but they still have a value to show.
@@ -351,7 +372,7 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
 
     /// <summary>"Inherited from ‹key›" — the tip of the link that goes to the key the color comes from.</summary>
     public string InheritedFromText =>
-        ColorFallbackSource is { } source ? Strings.Format("ColorScheme_InheritedFrom", KeyName(source)) : string.Empty;
+        ColorLinkTarget is { } target ? Strings.Format("ColorScheme_InheritedFrom", KeyName(target)) : string.Empty;
 
     /// <summary>The color the field of the single color is filled with: the key's own, or the one it inherits.</summary>
     public string SwatchColor => HasColor ? Color : InheritedColor;
@@ -397,9 +418,9 @@ public sealed partial class ThemeKeysPageViewModel : ObservableObject
     [RelayCommand]
     private void GoToColorSource()
     {
-        if (ColorFallbackSource is { } source)
+        if (ColorLinkTarget is { } target)
         {
-            _owner.RequestKey(source);
+            _owner.RequestKey(target);
         }
     }
 

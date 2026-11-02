@@ -106,10 +106,10 @@ public partial class ThemeKeysView : UserControl
         ResolvedTheme theme = vm.Theme ?? ResolvedTheme.Defaults;
         switch (vm.Page)
         {
-            case ThemePage.Preview or ThemePage.Interface:
+            case ThemePage.Interface:
                 _controls = new ThemeControlsPreview();
                 _controls.KeyClicked += OnPreviewKeyClicked;
-                _controls.Show(vm.Page, theme);
+                _controls.SetTheme(theme);
                 PreviewHost.Child = _controls;
                 return;
             case ThemePage.JavaScriptJson:

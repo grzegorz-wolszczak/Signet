@@ -1073,9 +1073,6 @@
       <TabItem x:Name="ThemeDiffPage" Header="{loc:Loc PreferencesWindow_ThemeDiff}" views:PreferencesPage.Parent="ColorSchemePage">
         <views:ThemeKeysView x:Name="ThemeDiffView" Margin="8" />
       </TabItem>
-      <TabItem x:Name="ThemePreviewPage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="ColorSchemePage">
-        <views:ThemeKeysView x:Name="ThemePreviewView" Margin="8" />
-      </TabItem>
 
 
       <!-- ============================= Preview Panel ============================= -->
@@ -1137,9 +1134,9 @@
                                 </ComboBox.ItemTemplate>
                               </ComboBox>
 
-                              <!-- The color of the highlight is in the color scheme (preview.highlight). -->
-                              <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
-                                               views:PreferencesPage.Target="ColorSchemePage" />
+                              <!-- The color of the highlight: a color of the theme only this panel uses, so it is edited here. -->
+                              <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightColor}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                              <views:ColorKeyEditorView Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" DataContext="{Binding PreviewHighlightColor}" />
 
                               <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
                                          IsEnabled="{Binding IsPreviewHighlightBackground}"
@@ -1173,6 +1170,21 @@
                                              Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right"
                                              IsEnabled="{Binding PreviewHighlightAutoHide}"
                                              ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelayTip}" ToolTip.ShowOnDisabled="True" />
+                            </Grid>
+                          </StackPanel>
+                        </Border>
+
+                        <!-- The colors the panel forces on the book (e.g. a dark page for a dark theme); unset = the book's own. -->
+                        <Border Classes="section">
+                          <StackPanel Spacing="6">
+                            <TextBlock Text="{loc:Loc PreferencesWindow_PreviewBookColors}" FontWeight="Bold" />
+                            <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewBookBackground}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                              <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding PreviewBackgroundColor}" />
+                            </Grid>
+                            <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewBookText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                              <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding PreviewTextColor}" />
                             </Grid>
                           </StackPanel>
                         </Border>

@@ -16,8 +16,8 @@ using Signet.Core.Themes;
 namespace Signet.App.Views;
 
 /// <summary>
-/// The preview of the pages of the theme editor without an editor: Preview (a page of a book with the highlighted
-/// element) and Interface (the controls, messages and icons in the colors of Signet). Every element shows the look of
+/// The preview of the Interface page of the theme editor (it has no editor to show): the controls, messages and icons
+/// in the colors of Signet. Every element shows the look of
 /// one key (its <see cref="Control.Tag"/>): a click reports the key (<see cref="KeyClicked"/>), and
 /// <see cref="Blink"/> makes the elements of a key blink. The Fluent palette has no elements of its own.
 /// </summary>
@@ -28,7 +28,6 @@ public sealed class ThemeControlsPreview : Border
     private readonly DispatcherTimer _blinkTimer = new() { Interval = TimeSpan.FromMilliseconds(180) };
     private readonly List<Control> _blinking = new();
     private ResolvedTheme _theme = ResolvedTheme.Defaults;
-    private ThemePage _page = ThemePage.Interface;
     private ThemeKey? _blinkKey;
     private int _blinkTick;
 
@@ -51,18 +50,11 @@ public sealed class ThemeControlsPreview : Border
     /// <summary>Raised by a click on an element shown in the look of a key.</summary>
     public event EventHandler<ThemeKey>? KeyClicked;
 
-    /// <summary>Shows the sample of a page (<see cref="ThemePage.Preview"/> or <see cref="ThemePage.Interface"/>).</summary>
-    public void Show(ThemePage page, ResolvedTheme theme)
-    {
-        _page = page;
-        SetTheme(theme);
-    }
-
     /// <summary>Changes the colors (the sample is built again).</summary>
     public void SetTheme(ResolvedTheme theme)
     {
         _theme = theme ?? throw new ArgumentNullException(nameof(theme));
-        Child = _page == ThemePage.Preview ? BuildBook() : BuildInterface();
+        Child = BuildInterface();
         Blink(_blinkTimer.IsEnabled ? _blinkKey : null);
     }
 
@@ -120,43 +112,6 @@ public sealed class ThemeControlsPreview : Border
                 return;
             }
         }
-    }
-
-    // ---- Preview: a page of a book ----
-
-    private Border BuildBook()
-    {
-        IBrush text = Brush(_theme.Color(ThemeKeys.PreviewText)) ?? (IBrush)Brushes.Black;
-        TextBlock Paragraph(string content, double size = 14, FontWeight weight = FontWeight.Normal) =>
-            new() { Text = content, Foreground = text, FontSize = size, FontWeight = weight, TextWrapping = TextWrapping.Wrap, Tag = ThemeKeys.PreviewText };
-
-        Color highlight = _theme.Color(ThemeKeys.PreviewHighlight) ?? Colors.Yellow;
-        Border highlighted = new()
-        {
-            Tag = ThemeKeys.PreviewHighlight,
-            Background = new SolidColorBrush(highlight, 0.45),
-            BorderBrush = new SolidColorBrush(highlight),
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(4, 2),
-            Child = Paragraph(Strings.Get("ColorSchemeSample_BookHighlight")),
-        };
-        return new Border
-        {
-            Tag = ThemeKeys.PreviewBackground,
-            Background = Brush(_theme.Color(ThemeKeys.PreviewBackground)) ?? (IBrush)Brushes.White,
-            Padding = new Thickness(16),
-            Child = new StackPanel
-            {
-                Spacing = 8,
-                Children =
-                {
-                    Paragraph(Strings.Get("ColorSchemeSample_BookTitle"), 20, FontWeight.Bold),
-                    Paragraph(Strings.Get("ColorSchemeSample_BookText")),
-                    highlighted,
-                    Paragraph(Strings.Get("ColorSchemeSample_BookNote")),
-                },
-            },
-        };
     }
 
     // ---- Interface: the controls, messages and icons ----

@@ -57,6 +57,8 @@
     <color key="ui.icon.file" value="#D0D0D0" />
     <color key="ui.icon.fileOutline" value="#8A8A8A" />
     <color key="ui.icon.fileFold" value="#A0A0A0" />
+    <!-- The Preview panel: the highlight of the caret keeps its color; the colors forced on the book are left to the book. -->
+    <color key="preview.highlight" value="#FFEB3B" />
   </colors>
   <attributes>
     <attribute key="ui.textSelection" foreground="#FFFFFF" background="#264F78" />

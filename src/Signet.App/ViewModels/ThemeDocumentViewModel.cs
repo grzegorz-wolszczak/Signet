@@ -39,6 +39,10 @@ public sealed partial class ThemeDocumentViewModel : ObservableObject
     private readonly SettingsStore _settings;
     private readonly Dictionary<string, Theme> _edited = new(StringComparer.Ordinal);
 
+    // The own colors switched off and not saved yet (by theme, key and which color of it), so switching one back on
+    // brings back the color it had instead of a start color: the draft forgets a color once its key is unset.
+    private readonly Dictionary<(string ThemeId, string KeyId, OwnColorPart Part), ThemeColor> _switchedOff = new();
+
     // Resolves the keys with the changes not saved yet, also those of the parents.
     private readonly ThemeResolver _editResolver;
 
@@ -226,6 +230,38 @@ public sealed partial class ThemeDocumentViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Remembers the own color of a key that is being switched off (its "own color" check box cleared), until Save —
+    /// <see cref="SwitchedOffColor"/> gives it back when the box is checked again. Nothing to remember is ignored.
+    /// </summary>
+    internal void RememberSwitchedOff(ThemeKey key, OwnColorPart part, ThemeColor? color)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        if (Selected is { } theme && color is { } own)
+        {
+            _switchedOff[(theme.Id, key.Id, part)] = own;
+        }
+    }
+
+    /// <summary>The own color of the key switched off earlier and not saved yet (<see cref="RememberSwitchedOff"/>), or <c>null</c>.</summary>
+    internal ThemeColor? SwitchedOffColor(ThemeKey key, OwnColorPart part)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        return Selected is { } theme && _switchedOff.TryGetValue((theme.Id, key.Id, part), out ThemeColor color) ? color : null;
+    }
+
+    // Forgets the switched-off colors of a theme whose changes are gone (saved, deleted or restored).
+    private void ForgetSwitchedOff(string? themeId)
+    {
+        foreach ((string ThemeId, string KeyId, OwnColorPart Part) entry in _switchedOff.Keys.ToList())
+        {
+            if (themeId is null || entry.ThemeId == themeId)
+            {
+                _switchedOff.Remove(entry);
+            }
+        }
+    }
+
     /// <summary>Undoes the change of a key of the selected theme (<see cref="ThemeStore.WithoutChange"/>).</summary>
     internal void RestoreKey(ThemeKey key)
     {
@@ -282,6 +318,7 @@ public sealed partial class ThemeDocumentViewModel : ObservableObject
         }
 
         _edited.Clear();
+        ForgetSwitchedOff(null);
         RefreshThemes(Selected?.Id);
         Changed?.Invoke(this, EventArgs.Empty);
         return true;
@@ -334,6 +371,7 @@ public sealed partial class ThemeDocumentViewModel : ObservableObject
         string next = current.ParentId ?? ThemeStore.LightId;
         _store.Delete(theme.Id);
         bool hadChanges = _edited.Remove(theme.Id);
+        ForgetSwitchedOff(theme.Id);
         RefreshThemes(next);
         if (hadChanges)
         {
@@ -352,6 +390,7 @@ public sealed partial class ThemeDocumentViewModel : ObservableObject
 
         _store.RestoreDefaults(theme.Id);
         bool hadChanges = _edited.Remove(theme.Id);
+        ForgetSwitchedOff(theme.Id);
         RefreshThemes(theme.Id);
         if (hadChanges)
         {
@@ -474,6 +513,22 @@ public sealed partial class ThemeDocumentViewModel : ObservableObject
 
         Selected = selected;
     }
+}
+
+/// <summary>Which color of a key an "own color" check box switches.</summary>
+public enum OwnColorPart
+{
+    /// <summary>The color of a color key.</summary>
+    Color,
+
+    /// <summary>The text color of a text attributes key.</summary>
+    Foreground,
+
+    /// <summary>The background of a text attributes key.</summary>
+    Background,
+
+    /// <summary>The color of the effect (underline, …) of a text attributes key.</summary>
+    Effect,
 }
 
 /// <summary>A variant of the controls in the list of Appearance › Color Scheme.</summary>

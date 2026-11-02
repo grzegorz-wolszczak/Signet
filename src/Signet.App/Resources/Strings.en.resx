@@ -6899,13 +6899,13 @@ Close the tab</value>
     <value>Inserted word</value>
   </data>
   <data name="ThemeKey_preview_highlight" xml:space="preserve">
-    <value>Highlight of the clicked element</value>
+    <value>Preview: highlight of the caret location</value>
   </data>
   <data name="ThemeKey_preview_background" xml:space="preserve">
-    <value>Background</value>
+    <value>Preview: background forced on the book</value>
   </data>
   <data name="ThemeKey_preview_text" xml:space="preserve">
-    <value>Text</value>
+    <value>Preview: text color forced on the book</value>
   </data>
   <data name="ThemeKey_ui_accent" xml:space="preserve">
     <value>Accent</value>
@@ -7143,18 +7143,6 @@ Close the tab</value>
   </data>
   <data name="ColorSchemeSample_RenameError" xml:space="preserve">
     <value>Regex Rename error</value>
-  </data>
-  <data name="ColorSchemeSample_BookTitle" xml:space="preserve">
-    <value>Chapter One</value>
-  </data>
-  <data name="ColorSchemeSample_BookText" xml:space="preserve">
-    <value>It was a bright cold day in April, and the clocks were striking thirteen.</value>
-  </data>
-  <data name="ColorSchemeSample_BookHighlight" xml:space="preserve">
-    <value>The paragraph clicked in Code Editor is highlighted here.</value>
-  </data>
-  <data name="ColorSchemeSample_BookNote" xml:space="preserve">
-    <value>The background and the text keep the colors of the book unless the theme sets them.</value>
   </data>
   <data name="ColorPickerWindow_BasicColors" xml:space="preserve">
     <value>Basic colors</value>
@@ -7771,5 +7759,20 @@ Close the tab</value>
   </data>
   <data name="ColorScheme_FromSystemAccentTip" xml:space="preserve">
     <value>The accent color of the system. It is the one color Signet does not write down — it comes from the system settings and changes with them. Tick "Own color" to override it here.</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightColor" xml:space="preserve">
+    <value>Highlight color:</value>
+  </data>
+  <data name="PreferencesWindow_PreviewBookColors" xml:space="preserve">
+    <value>Colors forced on the book</value>
+  </data>
+  <data name="PreferencesWindow_PreviewBookBackground" xml:space="preserve">
+    <value>Page background (unchecked = the book's own)</value>
+  </data>
+  <data name="PreferencesWindow_PreviewBookText" xml:space="preserve">
+    <value>Text color (unchecked = the book's own)</value>
+  </data>
+  <data name="ColorScheme_LeftToTheBook" xml:space="preserve">
+    <value>the book's own</value>
   </data>
 </root>

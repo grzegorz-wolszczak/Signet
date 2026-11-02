@@ -68,9 +68,20 @@ public sealed partial class ColorKeyEditorViewModel : ObservableObject
         get => ColorValue is not null;
         set
         {
-            if (value != HasColor)
+            if (value == HasColor)
             {
-                Set(value ? ColorValue ?? TextColor : null);
+                return;
+            }
+
+            // Switched off, the color is remembered until Save, so that checking the box again gives it back.
+            if (value)
+            {
+                Set(ColorValue ?? _owner.SwitchedOffColor(_key, OwnPart) ?? TextColor);
+            }
+            else
+            {
+                _owner.RememberSwitchedOff(_key, OwnPart, ColorValue);
+                Set(null);
             }
         }
     }
@@ -94,22 +105,37 @@ public sealed partial class ColorKeyEditorViewModel : ObservableObject
     /// </summary>
     public bool IsInherited => !HasColor;
 
-    // The key the color comes from while this one is unset; null = nothing names it (the platform decides) or this is
-    // one color of a text attributes key, which has no fallback chain of its own.
-    private ThemeKey? Source => _part is null && !HasColor ? _owner.Resolved?.ColorSource(_key) : null;
+    // The color the key takes while unset (the first one along its fallback chain, the system's included); null =
+    // none along the chain, or this is one color of a text attributes key, which has no fallback chain of its own.
+    private ThemeColor? InheritedValue => HasColor ? null
+        : _part is null ? _owner.Resolved?.InheritedColorOf(_key)
+        : _owner.Resolved?.InheritedPartOf(_key, _part == TextAttributesColor.Background)?.Color;
 
-    /// <summary>Whether the inherited color is known — it comes from another setting, which the editor can name.</summary>
-    public bool HasInheritedColor => Source is not null || SystemAccentValue is not null;
+    // The setting the link names and goes to: the one this key falls back to directly (it may inherit in turn); for one
+    // color of a text attributes key, the setting the controls make it from.
+    private ThemeKey? LinkTarget => HasColor ? null
+        : _part is null ? _owner.Resolved?.InheritedFrom(_key)
+        : _owner.Resolved?.InheritedPartOf(_key, _part == TextAttributesColor.Background)?.Source;
+
+    /// <summary>Whether the inherited color is known (from another setting, or one the system gives).</summary>
+    public bool HasInheritedColor => InheritedValue is not null;
 
     /// <summary>Whether the inherited color links to another setting (the accent of the system links nowhere).</summary>
-    public bool HasInheritedSource => Source is not null;
+    public bool HasInheritedSource => LinkTarget is not null;
 
     /// <summary>
-    /// Whether the color comes from the theme of the system and not from another setting: there is no value to show
-    /// and nowhere to go, so the field says so instead of a hex.
+    /// Whether nothing tells where the color comes from: no value to show and no setting to go to, so the field says
+    /// the controls give it. Every key the controls color has a fallback to the copy of the Fluent palette (or to the
+    /// accent), so this is left for what no setting can name.
     /// </summary>
     public bool IsFromPlatform =>
-        IsInherited && Source is null && SystemAccentValue is null && _part != TextAttributesColor.Background;
+        IsInherited && InheritedValue is null && LinkTarget is null && _part != TextAttributesColor.Background && !IsLeftToTheBook;
+
+    /// <summary>
+    /// Whether this is a color the Preview forces on the book and it is not set: the book keeps its own, which is not a
+    /// color of the controls (<see cref="ThemeKeys.IsLeftToTheBook"/>).
+    /// </summary>
+    public bool IsLeftToTheBook => IsInherited && _part is null && ThemeKeys.IsLeftToTheBook(_key);
 
     /// <summary>Whether the value shown is the accent of the system (no setting of Signet holds it).</summary>
     public bool IsSystemAccent => SystemAccentValue is not null;
@@ -118,12 +144,10 @@ public sealed partial class ColorKeyEditorViewModel : ObservableObject
     /// Whether this is a background that is not set at all: nothing is painted and what is behind shows through,
     /// which is not the same as a color taken from the theme.
     /// </summary>
-    public bool IsNoBackground => IsInherited && Source is null && _part == TextAttributesColor.Background;
+    public bool IsNoBackground => IsInherited && InheritedValue is null && _part == TextAttributesColor.Background;
 
     /// <summary>The inherited color as a hex (empty when it is not known).</summary>
-    public string InheritedColor =>
-        Source is { } source ? _owner.Resolved?.ColorOf(source)?.ToString() ?? string.Empty
-            : SystemAccentValue?.ToString() ?? string.Empty;
+    public string InheritedColor => InheritedValue?.ToString() ?? string.Empty;
 
     // The colors the system gives and Signet writes down nowhere (the accent, the shade of it a context menu title
     // takes): no setting holds them, but they still have a value to show.
@@ -131,7 +155,7 @@ public sealed partial class ColorKeyEditorViewModel : ObservableObject
 
     /// <summary>"Inherited from ‹setting›" — the tip of the link that goes to the setting the color comes from.</summary>
     public string InheritedFromText =>
-        Source is { } source ? Strings.Format("ColorScheme_InheritedFrom", ThemeKeysPageViewModel.KeyName(source)) : string.Empty;
+        LinkTarget is { } target ? Strings.Format("ColorScheme_InheritedFrom", ThemeKeysPageViewModel.KeyName(target)) : string.Empty;
 
     /// <summary>The color the field is filled with: the key's own, or the one it inherits.</summary>
     public string SwatchColor => HasColor ? Color : InheritedColor;
@@ -144,7 +168,7 @@ public sealed partial class ColorKeyEditorViewModel : ObservableObject
     /// </summary>
     public string FieldText => SwatchColor.Length > 0
         ? SwatchColor
-        : Strings.Get(IsNoBackground ? "ColorScheme_NoBackground" : "ColorScheme_FromPlatform");
+        : Strings.Get(IsNoBackground ? "ColorScheme_NoBackground" : IsLeftToTheBook ? "ColorScheme_LeftToTheBook" : "ColorScheme_FromPlatform");
 
     /// <summary>
     /// Black or white, whichever is readable on <see cref="SwatchColor"/> — the hex is written on the color itself,
@@ -162,9 +186,9 @@ public sealed partial class ColorKeyEditorViewModel : ObservableObject
     [RelayCommand]
     private void GoToSource()
     {
-        if (Source is { } source)
+        if (LinkTarget is { } target)
         {
-            _owner.RequestKey(source);
+            _owner.RequestKey(target);
         }
     }
 
@@ -202,6 +226,14 @@ public sealed partial class ColorKeyEditorViewModel : ObservableObject
         _owner.SetKey(_key, entry);
     }
 
+    // Which color of the key the "own color" check box switches.
+    private OwnColorPart OwnPart => _part switch
+    {
+        null => OwnColorPart.Color,
+        TextAttributesColor.Foreground => OwnColorPart.Foreground,
+        _ => OwnColorPart.Background,
+    };
+
     // The start color offered when "own color" is turned on: the editor's text color.
     private ThemeColor TextColor => _owner.Resolved?.Attributes(ThemeKeys.EditorText).Foreground ?? ThemeColor.FromRgb(0, 0, 0);
 
@@ -213,6 +245,7 @@ public sealed partial class ColorKeyEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(HasInheritedColor));
         OnPropertyChanged(nameof(IsFromPlatform));
         OnPropertyChanged(nameof(IsNoBackground));
+        OnPropertyChanged(nameof(IsLeftToTheBook));
         OnPropertyChanged(nameof(IsSystemAccent));
         OnPropertyChanged(nameof(HasInheritedSource));
         OnPropertyChanged(nameof(InheritedColor));

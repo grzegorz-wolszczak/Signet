@@ -1516,6 +1516,41 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
+    /// The colors of the Preview panel are edited on its own page, not in the color scheme of the editors (the panel is not
+    /// a code editor): the highlight and the colors forced on the book are colors of the interface theme, and a change
+    /// shows in the page of the preview before Save (moved in November 2026; the scheme had a Preview page of its own).
+    /// </summary>
+    [AvaloniaFact]
+    public void The_colors_of_the_Preview_panel_are_on_its_page_and_show_in_its_preview_before_save()
+    {
+        // Arrange
+        (PreferencesWindow window, PreferencesViewModel vm, _, _) = ShowPreviewPage(
+            "Preview", "PreviewPreviewHost", "PreviewPreviewPane", "PreviewSampleTip", bottom: false);
+        PreviewSample sample = window.FindControl<PreviewSample>("PreviewSamplePage")!;
+        Border page = sample.FindControl<Border>("Page")!;
+        Border marked = sample.FindControl<Border>("Block1")!;
+
+        // Assert
+        vm.ColorScheme.Pages.Select(p => p.Page).Should().NotContain(ThemePage.Interface, "the scheme keeps the editors only");
+        new[] { ThemeKeys.PreviewHighlight, ThemeKeys.PreviewBackground, ThemeKeys.PreviewText }
+            .Should().OnlyContain(k => k.Document == ThemeDocumentKind.Theme && k.OwnedByPanel);
+        window.GetVisualDescendants().OfType<ColorKeyEditorView>().Where(v => v.IsEffectivelyVisible)
+            .Select(v => v.DataContext)
+            .Should().Contain(new object[] { vm.PreviewHighlightColor, vm.PreviewBackgroundColor, vm.PreviewTextColor });
+
+        // Act
+        vm.PreviewHighlightColor.Color = "#FF0000";
+        vm.PreviewBackgroundColor.HasColor = true;
+        vm.PreviewBackgroundColor.Color = "#202020";
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        ((ISolidColorBrush)marked.Background!).Color.Should().Be(Color.Parse("#FF0000"), "the mark takes the highlight being edited");
+        ((ISolidColorBrush)page.Background!).Color.Should().Be(Color.Parse("#202020"), "the page takes the background forced on the book");
+        window.Close();
+    }
+
+    /// <summary>
     /// The Preview page: the panel at the right draws a page in the fonts of the settings with the mark of the caret as the real
     /// preview draws it (the real one is a web view), following both tabs; a click on a paragraph moves the mark.
     /// </summary>
@@ -2643,6 +2678,120 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
+    /// No color field of Preferences says "from the controls": Signet keeps a copy of the Fluent palette, so every color
+    /// the controls give has a setting behind it — an unset color shows the value it ends up in and links to the setting
+    /// it falls back to (found in November 2026: the start screen's name and highlight, the tooltip code and the title of
+    /// a context menu said "from the controls"). The colors the Preview forces on the book say the book keeps its own.
+    /// </summary>
+    [AvaloniaFact]
+    public void Every_inherited_color_of_Preferences_shows_its_value_and_its_source()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var vm = (PreferencesViewModel)window.DataContext!;
+        List<ColorKeyEditorViewModel> panelColors = window.GetLogicalDescendants().OfType<ColorKeyEditorView>()
+            .Select(v => v.DataContext).OfType<ColorKeyEditorViewModel>().Distinct().ToList();
+        ThemeKeysPageViewModel interfaceColors = vm.Theme.PageFor(ThemePage.Interface);
+
+        // Act
+        List<string> treeOffenders = new();
+        foreach (ThemeKey key in ThemeKeys.On(ThemePage.Interface).Where(k => k.Kind == ThemeKeyKind.Color && !k.OwnedByPanel))
+        {
+            interfaceColors.SelectKey(key);
+            if (interfaceColors.IsColorFromPlatform)
+            {
+                treeOffenders.Add(key.Id);
+            }
+        }
+
+        // Assert
+        panelColors.Should().NotBeEmpty();
+        panelColors.Where(c => c.IsInherited && !c.IsNoBackground && !c.IsLeftToTheBook)
+            .Should().OnlyContain(c => c.HasInheritedColor, "an inherited color shows the value it ends up in");
+        panelColors.Should().NotContain(c => c.IsFromPlatform);
+        panelColors.Where(c => c.IsInherited && !c.IsNoBackground && !c.IsLeftToTheBook && !c.IsSystemAccent)
+            .Should().OnlyContain(c => c.HasInheritedSource, "an inherited color links to the setting it comes from");
+        vm.PreviewBackgroundColor.FieldText.Should().Be(Strings.Get("ColorScheme_LeftToTheBook"));
+        treeOffenders.Should().BeEmpty();
+        window.Close();
+    }
+
+    /// <summary>
+    /// The colors the editor shows for an unset color the controls draw are the ones the controls draw: the start
+    /// screen's highlight is the button under the pointer (BaseHigh at a tenth), the Book Browser's selected row the
+    /// TreeDataGrid's (the accent at 40 %, the text BaseHigh) — each with a link to the setting it is made from.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_colors_shown_for_what_the_controls_draw_are_the_ones_they_draw()
+    {
+        // Arrange
+        Application app = Application.Current!;
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        var vm = (PreferencesViewModel)window.DataContext!;
+
+        // Act
+        string Drawn(string resource) =>
+            app.TryGetResource(resource, app.ActualThemeVariant, out object? value) && value is ISolidColorBrush brush
+                ? new ThemeColor((byte)Math.Round(brush.Color.A * brush.Opacity, MidpointRounding.AwayFromZero),
+                    brush.Color.R, brush.Color.G, brush.Color.B).ToString()
+                : "?";
+
+        // Assert
+        vm.StartScreenHighlightColor.InheritedColor.Should().Be(Drawn("ButtonBackgroundPointerOver"));
+        vm.StartScreenHighlightColor.HasInheritedSource.Should().BeTrue();
+        vm.BookBrowserSelectionBackgroundColor.InheritedColor.Should().Be(Drawn("TreeDataGridSelectedCellBackgroundBrush"));
+        vm.BookBrowserSelectionBackgroundColor.HasInheritedSource.Should().BeTrue();
+        vm.BookBrowserSelectionForegroundColor.InheritedColor.Should().Be(Drawn("SystemControlForegroundBaseHighBrush"));
+        vm.BookBrowserSelectionForegroundColor.HasInheritedSource.Should().BeTrue();
+        window.Close();
+    }
+
+    /// <summary>
+    /// The link of an inherited color goes to the setting the color falls back to directly, even when that setting
+    /// inherits in turn: the timestamp column inherits the list background, so its link goes there — not past it to
+    /// the palette color the list background takes (found in November 2026: three links of the Notifications page all
+    /// went to the palette, skipping the list background they are documented to inherit). The swatch still shows the
+    /// color the whole chain ends up in.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_link_of_an_inherited_color_goes_to_the_setting_it_falls_back_to_directly()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "NotificationsAppearancePage");
+        var vm = (PreferencesViewModel)window.DataContext!;
+        ColorKeyEditorViewModel list = vm.NotificationsBackgroundColor;
+        ColorKeyEditorViewModel timestamp = vm.NotificationsTimestampBackgroundColor;
+        string listName = Strings.Get("ThemeKey_" + ThemeKeys.UiNotificationsBackground.Id.Replace('.', '_'));
+
+        // Assert
+        list.IsInherited.Should().BeTrue("the list background has no color of its own to start with");
+        timestamp.InheritedFromText.Should().Contain(listName, "the column falls back to the list background");
+        timestamp.InheritedColor.Should().Be(list.InheritedColor, "the color shown is still the one the chain ends up in");
+
+        // Act
+        ColorKeyEditorView editor = window.GetVisualDescendants().OfType<ColorKeyEditorView>()
+            .Single(v => ReferenceEquals(v.DataContext, timestamp));
+        Button link = editor.GetVisualDescendants().OfType<Button>().Single(b => b.Classes.Contains("sourceLink"));
+        link.Command!.Execute(link.CommandParameter);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        window.GetVisualDescendants().OfType<ColorKeyEditorView>()
+            .Should().Contain(v => v.IsEffectivelyVisible && ReferenceEquals(v.DataContext, list),
+                "the link stays on the Notifications page, at the list background");
+        window.Close();
+    }
+
+    /// <summary>
     /// A text attributes key says what each of its colors does while it is unset, instead of showing an empty field:
     /// the text color is the one of what is around it (the theme of the system), a background that is not set is no
     /// background at all, and an effect with no color of its own is drawn in the text color. Three different things,
@@ -3463,7 +3612,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
     /// <summary>
     /// The "Preview Panel" section: the refresh delay on its General tab, the highlighting of the cursor position on its
-    /// Appearance tab (the color is in the color scheme) and the preview fonts under Appearance › Fonts.
+    /// Appearance tab (with its color — the panel's own, edited right there) and the preview fonts under Appearance › Fonts.
     /// </summary>
     [AvaloniaFact]
     public void Preview_section_splits_refresh_highlight_and_fonts()
@@ -3488,10 +3637,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         ShowAppearance(window, "Preview");
 
         // Assert
-        window.GetVisualDescendants().OfType<TextBox>().Should().NotContain(t => t.Classes.Contains("colorValue"),
-            "the color of the highlight is in the color scheme");
         window.GetVisualDescendants().OfType<TextBlock>()
-            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_ColorsInScheme"));
+            .Should().NotContain(t => t.Text == Strings.Get("PreferencesWindow_ColorsInScheme") && t.IsEffectivelyVisible,
+                "the color of the highlight is no longer in the color scheme");
+        window.GetVisualDescendants().OfType<TextBlock>()
+            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewHighlightColor") && t.IsEffectivelyVisible);
 
         // Act
         ShowFontsTab(window, "Preview");

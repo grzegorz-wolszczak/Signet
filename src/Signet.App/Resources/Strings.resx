@@ -6899,13 +6899,13 @@ Zamknij zakładkę</value>
     <value>Dodane słowo</value>
   </data>
   <data name="ThemeKey_preview_highlight" xml:space="preserve">
-    <value>Podświetlenie klikniętego elementu</value>
+    <value>Preview: podświetlenie miejsca kursora</value>
   </data>
   <data name="ThemeKey_preview_background" xml:space="preserve">
-    <value>Tło</value>
+    <value>Preview: tło wymuszone na książce</value>
   </data>
   <data name="ThemeKey_preview_text" xml:space="preserve">
-    <value>Tekst</value>
+    <value>Preview: kolor tekstu wymuszony na książce</value>
   </data>
   <data name="ThemeKey_ui_accent" xml:space="preserve">
     <value>Akcent</value>
@@ -7143,18 +7143,6 @@ Zamknij zakładkę</value>
   </data>
   <data name="ColorSchemeSample_RenameError" xml:space="preserve">
     <value>Błąd Regex Rename</value>
-  </data>
-  <data name="ColorSchemeSample_BookTitle" xml:space="preserve">
-    <value>Rozdział pierwszy</value>
-  </data>
-  <data name="ColorSchemeSample_BookText" xml:space="preserve">
-    <value>Był jasny, zimny dzień kwietniowy i zegary biły trzynastą.</value>
-  </data>
-  <data name="ColorSchemeSample_BookHighlight" xml:space="preserve">
-    <value>Akapit kliknięty w Code Editor jest tu podświetlony.</value>
-  </data>
-  <data name="ColorSchemeSample_BookNote" xml:space="preserve">
-    <value>Tło i tekst mają kolory książki, chyba że motyw je ustawia.</value>
   </data>
   <data name="ColorPickerWindow_BasicColors" xml:space="preserve">
     <value>Kolory podstawowe</value>
@@ -7771,5 +7759,20 @@ Zamknij zakładkę</value>
   </data>
   <data name="ColorScheme_FromSystemAccentTip" xml:space="preserve">
     <value>Kolor akcentu systemu. Jako jedyny nie jest zapisany w Signecie — pochodzi z ustawień systemu i zmienia się razem z nimi. Zaznacz „Własny kolor”, aby go tu nadpisać.</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightColor" xml:space="preserve">
+    <value>Kolor podświetlenia:</value>
+  </data>
+  <data name="PreferencesWindow_PreviewBookColors" xml:space="preserve">
+    <value>Kolory wymuszone na książce</value>
+  </data>
+  <data name="PreferencesWindow_PreviewBookBackground" xml:space="preserve">
+    <value>Tło strony (niezaznaczone = tło książki)</value>
+  </data>
+  <data name="PreferencesWindow_PreviewBookText" xml:space="preserve">
+    <value>Kolor tekstu (niezaznaczone = kolor książki)</value>
+  </data>
+  <data name="ColorScheme_LeftToTheBook" xml:space="preserve">
+    <value>kolor książki</value>
   </data>
 </root>

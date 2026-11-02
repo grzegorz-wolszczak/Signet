@@ -43,16 +43,21 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
 
     private ThemeDocumentViewModel Create(bool scheme, string themeId)
     {
+        PreferencesViewModel vm = NewPreferences();
+        ThemeDocumentViewModel document = scheme ? vm.ColorScheme : vm.Theme;
+        document.TextPrompt = (_, _, _) => Task.FromResult(_names.Dequeue());
+        document.Selected = document.Themes.Single(t => t.Id == themeId);
+        return document;
+    }
+
+    private PreferencesViewModel NewPreferences()
+    {
         LocalizationManager localization = new(_host.Settings, NullLogger<LocalizationManager>.Instance);
         IconThemeManager iconTheme = new(_host.Settings, NullLogger<IconThemeManager>.Instance);
         SpellChecker spellChecker = new(_host.Settings, Path.Combine(_root, "hunspell"), Path.Combine(_root, "user"));
         UiDensityManager uiDensity = new(_host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
         ThemeManager themes = new(_host.Settings, ThemeStores.In(_root), NullLogger<ThemeManager>.Instance);
-        PreferencesViewModel vm = new(_host.Settings, spellChecker, localization, iconTheme, _host.Shortcuts, _host.Registry, uiDensity, themes);
-        ThemeDocumentViewModel document = scheme ? vm.ColorScheme : vm.Theme;
-        document.TextPrompt = (_, _, _) => Task.FromResult(_names.Dequeue());
-        document.Selected = document.Themes.Single(t => t.Id == themeId);
-        return document;
+        return new PreferencesViewModel(_host.Settings, spellChecker, localization, iconTheme, _host.Shortcuts, _host.Registry, uiDensity, themes);
     }
 
     // A theme of the user with Signet Dark as the parent, selected.
@@ -91,7 +96,6 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
             vm.Roots.Where(r => r.IsGroup).Should().OnlyContain(g => g.Children.Count > 0 && g.Name.Length > 0);
         }
 
-        sut.PageFor(ThemePage.Preview).Roots[0].Key.Should().Be(ThemeKeys.PreviewHighlight, "a key without a group is at the top");
         theme.PageFor(ThemePage.Interface).Roots.Single(r => r.IsGroup && r.Children[0].Key!.Id.StartsWith("fluent.", StringComparison.Ordinal))
             .Children.Select(n => n.Name).Should().Contain("RegionColor", "the Fluent palette keeps the names of its colors");
     }
@@ -301,6 +305,98 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
         // Act & Assert
         sut.Resolved!.ColorOf(ThemeKeys.UiAccent).Should().BeNull();
         Select(New(), ThemeKeys.EditorCurrentLine).CanBeEmpty.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// An own color switched off and on again before Save comes back as it was, instead of the start color: the user
+    /// changed their mind, and nothing was saved yet (found in November 2026 — the color was lost). After Save the
+    /// switched-off color is gone for good.
+    /// </summary>
+    [Fact]
+    public void An_own_color_switched_off_and_on_again_before_save_comes_back()
+    {
+        // Arrange
+        ThemeDocumentViewModel sut = NewTheme();
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.UiAccent);
+        page.HasColor = true;
+        page.Color = "#3366CC";
+
+        // Act
+        page.HasColor = false;
+        page.HasColor = true;
+
+        // Assert
+        page.Color.Should().Be("#3366CC");
+
+        // Act
+        page.HasColor = false;
+        sut.Apply();
+        page.HasColor = true;
+
+        // Assert
+        page.Color.Should().NotBe("#3366CC", "Save made the switch-off final");
+    }
+
+    [Fact]
+    public void A_text_color_switched_off_and_on_again_before_save_comes_back()
+    {
+        // Arrange
+        ThemeDocumentViewModel sut = New();
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
+        page.HasForeground = true;
+        page.Foreground = "#123456";
+        page.HasBackground = true;
+        page.Background = "#654321";
+
+        // Act
+        page.HasForeground = false;
+        page.HasBackground = false;
+        page.HasForeground = true;
+        page.HasBackground = true;
+
+        // Assert
+        page.Foreground.Should().Be("#123456");
+        page.Background.Should().Be("#654321");
+    }
+
+    [Fact]
+    public void A_switched_off_color_is_not_given_to_another_theme()
+    {
+        // Arrange
+        ThemeDocumentViewModel sut = NewTheme();
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.UiAccent);
+        page.HasColor = true;
+        page.Color = "#3366CC";
+        page.HasColor = false;
+
+        // Act
+        sut.Selected = sut.Themes.Single(t => t.Id == ThemeStore.DarkId);
+        page = Select(sut, ThemeKeys.UiAccent);
+        page.HasColor = true;
+
+        // Assert
+        page.Color.Should().NotBe("#3366CC", "the color was switched off in Signet Light, not here");
+    }
+
+    [Fact]
+    public void A_panel_color_switched_off_and_on_again_before_save_comes_back()
+    {
+        // Arrange
+        ColorKeyEditorViewModel sut = NewPreferences().NotificationsBackgroundColor;
+        sut.HasColor = true;
+        sut.Color = "#0000FF";
+
+        // Act
+        sut.HasColor = false;
+
+        // Assert
+        sut.IsInherited.Should().BeTrue();
+
+        // Act
+        sut.HasColor = true;
+
+        // Assert
+        sut.Color.Should().Be("#0000FF");
     }
 
     [Fact]
