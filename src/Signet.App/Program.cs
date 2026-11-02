@@ -34,6 +34,7 @@ internal static class Program
         {
             ReportAbnormalEnds(log, logDir, processId);
             log.LogInformation("Start {App}; log directory: {LogDir}", ApplicationInfo.NameWithVersion, logDir);
+            log.LogInformation("{Startup}", StartupEnvironment.Describe(args));
 
             using ServiceProvider provider = AppServices.Build(loggerFactory);
             InitializeScratchpad(provider.GetRequiredService<SettingsStore>(), log);
