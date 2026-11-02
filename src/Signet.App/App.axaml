@@ -284,6 +284,22 @@
       <Setter Property="FontSize" Value="{DynamicResource SignetToolHeaderFontSize}" />
       <Setter Property="FontWeight" Value="{DynamicResource SignetToolHeaderFontWeight}" />
     </Style>
+    <!-- The bottom edge of a group of docked tool panels is drawn by its row of tabs, not by the panel: two borders left
+         and right of the selected tab draw the line, so the selected tab looks open to the panel. With a single panel
+         left (":singleitem", e.g. Clips closed next to Book Browser, or Table Of Contents next to Preview) Dock shrinks
+         the row to one pixel and hides the tabs, but still sizes those two borders by where the hidden selected tab
+         was — the line had a gap where a tab used to be, and bits of it after a resize. With one panel the line is
+         drawn whole instead, by the border that spans the row. -->
+    <Style Selector="dock|ToolTabStrip:singleitem /template/ Border#PART_BorderLeftFill">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="dock|ToolTabStrip:singleitem /template/ Border#PART_BorderRightFill">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="dock|ToolTabStrip:singleitem /template/ Border#PART_BorderFill">
+      <Setter Property="BorderThickness" Value="0,1,0,0" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DockThemeBorderLowBrush}" />
+    </Style>
     <!-- Tabs that do not fit in a row go to several rows instead of the scrolling arrows (Preferences › Code Editor; the
          class is on the windows that hold tabs). -->
     <Style Selector="Window.multilineTabs dock|DocumentTabStrip">
