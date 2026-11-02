@@ -16,7 +16,6 @@ indent_size = 2
 # Xml files
 [*.{yaml,yml}]
 indent_size = 2
-end_of_line = lf
 insert_final_newline = true
 
 [*.json]
@@ -36,15 +35,13 @@ indent_size = 4
 end_of_line = lf
 
 [*.{ps1,psm1}]
-end_of_line = crlf
 indent_size = 4
 
-# C# files
-[*.cs]
+# Windows batch files
+[*.{cmd,bat}]
 end_of_line = crlf
 
 [*.{js,ts,jsm}]
-end_of_line = crlf
 indent_size = 2
 #### Core EditorConfig Options ####
 
