@@ -1243,22 +1243,35 @@ internal static class LinuxNativeInterop
         return Marshal.PtrToStringUTF8(pointer, length);
     }
 
+    // For a GError that belongs to the caller: one returned through an "out GError" parameter (the *_finish functions).
     public static string GetErrorMessageAndFree(IntPtr error)
+    {
+        try
+        {
+            return GetErrorMessage(error);
+        }
+        finally
+        {
+            if (error != IntPtr.Zero)
+            {
+                g_error_free(error);
+            }
+        }
+    }
+
+    // Signet: for a GError the caller only borrows - the one a signal hands to its handlers ("load-failed", a download's
+    // "failed"), which the emitter frees itself after the class handler. Upstream freed it in the handlers, and WebKit's
+    // own "load-failed" handler (webkitWebViewLoadFail) then read the freed message: a SIGSEGV in strlen on the GTK
+    // thread (UPSTREAM.md, "A signal's GError is not freed").
+    public static string GetErrorMessage(IntPtr error)
     {
         if (error == IntPtr.Zero)
         {
             return "Unknown WebKitGTK error.";
         }
 
-        try
-        {
-            var details = Marshal.PtrToStructure<GError>(error);
-            return Marshal.PtrToStringUTF8(details.Message) ?? $"WebKitGTK error {details.Code}.";
-        }
-        finally
-        {
-            g_error_free(error);
-        }
+        var details = Marshal.PtrToStructure<GError>(error);
+        return Marshal.PtrToStringUTF8(details.Message) ?? $"WebKitGTK error {details.Code}.";
     }
 
     private static void OnJavaScriptFinished(IntPtr webView, IntPtr asyncResult, IntPtr userData)

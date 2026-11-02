@@ -1761,7 +1761,8 @@ public sealed partial class LinuxNativeWebViewBackend
     private int OnLoadFailed(IntPtr webView, LinuxNativeInterop.WebKitLoadEvent loadEvent, IntPtr failingUri, IntPtr error, IntPtr userData)
     {
         var uri = TryCreateUri(LinuxNativeInterop.ConvertUtf8Pointer(failingUri));
-        var message = LinuxNativeInterop.GetErrorMessageAndFree(error);
+        // Signet: the signal's GError is borrowed, WebKit frees it (UPSTREAM.md, "A signal's GError is not freed").
+        var message = LinuxNativeInterop.GetErrorMessage(error);
         _currentUrl = uri ?? _currentUrl;
         var failedNavigationId = _runtimeNavigationLifecycle.FailNavigation();
         _navigationReplayState.CompleteNavigation(uri, failedNavigationId, _currentUrl);
@@ -1975,7 +1976,8 @@ public sealed partial class LinuxNativeWebViewBackend
 
         if (TryGetDownloadItem(download, out var item))
         {
-            var message = LinuxNativeInterop.GetErrorMessageAndFree(error);
+            // Signet: the signal's GError is borrowed, WebKit frees it (UPSTREAM.md, "A signal's GError is not freed").
+            var message = LinuxNativeInterop.GetErrorMessage(error);
             if (item.Snapshot.State != NativeWebViewDownloadState.Canceled)
             {
                 item.MarkFailed(message, "WebKitDownloadFailed");
