@@ -5,6 +5,7 @@ using System.Threading;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.Core.Tests.BookManipulation;
@@ -66,7 +67,7 @@ public sealed class FileBatchRunTests
         Recorder recorder = new();
 
         // Act & Assert
-        book.Invoking(b => b.AddSoftHyphens(new FileBatchRun(recorder, cancelled.Token))).Should().Throw<OperationCanceledException>();
+        book.Invoking(b => b.AddSoftHyphens(TestHyphenation.AddEverywhere(b), new FileBatchRun(recorder, cancelled.Token))).Should().Throw<OperationCanceledException>();
         recorder.Reports.Should().BeEmpty();
     }
 
@@ -95,11 +96,13 @@ public sealed class FileBatchRunTests
         // Arrange
         using Book book = BookWithFiles(extra: 2);
 
+        SoftHyphenRemovePlan plan = TestHyphenation.RemoveEverywhere(book);
+
         // Act
-        FileBatchResult result = book.RemoveSoftHyphens();
+        FileBatchResult result = book.RemoveSoftHyphens(plan);
 
         // Assert
-        result.Processed.Should().Be(book.GetHtmlResources().Count);
+        result.Processed.Should().Be(TestHyphenation.FilesOf(plan.Chosen));
         result.HasSkipped.Should().BeFalse();
     }
 }

@@ -507,6 +507,74 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_Hyphenation_action_asks_the_view_for_the_dialog()
+    {
+        // Arrange
+        MainWindowViewModel sut = New();
+        sut.LoadBook(_disposables.Add(BookCreator.CreateNewBook("3.0")), string.Empty);
+        bool raised = false;
+        sut.HyphenationRequested += (_, _) => raised = true;
+
+        // Act
+        sut.Actions.Require(AppActionIds.Hyphenation).Execute(null);
+
+        // Assert
+        raised.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task PrepareHyphenation_returns_null_without_a_book()
+    {
+        // Arrange
+        MainWindowViewModel sut = New();
+
+        // Act
+        SoftHyphensViewModel? hyphenation = await sut.PrepareHyphenationAsync();
+
+        // Assert
+        hyphenation.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Hyphenation_surveys_the_book_under_progress_and_removing_leaves_the_dialog_on_the_book_surveyed_anew()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Broken("languages"), temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            List<(string Title, bool Cancellable)> runs = new();
+            ProgressRunner runner = (title, work, cancellable) =>
+            {
+                runs.Add((title, cancellable));
+                return work(new ListProgress(new List<WorkProgress>()), CancellationToken.None);
+            };
+
+            // Act
+            SoftHyphensViewModel hyphenation = (await sut.PrepareHyphenationAsync(runner))!;
+
+            // Assert
+            hyphenation.Mode.Should().Be(SoftHyphensMode.Add);
+            hyphenation.RemoveRoots.Should().NotBeEmpty("the book has soft hyphens");
+
+            // Act
+            hyphenation.IsRemoveMode = true;
+            await hyphenation.ApplyCommand.ExecuteAsync(null);
+
+            // Assert
+            runs.Should().ContainSingle().Which.Title.Should().Be(Strings.Get("Operation_RemoveSoftHyphens"), "the operations of the dialog go over it");
+            book.SurveySoftHyphens().HasSoftHyphens.Should().BeFalse();
+            hyphenation.RemoveRoots.Should().BeEmpty("the dialog shows the book surveyed anew");
+            sut.StatusMessage.Should().Be(Strings.Get("Status_SoftHyphensRemoved"));
+            sut.IsBookOperationBusy.Should().BeFalse();
+        });
+    }
+
+    [Fact]
     public async Task PrepareCleanup_returns_null_without_a_book()
     {
         // Arrange

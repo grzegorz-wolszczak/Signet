@@ -1215,29 +1215,89 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>
-    /// "Add soft hyphens" — inserts soft hyphens via <see cref="SoftHyphenInserter"/>
-    /// in the content of all the book's HTML resources. A file that is not well-formed is skipped
-    /// (left unchanged) and the rest is processed; the skipped files are listed in the result.
+    /// What "Add / Remove Soft Hyphens" see in the book: the languages of its text file by file (where each is said,
+    /// how many words and soft hyphens it has) and the soft hyphens outside the text, one by one
+    /// (<see cref="SoftHyphenSurvey"/>). The language of text no element states one for is the OPF's first
+    /// <c>dc:language</c>; without one it is unknown. A pass over every XHTML file: <paramref name="run"/> is told of
+    /// each and can stop it between two (it only reads the book).
     /// </summary>
     /// <param name="run">Reports the progress and can stop it.</param>
-    public FileBatchResult AddSoftHyphens(FileBatchRun run = default) =>
-        ReplaceInEachWellFormed(source => SoftHyphenInserter.InsertSoftHyphens(source), run);
+    public SoftHyphenSurvey SurveySoftHyphens(FileBatchRun run = default) =>
+        SoftHyphenSurvey.Of(SurveyedFiles(GetHtmlResources(), run), BookLanguageOrUnknown());
+
+    // The files of a survey, telling run of each before it is read and stopping when it is cancelled.
+    private static IEnumerable<(string BookPath, string Text)> SurveyedFiles(IReadOnlyList<HtmlResource> files, FileBatchRun run)
+    {
+        for (int i = 0; i < files.Count; i++)
+        {
+            run.Cancellation.ThrowIfCancellationRequested();
+            run.Progress?.Report(new FileBatchProgress(i, files.Count, files[i].BookPath));
+            yield return (files[i].BookPath, files[i].GetText());
+        }
+    }
 
     /// <summary>
-    /// "Remove soft hyphens" — the inverse of <see cref="AddSoftHyphens"/>,
-    /// removes soft hyphens via <see cref="SoftHyphenInserter.RemoveSoftHyphens"/> from all the book's HTML resources.
-    /// A file that is not well-formed is skipped (left unchanged) and the rest is processed; the skipped files are
-    /// listed in the result.
+    /// "Add Soft Hyphens": soft hyphens are added to the text of the chosen languages in the chosen files, where the
+    /// patterns of the language allow a break (<see cref="SoftHyphenInserter.InsertSoftHyphens"/>). A file that is not
+    /// well-formed is skipped (left unchanged) and the rest is processed; the skipped files are listed in the result.
     /// </summary>
+    /// <param name="plan">The files and languages, the patterns of each language and the shortest word.</param>
     /// <param name="run">Reports the progress and can stop it.</param>
-    public FileBatchResult RemoveSoftHyphens(FileBatchRun run = default) =>
-        ReplaceInEachWellFormed(SoftHyphenInserter.RemoveSoftHyphens, run);
+    public FileBatchResult AddSoftHyphens(SoftHyphenAddPlan plan, FileBatchRun run = default)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        string language = BookLanguageOrUnknown();
+        return ReplaceInEachWellFormed(
+            PlannedFiles(plan.Chosen.Select(c => c.BookPath)),
+            html => SoftHyphenInserter.InsertSoftHyphens(
+                html.GetText(),
+                language,
+                key => plan.Chosen.Contains((html.BookPath, key)) ? plan.Patterns.GetValueOrDefault(key) : null,
+                plan.MinWordLength),
+            run);
+    }
 
-    private FileBatchResult ReplaceInEachWellFormed(Func<string, string> transform, FileBatchRun run) =>
-        ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: true, run: run, process: html =>
+    /// <summary>
+    /// "Remove Soft Hyphens": soft hyphens are removed from the text of the chosen languages in the chosen files and
+    /// from the chosen places outside the text (<see cref="SoftHyphenInserter.RemoveSoftHyphens"/>). A file that is not
+    /// well-formed is skipped (left unchanged) and the rest is processed; the skipped files are listed in the result.
+    /// </summary>
+    /// <param name="plan">The files and languages, and the soft hyphens outside the text, to remove.</param>
+    /// <param name="run">Reports the progress and can stop it.</param>
+    public FileBatchResult RemoveSoftHyphens(SoftHyphenRemovePlan plan, FileBatchRun run = default)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        string language = BookLanguageOrUnknown();
+        Dictionary<string, HashSet<int>> outside = plan.OutsideText
+            .GroupBy(p => p.BookPath, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Select(p => p.Offset).ToHashSet(), StringComparer.Ordinal);
+        return ReplaceInEachWellFormed(
+            PlannedFiles(plan.Chosen.Select(c => c.BookPath).Concat(outside.Keys)),
+            html => SoftHyphenInserter.RemoveSoftHyphens(
+                html.GetText(),
+                language,
+                key => plan.Chosen.Contains((html.BookPath, key)),
+                outside.TryGetValue(html.BookPath, out HashSet<int>? offsets) ? offsets : new HashSet<int>()),
+            run);
+    }
+
+    // The language of text no element states one for: the OPF's first dc:language, or none (unknown) — not Signet's
+    // default, which GetPrimaryBookLanguage falls back to.
+    private string BookLanguageOrUnknown() => GetOpf().GetDcMetadataValues("dc:language").FirstOrDefault()?.Trim() ?? string.Empty;
+
+    // The XHTML files of the book a plan names, in the order of the book.
+    private List<HtmlResource> PlannedFiles(IEnumerable<string> bookPaths)
+    {
+        HashSet<string> wanted = new(bookPaths, StringComparer.Ordinal);
+        return GetHtmlResources().Where(h => wanted.Contains(h.BookPath)).ToList();
+    }
+
+    private FileBatchResult ReplaceInEachWellFormed(
+        IEnumerable<HtmlResource> resources, Func<HtmlResource, string> transform, FileBatchRun run) =>
+        ProcessHtmlFiles(resources, requireWellFormed: true, run: run, process: html =>
         {
             string original = html.GetText();
-            string newSource = transform(original);
+            string newSource = transform(html);
             if (string.Equals(newSource, original, StringComparison.Ordinal))
             {
                 return false;

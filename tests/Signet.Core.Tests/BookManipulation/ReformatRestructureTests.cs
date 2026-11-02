@@ -376,7 +376,7 @@ public sealed class ReformatRestructureTests
             + "<body><p>hy&#173;phen</p></body></html>");
 
         // Act
-        FileBatchResult result = book.RemoveSoftHyphens();
+        FileBatchResult result = book.RemoveSoftHyphens(TestHyphenation.RemoveEverywhere(book));
 
         // Assert
         result.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(chapters[0].BookPath);
@@ -394,13 +394,14 @@ public sealed class ReformatRestructureTests
         IReadOnlyList<HtmlResource> chapters = book.GetHtmlResources();
         chapters.Should().HaveCountGreaterThan(1);
         chapters[0].SetText("<html><head><body><p>broken");
+        SoftHyphenAddPlan plan = TestHyphenation.AddEverywhere(book);
 
         // Act
-        FileBatchResult result = book.AddSoftHyphens();
+        FileBatchResult result = book.AddSoftHyphens(plan);
 
         // Assert
         result.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(chapters[0].BookPath);
-        result.Processed.Should().Be(chapters.Count - 1);
+        result.Processed.Should().Be(TestHyphenation.FilesOf(plan.Chosen) - 1);
         chapters[0].GetText().Should().Be("<html><head><body><p>broken");
     }
 

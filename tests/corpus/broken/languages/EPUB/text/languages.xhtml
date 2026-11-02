@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pl" xml:lang="pl">
+<head>
+  <title>Języki</title>
+  <meta charset="utf-8"/>
+</head>
+<body>
+  <!-- Added in November 2026 for Add / Remove Soft Hyphens, which hyphenate each language by its own patterns:
+       the language of a piece of text comes from the nearest element stating one, and a book states several. -->
+  <h1>Języki książki</h1>
+
+  <!-- Polish, from lang on <html>. -->
+  <p>Niezależność wymaga cierpliwości.</p>
+
+  <!-- English inside Polish, from lang on a <span>. -->
+  <p>Cytat: <span lang="en" xml:lang="en">independence requires understanding</span>.</p>
+
+  <!-- German: a language Signet may have no patterns for. -->
+  <blockquote lang="de" xml:lang="de"><p>Unabhängigkeit erfordert Geduld.</p></blockquote>
+
+  <!-- English with a region the patterns may lack (en-GB, when only en-US is installed). -->
+  <p lang="en-GB" xml:lang="en-GB">Colourful neighbourhoods everywhere.</p>
+
+  <!-- The same language written another way (an underscore, upper case): still English. -->
+  <p><span lang="EN_us">understanding</span></p>
+
+  <!-- A word hyphenated already: left as it is, and its soft hyphen counted under Polish. -->
+  <p>Już podzie&#173;lone słowo.</p>
+
+  <!-- An element stating a language around nothing but white space: no language of the book. -->
+  <div lang="fr" xml:lang="fr"> </div>
+</body>
+</html>

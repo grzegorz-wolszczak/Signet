@@ -1,0 +1,84 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.SoftHyphensWindow"
+        x:DataType="vm:SoftHyphensViewModel"
+        Width="980" Height="620" MinWidth="640" MinHeight="380"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc SoftHyphens_Title}">
+
+  <!-- The cells of the tree (the columns are built in code; SoftHyphensNode). A double click on a file or on a place
+       outside the text opens it in the code. -->
+  <Window.Resources>
+    <DataTemplate x:Key="SoftHyphensTitleCellTemplate" x:DataType="vm:SoftHyphensNode">
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Background="Transparent" ToolTip.Tip="{Binding TitleTip}">
+        <CheckBox IsChecked="{Binding Check, Mode=TwoWay}" IsVisible="{Binding HasCheckBox}" MinWidth="0" Margin="0,0,4,0" />
+        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                   Classes.unavailable="{Binding !HasCheckBox}" />
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="SoftHyphensPatternsCellTemplate" x:DataType="vm:SoftHyphensNode">
+      <TextBlock Text="{Binding Patterns}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Background="Transparent"
+                 ToolTip.Tip="{Binding PatternsTip}" Classes.warn="{Binding PatternsWarn}" />
+    </DataTemplate>
+    <DataTemplate x:Key="SoftHyphensSourceCellTemplate" x:DataType="vm:SoftHyphensNode">
+      <TextBlock Text="{Binding Source}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Background="Transparent"
+                 ToolTip.Tip="{Binding Source}" />
+    </DataTemplate>
+    <DataTemplate x:Key="SoftHyphensCountCellTemplate" x:DataType="vm:SoftHyphensNode">
+      <TextBlock Text="{Binding Count}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+    </DataTemplate>
+    <DataTemplate x:Key="SoftHyphensContextCellTemplate" x:DataType="vm:SoftHyphensNode">
+      <TextBlock Text="{Binding Context}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Background="Transparent"
+                 ToolTip.Tip="{Binding Context}" />
+    </DataTemplate>
+  </Window.Resources>
+
+  <Window.Styles>
+    <!-- A language that cannot be hyphenated (and its files) is shown, but dimmed. -->
+    <Style Selector="TextBlock.unavailable">
+      <Setter Property="Opacity" Value="0.6" />
+    </Style>
+    <Style Selector="TextBlock.warn">
+      <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="16">
+    <!-- The switch between adding and removing; each side keeps its own tree and checks. -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="16" Margin="0,0,0,8">
+      <RadioButton x:Name="AddModeButton" GroupName="SoftHyphensMode" Content="{loc:Loc SoftHyphens_ModeAdd}"
+                   IsChecked="{Binding IsAddMode, Mode=TwoWay}" />
+      <RadioButton x:Name="RemoveModeButton" GroupName="SoftHyphensMode" Content="{loc:Loc SoftHyphens_ModeRemove}"
+                   IsChecked="{Binding IsRemoveMode, Mode=TwoWay}" />
+    </StackPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Intro}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,12,0,0">
+      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+        <Button x:Name="SelectAllButton" Content="{loc:Loc SoftHyphens_SelectAll}" Command="{Binding SelectAllCommand}" />
+        <Button x:Name="DeselectAllButton" Content="{loc:Loc SoftHyphens_DeselectAll}" Command="{Binding DeselectAllCommand}" />
+        <Button x:Name="DictionaryManagerButton" Content="{loc:Loc SoftHyphens_OpenDictionaryManager}"
+                Command="{Binding OpenDictionaryManagerCommand}" IsVisible="{Binding IsAddMode}" />
+      </StackPanel>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="{loc:Loc SoftHyphens_MinWordLength}" VerticalAlignment="Center" IsVisible="{Binding IsAddMode}" />
+        <NumericUpDown x:Name="MinWordLengthBox" Value="{Binding MinWordLength}" IsVisible="{Binding IsAddMode}"
+                       Minimum="{x:Static vm:SoftHyphensViewModel.MinWordLengthMin}"
+                       Maximum="{x:Static vm:SoftHyphensViewModel.MinWordLengthMax}"
+                       Increment="1" FormatString="0" Width="110" Margin="0,0,16,0" />
+        <Button x:Name="ApplyButton" Classes="accent" Content="{Binding ApplyText}" Command="{Binding ApplyCommand}"
+                IsDefault="True" MinWidth="80" />
+        <Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" Command="{Binding CloseCommand}" IsCancel="True" MinWidth="80" />
+      </StackPanel>
+    </Grid>
+
+    <Panel>
+      <TreeDataGrid x:Name="Tree" IsVisible="{Binding !IsEmpty}" />
+      <TextBlock x:Name="EmptyText" Text="{Binding EmptyText}" IsVisible="{Binding IsEmpty}" TextWrapping="Wrap"
+                 HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.75" />
+    </Panel>
+  </DockPanel>
+</Window>

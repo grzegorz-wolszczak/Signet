@@ -219,6 +219,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.ReportsRequested -= OnReportsRequested;
             _boundViewModel.SpellcheckEditorRequested -= OnSpellcheckEditorRequested;
             _boundViewModel.CleanupRequested -= OnCleanupRequested;
+            _boundViewModel.HyphenationRequested -= OnHyphenationRequested;
             _boundViewModel.ManageFontsRequested -= OnManageFontsRequested;
             _boundViewModel.FootnoteConversionRequested -= OnFootnoteConversionRequested;
             _boundViewModel.FootnoteLettersRequested -= OnFootnoteLettersRequested;
@@ -283,6 +284,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.ReportsRequested += OnReportsRequested;
         _boundViewModel.SpellcheckEditorRequested += OnSpellcheckEditorRequested;
         _boundViewModel.CleanupRequested += OnCleanupRequested;
+        _boundViewModel.HyphenationRequested += OnHyphenationRequested;
         _boundViewModel.ManageFontsRequested += OnManageFontsRequested;
         _boundViewModel.FootnoteConversionRequested += OnFootnoteConversionRequested;
         _boundViewModel.FootnoteLettersRequested += OnFootnoteLettersRequested;
@@ -1435,6 +1437,52 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (_boundViewModel is { } vm && vm.PrepareManageFonts() is { } fonts)
         {
             await ManageFontsWindow.ShowAsync(this, fonts, vm.BookBrowser);
+        }
+    }
+
+    // "Hyphenation…": the book is surveyed under a progress window, then the dialog is shown; its "Add" / "Remove" show
+    // their progress over it, and the dictionary manager opens over it for the languages without patterns.
+    private async void OnHyphenationRequested(object? sender, EventArgs e)
+    {
+        MainWindowViewModel? vm = _boundViewModel;
+        if (vm is null)
+        {
+            return;
+        }
+
+        SoftHyphensWindow? dialog = null;
+        SoftHyphensViewModel? hyphenation = await vm.PrepareHyphenationAsync(
+            (title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
+                dialog ?? (Window)this, title, Strings.Get("Progress_Starting"), work, cancellable));
+        if (hyphenation is null)
+        {
+            return;
+        }
+
+        // "Add" / "Remove" are off while a book operation runs (this dialog's own included).
+        hyphenation.IsBookOperationBusy = vm.IsBookOperationBusy;
+        PropertyChangedEventHandler busyChanged = (_, args) =>
+        {
+            if (args.PropertyName == nameof(MainWindowViewModel.IsBookOperationBusy))
+            {
+                hyphenation.IsBookOperationBusy = vm.IsBookOperationBusy;
+            }
+        };
+        vm.PropertyChanged += busyChanged;
+        try
+        {
+            await SoftHyphensWindow.ShowAsync(this, hyphenation, owner =>
+            {
+                IServiceProvider? services = App.Services;
+                return services is null
+                    ? Task.FromResult(false)
+                    : DictionaryManagerWindow.ShowAsync(owner, new DictionaryManagerViewModel(
+                        services.GetRequiredService<Signet.Core.Spellcheck.SpellChecker>(), services.GetRequiredService<SettingsStore>()));
+            }, window => dialog = window);
+        }
+        finally
+        {
+            vm.PropertyChanged -= busyChanged;
         }
     }
 

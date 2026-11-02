@@ -98,3 +98,21 @@ alone — `stray`, which nothing styles, included.
 **`plain.xhtml`** uses the same class names but sees `styles/plain.css`, which has class selectors only:
 there `note` and `stray` really are undefined and are removed. Both are asserted by
 `CleanupAnalysisTests.UndefinedClasses_on_the_broken_classes_book_strips_only_the_file_whose_css_names_classes_by_name`.
+
+## `languages`
+
+Several languages, stated in several ways, and soft hyphens where no language is. Added in November 2026 with
+Hyphenation (adding soft hyphens by the patterns of each language, removing them by language and by place), which
+reads the language of a piece of text from the nearest element stating one.
+
+**`languages.xhtml`** — Polish from `lang` on `<html>`; English from a `<span>`; German from a `<blockquote>` (a
+language Signet may have no patterns for); English with a region the patterns may lack (`en-GB`, when only `en-US` is
+installed — hyphenated by the patterns of another variant, with a warning); the same language written another way
+(`EN_us`: an underscore and upper case are still English); a word hyphenated already (left as it is, its soft hyphen
+counted under Polish); and an element stating French around nothing but white space, which adds no language. The
+survey, adding and removing are asserted by `SoftHyphenSurveyTests`.
+
+**`outside.xhtml`** — no element states a language, so the text is in the OPF's (Polish). Soft hyphens stand outside
+the text of any language: in the `<title>` of the head, in an `href` (it breaks the link), an `id` (it breaks what points
+at it) and a `title` attribute, in a `<pre>`, a `<code>` and a comment. Adding never puts one there; removing lists each
+of them on its own.

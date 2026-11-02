@@ -2699,11 +2699,8 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_LiveCssPanel" xml:space="preserve">
     <value>Panel CSS na ż&amp;ywo</value>
   </data>
-  <data name="Action_MainWindow_AddSoftHyphens" xml:space="preserve">
-    <value>Dodaj &amp;miękkie dywizy</value>
-  </data>
-  <data name="Action_MainWindow_RemoveSoftHyphens" xml:space="preserve">
-    <value>&amp;Usuń miękkie dywizy</value>
+  <data name="Action_MainWindow_Hyphenation" xml:space="preserve">
+    <value>&amp;Dzielenie wyrazów…</value>
   </data>
   <data name="Action_MainWindow_SpellcheckEditor" xml:space="preserve">
     <value>&amp;Sprawdzanie pisowni...</value>
@@ -3147,10 +3144,10 @@ Czy chcesz zapisać zmiany?</value>
     <value>Upiększanie wszystkich arkuszy stylów</value>
   </data>
   <data name="Operation_AddSoftHyphens" xml:space="preserve">
-    <value>Dodawanie miękkich dywizów</value>
+    <value>Dodawanie miękkich łączników</value>
   </data>
   <data name="Operation_RemoveSoftHyphens" xml:space="preserve">
-    <value>Usuwanie miękkich dywizów</value>
+    <value>Usuwanie miękkich łączników</value>
   </data>
   <data name="Operation_Restructure" xml:space="preserve">
     <value>Restrukturyzacja</value>
@@ -3174,10 +3171,10 @@ Czy chcesz zapisać zmiany?</value>
     <value>Zakończono poprawianie wszystkich plików.</value>
   </data>
   <data name="Status_SoftHyphensAdded" xml:space="preserve">
-    <value>Dodano miękkie dywizy.</value>
+    <value>Dodano miękkie łączniki.</value>
   </data>
   <data name="Status_SoftHyphensRemoved" xml:space="preserve">
-    <value>Usunięto miękkie dywizy.</value>
+    <value>Usunięto miękkie łączniki.</value>
   </data>
   <data name="Status_CaretNotInElement" xml:space="preserve">
     <value>Karetka nie jest wewnątrz żadnego elementu.</value>
@@ -7679,7 +7676,7 @@ Zamknij zakładkę</value>
     <value>wymagany</value>
   </data>
   <data name="DictionaryManager_RoleHyphenation" xml:space="preserve">
-    <value>dzielenie wyrazów (nieużywane przez Signet)</value>
+    <value>wzorce dzielenia wyrazów (miękkie łączniki)</value>
   </data>
   <data name="DictionaryManager_RoleThesaurus" xml:space="preserve">
     <value>tezaurus (nieużywany przez Signet)</value>
@@ -7716,7 +7713,7 @@ Zamknij zakładkę</value>
     <value>Nie udało się dodać słownika</value>
   </data>
   <data name="DictionaryManager_Hint" xml:space="preserve">
-    <value>Słownik to para plików .aff i .dic o tej samej nazwie. Pozostałe pliki paczki (dzielenie wyrazów, tezaurus, dokumentacja) można dodać razem z nią — Signet je przechowuje, ale ich nie czyta.</value>
+    <value>Słownik to para plików .aff i .dic o tej samej nazwie. Pozostałe pliki paczki (wzorce dzielenia wyrazów, tezaurus, dokumentacja) można dodać razem z nią. Wzorce dzielenia (hyph_*.dic) służą do dodawania miękkich łączników; pozostałe Signet tylko przechowuje.</value>
   </data>
   <data name="StartScreen_OpenSelected" xml:space="preserve">
     <value>Otwórz wybrany</value>
@@ -7774,5 +7771,134 @@ Zamknij zakładkę</value>
   </data>
   <data name="ColorScheme_LeftToTheBook" xml:space="preserve">
     <value>kolor książki</value>
+  </data>
+  <data name="SoftHyphens_AddIntro" xml:space="preserve">
+    <value>Słowa są dzielone według wzorców dzielenia języka tekstu — plików hyph_*.dic zainstalowanych słowników. Język bez wzorców nie jest dzielony. Zaznacz języki i pliki, w których dodać miękkie łączniki.</value>
+  </data>
+  <data name="SoftHyphens_RemoveIntro" xml:space="preserve">
+    <value>Miękkie łączniki zostaną usunięte z tekstu zaznaczonych języków w zaznaczonych plikach oraz z zaznaczonych miejsc poza tekstem.</value>
+  </data>
+  <data name="SoftHyphens_Add" xml:space="preserve">
+    <value>Dodaj</value>
+  </data>
+  <data name="SoftHyphens_Remove" xml:space="preserve">
+    <value>Usuń</value>
+  </data>
+  <data name="SoftHyphens_ColumnName" xml:space="preserve">
+    <value>Język / plik</value>
+  </data>
+  <data name="SoftHyphens_ColumnPatterns" xml:space="preserve">
+    <value>Wzorce dzielenia</value>
+  </data>
+  <data name="SoftHyphens_ColumnSource" xml:space="preserve">
+    <value>Skąd język</value>
+  </data>
+  <data name="SoftHyphens_ColumnWords" xml:space="preserve">
+    <value>Słowa do podzielenia</value>
+  </data>
+  <data name="SoftHyphens_ColumnSoftHyphens" xml:space="preserve">
+    <value>Miękkie łączniki</value>
+  </data>
+  <data name="SoftHyphens_ColumnContext" xml:space="preserve">
+    <value>Kontekst</value>
+  </data>
+  <data name="SoftHyphens_SelectAll" xml:space="preserve">
+    <value>Zaznacz wszystko</value>
+  </data>
+  <data name="SoftHyphens_DeselectAll" xml:space="preserve">
+    <value>Odznacz wszystko</value>
+  </data>
+  <data name="SoftHyphens_OpenDictionaryManager" xml:space="preserve">
+    <value>Otwórz menedżer słowników…</value>
+  </data>
+  <data name="SoftHyphens_MinWordLength" xml:space="preserve">
+    <value>Najkrótsze dzielone słowo (liter):</value>
+  </data>
+  <data name="SoftHyphens_UnknownLanguage" xml:space="preserve">
+    <value>❓ Język nieznany</value>
+  </data>
+  <data name="SoftHyphens_UnknownLanguageReason" xml:space="preserve">
+    <value>Ani element wokół tego tekstu (atrybut lang / xml:lang), ani OPF (dc:language) nie podaje jego języka — nie wiadomo, jakimi wzorcami go dzielić.</value>
+  </data>
+  <data name="SoftHyphens_PatternsNone" xml:space="preserve">
+    <value>— (język nieznany)</value>
+  </data>
+  <data name="SoftHyphens_PatternsMissing" xml:space="preserve">
+    <value>⚠ brak pliku {0}</value>
+  </data>
+  <data name="SoftHyphens_PatternsMissingTip" xml:space="preserve">
+    <value>Brak wzorców dzielenia dla tego języka. Zainstaluj słownik zawierający plik {0} (np. paczkę słownika LibreOffice) w menedżerze słowników.</value>
+  </data>
+  <data name="SoftHyphens_PatternsFallback" xml:space="preserve">
+    <value>❗ brak {0}, użyję {1}</value>
+  </data>
+  <data name="SoftHyphens_PatternsFallbackTip" xml:space="preserve">
+    <value>Wzorce innej odmiany języka ({0}) zamiast {1} — dzielenie może się trochę różnić od przyjętego dla {1}.</value>
+  </data>
+  <data name="SoftHyphens_PatternsUnreadable" xml:space="preserve">
+    <value>⚠ nie da się odczytać {0}</value>
+  </data>
+  <data name="SoftHyphens_PatternsUnreadableTip" xml:space="preserve">
+    <value>Plik wzorców {0} nie daje się odczytać: {1}</value>
+  </data>
+  <data name="SoftHyphens_SourceElement" xml:space="preserve">
+    <value>lang na &lt;{0}&gt;</value>
+  </data>
+  <data name="SoftHyphens_SourceOpf" xml:space="preserve">
+    <value>dc:language (OPF)</value>
+  </data>
+  <data name="SoftHyphens_SourceNone" xml:space="preserve">
+    <value>nic go nie podaje</value>
+  </data>
+  <data name="SoftHyphens_SourceFiles" xml:space="preserve">
+    <value>{0} — plików: {1}</value>
+  </data>
+  <data name="SoftHyphens_OutsideText" xml:space="preserve">
+    <value>Poza tekstem</value>
+  </data>
+  <data name="SoftHyphens_OutsideTextTip" xml:space="preserve">
+    <value>Miękkie łączniki, które nie stoją w tekście żadnego języka: w atrybutach, w &lt;head&gt;, w elementach, które nie są prozą (pre, code, script, style…), w komentarzach. „Dodaj” nigdy ich tam nie wstawia; w id, href czy class to błędy.</value>
+  </data>
+  <data name="SoftHyphens_KindCount" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="SoftHyphens_PlaceTitle" xml:space="preserve">
+    <value>{0}:{1}</value>
+  </data>
+  <data name="SoftHyphens_PlaceTip" xml:space="preserve">
+    <value>Dwuklik otwiera to miejsce w kodzie.</value>
+  </data>
+  <data name="SoftHyphens_PlaceAttribute" xml:space="preserve">
+    <value>atrybut {0}</value>
+  </data>
+  <data name="SoftHyphens_PlaceOtherAttributes" xml:space="preserve">
+    <value>inne atrybuty</value>
+  </data>
+  <data name="SoftHyphens_PlaceHead" xml:space="preserve">
+    <value>&lt;head&gt;</value>
+  </data>
+  <data name="SoftHyphens_PlaceElement" xml:space="preserve">
+    <value>&lt;{0}&gt;</value>
+  </data>
+  <data name="SoftHyphens_PlaceComment" xml:space="preserve">
+    <value>komentarz</value>
+  </data>
+  <data name="Operation_Hyphenation" xml:space="preserve">
+    <value>Dzielenie wyrazów</value>
+  </data>
+  <data name="SoftHyphens_Title" xml:space="preserve">
+    <value>Dzielenie wyrazów</value>
+  </data>
+  <data name="SoftHyphens_ModeAdd" xml:space="preserve">
+    <value>Dodawanie miękkich łączników</value>
+  </data>
+  <data name="SoftHyphens_ModeRemove" xml:space="preserve">
+    <value>Usuwanie miękkich łączników</value>
+  </data>
+  <data name="SoftHyphens_NothingToAdd" xml:space="preserve">
+    <value>Książka nie ma tekstu do podzielenia.</value>
+  </data>
+  <data name="SoftHyphens_NothingToRemove" xml:space="preserve">
+    <value>Książka nie ma miękkich łączników.</value>
   </data>
 </root>

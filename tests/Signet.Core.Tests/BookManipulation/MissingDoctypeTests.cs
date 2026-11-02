@@ -204,13 +204,13 @@ public sealed class MissingDoctypeTests
         HtmlResource stripped = RemoveDoctype(book.GetHtmlResources()[0]);
 
         // Act & Assert
-        book.AddSoftHyphens().Skipped.Should().BeEmpty();
+        book.AddSoftHyphens(TestHyphenation.AddEverywhere(book)).Skipped.Should().BeEmpty();
 
         // Act & Assert
         book.PrettyPrintAllHtml(addMissingDoctype: false).Skipped.Should().BeEmpty();
 
         // Act & Assert
-        book.RemoveSoftHyphens().Skipped.Should().BeEmpty();
+        book.RemoveSoftHyphens(TestHyphenation.RemoveEverywhere(book)).Skipped.Should().BeEmpty();
 
         // Act & Assert
         book.PrepareClassRename().Renamer.Should().NotBeNull();

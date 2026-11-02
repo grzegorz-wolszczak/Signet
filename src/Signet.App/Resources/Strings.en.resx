@@ -2699,11 +2699,8 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_LiveCssPanel" xml:space="preserve">
     <value>&amp;Live CSS Panel</value>
   </data>
-  <data name="Action_MainWindow_AddSoftHyphens" xml:space="preserve">
-    <value>Add &amp;Soft Hyphens</value>
-  </data>
-  <data name="Action_MainWindow_RemoveSoftHyphens" xml:space="preserve">
-    <value>&amp;Remove Soft Hyphens</value>
+  <data name="Action_MainWindow_Hyphenation" xml:space="preserve">
+    <value>&amp;Hyphenation…</value>
   </data>
   <data name="Action_MainWindow_SpellcheckEditor" xml:space="preserve">
     <value>&amp;Spellcheck...</value>
@@ -7679,7 +7676,7 @@ Close the tab</value>
     <value>required</value>
   </data>
   <data name="DictionaryManager_RoleHyphenation" xml:space="preserve">
-    <value>hyphenation (not used by Signet)</value>
+    <value>hyphenation patterns (soft hyphens)</value>
   </data>
   <data name="DictionaryManager_RoleThesaurus" xml:space="preserve">
     <value>thesaurus (not used by Signet)</value>
@@ -7716,7 +7713,7 @@ Close the tab</value>
     <value>The dictionary could not be added</value>
   </data>
   <data name="DictionaryManager_Hint" xml:space="preserve">
-    <value>A dictionary is an .aff and a .dic file with the same name. The other files of the package (hyphenation, a thesaurus, documentation) may be added along with it — Signet keeps them, but never reads them.</value>
+    <value>A dictionary is an .aff and a .dic file with the same name. The other files of the package (hyphenation patterns, a thesaurus, documentation) may be added along with it. The hyphenation patterns (hyph_*.dic) are used to add soft hyphens; Signet only keeps the others.</value>
   </data>
   <data name="StartScreen_OpenSelected" xml:space="preserve">
     <value>Open Selected</value>
@@ -7774,5 +7771,134 @@ Close the tab</value>
   </data>
   <data name="ColorScheme_LeftToTheBook" xml:space="preserve">
     <value>the book's own</value>
+  </data>
+  <data name="SoftHyphens_AddIntro" xml:space="preserve">
+    <value>Words are broken by the hyphenation patterns of the language of the text — the hyph_*.dic files of the installed dictionaries. A language without patterns is not hyphenated. Check the languages and files to add soft hyphens to.</value>
+  </data>
+  <data name="SoftHyphens_RemoveIntro" xml:space="preserve">
+    <value>Soft hyphens are removed from the text of the checked languages in the checked files, and from the checked places outside the text.</value>
+  </data>
+  <data name="SoftHyphens_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="SoftHyphens_Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="SoftHyphens_ColumnName" xml:space="preserve">
+    <value>Language / file</value>
+  </data>
+  <data name="SoftHyphens_ColumnPatterns" xml:space="preserve">
+    <value>Hyphenation patterns</value>
+  </data>
+  <data name="SoftHyphens_ColumnSource" xml:space="preserve">
+    <value>Language from</value>
+  </data>
+  <data name="SoftHyphens_ColumnWords" xml:space="preserve">
+    <value>Words to hyphenate</value>
+  </data>
+  <data name="SoftHyphens_ColumnSoftHyphens" xml:space="preserve">
+    <value>Soft hyphens</value>
+  </data>
+  <data name="SoftHyphens_ColumnContext" xml:space="preserve">
+    <value>Context</value>
+  </data>
+  <data name="SoftHyphens_SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="SoftHyphens_DeselectAll" xml:space="preserve">
+    <value>Deselect All</value>
+  </data>
+  <data name="SoftHyphens_OpenDictionaryManager" xml:space="preserve">
+    <value>Open Dictionary Manager…</value>
+  </data>
+  <data name="SoftHyphens_MinWordLength" xml:space="preserve">
+    <value>Shortest hyphenated word (letters):</value>
+  </data>
+  <data name="SoftHyphens_UnknownLanguage" xml:space="preserve">
+    <value>❓ Unknown language</value>
+  </data>
+  <data name="SoftHyphens_UnknownLanguageReason" xml:space="preserve">
+    <value>Neither an element around this text (a lang / xml:lang attribute) nor the OPF (dc:language) states its language — there is no telling which patterns to break it by.</value>
+  </data>
+  <data name="SoftHyphens_PatternsNone" xml:space="preserve">
+    <value>— (unknown language)</value>
+  </data>
+  <data name="SoftHyphens_PatternsMissing" xml:space="preserve">
+    <value>⚠ missing {0}</value>
+  </data>
+  <data name="SoftHyphens_PatternsMissingTip" xml:space="preserve">
+    <value>No hyphenation patterns for this language. Install a dictionary holding the file {0} (e.g. a LibreOffice dictionary package) in the dictionary manager.</value>
+  </data>
+  <data name="SoftHyphens_PatternsFallback" xml:space="preserve">
+    <value>❗ no {0}, using {1}</value>
+  </data>
+  <data name="SoftHyphens_PatternsFallbackTip" xml:space="preserve">
+    <value>Patterns of another variant of the language ({0}) instead of {1} — the breaks may differ a little from those of {1}.</value>
+  </data>
+  <data name="SoftHyphens_PatternsUnreadable" xml:space="preserve">
+    <value>⚠ cannot read {0}</value>
+  </data>
+  <data name="SoftHyphens_PatternsUnreadableTip" xml:space="preserve">
+    <value>The patterns file {0} cannot be read: {1}</value>
+  </data>
+  <data name="SoftHyphens_SourceElement" xml:space="preserve">
+    <value>lang on &lt;{0}&gt;</value>
+  </data>
+  <data name="SoftHyphens_SourceOpf" xml:space="preserve">
+    <value>dc:language (OPF)</value>
+  </data>
+  <data name="SoftHyphens_SourceNone" xml:space="preserve">
+    <value>not stated anywhere</value>
+  </data>
+  <data name="SoftHyphens_SourceFiles" xml:space="preserve">
+    <value>{0} — files: {1}</value>
+  </data>
+  <data name="SoftHyphens_OutsideText" xml:space="preserve">
+    <value>Outside the text</value>
+  </data>
+  <data name="SoftHyphens_OutsideTextTip" xml:space="preserve">
+    <value>Soft hyphens that stand in the text of no language: in attributes, in &lt;head&gt;, in elements that are not prose (pre, code, script, style…), in comments. "Add" never puts them there; in an id, href or class they are faults.</value>
+  </data>
+  <data name="SoftHyphens_KindCount" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="SoftHyphens_PlaceTitle" xml:space="preserve">
+    <value>{0}:{1}</value>
+  </data>
+  <data name="SoftHyphens_PlaceTip" xml:space="preserve">
+    <value>A double click opens this place in the code.</value>
+  </data>
+  <data name="SoftHyphens_PlaceAttribute" xml:space="preserve">
+    <value>attribute {0}</value>
+  </data>
+  <data name="SoftHyphens_PlaceOtherAttributes" xml:space="preserve">
+    <value>other attributes</value>
+  </data>
+  <data name="SoftHyphens_PlaceHead" xml:space="preserve">
+    <value>&lt;head&gt;</value>
+  </data>
+  <data name="SoftHyphens_PlaceElement" xml:space="preserve">
+    <value>&lt;{0}&gt;</value>
+  </data>
+  <data name="SoftHyphens_PlaceComment" xml:space="preserve">
+    <value>comment</value>
+  </data>
+  <data name="Operation_Hyphenation" xml:space="preserve">
+    <value>Hyphenation</value>
+  </data>
+  <data name="SoftHyphens_Title" xml:space="preserve">
+    <value>Hyphenation</value>
+  </data>
+  <data name="SoftHyphens_ModeAdd" xml:space="preserve">
+    <value>Add soft hyphens</value>
+  </data>
+  <data name="SoftHyphens_ModeRemove" xml:space="preserve">
+    <value>Remove soft hyphens</value>
+  </data>
+  <data name="SoftHyphens_NothingToAdd" xml:space="preserve">
+    <value>The book has no text to hyphenate.</value>
+  </data>
+  <data name="SoftHyphens_NothingToRemove" xml:space="preserve">
+    <value>The book has no soft hyphens.</value>
   </data>
 </root>
