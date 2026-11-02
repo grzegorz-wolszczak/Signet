@@ -714,7 +714,7 @@ public partial class CodeTabView : UserControl
 
         // The title: the file of the tab.
         _contextMenu.Items.Add(MenuTitle.CreateItem(vm.Resource.Filename));
-        _contextMenu.Items.Add(new Separator());
+        _contextMenu.Items.Add(MenuTitle.CreateSeparator());
 
         List<Control> items = new();
         ICodeTabHost? host = vm.Host;

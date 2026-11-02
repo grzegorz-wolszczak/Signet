@@ -450,11 +450,29 @@
       <Setter Property="FontSize" Value="{DynamicResource SignetContextMenuItemsFontSize}" />
       <Setter Property="FontWeight" Value="{DynamicResource SignetContextMenuItemsFontWeight}" />
     </Style>
+    <!-- In a context menu the title is the menu's title bar: across the top edge (the margin takes back the space Fluent
+         leaves above the items, MenuFlyoutScrollerMargin; compact mode overrides it in UiDensityManager), with the top
+         corners of the menu (OverlayCornerRadius 5 inside its 1 px border) and the text centered over the whole width (not
+         after the icon column). The separator after it is not drawn: the title bar sets it apart. -->
     <Style Selector="ContextMenu MenuItem.menuTitle">
+      <Style.Resources>
+        <Thickness x:Key="SignetContextMenuTitleMargin">0,-4,0,4</Thickness>
+      </Style.Resources>
       <Setter Property="FontFamily" Value="{DynamicResource SignetContextMenuTitleFontFamily}" />
       <Setter Property="FontSize" Value="{DynamicResource SignetContextMenuTitleFontSize}" />
       <Setter Property="FontWeight" Value="{DynamicResource SignetContextMenuTitleFontWeight}" />
       <Setter Property="Background" Value="{DynamicResource SignetContextMenuTitleBackgroundBrush}" />
+      <Setter Property="Margin" Value="{DynamicResource SignetContextMenuTitleMargin}" />
+      <Setter Property="CornerRadius" Value="4,4,0,0" />
+      <Setter Property="Padding" Value="12,6" />
+    </Style>
+    <Style Selector="ContextMenu MenuItem.menuTitle /template/ ContentPresenter#PART_HeaderPresenter">
+      <Setter Property="Grid.Column" Value="0" />
+      <Setter Property="Grid.ColumnSpan" Value="5" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ContextMenu Separator.menuTitleSeparator">
+      <Setter Property="IsVisible" Value="False" />
     </Style>
 
     <!-- Flat toolbar buttons (the toolbars, the status bar, the button bars of panels): no background at rest, highlighted

@@ -9,14 +9,18 @@ namespace Signet.App.Infrastructure;
 
 /// <summary>
 /// The title of a context menu: a bold, not clickable first item naming what was right-clicked (a file, an entry, a
-/// toolbar; with several selected, how many), or the place when nothing in particular was, with a line under it.
+/// toolbar; with several selected, how many), or the place when nothing in particular was. App.axaml draws it as the
+/// menu's title bar: across the top edge, with the menu's rounded corners and the text centered.
 /// It is a plain <see cref="MenuItem"/> with the class <see cref="TitleClass"/> (a style for the items of a menu built from
-/// view models can leave it out with <c>:not(.menuTitle)</c>).
+/// view models can leave it out with <c>:not(.menuTitle)</c>), followed by <see cref="CreateSeparator"/>.
 /// </summary>
 public static class MenuTitle
 {
     /// <summary>The class of the title item.</summary>
     public const string TitleClass = "menuTitle";
+
+    /// <summary>The class of the separator after the title (hidden in a context menu: the title bar sets it apart).</summary>
+    public const string SeparatorClass = "menuTitleSeparator";
 
     /// <summary>
     /// Puts a title with the text of <paramref name="text"/> at the top of <paramref name="menu"/>, followed by a separator.
@@ -29,7 +33,7 @@ public static class MenuTitle
         ArgumentNullException.ThrowIfNull(text);
         MenuItem title = CreateItem(text());
         menu.Items.Insert(0, title);
-        menu.Items.Insert(1, new Separator());
+        menu.Items.Insert(1, CreateSeparator());
         // Opening comes before a right click opens the menu; a menu opened from code (ContextMenu.Open) skips it, so the
         // text is also read once it is open.
         menu.Opening += (_, _) => title.Header = Escape(text());
@@ -63,6 +67,17 @@ public static class MenuTitle
         };
         title.Classes.Add(TitleClass);
         return title;
+    }
+
+    /// <summary>
+    /// The separator that follows the title. It stays an item of the menu (the items after it keep their places), but a
+    /// context menu does not draw it.
+    /// </summary>
+    public static Separator CreateSeparator()
+    {
+        Separator separator = new();
+        separator.Classes.Add(SeparatorClass);
+        return separator;
     }
 
     /// <summary>

@@ -277,7 +277,7 @@ public partial class KeymapView : UserControl
 
         // The title: the action whose shortcuts the menu edits.
         items.Insert(0, MenuTitle.CreateItem(node.Name));
-        items.Insert(1, new Separator());
+        items.Insert(1, MenuTitle.CreateSeparator());
         ContextMenu menu = new() { ItemsSource = items, Placement = PlacementMode.Pointer };
         menu.Open(anchor);
 

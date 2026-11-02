@@ -124,7 +124,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     // The title of a main menu item's context menu (the name of a recent file) and the separator under it.
     private static Control[] TitleOf(MenuItem item) =>
         item.DataContext is Menu.MenuItemViewModel { ContextTitle: { Length: > 0 } title }
-            ? new Control[] { MenuTitle.CreateItem(title), new Separator() }
+            ? new Control[] { MenuTitle.CreateItem(title), MenuTitle.CreateSeparator() }
             : Array.Empty<Control>();
 
     private static Control? CreateActionIcon(string? iconKey)

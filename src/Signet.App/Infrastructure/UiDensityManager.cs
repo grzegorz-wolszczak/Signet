@@ -366,6 +366,8 @@ public sealed class UiDensityManager(
         ["MenuFlyoutSeparatorThemePadding"] = new Thickness(4, 3, 4, 3),
         ["MenuIconPresenterMargin"] = new Thickness(0, 0, 8, 0),
         ["MenuFlyoutScrollerMargin"] = new Thickness(0, 2, 0, 2),
+        // The context menu title bar takes back the scroller's top margin (App.axaml, ContextMenu MenuItem.menuTitle).
+        ["SignetContextMenuTitleMargin"] = new Thickness(0, -2, 0, 2),
         ["MenuBarHeight"] = 24d,
     };
 
