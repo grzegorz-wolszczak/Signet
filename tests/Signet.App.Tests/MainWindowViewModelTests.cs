@@ -167,6 +167,50 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Find_action_with_a_code_tab_open_selects_the_current_file_scope()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = New();
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+        sut.LoadBook(book, epub);
+        sut.Tabs.OpenResources(new Resource[] { book.GetHtmlResources().First() });
+        sut.IsFindReplaceVisible = false;
+        sut.FindReplace.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
+        AppAction action = sut.Actions.Require(AppActionIds.Find);
+
+        // Act
+        action.Execute(null);
+
+        // Assert
+        sut.IsFindReplaceVisible.Should().BeTrue();
+        sut.FindReplace.LookWhereIndex.Should().Be((int)LookWhere.CurrentFile);
+    }
+
+    [Fact]
+    public void Find_action_with_a_non_code_tab_active_keeps_the_selected_scope()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = New();
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+        sut.LoadBook(book, epub);
+        sut.Tabs.OpenResources(new Resource[] { book.GetFolderKeeper().GetResourceTypeList<ImageResource>(sorted: true).First() });
+        sut.IsFindReplaceVisible = false;
+        sut.FindReplace.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
+        AppAction action = sut.Actions.Require(AppActionIds.Find);
+
+        // Act
+        action.Execute(null);
+
+        // Assert
+        sut.IsFindReplaceVisible.Should().BeTrue();
+        sut.FindReplace.LookWhereIndex.Should().Be((int)LookWhere.AllHtmlFiles);
+    }
+
+    [Fact]
     public void SearchAllTextFiles_action_opens_find_panel_and_selects_all_files_scope()
     {
         // Arrange

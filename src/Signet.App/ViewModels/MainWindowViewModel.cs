@@ -1535,11 +1535,17 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// The "Find" action (Ctrl+F): shows the Find &amp; Replace panel, puts the text selected in the
-    /// editor into the Find field and raises a request to focus it.
+    /// The "Find" action (Ctrl+F): shows the Find &amp; Replace panel, sets the "Look in" scope to the
+    /// current file when a code tab is open, puts the text selected in the editor into the Find field
+    /// and raises a request to focus it.
     /// </summary>
     private void ShowFindPanel()
     {
+        if (ActiveCodeTab is not null)
+        {
+            _findReplace.LookWhereIndex = (int)LookWhere.CurrentFile;
+        }
+
         IsFindReplaceVisible = true;
         _findReplace.SeedFindFromSelection();
         FindPanelFocusRequested?.Invoke(this, EventArgs.Empty);
