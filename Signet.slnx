@@ -18,6 +18,7 @@
     <Project Path="tests/Signet.NativeWebView.Platform.Linux.Tests/Signet.NativeWebView.Platform.Linux.Tests.csproj" />
     <Project Path="tests/Signet.Core.Tests/Signet.Core.Tests.csproj" />
     <Project Path="tests/Signet.EpubCheck.Cli.Tests/Signet.EpubCheck.Cli.Tests.csproj" />
+    <Project Path="tests/Signet.EpubCheck.Conformance.Tests/Signet.EpubCheck.Conformance.Tests.csproj" />
     <Project Path="tests/Signet.EpubCheck.Core.Tests/Signet.EpubCheck.Core.Tests.csproj" />
   </Folder>
 </Solution>
