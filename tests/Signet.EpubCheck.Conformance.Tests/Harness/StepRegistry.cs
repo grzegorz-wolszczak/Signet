@@ -46,6 +46,7 @@ internal sealed class StepRegistry
         ConfigurationSteps.Register(registry);
         ExecutionSteps.Register(registry);
         FilenameSteps.Register(registry);
+        UrlFragmentSteps.Register(registry);
         AssertionSteps.Register(registry);
         CliSteps.Register(registry);
         UnavailableSteps.Register(registry);

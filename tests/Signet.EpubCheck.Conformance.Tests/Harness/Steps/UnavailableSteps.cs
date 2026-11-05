@@ -27,13 +27,6 @@ internal static class UnavailableSteps
             "JSON at {string} are all {string}",
             "JSON at {string} are all {bool}");
 
-        Unavailable(steps, "The WHATWG URL / fragment parser is not implemented yet (task 1.3).",
-            "{string} is a {} {} fragment",
-            "it indicates an element with ID {string}",
-            "it does not indicate an element",
-            "it is a media fragment",
-            "it has scheme {string}");
-
         Unavailable(steps, "The viewport parser is not implemented yet (task 3.5).",
             "parsing viewport {string}",
             "no error is returned",

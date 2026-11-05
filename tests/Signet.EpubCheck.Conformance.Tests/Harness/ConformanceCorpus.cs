@@ -21,6 +21,7 @@ internal static class ConformanceCorpus
         "cli/cli.feature",
         "epub3/04-ocf/filename-checker.feature",
         "epub3/04-ocf/ocf.feature",
+        "unit-tests/url-fragment.feature",
     };
 
     /// <summary>
@@ -62,7 +63,7 @@ internal static class ConformanceCorpus
             366, 371, 376);
         AddOcf(pending, "Needs the single-document checker and OPF parser (tasks 2.1-2.5).",
             77, 82, 95, 108);
-        AddOcf(pending, "Needs the WHATWG URL parser and reference checks (tasks 1.3 and 3.5).",
+        AddOcf(pending, "Needs content-document and resource-reference checks (tasks 3.5 and 3.6).",
             118, 131, 137, 145, 151, 157, 169, 175, 181, 187, 193, 199, 207, 213, 218, 223, 229, 235, 240, 245, 255, 261, 270);
         AddOcf(pending, "Needs XML schema validation and OCF container parsing (tasks 2.1-2.5 and 3.1).",
             280, 293, 302, 313, 319, 329, 338, 350);

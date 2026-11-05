@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Signet.EpubCheck.Core;
+using Signet.EpubCheck.Core.Util;
 
 namespace Signet.EpubCheck.Conformance.Tests.Harness;
 
@@ -38,6 +39,9 @@ internal sealed class ScenarioWorld
 
     // AssertionSteps
     public MessageInfo? LastAssertedMessage { get; set; }
+
+    // URL fragment steps
+    public EpubUrlFragment? LastFragment { get; set; }
 
     // CLISteps
     public StringWriter StdOut { get; } = new();
