@@ -14,6 +14,18 @@ public static class EpubCheckVersion
     /// <summary>The full version: <see cref="UpstreamRelease"/>, <c>-</c> and the UTC build time as <c>yyyyMMddHHmm</c>.</summary>
     public static string Text { get; } = ReadText();
 
+    /// <summary>The date of the build as <c>yyyy-MM-dd</c> (from the timestamp in <see cref="Text"/>), or <c>unknown</c>.</summary>
+    public static string BuildDate { get; } = ReadBuildDate();
+
+    private static string ReadBuildDate()
+    {
+        int dash = Text.LastIndexOf('-');
+        string stamp = dash >= 0 ? Text[(dash + 1)..] : string.Empty;
+        return stamp.Length == 12 && System.DateTime.TryParseExact(stamp, "yyyyMMddHHmm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out System.DateTime built)
+            ? built.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)
+            : "unknown";
+    }
+
     private static string ReadText()
     {
         string? informational = typeof(EpubCheckVersion).Assembly

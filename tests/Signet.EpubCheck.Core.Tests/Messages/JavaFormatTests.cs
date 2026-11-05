@@ -48,6 +48,22 @@ public sealed class JavaFormatTests
         text.Should().Be("null true false 12.5");
     }
 
+    [Theory]
+    [InlineData(0, "0 errors")]
+    [InlineData(1234, "1234 errors")]
+    public void Format_FillsAnIntegerWithD(int count, string expected)
+    {
+        // Act & Assert
+        JavaFormat.Format("%1$d errors", count).Should().Be(expected);
+    }
+
+    [Fact]
+    public void Format_OfAStringWithD_Throws()
+    {
+        // Act & Assert
+        FluentActions.Invoking(() => JavaFormat.Format("%1$d", "text")).Should().Throw<FormatException>();
+    }
+
     [Fact]
     public void Format_IgnoresArgumentsThatNoPlaceholderUses()
     {
@@ -66,8 +82,7 @@ public sealed class JavaFormatTests
     }
 
     [Theory]
-    [InlineData("%d")]
-    [InlineData("%1$d")]
+    [InlineData("%1$x")]
     [InlineData("%5s")]
     [InlineData("100%")]
     public void Format_WithAConversionItDoesNotSupport_Throws(string template)

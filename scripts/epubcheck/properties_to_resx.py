@@ -125,7 +125,7 @@ def parse(path: Path, keep_leading_space) -> dict:
 
 
 def placeholders(text: str):
-    return sorted(re.findall(r"%\d+\$s", text))
+    return sorted(re.findall(r"%\d+\$[sd]", text))
 
 
 def main() -> None:
