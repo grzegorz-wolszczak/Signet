@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+    The version of the EPUBCheck port (Signet.EpubCheck.*): the upstream EPUBCheck release it ports, not Signet's own
+    VersionPrefix (Directory.Build.props). The full version is 5.4.0-<yyyyMMddHHmm UTC> (version/Versioning.targets).
+    Imported by Signet.EpubCheck.Core.csproj and Signet.EpubCheck.Cli.csproj. When moving to another upstream release,
+    change it here and in src/Signet.EpubCheck.Core/UPSTREAM.md.
+  -->
+  <PropertyGroup>
+    <VersionPrefix>5.4.0</VersionPrefix>
+  </PropertyGroup>
+
+</Project>

@@ -5,6 +5,8 @@
     <Project Path="src/Signet.Controls.TreeDataGrid/Signet.Controls.TreeDataGrid.csproj" />
     <Project Path="src/Signet.NativeWebView.Platform.Linux/Signet.NativeWebView.Platform.Linux.csproj" />
     <Project Path="src/Signet.Core/Signet.Core.csproj" />
+    <Project Path="src/Signet.EpubCheck.Cli/Signet.EpubCheck.Cli.csproj" />
+    <Project Path="src/Signet.EpubCheck.Core/Signet.EpubCheck.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Signet.App.MainWindowUiTests/Signet.App.MainWindowUiTests.csproj" />
@@ -15,5 +17,7 @@
     <Project Path="tests/Signet.Controls.TreeDataGrid.Tests/Signet.Controls.TreeDataGrid.Tests.csproj" />
     <Project Path="tests/Signet.NativeWebView.Platform.Linux.Tests/Signet.NativeWebView.Platform.Linux.Tests.csproj" />
     <Project Path="tests/Signet.Core.Tests/Signet.Core.Tests.csproj" />
+    <Project Path="tests/Signet.EpubCheck.Cli.Tests/Signet.EpubCheck.Cli.Tests.csproj" />
+    <Project Path="tests/Signet.EpubCheck.Core.Tests/Signet.EpubCheck.Core.Tests.csproj" />
   </Folder>
 </Solution>
