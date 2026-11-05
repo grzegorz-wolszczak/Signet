@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The checking core of the EPUBCheck port (see UPSTREAM.md). It does not depend on Signet.Core: the standalone
+       tool (Signet.EpubCheck.Cli) uses it alone, Signet uses it through its own adapters. -->
+  <Import Project="..\..\version\EpubCheckVersion.props" />
+  <Import Project="..\..\version\Versioning.targets" />
+
+  <PropertyGroup>
+    <RootNamespace>Signet.EpubCheck.Core</RootNamespace>
+    <AssemblyName>Signet.EpubCheck.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Signet.EpubCheck.Core.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3.mtp-off" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The temporary-folder isolation and cleanup check shared by all the test projects. -->
+    <Compile Include="..\Signet.Core.Tests\TestSupport\TestIsolation.cs" Link="TestSupport\TestIsolation.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Signet.EpubCheck.Cli\Signet.EpubCheck.Cli.csproj" />
+  </ItemGroup>
+
+</Project>
