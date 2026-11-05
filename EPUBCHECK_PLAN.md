@@ -4,9 +4,9 @@ A C# port of the official [EPUBCheck](https://github.com/w3c/epubcheck) (W3C / D
 lives in this repository as a standalone command-line tool, with its checking core in a separate library
 that Signet itself uses for its "Validation Results".
 
-Status: **in progress — epic 0 and tasks 1.1–1.3 are done** (project skeleton, version, upstream pin, message and report
+Status: **in progress — epic 0 and tasks 1.1–1.4 are done** (project skeleton, version, upstream pin, message and report
 model, message texts in English and Polish, conformance harness, command line, EPUB source abstraction and OCF/ZIP
-checks, WHATWG-style URL and URL-fragment parsing); **next: task 1.4 Utilities**.
+checks, WHATWG-style URL and URL-fragment parsing, raw parsing utilities); **next: task 2.1 RELAX NG model and validator**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -81,11 +81,10 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 1.4 Utilities
+### Next task: 2.1 RELAX NG model and validator
 
-Port the MIME type parser, `CodePoints`, microsyntaxes, `PackageDocumentPeeker`, and prefix/vocabulary parsing. Keep
-URL-reference validation and resource existence scenarios pending: they now have parsing support, but require the
-content-document and resource-reference checks of tasks 3.5 and 3.6. Do not implement epic 2.
+Implement the RELAX NG model and streaming derivative-based validator. URL-reference validation and resource
+existence scenarios remain pending for content-document and resource-reference checks of tasks 3.5 and 3.6.
 
 **Done (2026-11-05):** `IEpubSource` has in-memory, directory and ZIP implementations. The ZIP source reads
 the central directory itself to retain ordering, raw UTF-8 validation and the first-entry local-header extra-field
@@ -261,8 +260,9 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   as a URL parser. `EpubUrlFragment` parses HTML/XHTML, SVG and XML fragments, including fragment directives,
   scheme-based fragments and media fragments. `unit-tests/url-fragment.feature` is enabled (41 scenarios); the OCF
   URL scenarios remain pending because checking their references requires tasks 3.5 and 3.6.
-- **1.4 Utilities (M).** MIME type parser, `CodePoints`, microsyntaxes, `PackageDocumentPeeker`, prefix / vocabulary
-  parsing (`vocab`, 24 files).
+- **1.4 Utilities (M). DONE.** Added the MIME type parser and serializer, `CodePoints`, viewport meta microsyntax,
+  package-document metadata peeker, and the prefix/property vocabulary parser. URL-reference validation and resource
+  existence checks deliberately remain pending for tasks 3.5 and 3.6; this task performs parsing only.
 
 ### Epic 2 — Schema engine (critical path)
 
