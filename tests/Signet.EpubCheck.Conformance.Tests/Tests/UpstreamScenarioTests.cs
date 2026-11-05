@@ -25,7 +25,8 @@ public sealed class UpstreamScenarioTests
         s_scenarios.Value.Select(s => new TheoryDataRow<string>(s.Id)
         {
             TestDisplayName = s.DisplayName,
-            Skip = ConformanceCorpus.IsEnabled(s) ? null : NotEnabled,
+            Skip = ConformanceCorpus.IsEnabled(s) ? null
+                : ConformanceCorpus.PendingScenarios.TryGetValue(s.Id, out string? reason) ? reason : NotEnabled,
         });
 
     [Theory]
@@ -41,7 +42,7 @@ public sealed class UpstreamScenarioTests
         {
             ScenarioRunner.Run(scenario, s_steps.Value, world);
         }
-        catch (ScenarioNotImplementedException ex) when (!ConformanceCorpus.EnabledFeatures.Contains(scenario.FeaturePath))
+        catch (ScenarioNotImplementedException ex) when (!ConformanceCorpus.MustPass(scenario))
         {
             Assert.Skip(ex.Message);
         }
