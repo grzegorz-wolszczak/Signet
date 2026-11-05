@@ -1,4 +1,5 @@
 using Signet.EpubCheck.Core;
+using Signet.EpubCheck.Core.Ocf;
 using Signet.EpubCheck.Core.Reporting;
 
 namespace Signet.EpubCheck.Conformance.Tests.Harness;
@@ -22,4 +23,25 @@ internal sealed class UnavailableEpubChecker : IEpubChecker
 {
     public void Check(CheckRequest request) =>
         throw new ScenarioNotImplementedException("The EPUB checker of the port is not implemented yet.");
+}
+
+/// <summary>The portion of the port that can check a complete OCF ZIP container.</summary>
+internal sealed class OcfEpubChecker : IEpubChecker
+{
+    public void Check(CheckRequest request)
+    {
+        if (request.Mode != CheckerMode.Epub)
+        {
+            throw new ScenarioNotImplementedException("Checking individual documents is not implemented yet.");
+        }
+
+        if (System.IO.Directory.Exists(request.Path))
+        {
+            using DirectoryEpubSource source = new(request.Path);
+            OCFChecker.Check(source, request.Version, request.Report);
+            return;
+        }
+
+        OCFChecker.CheckZip(request.Path, request.Version, request.Report);
+    }
 }

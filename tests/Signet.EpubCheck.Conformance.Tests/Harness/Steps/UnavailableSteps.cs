@@ -34,10 +34,6 @@ internal static class UnavailableSteps
             "it is a media fragment",
             "it has scheme {string}");
 
-        Unavailable(steps, "The OCF file name checker is not implemented yet (task 1.2).",
-            "checking file name {string}",
-            "checking file name containing code point {codepoint}");
-
         Unavailable(steps, "The viewport parser is not implemented yet (task 3.5).",
             "parsing viewport {string}",
             "no error is returned",
