@@ -72,4 +72,20 @@ The datatype library `http://whattf.org/datatype-draft` is **not** needed: upstr
   field for them). When one is reported anyway — its severity was raised by a custom messages file — upstream prints an empty
   message; the port prints `No description is available for ACC-001.` (`PortMessages.resx`, English and Polish).
 
+The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
+
+- The reason of an argument error is printed on the error stream (`Version number omitted from the -v argument.`,
+  `Version not supported`, ...). Upstream throws it and then swallows the exception, so only the help is shown.
+- An unknown `--profile` prints `Unknown profile "x", using default validation profile.`; upstream prints the text about
+  ignored modes and versions, which does not fit.
+- `-o`, `-j` and `-x` without a file name need the file to check to come before them (upstream fails with an
+  unexplained null pointer error), and say so.
+- The EPUB 3 version in the texts is `3.4`, the version the port checks against; upstream's enum still says `3.3`.
+- The help text is upstream's word for word, typos included (`in ouput`): `cli.feature` compares it exactly.
+- A language without texts (`--locale fr-FR`) falls back to the default locale of the user, and to English when that has
+  none either; upstream has 12 languages, the port English and Polish (`cli.feature`'s three French scenarios are not
+  meant to pass).
+- Files given by an `http://` or `https://` address are not fetched (not supported yet).
+- The texts that only the port has (`The EPUB checker is not implemented yet.`, ...) are in `CliPortMessages.resx`.
+
 Each further deviation from upstream is listed here, with the reason.

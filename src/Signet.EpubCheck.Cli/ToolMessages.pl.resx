@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="single_file" xml:space="preserve">
+    <value>Plik jest sprawdzany jako pojedynczy plik typu %1$s, dla EPUB w wersji %2$s, z profilem walidacji %3$s. Uruchamiany jest tylko podzbiór dostępnych testów.</value>
+  </data>
+  <data name="opv_version_test" xml:space="preserve">
+    <value>*** Do usunięcia *** Testy są wykonywane tylko dla wersji OPF.</value>
+  </data>
+  <data name="mode_version_not_supported" xml:space="preserve">
+    <value>Sprawdzanie nie obsługuje typu %1$s w wersji %2$s.</value>
+  </data>
+  <data name="no_errors__or_warnings" xml:space="preserve">
+    <value>Nie wykryto błędów ani ostrzeżeń.</value>
+  </data>
+  <data name="there_were_errors" xml:space="preserve">
+    <value>
+Sprawdzanie zakończone z błędami</value>
+  </data>
+  <data name="there_were_warnings" xml:space="preserve">
+    <value>
+Sprawdzanie zakończone z ostrzeżeniami</value>
+  </data>
+  <data name="messages" xml:space="preserve">
+    <value>Komunikaty</value>
+  </data>
+  <data name="counter_fatal_zero" xml:space="preserve">
+    <value>0 błędów krytycznych</value>
+  </data>
+  <data name="counter_fatal_one" xml:space="preserve">
+    <value>1 błąd krytyczny</value>
+  </data>
+  <data name="counter_fatal_many" xml:space="preserve">
+    <value>%1$d błędów krytycznych</value>
+  </data>
+  <data name="counter_error_zero" xml:space="preserve">
+    <value>0 błędów</value>
+  </data>
+  <data name="counter_error_one" xml:space="preserve">
+    <value>1 błąd</value>
+  </data>
+  <data name="counter_error_many" xml:space="preserve">
+    <value>%1$d błędów</value>
+  </data>
+  <data name="counter_warn_zero" xml:space="preserve">
+    <value>0 ostrzeżeń</value>
+  </data>
+  <data name="counter_warn_one" xml:space="preserve">
+    <value>1 ostrzeżenie</value>
+  </data>
+  <data name="counter_warn_many" xml:space="preserve">
+    <value>%1$d ostrzeżeń</value>
+  </data>
+  <data name="counter_info_zero" xml:space="preserve">
+    <value>0 informacji</value>
+  </data>
+  <data name="counter_info_one" xml:space="preserve">
+    <value>1 informacja</value>
+  </data>
+  <data name="counter_info_many" xml:space="preserve">
+    <value>%1$d informacji</value>
+  </data>
+  <data name="counter_usage_zero" xml:space="preserve">
+    <value>0 użyć</value>
+  </data>
+  <data name="counter_usage_one" xml:space="preserve">
+    <value>1 użycie</value>
+  </data>
+  <data name="counter_usage_many" xml:space="preserve">
+    <value>%1$d użyć</value>
+  </data>
+  <data name="error_processing_unexpanded_epub" xml:space="preserve">
+    <value>
+To sprawdzanie nie obsługuje rozpakowanych plików EPUB
+</value>
+  </data>
+  <data name="deleting_archive" xml:space="preserve">
+    <value>
+Tworzenie pliku EPUB przerwano z powodu wykrytych błędów.
+</value>
+  </data>
+  <data name="display_help" xml:space="preserve">
+    <value>-help wyświetla pomoc</value>
+  </data>
+  <data name="argument_needed" xml:space="preserve">
+    <value>Oczekiwano co najmniej jednego argumentu</value>
+  </data>
+  <data name="version_argument_expected" xml:space="preserve">
+    <value>Brak numeru wersji w argumencie -v.</value>
+  </data>
+  <data name="mode_argument_expected" xml:space="preserve">
+    <value>Brak typu w argumencie -mode.</value>
+  </data>
+  <data name="profile_argument_expected" xml:space="preserve">
+    <value>Brak nazwy profilu po argumencie -profile.</value>
+  </data>
+  <data name="profile_unknown" xml:space="preserve">
+    <value>Nieznany profil "%1$s", używany jest domyślny profil walidacji.</value>
+  </data>
+  <data name="no_file_specified" xml:space="preserve">
+    <value>Nie podano pliku w argumentach. Kończenie.</value>
+  </data>
+  <data name="mode_version_ignored" xml:space="preserve">
+    <value>Argumenty trybu i wersji są ignorowane dla plików EPUB. Są odczytywane z samych plików.</value>
+  </data>
+  <data name="mode_required" xml:space="preserve">
+    <value>Dla plików innych niż EPUB wymagany jest tryb. Domyślna wersja to 3.0.</value>
+  </data>
+  <data name="validating_version_message" xml:space="preserve">
+    <value>Sprawdzanie według reguł EPUB w wersji %1$s.</value>
+  </data>
+  <data name="output_type_conflict" xml:space="preserve">
+    <value>Można podać tylko jeden format wyjściowy naraz.</value>
+  </data>
+  <data name="validating_against_epub_version" xml:space="preserve">
+    <value>Sprawdzanie względem EPUB w wersji %1$s - własna walidacja</value>
+  </data>
+  <data name="file_not_found" xml:space="preserve">
+    <value>Nie znaleziono pliku: "%1$s"</value>
+  </data>
+  <data name="directory_not_found" xml:space="preserve">
+    <value>Nie znaleziono katalogu: "%1$s"</value>
+  </data>
+  <data name="epubcheck_completed" xml:space="preserve">
+    <value>EPUBCheck zakończył pracę</value>
+  </data>
+  <data name="error_creating_config_file" xml:space="preserve">
+    <value>Błąd podczas tworzenia pliku konfiguracji "%1$s".</value>
+  </data>
+  <data name="expected_message_filename" xml:space="preserve">
+    <value>Oczekiwano nazwy pliku z niestandardowymi komunikatami, a znaleziono "%1$s"</value>
+  </data>
+  <data name="unrecognized_argument" xml:space="preserve">
+    <value>Nierozpoznany argument: "%1$s"</value>
+  </data>
+  <data name="epubcheck_version_text" xml:space="preserve">
+    <value>EPUBCheck v%1$s</value>
+  </data>
+  <data name="incorrect_locale" xml:space="preserve">
+    <value>Argument "%1$s" opcji --locale jest niepoprawny.</value>
+  </data>
+  <data name="missing_locale" xml:space="preserve">
+    <value>Brak argumentu opcji --locale.</value>
+  </data>
+  <data name="incorrect_maxofeach" xml:space="preserve">
+    <value>Argument "%1$s" opcji --maxOfEachMessage musi być liczbą albo słowem 'unlimited'.</value>
+  </data>
+  <data name="missing_maxofeach" xml:space="preserve">
+    <value>Brak argumentu opcji --maxOfEachMessage.</value>
+  </data>
+  <data name="help_text" xml:space="preserve">
+    <value>EPUBCheck v%1$s
+
+Pierwszym argumentem uruchomienia powinna być nazwa (ze ścieżką)
+sprawdzanego pliku.
+
+Aby wskazać profil walidacji (sprawdzanie zgodności z wybranym profilem EPUB 3
+lub specyfikacją rozszerzenia), użyj opcji -profile:
+
+Obsługiwane profile walidacji:
+--profile default        = domyślny profil walidacji
+--profile dict           = sprawdza zgodność ze specyfikacją EPUB Dictionaries and Glossaries
+--profile edupub         = sprawdza zgodność z profilem EDUPUB
+--profile idx            = sprawdza zgodność ze specyfikacją EPUB Indexes
+--profile preview        = sprawdza zgodność ze specyfikacją EPUB Previews
+
+Przy sprawdzaniu pliku innego niż EPUB trzeba podać wersję EPUB tego pliku
+opcją -v oraz jego typ opcją -mode.
+Domyślna wersja to: 3.0.
+
+Obsługiwane tryby i wersje:
+--mode opf -v 2.0
+--mode opf -v 3.0
+--mode xhtml -v 2.0
+--mode xhtml -v 3.0
+--mode svg -v 2.0
+--mode svg -v 3.0
+--mode nav -v 3.0
+--mode mo  -v 3.0        = do sprawdzania Media Overlays
+--mode exp               = do rozpakowanych archiwów EPUB
+
+Narzędzie przyjmuje także następujące opcje:
+--save                   = zapisuje plik EPUB zbudowany z rozpakowanego EPUB
+--out &lt;file&gt;             = zapisuje raport XML (użyj -, aby wypisać go w konsoli)
+--xmp &lt;file&gt;             = zapisuje raport XMP (użyj -, aby wypisać go w konsoli)
+--json &lt;file&gt;            = zapisuje raport JSON (użyj -, aby wypisać go w konsoli)
+-m &lt;file&gt;                = to samo co --mode
+-p &lt;profile&gt;             = to samo co --profile
+-o &lt;file&gt;                = to samo co --out
+-x &lt;file&gt;                = to samo co --xmp
+-j &lt;file&gt;                = to samo co --json
+--maxOfEachMessage NUM   = ogranicza do NUM liczbę komunikatów zgłaszanych dla każdej pary identyfikator-i-tekst komunikatu.
+                           Opcja dotyczy tylko raportów w formacie JSON lub XML.
+                           Gdy opcji nie ustawiono, raport zawiera najwyżej 25
+                           komunikatów dla każdej pary identyfikator-i-tekst.
+                           Słowo 'unlimited' lub wartość ujemna znosi limit i dołącza
+                           do raportu wszystkie komunikaty.
+
+--failonwarnings         = Domyślnie narzędzie zwraca 1, gdy w pliku znaleziono błędy, albo 0, gdy ich nie ma.
+                           Z opcją --failonwarnings proces kończy się kodem 1, gdy są ostrzeżenia lub błędy,
+                           a kodem 0 tylko wtedy, gdy nie ma ani ostrzeżeń, ani błędów.
+-q, --quiet              = brak komunikatów w konsoli, z wyjątkiem błędów; wszystko tylko w raporcie
+-f, --fatal              = w wyniku tylko błędy krytyczne
+-e, --error              = w wyniku tylko błędy i błędy krytyczne
+-w, --warn               = w wyniku błędy krytyczne, błędy i ostrzeżenia
+-u, --usage              = w wyniku także informacje o użyciu funkcji EPUB
+                           (domyślnie wyłączone); po włączeniu informacje o użyciu
+                           zawsze trafiają do pliku wynikowego
+--locale &lt;locale&gt;        = komunikaty w języku podanym znacznikiem IETF BCP 47 (obsługiwane: en, pl).
+
+-l, --listChecks [&lt;file&gt;]       = zapisuje identyfikatory i ważności komunikatów do pliku niestandardowych komunikatów &lt;file&gt;
+                                  lub wypisuje je w konsoli
+-c, --customMessages [&lt;file&gt;]   = zmienia ważności komunikatów według pliku niestandardowych komunikatów &lt;file&gt;
+
+--version                = wyświetla wersję EPUBCheck
+
+-h, -? lub --help         = wyświetla ten komunikat pomocy
+</value>
+  </data>
+</root>

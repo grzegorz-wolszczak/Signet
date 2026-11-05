@@ -11,6 +11,7 @@
   <ItemGroup>
     <!-- The temporary-folder isolation and cleanup check shared by all the test projects. -->
     <Compile Include="..\Signet.Core.Tests\TestSupport\TestIsolation.cs" Link="TestSupport\TestIsolation.cs" />
+    <Compile Include="..\Signet.Core.Tests\TestSupport\TempDir.cs" Link="TestSupport\TempDir.cs" />
   </ItemGroup>
 
   <ItemGroup>
