@@ -35,7 +35,7 @@ public sealed class UpstreamScenarioTests
     {
         // Arrange
         ScenarioDefinition scenario = s_scenarios.Value.Single(s => s.Id == id);
-        ScenarioWorld world = new(ConformanceCorpus.Root, new UnavailableEpubChecker());
+        ScenarioWorld world = new(ConformanceCorpus.Root, new OcfEpubChecker());
 
         // Act
         try
