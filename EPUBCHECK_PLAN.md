@@ -4,7 +4,7 @@ A C# port of the official [EPUBCheck](https://github.com/w3c/epubcheck) (W3C / D
 lives in this repository as a standalone command-line tool, with its checking core in a separate library
 that Signet itself uses for its "Validation Results".
 
-Status: **in progress — tasks 0.1–0.5 are done** (project skeleton, version, upstream pin, message and report model, message texts in English and Polish, conformance harness); the rest is not
+Status: **in progress — tasks 0.1–0.6 are done** (project skeleton, version, upstream pin, message and report model, message texts in English and Polish, conformance harness); the rest is not
 implemented yet. Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -115,11 +115,16 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   features in `ConformanceCorpus.EnabledFeatures` must pass (none yet — add a feature there when its task lands:
   `cli/cli.feature` with 0.6, `epub3/04-ocf/ocf.feature` with 1.2, …); the others are skipped with the reason.
   `SIGNET_CONFORMANCE_ALL=1` runs all of them: a scenario that needs a part of the port that is missing ends as
-  "not implemented" (skipped), any other failure is shown (today 41, all of `cli.feature`). The steps that need the report
+  "not implemented" (skipped), any other failure is shown (today the 23 pending ones of `cli.feature`). The steps that need the report
   writers (JSON/XML), the URL parser, the file name checker or the viewport parser are bound to "not implemented" with
   the task that brings them. The harness itself has tests on scenarios of its own and a scripted checker.
-- **0.6 CLI parser (M).** Hand-written parser, exact help text, return codes, `--version`; everything else reports
-  "not implemented" until the epics below land. Covered by `cli.feature`.
+- **0.6 CLI parser (M). DONE.** `ToolRun` (upstream's `EpubChecker`): every option and spelling, the help and version texts
+  (`ToolMessages.resx`, a copy of upstream's `messages.properties`; Polish in `ToolMessages.pl.resx`), `--listChecks`,
+  `--customMessages` (also from the `ePubCheckCustomMessageFile` variable), `--locale`, the reporting levels, `--quiet`,
+  the argument errors, the closing counters and the exit codes; `ConsoleReport` prints messages as upstream's default
+  report does (task 4.1's console part). What needs the checker or the report writers says it is not implemented yet.
+  `cli/cli.feature` is enabled in the conformance harness: 23 of its 53 scenarios run and pass; 30 are `pending` with the
+  reason (the checker, the report writers, the archive of `--save`, French messages that the port does not have).
 
 ### Epic 1 — Raw input layer (read-only)
 
@@ -170,7 +175,7 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
 
 ### Epic 4 — Reports and the executable
 
-- **4.1 Console output (S).** Upstream format, counters, `-q`.
+- **4.1 Console output (S).** Upstream format, counters, `-q`. Done with 0.6 (`ConsoleReport`, the closing counters).
 - **4.2 XML / XMP / JSON reports (M).** Publication metadata, items, messages, locations; `System.Text.Json`, field
   order as upstream; `maxOfEachMessage`.
 - **4.3 Standalone executable (S).** Publish profiles for `win-x64` and `linux-x64` (self-contained, single-file, no
