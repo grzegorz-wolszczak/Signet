@@ -25,7 +25,7 @@ internal sealed class ToolOutput
     {
         if (!Quiet)
         {
-            Out.Write(text);
+            Out.Write(NormalizeLineEndings(text));
             Out.Write('\n');
         }
     }
@@ -33,14 +33,16 @@ internal sealed class ToolOutput
     /// <summary>Prints a line on standard output even when the tool is quiet.</summary>
     public void PrintlnAlways(string text)
     {
-        Out.Write(text);
+        Out.Write(NormalizeLineEndings(text));
         Out.Write('\n');
     }
 
     /// <summary>Prints a line on standard error.</summary>
     public void PrintError(string text)
     {
-        Error.Write(text);
+        Error.Write(NormalizeLineEndings(text));
         Error.Write('\n');
     }
+
+    private static string NormalizeLineEndings(string text) => text.Replace("\r\n", "\n", System.StringComparison.Ordinal);
 }

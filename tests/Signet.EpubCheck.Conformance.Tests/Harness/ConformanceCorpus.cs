@@ -19,6 +19,8 @@ internal static class ConformanceCorpus
     public static readonly IReadOnlySet<string> EnabledFeatures = new HashSet<string>(StringComparer.Ordinal)
     {
         "cli/cli.feature",
+        "epub3/04-ocf/filename-checker.feature",
+        "epub3/04-ocf/ocf.feature",
     };
 
     /// <summary>
@@ -58,7 +60,21 @@ internal static class ConformanceCorpus
             220, 269, 276, 283, 290, 297, 317, 322, 327, 332, 337, 342, 347);
         Add("Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).",
             366, 371, 376);
+        AddOcf(pending, "Needs the single-document checker and OPF parser (tasks 2.1-2.5).",
+            77, 82, 95, 108);
+        AddOcf(pending, "Needs the WHATWG URL parser and reference checks (tasks 1.3 and 3.5).",
+            118, 131, 137, 145, 151, 157, 169, 175, 181, 187, 193, 199, 207, 213, 218, 223, 229, 235, 240, 245, 255, 261, 270);
+        AddOcf(pending, "Needs XML schema validation and OCF container parsing (tasks 2.1-2.5 and 3.1).",
+            280, 293, 302, 313, 319, 329, 338, 350);
         return pending;
+    }
+
+    private static void AddOcf(Dictionary<string, string> pending, string reason, params int[] lines)
+    {
+        foreach (int line in lines)
+        {
+            pending.Add($"epub3/04-ocf/ocf.feature:{line}", reason);
+        }
     }
 
     private static string FindRoot()

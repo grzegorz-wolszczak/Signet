@@ -4,9 +4,9 @@ A C# port of the official [EPUBCheck](https://github.com/w3c/epubcheck) (W3C / D
 lives in this repository as a standalone command-line tool, with its checking core in a separate library
 that Signet itself uses for its "Validation Results".
 
-Status: **in progress — epic 0 (tasks 0.1–0.6) is done** (project skeleton, version, upstream pin, message and report
-model, message texts in English and Polish, conformance harness, command line); **tasks 1.1 + 1.2 are in progress**
-(source abstraction, ZIP central-directory reader and basic OCF checks exist, but conformance is not enabled yet).
+Status: **in progress — epic 0 and tasks 1.1–1.2 are done** (project skeleton, version, upstream pin, message and report
+model, message texts in English and Polish, conformance harness, command line, EPUB source abstraction and OCF/ZIP
+checks); **next: task 1.3 WHATWG URL parser**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -19,7 +19,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: continue **1.1 + 1.2 together**, see "Next task" below).
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **1.3 WHATWG URL parser**, see "Next task" below).
    Do **one task** (or the pair named above), then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -81,17 +81,18 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 1.1 + 1.2 (IEpubSource + OCF / ZIP checker)
+### Next task: 1.3 WHATWG URL parser
 
-Do them as one piece: the source abstraction has no meaning without its first consumer.
+Port upstream's galimatias replacement: WHATWG URL parsing, URL fragments and path normalization. Remove the URL-related
+OCF scenarios from `PendingScenarios` only when they pass; do not implement OPF or XML-schema checks yet.
 
-**Progress (2026-11-05):** `IEpubSource` now has in-memory, directory and ZIP implementations. The ZIP source reads
+**Done (2026-11-05):** `IEpubSource` has in-memory, directory and ZIP implementations. The ZIP source reads
 the central directory itself to retain ordering, raw UTF-8 validation and the first-entry local-header extra-field
 length; its content streams still come from `System.IO.Compression`. `OCFChecker` handles basic archive failures,
 `mimetype`, duplicate canonical/case-folded names, directory entries, filename characters and the presence of
 `META-INF/container.xml`; the CLI and conformance harness call it. The standalone filename steps are also bound.
-This is deliberately **not DONE**: finish the ZIP error parity and OCF conformance, list only later-task scenarios as
-pending, then enable `ocf.feature`; do not start task 1.3.
+`ocf.feature` and `filename-checker.feature` are enabled: 65 scenarios pass and 35 are pending with their task ids
+(URL, XML schema and OPF work). No parser for `container.xml` or `encryption.xml` is included here.
 
 - **Port** (upstream `com.adobe.epubcheck.ocf` and `api`): `OCFChecker` (the order of the checks), `OCFZipChecker`
   and `OCFResources`/`OCFZipResources`/`OCFDirectoryResources` (→ `IEpubSource` implementations: ZIP file, folder,
@@ -248,10 +249,12 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
 
 ### Epic 1 — Raw input layer (read-only)
 
-- **1.1 EPUB source abstraction (M).** `IEpubSource` over a ZIP file, a folder (`exp`), a single file and an
-  **in-memory source** (so Signet can validate unsaved edits). Gives entries, order, compression method, sizes, bytes.
-- **1.2 OCF / ZIP checker (L).** `PKG-*`: `mimetype`, duplicate entries, empty directories, file names (characters,
-  normalization, case collisions), broken archives as FATAL. After `OCFChecker`, `OCFZipChecker`, `OCFFilenameChecker`.
+- **1.1 EPUB source abstraction (M). DONE.** `IEpubSource` has ZIP, expanded-directory and in-memory implementations;
+  entries retain name, order, compression method and sizes, and open read-only streams.
+- **1.2 OCF / ZIP checker (L). DONE.** `OCFChecker`, ZIP central-directory reading and `OCFFilenameChecker` cover
+  `mimetype`, duplicate entries, empty directories, file names (characters, normalization, case collisions) and broken
+  archives. `epub3/04-ocf/ocf.feature` and `filename-checker.feature` are enabled; scenarios needing URL, XML schema
+  or OPF work remain individually pending with their task ids.
 - **1.3 WHATWG URL parser (M).** Replacement for galimatias (`System.Uri` is not WHATWG), URL fragments, path
   normalization.
 - **1.4 Utilities (M).** MIME type parser, `CodePoints`, microsyntaxes, `PackageDocumentPeeker`, prefix / vocabulary
