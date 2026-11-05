@@ -14,8 +14,8 @@ internal static class ToolRunner
         try
         {
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(uiCulture);
-            using StringWriter output = new();
-            using StringWriter error = new();
+            using StringWriter output = new() { NewLine = "\n" };
+            using StringWriter error = new() { NewLine = "\n" };
             int exitCode = EpubCheckTool.Run(args, output, error);
             return new Result(exitCode, output.ToString(), error.ToString());
         }

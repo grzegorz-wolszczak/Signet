@@ -42,7 +42,8 @@ internal static partial class CliSteps
     // Upstream: the output "is" compared after a trailing CRLF became LF, with {{VERSION}} filled in.
     private static string TrimEndLineBreak(this string text) => TrailingCrLf().Replace(text, "\n");
 
-    private static string Replace(string template) => template.Replace("{{VERSION}}", EpubCheckVersion.Text, StringComparison.Ordinal);
+    private static string Replace(string template) =>
+        template.Replace("{{VERSION}}", EpubCheckVersion.Text, StringComparison.Ordinal).Replace("\r\n", "\n", StringComparison.Ordinal);
 
     private static void Run(ScenarioWorld world, string command)
     {

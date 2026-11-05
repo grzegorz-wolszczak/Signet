@@ -36,7 +36,7 @@ public static class OCFChecker
         }
         catch (InvalidDataException ex)
         {
-            report.Message(MessageId.PKG_008, new EpubLocation(path), ex.Message);
+            report.Message(MessageId.PKG_008, new EpubLocation(path), ex.Message.ToLowerInvariant());
         }
         catch (IOException ex)
         {
@@ -112,7 +112,7 @@ public static class OCFChecker
 
     private static void CheckZipContainer(ZipEpubSource source, IReport report)
     {
-        if (source.FirstEntryName != MimeTypeEntryName)
+        if (source.FirstEntryName != MimeTypeEntryName && source.Entries.Any(entry => entry.Name == MimeTypeEntryName))
         {
             report.Message(MessageId.PKG_006, new EpubLocation(source.Path));
         }
@@ -156,6 +156,7 @@ public static class OCFChecker
             return false;
         }
 
-        return !name.StartsWith("META-INF/com.apple.", StringComparison.Ordinal);
+        string extension = Path.GetExtension(name);
+        return extension is ".css" or ".gif" or ".htm" or ".html" or ".jpeg" or ".jpg" or ".ncx" or ".opf" or ".png" or ".svg" or ".xhtml";
     }
 }
