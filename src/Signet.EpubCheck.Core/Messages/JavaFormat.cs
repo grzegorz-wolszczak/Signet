@@ -6,7 +6,7 @@ namespace Signet.EpubCheck.Core.Messages;
 
 /// <summary>
 /// The part of Java's <c>String.format</c> that the message texts use: <c>%1$s</c> (an argument by position), <c>%s</c>
-/// (the next argument), <c>%%</c> and <c>%n</c>. The texts of upstream, and the custom messages files people write
+/// (the next argument), <c>%d</c> (an integer), <c>%%</c> and <c>%n</c>. The texts of upstream, and the custom messages files people write
 /// for it, use this syntax, so it is kept instead of .NET's <c>{0}</c>.
 /// </summary>
 public static class JavaFormat
@@ -72,6 +72,17 @@ public static class JavaFormat
                     }
 
                     result.Append(ToText(args[index]));
+                    break;
+                case 'd':
+                    int numberIndex = indexed ? number - 1 : ordinary++;
+                    if (numberIndex < 0 || numberIndex >= args.Length)
+                    {
+                        throw new FormatException($"Format specifier '{template[start..i]}'");
+                    }
+
+                    result.Append(args[numberIndex] is int or long or short or byte
+                        ? Convert.ToString(args[numberIndex], CultureInfo.InvariantCulture)
+                        : throw new FormatException("d != " + (args[numberIndex]?.GetType().FullName ?? "null")));
                     break;
                 case '%' when !indexed:
                     result.Append('%');
