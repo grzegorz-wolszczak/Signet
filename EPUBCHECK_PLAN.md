@@ -30,16 +30,15 @@ questions into one message, as `AGENTS.md` demands).
 
 1. Fix the warnings (the `IDExxxx` ones and any other) last, then run **all** tests of the EpubCheck projects (below)
    and the whole solution build; `dotnet test` must be green, including the "leaves nothing behind" guard.
-2. Commit on `feat/epubcheck-port`, **nicely split** (one logical step per commit, each commit builds): Conventional
-   Commits (`feat`, `test`, `docs`, `build`, …), detailed body (what, why, trade-offs, impact), ending with the
-   `Co-Authored-By` line from the system reminder. A package version change is a separate `build` commit. Only
-   `*.md` changes need no build or test run.
-3. `git push origin feat/epubcheck-port`.
-4. **Merge into `main` after every task** (the owner chose this): `git fetch`; if `main` moved, rebase the branch on
-   it (it is the agent's own branch; `--force-with-lease` is fine); then `git switch main && git merge --ff-only
-   feat/epubcheck-port && git push origin main && git switch feat/epubcheck-port`. On conflicts or red tests after
-   the rebase: stop and report, do not force anything. (`main` has none of the work yet — the first merge brings
-   0.1–0.6 along; check `git log main..feat/epubcheck-port` first and that the whole solution still builds.)
+2. Commit **directly on `main`** (the owner's decision, November 2026: work on this feature on `main`, no feature
+   branch; this overrides the general "branch first" habit for this feature only), **nicely split** (one logical step
+   per commit, each commit builds): Conventional Commits (`feat`, `test`, `docs`, `build`, …), detailed body (what, why,
+   trade-offs, impact), ending with the `Co-Authored-By` line from the system reminder. A package version change is a
+   separate `build` commit. Only `*.md` changes need no build or test run.
+3. `git pull --ff-only` before starting (and `git fetch` before pushing; if `main` moved, rebase your own unpushed
+   commits on it), then `git push origin main`. On conflicts or red tests after a rebase: stop and report, never
+   force-push `main`.
+   (The branch `feat/epubcheck-port` was merged into `main` on 2026-11-05 and is no longer used.)
 
 ### Conventions (summary of what the repo demands)
 
@@ -133,7 +132,7 @@ checker lands.
 | Signet | Signet's validation moves onto this library (it must end up more complete than today's). Signet-only rules (footnotes, CMYK images, file-name portability, …) stay as a **separate rule set with their own codes**, next to the EPUBCheck results; `ValidationFix`es attach to message ids. |
 | Test fixtures | Upstream fixtures (BSD-3) are copied into `tests/corpus` with their license. |
 | Remote files | Checking a file by `http(s)://` URL (upstream's `URLResourceProvider`) is **not supported, permanently** (owner's decision, November 2026): the tool prints `Checking a remote file is not supported: "<url>"` and exits 1 (the one upstream scenario, `cli.feature:197`, expects 1). Listed in `UPSTREAM.md`. The tool and the library never touch the network. |
-| Workflow | One task per "kontynuuj", then stop. After each task: nicely split Conventional Commits on `feat/epubcheck-port`, push, **merge into `main`** and push it (standing permission; details in "Handoff"). |
+| Workflow | One task per "kontynuuj", then stop. After each task: nicely split Conventional Commits **directly on `main`**, push (standing permission; details in "Handoff"). |
 | Feature files | Parsed with the official **`Gherkin`** NuGet package (cucumber/gherkin, MIT, netstandard2.0, 42.0.1 at the time of writing) — we write only the step bindings, not a parser. Test-only dependency; its addition is a separate `build` commit. |
 
 ## Open items
@@ -144,8 +143,8 @@ checker lands.
   reflection); ReadyToRun optional; Native AOT not planned.
 
 (Resolved in November 2026: version suffix = Signet's scheme; platforms = Linux and Windows x64; schema error text =
-exactly Jing's; remote `http(s)` files = never supported; git workflow = commit, push and merge into `main` after
-every task.)
+exactly Jing's; remote `http(s)` files = never supported; git workflow = commit and push directly on `main` after
+every task; no feature branch.)
 
 ## Upstream facts the plan rests on
 
