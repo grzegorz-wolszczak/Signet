@@ -1,0 +1,901 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="INF_001" xml:space="preserve">
+    <value>Rule %1$s is under review and its severity may change in a future release. See the discussion at %2$s</value>
+  </data>
+  <data name="ACC_004" xml:space="preserve">
+    <value>Html "a" element must have text.</value>
+  </data>
+  <data name="ACC_005" xml:space="preserve">
+    <value>Table heading cells should be identified by "th" elements for accessibility.</value>
+  </data>
+  <data name="ACC_006" xml:space="preserve">
+    <value>Tables should include a "thead" element for accessibility.</value>
+  </data>
+  <data name="ACC_007" xml:space="preserve">
+    <value>Content Documents do not use "epub:type" attributes for semantic inflection.</value>
+  </data>
+  <data name="ACC_009" xml:space="preserve">
+    <value>MathML should either have an "alttext" attribute or "annotation-xml" child element.</value>
+  </data>
+  <data name="ACC_011" xml:space="preserve">
+    <value>SVG hyperlink has no accessible name</value>
+  </data>
+  <data name="ACC_012" xml:space="preserve">
+    <value>Table elements should include a caption element.</value>
+  </data>
+  <data name="CHK_001" xml:space="preserve">
+    <value>The custom message overrides file was not found.</value>
+  </data>
+  <data name="CHK_002" xml:space="preserve">
+    <value>Unrecognized custom message id %1$s encountered in message overrides file "%2$s".</value>
+  </data>
+  <data name="CHK_003" xml:space="preserve">
+    <value>Unrecognized custom message severity "%1$s" encountered in message overrides file "%2$s".</value>
+  </data>
+  <data name="CHK_004" xml:space="preserve">
+    <value>The custom message contains too many parameters in message overrides file "%1$s".</value>
+  </data>
+  <data name="CHK_005" xml:space="preserve">
+    <value>The custom suggestion contains too many parameters in message overrides file "%1$s".</value>
+  </data>
+  <data name="CHK_006" xml:space="preserve">
+    <value>Unable to parse the custom format parameter in message overrides file "%1$s".</value>
+  </data>
+  <data name="CHK_007" xml:space="preserve">
+    <value>Error encountered while processing custom message file "%1$s": "%2$s".</value>
+  </data>
+  <data name="CHK_008" xml:space="preserve">
+    <value>Error encountered while processing an item "%1$s"; skip other checks for the item.</value>
+  </data>
+  <data name="CSS_001" xml:space="preserve">
+    <value>The "%1$s" property must not be included in an EPUB Style Sheet.</value>
+  </data>
+  <data name="CSS_002" xml:space="preserve">
+    <value>Empty or NULL reference found.</value>
+  </data>
+  <data name="CSS_003" xml:space="preserve">
+    <value>CSS document is encoded in UTF-16. It should be encoded in UTF-8 instead.</value>
+  </data>
+  <data name="CSS_004" xml:space="preserve">
+    <value>CSS documents must be encoded in UTF-8, detected %1$s;</value>
+  </data>
+  <data name="CSS_005" xml:space="preserve">
+    <value>Conflicting alternate style tags found: %1$s.</value>
+  </data>
+  <data name="CSS_006" xml:space="preserve">
+    <value>CSS selector specifies fixed position.</value>
+  </data>
+  <data name="CSS_007" xml:space="preserve">
+    <value>Font-face reference "%1$s" refers to non-standard font type "%2$s".</value>
+  </data>
+  <data name="CSS_008" xml:space="preserve">
+    <value>An error occurred while parsing the CSS: %1$s.</value>
+  </data>
+  <data name="CSS_015" xml:space="preserve">
+    <value>Alternative style sheets must have a title.</value>
+  </data>
+  <data name="CSS_019" xml:space="preserve">
+    <value>CSS font-face declaration has no attributes.</value>
+  </data>
+  <data name="CSS_028" xml:space="preserve">
+    <value>Use of Font-face declaration.</value>
+  </data>
+  <data name="CSS_029" xml:space="preserve">
+    <value>Found CSS class name "%1$s" but no "%2$s" property was declared in the package document.</value>
+  </data>
+  <data name="CSS_030" xml:space="preserve">
+    <value>The package document declares media overlays styling class names but no CSS was found in the content document.</value>
+  </data>
+  <data name="HTM_001" xml:space="preserve">
+    <value>Any publication resource that is an XML-based media type must be a valid XML 1.0 document. XML version found: %1$s.</value>
+  </data>
+  <data name="HTM_002" xml:space="preserve">
+    <value>The installed xml parser doesn’t support xml version verification. Xml files must be a valid XML 1.0 document.</value>
+  </data>
+  <data name="HTM_003" xml:space="preserve">
+    <value>External entities are not allowed in EPUB v3 documents. External entity declaration found: %1$s.</value>
+  </data>
+  <data name="HTM_004" xml:space="preserve">
+    <value>Irregular DOCTYPE: found "%1$s", expected "%2$s".</value>
+  </data>
+  <data name="HTM_005" xml:space="preserve">
+    <value>An external reference was found.</value>
+  </data>
+  <data name="HTM_007" xml:space="preserve">
+    <value>Empty or whitespace-only value of attribute ssml:ph.</value>
+  </data>
+  <data name="HTM_009" xml:space="preserve">
+    <value>The DOCTYPE provided is obsolete or irregular and can be removed.</value>
+  </data>
+  <data name="HTM_010" xml:space="preserve">
+    <value>Namespace "%1$s" is unusual for the prefix "epub".</value>
+  </data>
+  <data name="HTM_011" xml:space="preserve">
+    <value>Entity is undeclared.</value>
+  </data>
+  <data name="HTM_011_SUG" xml:space="preserve">
+    <value>Define the entity or use the numbered entity instead.</value>
+  </data>
+  <data name="HTM_025" xml:space="preserve">
+    <value>Non-registered URI scheme type found in href.</value>
+  </data>
+  <data name="HTM_044" xml:space="preserve">
+    <value>Namespace uri "%1$s" was included but not used.</value>
+  </data>
+  <data name="HTM_044_SUG" xml:space="preserve">
+    <value>Remove unused Namespace URIs.</value>
+  </data>
+  <data name="HTM_045" xml:space="preserve">
+    <value>Encountered empty href.</value>
+  </data>
+  <data name="HTM_045_SUG" xml:space="preserve">
+    <value>Empty hrefs are valid self-references.  These should be validated to ensure that this is the desired intent.</value>
+  </data>
+  <data name="HTM_046" xml:space="preserve">
+    <value>Fixed layout document has no "viewport" meta element.</value>
+  </data>
+  <data name="HTM_047" xml:space="preserve">
+    <value>Viewport metadata "%1$s" has a syntax error</value>
+  </data>
+  <data name="HTM_048" xml:space="preserve">
+    <value>SVG Fixed-Layout Documents must have a "viewBox" attribute (on the outermost "svg" element).</value>
+  </data>
+  <data name="HTM_051" xml:space="preserve">
+    <value>Found Microdata semantic enrichments but no RDFa. EDUPUB recommends using RDFa Lite.</value>
+  </data>
+  <data name="HTM_052" xml:space="preserve">
+    <value>The property "region-based" is only allowed on nav elements in Data Navigation Documents.</value>
+  </data>
+  <data name="HTM_054" xml:space="preserve">
+    <value>Custom attribute namespace ("%1$s") must not include the string "%2$s" in its domain.</value>
+  </data>
+  <data name="HTM_055" xml:space="preserve">
+    <value>The "%1$s" element should not be used (discouraged construct)</value>
+  </data>
+  <data name="HTM_056" xml:space="preserve">
+    <value>Viewport metadata has no "%1$s" dimension (both "width" and "height" properties are required)</value>
+  </data>
+  <data name="HTM_057" xml:space="preserve">
+    <value>Viewport "%1$s" value must be a positive number or the keyword "device-%1$s"</value>
+  </data>
+  <data name="HTM_058" xml:space="preserve">
+    <value>HTML documents must be encoded in UTF-8, but UTF-16 was detected.</value>
+  </data>
+  <data name="HTM_059" xml:space="preserve">
+    <value>Viewport "%1$s" property must not be defined more than once, but found values [%2$s].</value>
+  </data>
+  <data name="HTM_060a" xml:space="preserve">
+    <value>EPUB reading systems must ignore secondary viewport meta elements in fixed-layout documents; viewport declaration "%1$s" will be ignored. </value>
+  </data>
+  <data name="HTM_060b" xml:space="preserve">
+    <value>EPUB reading systems must ignore viewport meta elements in reflowable documents; viewport declaration "%1$s" will be ignored.</value>
+  </data>
+  <data name="HTM_061" xml:space="preserve">
+    <value>"%1$s" is not a valid custom data attribute (it must have at least one character after the hyphen, be XML-compatible, and not contain ASCII uppercase letters).</value>
+  </data>
+  <data name="HTM_062" xml:space="preserve">
+    <value>SVG "xlink:href" attribute is deprecated; an "href" attribute should be used instead.</value>
+  </data>
+  <data name="HTM_063" xml:space="preserve">
+    <value>SVG "xlink:href" attribute value ("%1$s") should be equal to the "href" attribute value ("%2$s").</value>
+  </data>
+  <data name="MED_003" xml:space="preserve">
+    <value>Picture "img" elements must reference core media type resources, but found resource "%1$s" of type "%2$s".</value>
+  </data>
+  <data name="MED_004" xml:space="preserve">
+    <value>Image file header may be corrupted.</value>
+  </data>
+  <data name="MED_005" xml:space="preserve">
+    <value>Media Overlay audio reference %1$s to non-standard audio type %2$s found.</value>
+  </data>
+  <data name="MED_007" xml:space="preserve">
+    <value>Picture "source" elements must define a "type" attribute when they reference foreign resources; found resource "%1$s" of type "%2$s".</value>
+  </data>
+  <data name="MED_008" xml:space="preserve">
+    <value>The time specified in the clipBegin attribute must not be after clipEnd.</value>
+  </data>
+  <data name="MED_009" xml:space="preserve">
+    <value>The time specified in the clipBegin attribute must not be the same as clipEnd.</value>
+  </data>
+  <data name="MED_010" xml:space="preserve">
+    <value>EPUB Content Documents referenced from a Media Overlay must specify the "media-overlay" attribute.</value>
+  </data>
+  <data name="MED_011" xml:space="preserve">
+    <value>EPUB Content Document referenced from multiple Media Overlay Documents.</value>
+  </data>
+  <data name="MED_012" xml:space="preserve">
+    <value>The "media-overlay" attribute does not match the ID of the Media Overlay that refers to this document.</value>
+  </data>
+  <data name="MED_013" xml:space="preserve">
+    <value>Media Overlay Document referenced from the "media-overlay" attribute does not contain a reference to this Content Document.</value>
+  </data>
+  <data name="MED_014" xml:space="preserve">
+    <value>Media overlay audio file URLs must not have a fragment, but found '#%1$s'. </value>
+  </data>
+  <data name="MED_015" xml:space="preserve">
+    <value>Media overlay text references must be in reading order. Text target "%1$s" is before the previous link target in %2$s order.</value>
+  </data>
+  <data name="MED_016" xml:space="preserve">
+    <value>Media Overlays total duration should be the sum of the durations of all Media Overlays documents.</value>
+  </data>
+  <data name="MED_017" xml:space="preserve">
+    <value>URL fragment should indicate an element ID, but found '#%1$s'.</value>
+  </data>
+  <data name="MED_018" xml:space="preserve">
+    <value>URL fragment should be an SVG fragment identifier, but found '#%1$s'.</value>
+  </data>
+  <data name="NAV_001" xml:space="preserve">
+    <value>The nav file is not supported for EPUB v2.</value>
+  </data>
+  <data name="NAV_003" xml:space="preserve">
+    <value>The Navigation Document must have a page list when content document(s) contain page breaks (epub:type="pagebreak").</value>
+  </data>
+  <data name="NAV_004" xml:space="preserve">
+    <value>The Navigation Document should contain the full document heading hierarchy in EDUPUB.</value>
+  </data>
+  <data name="NAV_005" xml:space="preserve">
+    <value>Content documents contain "audio" elements but the Navigation Document does not have a listing of audio clips (epub:type="loa").</value>
+  </data>
+  <data name="NAV_006" xml:space="preserve">
+    <value>Content documents contain "figure" elements but the Navigation Document does not have a listing of figures (epub:type="loi").</value>
+  </data>
+  <data name="NAV_007" xml:space="preserve">
+    <value>Content documents contain "table" elements but the Navigation Document does not have a listing of tables (epub:type="lot").</value>
+  </data>
+  <data name="NAV_008" xml:space="preserve">
+    <value>Content documents contain "video" elements but the Navigation Document does not have a listing of video clips (epub:type="lov").</value>
+  </data>
+  <data name="NAV_009" xml:space="preserve">
+    <value>Region-based navigation links must point to Fixed-Layout Documents.</value>
+  </data>
+  <data name="NAV_010" xml:space="preserve">
+    <value>"%1$s" nav must not link to remote resources; found link to "%2$s".</value>
+  </data>
+  <data name="NAV_011" xml:space="preserve">
+    <value>"%1$s" nav must be in reading order; link target "%2$s" is before the previous link’s target in %3$s order.</value>
+  </data>
+  <data name="NAV_011_SUG.spine" xml:space="preserve">
+    <value>spine</value>
+  </data>
+  <data name="NAV_011_SUG.document" xml:space="preserve">
+    <value>document</value>
+  </data>
+  <data name="NCX_001" xml:space="preserve">
+    <value>NCX identifier ("%1$s") does not match OPF identifier ("%2$s").</value>
+  </data>
+  <data name="NCX_004" xml:space="preserve">
+    <value>NCX identifier ("dtb:uid" metadata) should not contain leading or trailing whitespace.</value>
+  </data>
+  <data name="NCX_006" xml:space="preserve">
+    <value>Empty "text" label in the NCX document</value>
+  </data>
+  <data name="OBS_001" xml:space="preserve">
+    <value>Usage of %1$s is outdated.</value>
+  </data>
+  <data name="OBS_001.content-fallback" xml:space="preserve">
+    <value>manifest content fallback (for resource "%1$s")</value>
+  </data>
+  <data name="OBS_001.font-obfuscation" xml:space="preserve">
+    <value>font obfuscation</value>
+  </data>
+  <data name="OBS_001.element" xml:space="preserve">
+    <value>the %1$s element</value>
+  </data>
+  <data name="OBS_001.ncx" xml:space="preserve">
+    <value>OPF 2 NCX navigation</value>
+  </data>
+  <data name="OBS_001.property" xml:space="preserve">
+    <value>the "%1$s" property</value>
+  </data>
+  <data name="OBS_001.css-prefixed-property" xml:space="preserve">
+    <value>the CSS prefixed property "%1$s"</value>
+  </data>
+  <data name="OBS_001.css-prefixed-value" xml:space="preserve">
+    <value>the CSS prefixed value "%1$s"</value>
+  </data>
+  <data name="OPF_001" xml:space="preserve">
+    <value>There was an error when parsing the EPUB version: %1$s.</value>
+  </data>
+  <data name="OPF_002" xml:space="preserve">
+    <value>The OPF file "%1$s" was not found in the EPUB.</value>
+  </data>
+  <data name="OPF_003" xml:space="preserve">
+    <value>Item "%1$s" exists in the EPUB, but is not declared in the OPF manifest.</value>
+  </data>
+  <data name="OPF_004" xml:space="preserve">
+    <value>Invalid prefix declaration: leading or trailing whitespace is not allowed.</value>
+  </data>
+  <data name="OPF_004a" xml:space="preserve">
+    <value>Invalid prefix declaration: found empty prefix.</value>
+  </data>
+  <data name="OPF_004b" xml:space="preserve">
+    <value>Invalid prefix "%1$s": must be a valid non-colonized name (aka "NCName").</value>
+  </data>
+  <data name="OPF_004c" xml:space="preserve">
+    <value>Invalid prefix declaration: prefix "%1$s" must be immediately followed by a colon character (":").</value>
+  </data>
+  <data name="OPF_004d" xml:space="preserve">
+    <value>Invalid prefix declaration: prefix "%1$s" must be separated by its URI with a space.</value>
+  </data>
+  <data name="OPF_004e" xml:space="preserve">
+    <value>Invalid prefix declaration: found illegal whitespace between prefix and URI.</value>
+  </data>
+  <data name="OPF_004f" xml:space="preserve">
+    <value>Invalid prefix declaration: found illegal whitespace between prefix mappings.</value>
+  </data>
+  <data name="OPF_005" xml:space="preserve">
+    <value>Invalid prefix declaration: URI for prefix "%1$s" doesn’t exist.</value>
+  </data>
+  <data name="OPF_006" xml:space="preserve">
+    <value>Invalid prefix declaration: URI "%1$s" is not a valid URI.</value>
+  </data>
+  <data name="OPF_007" xml:space="preserve">
+    <value>Re-declaration of reserved prefix "%1$s".</value>
+  </data>
+  <data name="OPF_007a" xml:space="preserve">
+    <value>Invalid prefix mapping: prefix "_" must not be declared.</value>
+  </data>
+  <data name="OPF_007b" xml:space="preserve">
+    <value>Invalid prefix mapping: default vocabulary "%1$s" must not be re-declared.</value>
+  </data>
+  <data name="OPF_007c" xml:space="preserve">
+    <value>Invalid prefix mapping: a prefix to the Dublin Core /elements/1.1/ namespace must not be declared</value>
+  </data>
+  <data name="OPF_010" xml:space="preserve">
+    <value>Error resolving reference: "%1$s".</value>
+  </data>
+  <data name="OPF_011" xml:space="preserve">
+    <value>itemref can’t have both page-spread-right and page-spread-left properties.</value>
+  </data>
+  <data name="OPF_012" xml:space="preserve">
+    <value>Item property "%1$s" is not defined for media type "%2$s".</value>
+  </data>
+  <data name="OPF_013" xml:space="preserve">
+    <value>Resource "%1$s" is declared with MIME type "%2$s" in content, but has MIME type "%3$s" in the package document.</value>
+  </data>
+  <data name="OPF_014" xml:space="preserve">
+    <value>The property "%1$s" should be declared in the OPF file.</value>
+  </data>
+  <data name="OPF_015" xml:space="preserve">
+    <value>The property "%1$s" should not be declared in the OPF file.</value>
+  </data>
+  <data name="OPF_016" xml:space="preserve">
+    <value>The element "rootfile" is missing its required attribute "full-path".</value>
+  </data>
+  <data name="OPF_017" xml:space="preserve">
+    <value>The attribute "full-path" on element "rootfile" must not be empty.</value>
+  </data>
+  <data name="OPF_018" xml:space="preserve">
+    <value>The "remote-resources" property was declared in the Package Document, but no reference to remote resources has been found.</value>
+  </data>
+  <data name="OPF_018b" xml:space="preserve">
+    <value>The "remote-resources" property was declared in the Package Document, but no reference to remote resources has been found; please check scripted content to make sure the property is legit. </value>
+  </data>
+  <data name="OPF_021" xml:space="preserve">
+    <value>Use of non-registered URI scheme type in href: "%1$s".</value>
+  </data>
+  <data name="OPF_025" xml:space="preserve">
+    <value>Property value list "%1$s" is not allowed, only one value must be specified.</value>
+  </data>
+  <data name="OPF_026" xml:space="preserve">
+    <value>Found malformed property value: "%1$s".</value>
+  </data>
+  <data name="OPF_027" xml:space="preserve">
+    <value>Undefined property: "%1$s".</value>
+  </data>
+  <data name="OPF_028" xml:space="preserve">
+    <value>Undeclared prefix: "%1$s".</value>
+  </data>
+  <data name="OPF_029" xml:space="preserve">
+    <value>The file "%1$s" does not appear to match the media type %2$s, as specified in the OPF file.</value>
+  </data>
+  <data name="OPF_030" xml:space="preserve">
+    <value>The unique-identifier "%1$s" was not found.</value>
+  </data>
+  <data name="OPF_031" xml:space="preserve">
+    <value>File listed in reference element in guide was not declared in OPF manifest: %1$s.</value>
+  </data>
+  <data name="OPF_032" xml:space="preserve">
+    <value>Guide references "%1$s" which is not a valid "OPS Content Document".</value>
+  </data>
+  <data name="OPF_033" xml:space="preserve">
+    <value>The spine contains no linear resources.</value>
+  </data>
+  <data name="OPF_034" xml:space="preserve">
+    <value>The spine contains multiple references to the manifest item with id "%1$s".</value>
+  </data>
+  <data name="OPF_035" xml:space="preserve">
+    <value>Media type "text/html" is not appropriate for XHTML/OPS.</value>
+  </data>
+  <data name="OPF_035_SUG" xml:space="preserve">
+    <value>Use "application/xhtml+xml" instead.</value>
+  </data>
+  <data name="OPF_036" xml:space="preserve">
+    <value>Video type "%1$s" might not be supported by reading systems</value>
+  </data>
+  <data name="OPF_036_SUG" xml:space="preserve">
+    <value>Use "video/mp4", "video/h264" or "video/webm" instead.</value>
+  </data>
+  <data name="OPF_037" xml:space="preserve">
+    <value>Found deprecated media-type "%1$s".</value>
+  </data>
+  <data name="OPF_038" xml:space="preserve">
+    <value>Media type "%1$s" is not appropriate for an OEBPS 1.2 context; Use "text/x-oeb1-document" instead.</value>
+  </data>
+  <data name="OPF_039" xml:space="preserve">
+    <value>Media-type "%1$s" is not appropriate in an OEBPS 1.2 context. Use "text/x-oeb1-css" instead.</value>
+  </data>
+  <data name="OPF_040" xml:space="preserve">
+    <value>Fallback item with id "%1$s" could not be found.</value>
+  </data>
+  <data name="OPF_041" xml:space="preserve">
+    <value>Fallback-style item with id "%1$s" could not be found.</value>
+  </data>
+  <data name="OPF_042" xml:space="preserve">
+    <value>"%1$s" is not a permissible spine media-type.</value>
+  </data>
+  <data name="OPF_043" xml:space="preserve">
+    <value>Spine item with non-standard media-type "%1$s" has no fallback.</value>
+  </data>
+  <data name="OPF_044" xml:space="preserve">
+    <value>Spine item with non-standard media-type "%1$s" has no EPUB content document fallback.</value>
+  </data>
+  <data name="OPF_045" xml:space="preserve">
+    <value>Encountered circular reference in fallback chain.</value>
+  </data>
+  <data name="OPF_047" xml:space="preserve">
+    <value>OPF file is using OEBPS 1.2 syntax allowing backwards compatibility.</value>
+  </data>
+  <data name="OPF_048" xml:space="preserve">
+    <value>Package tag is missing its required unique-identifier attribute and value.</value>
+  </data>
+  <data name="OPF_049" xml:space="preserve">
+    <value>Item id "%1$s" was not found in the manifest.</value>
+  </data>
+  <data name="OPF_050" xml:space="preserve">
+    <value>TOC attribute references resource with non-NCX mime type; "application/x-dtbncx+xml" is expected.</value>
+  </data>
+  <data name="OPF_051" xml:space="preserve">
+    <value>Image dimensions exceed recommended size.</value>
+  </data>
+  <data name="OPF_052" xml:space="preserve">
+    <value>Role value "%1$s" is not valid.</value>
+  </data>
+  <data name="OPF_053" xml:space="preserve">
+    <value>Date value "%1$s" does not follow recommended syntax as per http://www.w3.org/TR/NOTE-datetime:%2$s.</value>
+  </data>
+  <data name="OPF_054" xml:space="preserve">
+    <value>Date value "%1$s" is not valid as per http://www.w3.org/TR/NOTE-datetime:%2$s.</value>
+  </data>
+  <data name="OPF_055" xml:space="preserve">
+    <value>%1$s tag is empty.</value>
+  </data>
+  <data name="OPF_057" xml:space="preserve">
+    <value>Image file length exceeds recommended size.</value>
+  </data>
+  <data name="OPF_060" xml:space="preserve">
+    <value>Duplicate entry in the ZIP file: "%1$s" (file names must be unique after Unicode canonical normalization and full case folding).</value>
+  </data>
+  <data name="OPF_062" xml:space="preserve">
+    <value>Found Adobe page-map attribute on spine element in opf file.</value>
+  </data>
+  <data name="OPF_063" xml:space="preserve">
+    <value>Referenced Adobe page-map item "%1$s" was not found in the manifest.</value>
+  </data>
+  <data name="OPF_064" xml:space="preserve">
+    <value>OPF declares type "%1$s", validating using profile "%2$s".</value>
+  </data>
+  <data name="OPF_065" xml:space="preserve">
+    <value>Invalid metadata declaration, probably due to a cycle in "refines" metadata.</value>
+  </data>
+  <data name="OPF_066" xml:space="preserve">
+    <value>Missing "dc:source" or "source-of" pagination metadata. The pagination source must be identified using the "dc:source" and "source-of" properties when the content includes page break markers.</value>
+  </data>
+  <data name="OPF_067" xml:space="preserve">
+    <value>The resource "%1$s" must not be listed both as  a "link" element in the package metadata and as a manifest item.</value>
+  </data>
+  <data name="OPF_070" xml:space="preserve">
+    <value>Custom collection role "%1$s" is an invalid URL.</value>
+  </data>
+  <data name="OPF_071" xml:space="preserve">
+    <value>Index collections must only contain resources pointing to XHTML Content Documents.</value>
+  </data>
+  <data name="OPF_072" xml:space="preserve">
+    <value>Metadata element "%1$s" is empty.</value>
+  </data>
+  <data name="OPF_073" xml:space="preserve">
+    <value>External identifiers must not appear in the document type declaration.</value>
+  </data>
+  <data name="OPF_074" xml:space="preserve">
+    <value>Package resource "%1$s" is declared in several manifest items.</value>
+  </data>
+  <data name="OPF_075" xml:space="preserve">
+    <value>Preview collections must only point to EPUB Content Documents.</value>
+  </data>
+  <data name="OPF_076" xml:space="preserve">
+    <value>The URI of preview collections link elements must not include EPUB canonical fragment identifiers.</value>
+  </data>
+  <data name="OPF_077" xml:space="preserve">
+    <value>A Data Navigation Document should not be included in the spine.</value>
+  </data>
+  <data name="OPF_078" xml:space="preserve">
+    <value>An EPUB Dictionary must contain at least one Content Document with dictionary content (epub:type "dictionary").</value>
+  </data>
+  <data name="OPF_079" xml:space="preserve">
+    <value>Dictionary content was found (epub:type "dictionary"), the Package Document should declare the dc:type "dictionary".</value>
+  </data>
+  <data name="OPF_080" xml:space="preserve">
+    <value>A Search Key Map document file name should have the extension ".xml".</value>
+  </data>
+  <data name="OPF_081" xml:space="preserve">
+    <value>Resource "%1$s" (referenced from an EPUB Dictionary collection) was not found.</value>
+  </data>
+  <data name="OPF_082" xml:space="preserve">
+    <value>Found an EPUB Dictionary collection containing more than one Search Key Map Document.</value>
+  </data>
+  <data name="OPF_083" xml:space="preserve">
+    <value>Found an EPUB Dictionary collection containing no Search Key Map Document.</value>
+  </data>
+  <data name="OPF_084" xml:space="preserve">
+    <value>Found an EPUB Dictionary collection containing resource "%1$s" which is neither a Search Key Map Document nor an XHTML Content Document.</value>
+  </data>
+  <data name="OPF_085" xml:space="preserve">
+    <value>"dc:identifier" value "%1$s" is marked as a UUID, but is an invalid UUID.</value>
+  </data>
+  <data name="OPF_086" xml:space="preserve">
+    <value>Property "%1$s" is deprecated. Consider using %2$s instead.</value>
+  </data>
+  <data name="OPF_086_SUG.default" xml:space="preserve">
+    <value>a custom prefixed property</value>
+  </data>
+  <data name="OPF_086_SUG.marc21xml-record" xml:space="preserve">
+    <value>the "record" keyword and the media-type "application/marcxml+xml"</value>
+  </data>
+  <data name="OPF_086_SUG.mods-record" xml:space="preserve">
+    <value>the "record" keyword and the media-type "application/mods+xml"</value>
+  </data>
+  <data name="OPF_086_SUG.onix-record" xml:space="preserve">
+    <value>the "record" keyword with the properties attribute value "onix"</value>
+  </data>
+  <data name="OPF_086_SUG.xml-signature" xml:space="preserve">
+    <value>no signature-identifying link</value>
+  </data>
+  <data name="OPF_086_SUG.xmp-record" xml:space="preserve">
+    <value>the "record" keyword</value>
+  </data>
+  <data name="OPF_086b" xml:space="preserve">
+    <value>epub:type value "%1$s" is deprecated. Consider using %2$s instead.</value>
+  </data>
+  <data name="OPF_086b_SUG.default" xml:space="preserve">
+    <value>a custom prefixed value</value>
+  </data>
+  <data name="OPF_086b_SUG.annoref" xml:space="preserve">
+    <value>open annotations</value>
+  </data>
+  <data name="OPF_086b_SUG.annotation" xml:space="preserve">
+    <value>open annotations</value>
+  </data>
+  <data name="OPF_086b_SUG.help" xml:space="preserve">
+    <value>the "tip" property</value>
+  </data>
+  <data name="OPF_086b_SUG.marginalia" xml:space="preserve">
+    <value>a bare "aside" element</value>
+  </data>
+  <data name="OPF_086b_SUG.note" xml:space="preserve">
+    <value>a "footnote" or "endnote" property</value>
+  </data>
+  <data name="OPF_086b_SUG.rearnote" xml:space="preserve">
+    <value>the "endnote" property</value>
+  </data>
+  <data name="OPF_086b_SUG.rearnotes" xml:space="preserve">
+    <value>the "endnotes" property</value>
+  </data>
+  <data name="OPF_086b_SUG.sidebar" xml:space="preserve">
+    <value>a bare "aside" element</value>
+  </data>
+  <data name="OPF_086b_SUG.warning" xml:space="preserve">
+    <value>the "notice" property</value>
+  </data>
+  <data name="OPF_086c" xml:space="preserve">
+    <value>the "%1$s" reserved prefix is deprecated.</value>
+  </data>
+  <data name="OPF_087" xml:space="preserve">
+    <value>epub:type value "%1$s" is not allowed on documents of type "%2$s".</value>
+  </data>
+  <data name="OPF_088" xml:space="preserve">
+    <value>Unrecognized epub:type value "%1$s".</value>
+  </data>
+  <data name="OPF_089" xml:space="preserve">
+    <value>The "alternate" link rel keyword cannot be paired with other keywords.</value>
+  </data>
+  <data name="OPF_090" xml:space="preserve">
+    <value>It is encouraged to use MIME media type "%1$s" instead of "%2$s".</value>
+  </data>
+  <data name="OPF_091" xml:space="preserve">
+    <value>The item href URL must not have a fragment identifier.</value>
+  </data>
+  <data name="OPF_092" xml:space="preserve">
+    <value>Language tag "%1$s" is not well-formed: %2$s</value>
+  </data>
+  <data name="OPF_093" xml:space="preserve">
+    <value>The "media-type" attribute is required for linked resources located in the EPUB container</value>
+  </data>
+  <data name="OPF_094" xml:space="preserve">
+    <value>The "media-type" attribute is required for "%1$s" links.</value>
+  </data>
+  <data name="OPF_095" xml:space="preserve">
+    <value>The "media-type" attribute of "voicing" links must be an audio MIME type, but found "%1$s".</value>
+  </data>
+  <data name="OPF_096" xml:space="preserve">
+    <value>Non-linear content must be reachable, but found no hyperlink to "%1$s".</value>
+  </data>
+  <data name="OPF_096b" xml:space="preserve">
+    <value>No hyperlink was found to non-linear document "%1$s", please check that it can be reached from scripted content.</value>
+  </data>
+  <data name="OPF_097" xml:space="preserve">
+    <value>Resource "%1$s" is listed in the manifest, but no reference to it was found in content documents.</value>
+  </data>
+  <data name="OPF_098" xml:space="preserve">
+    <value>The "href" attribute must reference resources, not elements in the package document, but found URL "%1$s".</value>
+  </data>
+  <data name="OPF_099" xml:space="preserve">
+    <value>The manifest must not list the package document.</value>
+  </data>
+  <data name="OPF_100" xml:space="preserve">
+    <value>The "%1$s" property only applies to pre-paginated content.</value>
+  </data>
+  <data name="PKG_001" xml:space="preserve">
+    <value>Validating the EPUB against version %1$s but detected version %2$s.</value>
+  </data>
+  <data name="PKG_003" xml:space="preserve">
+    <value>Unable to read EPUB file header.  This is likely a corrupted EPUB file.</value>
+  </data>
+  <data name="PKG_004" xml:space="preserve">
+    <value>Corrupted EPUB ZIP header.</value>
+  </data>
+  <data name="PKG_005" xml:space="preserve">
+    <value>The mimetype file has an extra field of length %1$s. The use of the extra field feature of the ZIP format is not permitted for the mimetype file.</value>
+  </data>
+  <data name="PKG_006" xml:space="preserve">
+    <value>Mimetype file entry is missing or is not the first file in the archive.</value>
+  </data>
+  <data name="PKG_007" xml:space="preserve">
+    <value>The content of the mimetype file must be the string "application/epub+zip"%1$s</value>
+  </data>
+  <data name="PKG_007.whitespace" xml:space="preserve">
+    <value> with no whitespace or newline.</value>
+  </data>
+  <data name="PKG_008" xml:space="preserve">
+    <value>Unable to read file "%1$s".</value>
+  </data>
+  <data name="PKG_009" xml:space="preserve">
+    <value>The file name "%1$s" contains characters that are not allowed in OCF file names: %2$s.</value>
+  </data>
+  <data name="PKG_010" xml:space="preserve">
+    <value>The file name "%1$s" contains spaces, which may create interoperability issues with older reading systems.</value>
+  </data>
+  <data name="PKG_011" xml:space="preserve">
+    <value>The file name "%1$s" is not allowed to end with ".".</value>
+  </data>
+  <data name="PKG_012" xml:space="preserve">
+    <value>The file name "%1$s" contains non-ASCII characters, which might create interoperability issues with older reading systems.</value>
+  </data>
+  <data name="PKG_013" xml:space="preserve">
+    <value>The EPUB file includes multiple OPS renditions.</value>
+  </data>
+  <data name="PKG_014" xml:space="preserve">
+    <value>The EPUB contains empty directory "%1$s".</value>
+  </data>
+  <data name="PKG_015" xml:space="preserve">
+    <value>Unable to read EPUB contents: %1$s</value>
+  </data>
+  <data name="PKG_016" xml:space="preserve">
+    <value>Use only lowercase characters for the EPUB file extension for maximum compatibility.</value>
+  </data>
+  <data name="PKG_016_SUG" xml:space="preserve">
+    <value>For maximum compatibility, use ".epub".</value>
+  </data>
+  <data name="PKG_017" xml:space="preserve">
+    <value>Uncommon EPUB file extension.</value>
+  </data>
+  <data name="PKG_017_SUG" xml:space="preserve">
+    <value>For maximum compatibility, use ".epub".</value>
+  </data>
+  <data name="PKG_018" xml:space="preserve">
+    <value>The EPUB file could not be found.</value>
+  </data>
+  <data name="PKG_020" xml:space="preserve">
+    <value>OPF file "%1$s" could not be found.</value>
+  </data>
+  <data name="PKG_021" xml:space="preserve">
+    <value>Corrupted image file encountered.</value>
+  </data>
+  <data name="PKG_022" xml:space="preserve">
+    <value>Wrong file extension for image. The image is a "%1$s" file but has the file extension "%2$s".</value>
+  </data>
+  <data name="PKG_023" xml:space="preserve">
+    <value>Validating the EPUB against version 2.0, default validation profile will be used.</value>
+  </data>
+  <data name="PKG_024" xml:space="preserve">
+    <value>Uncommon EPUB file extension.</value>
+  </data>
+  <data name="PKG_024_SUG" xml:space="preserve">
+    <value>For maximum compatibility, use ".epub".</value>
+  </data>
+  <data name="PKG_025" xml:space="preserve">
+    <value>Publication resource must not be located in the META-INF directory</value>
+  </data>
+  <data name="PKG_026" xml:space="preserve">
+    <value>Obfuscated resource must be a Font Core Media Type (was declared as "%1$s" in "%2$s").</value>
+  </data>
+  <data name="PKG_027" xml:space="preserve">
+    <value>Could not extract EPUB ZIP content, probably due to file names not encoded in UTF-8.  </value>
+  </data>
+  <data name="RSC_001" xml:space="preserve">
+    <value>File "%1$s" could not be found.</value>
+  </data>
+  <data name="RSC_002" xml:space="preserve">
+    <value>Required META-INF/container.xml resource could not be found.</value>
+  </data>
+  <data name="RSC_003" xml:space="preserve">
+    <value>No rootfile tag with media type "application/oebps-package+xml" was found in the container.</value>
+  </data>
+  <data name="RSC_004" xml:space="preserve">
+    <value>File "%1$s" is encrypted, its content will not be checked.</value>
+  </data>
+  <data name="RSC_005" xml:space="preserve">
+    <value>Error while parsing file: %1$s</value>
+  </data>
+  <data name="RSC_006" xml:space="preserve">
+    <value>Remote resource reference is not allowed in this context; resource "%1$s" must be located in the EPUB container.</value>
+  </data>
+  <data name="RSC_006b" xml:space="preserve">
+    <value>Resource "%1$s" is located outside the EPUB Container; please check the resource is retrieved in scripted content. </value>
+  </data>
+  <data name="RSC_007" xml:space="preserve">
+    <value>Referenced resource "%1$s" could not be found in the EPUB.</value>
+  </data>
+  <data name="RSC_007w" xml:space="preserve">
+    <value>Referenced resource "%1$s" could not be found in the EPUB.</value>
+  </data>
+  <data name="RSC_008" xml:space="preserve">
+    <value>Referenced resource "%1$s" is not declared in the OPF manifest.</value>
+  </data>
+  <data name="RSC_009" xml:space="preserve">
+    <value>A non-SVG image resource should not be defined with a fragment identifier.</value>
+  </data>
+  <data name="RSC_010" xml:space="preserve">
+    <value>Reference to non-standard resource type found.</value>
+  </data>
+  <data name="RSC_011" xml:space="preserve">
+    <value>Found a reference to a resource that is not a spine item.</value>
+  </data>
+  <data name="RSC_012" xml:space="preserve">
+    <value>Fragment identifier is not defined.</value>
+  </data>
+  <data name="RSC_013" xml:space="preserve">
+    <value>Fragment identifier is used in a reference to a stylesheet resource.</value>
+  </data>
+  <data name="RSC_014" xml:space="preserve">
+    <value>Fragment identifier defines an incompatible resource type.</value>
+  </data>
+  <data name="RSC_015" xml:space="preserve">
+    <value>A fragment identifier is required for svg use tag references.</value>
+  </data>
+  <data name="RSC_016" xml:space="preserve">
+    <value>Fatal Error while parsing file: %1$s</value>
+  </data>
+  <data name="RSC_017" xml:space="preserve">
+    <value>Warning while parsing file: %1$s</value>
+  </data>
+  <data name="RSC_019" xml:space="preserve">
+    <value>EPUBs with Multiple Renditions should contain a META-INF/metadata.xml file.</value>
+  </data>
+  <data name="RSC_020" xml:space="preserve">
+    <value>"%1$s" is not a valid URL (%2$s)</value>
+  </data>
+  <data name="RSC_021" xml:space="preserve">
+    <value>A Search Key Map Document must point to Content Documents ("%1$s" was not found in the spine).</value>
+  </data>
+  <data name="RSC_022" xml:space="preserve">
+    <value>Cannot check image details (requires Java version 7 or higher).</value>
+  </data>
+  <data name="RSC_024" xml:space="preserve">
+    <value>Informative parsing warning: %1$s</value>
+  </data>
+  <data name="RSC_025" xml:space="preserve">
+    <value>Informative parsing error: %1$s</value>
+  </data>
+  <data name="RSC_026" xml:space="preserve">
+    <value>URL "%1$s" leaks outside the container (it is not a valid-relative-ocf-URL-with-fragment string)</value>
+  </data>
+  <data name="RSC_027" xml:space="preserve">
+    <value>XML document is encoded in UTF-16. It should be encoded in UTF-8 instead.</value>
+  </data>
+  <data name="RSC_028" xml:space="preserve">
+    <value>XML documents must be encoded in UTF-8, but %1$s was detected.</value>
+  </data>
+  <data name="RSC_029" xml:space="preserve">
+    <value>Data URL is not allowed in this context.</value>
+  </data>
+  <data name="RSC_030" xml:space="preserve">
+    <value>File URLs are not allowed in EPUB, but found "%1$s".</value>
+  </data>
+  <data name="RSC_031" xml:space="preserve">
+    <value>Remote resource references should use HTTPS, but found "%1$s".</value>
+  </data>
+  <data name="RSC_032" xml:space="preserve">
+    <value>Fallback must be provided for foreign resources, but found none for resource "%1$s" of type "%2$s".</value>
+  </data>
+  <data name="RSC_033" xml:space="preserve">
+    <value>Relative URL strings must not have a query component, but found one in "%1$s".</value>
+  </data>
+  <data name="RSC_034" xml:space="preserve">
+    <value>Scripts must have a JavaScript media type.</value>
+  </data>
+  <data name="RSC_035" xml:space="preserve">
+    <value>"%1$s" is a legacy media type for JavaScript. Consider using 'text/javascript' instead.</value>
+  </data>
+  <data name="RSC_036" xml:space="preserve">
+    <value>%1$s</value>
+  </data>
+</root>
