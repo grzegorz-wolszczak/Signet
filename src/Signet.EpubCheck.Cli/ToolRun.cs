@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using Signet.EpubCheck.Core;
 using Signet.EpubCheck.Core.Messages;
+using Signet.EpubCheck.Core.Ocf;
 using Signet.EpubCheck.Core.Reporting;
 
 namespace Signet.EpubCheck.Cli;
@@ -149,10 +150,10 @@ internal sealed class ToolRun
             report.Info(null, FeatureKind.ExecMode, _messages.Get("single_file", _mode, VersionText(_version), (_profile ?? EpubProfile.Default).ToText()));
         }
 
-        return ValidateFile(_path!);
+        return ValidateFile(_path!, report);
     }
 
-    private int ValidateFile(string path)
+    private int ValidateFile(string path, ConsoleReport report)
     {
         if (path.StartsWith("http://", StringComparison.Ordinal) || path.StartsWith("https://", StringComparison.Ordinal))
         {
@@ -172,8 +173,14 @@ internal sealed class ToolRun
             throw new ToolArgumentException(_messages.Get("mode_version_not_supported", _mode, VersionText(_version)));
         }
 
-        _output.PrintError(_messages.GetPort("checker_not_implemented"));
-        return 1;
+        if (_mode is not null)
+        {
+            _output.PrintError(_messages.GetPort("checker_not_implemented"));
+            return 1;
+        }
+
+        OCFChecker.CheckZip(path, _version, report);
+        return report.ErrorCount + report.FatalErrorCount == 0 ? 0 : 1;
     }
 
     // The modes upstream has a checker for: none (a whole EPUB), opf, xhtml, svg (EPUB 2 and 3), mo and nav (EPUB 3 only).

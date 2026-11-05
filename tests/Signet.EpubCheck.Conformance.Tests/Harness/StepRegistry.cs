@@ -45,6 +45,7 @@ internal sealed class StepRegistry
         StepRegistry registry = new();
         ConfigurationSteps.Register(registry);
         ExecutionSteps.Register(registry);
+        FilenameSteps.Register(registry);
         AssertionSteps.Register(registry);
         CliSteps.Register(registry);
         UnavailableSteps.Register(registry);

@@ -5,8 +5,9 @@ lives in this repository as a standalone command-line tool, with its checking co
 that Signet itself uses for its "Validation Results".
 
 Status: **in progress — epic 0 (tasks 0.1–0.6) is done** (project skeleton, version, upstream pin, message and report
-model, message texts in English and Polish, conformance harness, command line); **next: task 1.1 + 1.2** (see
-"Handoff"). The checker itself is not implemented yet. Research done in November 2026 against the upstream
+model, message texts in English and Polish, conformance harness, command line); **tasks 1.1 + 1.2 are in progress**
+(source abstraction, ZIP central-directory reader and basic OCF checks exist, but conformance is not enabled yet).
+Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
 ## Handoff — read this first (for the next agent)
@@ -18,7 +19,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **1.1 + 1.2 together**, see "Next task" below).
+2. Take the **first task in "Tasks" that is not marked DONE** (today: continue **1.1 + 1.2 together**, see "Next task" below).
    Do **one task** (or the pair named above), then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -83,6 +84,14 @@ SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   
 ### Next task: 1.1 + 1.2 (IEpubSource + OCF / ZIP checker)
 
 Do them as one piece: the source abstraction has no meaning without its first consumer.
+
+**Progress (2026-11-05):** `IEpubSource` now has in-memory, directory and ZIP implementations. The ZIP source reads
+the central directory itself to retain ordering, raw UTF-8 validation and the first-entry local-header extra-field
+length; its content streams still come from `System.IO.Compression`. `OCFChecker` handles basic archive failures,
+`mimetype`, duplicate canonical/case-folded names, directory entries, filename characters and the presence of
+`META-INF/container.xml`; the CLI and conformance harness call it. The standalone filename steps are also bound.
+This is deliberately **not DONE**: finish the ZIP error parity and OCF conformance, list only later-task scenarios as
+pending, then enable `ocf.feature`; do not start task 1.3.
 
 - **Port** (upstream `com.adobe.epubcheck.ocf` and `api`): `OCFChecker` (the order of the checks), `OCFZipChecker`
   and `OCFResources`/`OCFZipResources`/`OCFDirectoryResources` (→ `IEpubSource` implementations: ZIP file, folder,
