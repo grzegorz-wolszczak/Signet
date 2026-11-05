@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="single_file" xml:space="preserve">
+    <value>File is validated as a single file of type %1$s, for EPUB version %2$s using the %3$s validation profile. Only a subset of the available tests is run.</value>
+  </data>
+  <data name="opv_version_test" xml:space="preserve">
+    <value>*** Candidate for msg deletion *** Tests are performed only for the OPF version.</value>
+  </data>
+  <data name="mode_version_not_supported" xml:space="preserve">
+    <value>The checker doesn’t validate type %1$s and version %2$s.</value>
+  </data>
+  <data name="no_errors__or_warnings" xml:space="preserve">
+    <value>No errors or warnings detected.</value>
+  </data>
+  <data name="there_were_errors" xml:space="preserve">
+    <value>
+Check finished with errors</value>
+  </data>
+  <data name="there_were_warnings" xml:space="preserve">
+    <value>
+Check finished with warnings</value>
+  </data>
+  <data name="messages" xml:space="preserve">
+    <value>Messages</value>
+  </data>
+  <data name="counter_fatal_zero" xml:space="preserve">
+    <value>0 fatals</value>
+  </data>
+  <data name="counter_fatal_one" xml:space="preserve">
+    <value>1 fatal</value>
+  </data>
+  <data name="counter_fatal_many" xml:space="preserve">
+    <value>%1$d fatals</value>
+  </data>
+  <data name="counter_error_zero" xml:space="preserve">
+    <value>0 errors</value>
+  </data>
+  <data name="counter_error_one" xml:space="preserve">
+    <value>1 error</value>
+  </data>
+  <data name="counter_error_many" xml:space="preserve">
+    <value>%1$d errors</value>
+  </data>
+  <data name="counter_warn_zero" xml:space="preserve">
+    <value>0 warnings</value>
+  </data>
+  <data name="counter_warn_one" xml:space="preserve">
+    <value>1 warning</value>
+  </data>
+  <data name="counter_warn_many" xml:space="preserve">
+    <value>%1$d warnings</value>
+  </data>
+  <data name="counter_info_zero" xml:space="preserve">
+    <value>0 infos</value>
+  </data>
+  <data name="counter_info_one" xml:space="preserve">
+    <value>1 info</value>
+  </data>
+  <data name="counter_info_many" xml:space="preserve">
+    <value>%1$d infos</value>
+  </data>
+  <data name="counter_usage_zero" xml:space="preserve">
+    <value>0 usages</value>
+  </data>
+  <data name="counter_usage_one" xml:space="preserve">
+    <value>1 usage</value>
+  </data>
+  <data name="counter_usage_many" xml:space="preserve">
+    <value>%1$d usages</value>
+  </data>
+  <data name="error_processing_unexpanded_epub" xml:space="preserve">
+    <value>
+This check cannot process expanded epubs
+</value>
+  </data>
+  <data name="deleting_archive" xml:space="preserve">
+    <value>
+Epub creation cancelled due to detected errors.
+</value>
+  </data>
+  <data name="display_help" xml:space="preserve">
+    <value>-help displays help</value>
+  </data>
+  <data name="argument_needed" xml:space="preserve">
+    <value>At least one argument expected</value>
+  </data>
+  <data name="version_argument_expected" xml:space="preserve">
+    <value>Version number omitted from the -v argument.</value>
+  </data>
+  <data name="mode_argument_expected" xml:space="preserve">
+    <value>Type omitted from the -mode argument.</value>
+  </data>
+  <data name="profile_argument_expected" xml:space="preserve">
+    <value>Profile name omitted after the -profile argument.</value>
+  </data>
+  <data name="profile_unknown" xml:space="preserve">
+    <value>Unknown profile "%1$s", using default validation profile.</value>
+  </data>
+  <data name="no_file_specified" xml:space="preserve">
+    <value>No file specified in the arguments. Exiting.</value>
+  </data>
+  <data name="mode_version_ignored" xml:space="preserve">
+    <value>The mode and version arguments are ignored for epubs. They are retrieved from the files.</value>
+  </data>
+  <data name="mode_required" xml:space="preserve">
+    <value>Mode required for non-epub files. Default version is 3.0.</value>
+  </data>
+  <data name="validating_version_message" xml:space="preserve">
+    <value>Validating using EPUB version %1$s rules.</value>
+  </data>
+  <data name="output_type_conflict" xml:space="preserve">
+    <value>Only one output format can be specified at a time.</value>
+  </data>
+  <data name="validating_against_epub_version" xml:space="preserve">
+    <value>Validating against EPUB version %1$s - custom validation</value>
+  </data>
+  <data name="file_not_found" xml:space="preserve">
+    <value>File not found: "%1$s"</value>
+  </data>
+  <data name="directory_not_found" xml:space="preserve">
+    <value>Directory not found: "%1$s"</value>
+  </data>
+  <data name="epubcheck_completed" xml:space="preserve">
+    <value>EPUBCheck completed</value>
+  </data>
+  <data name="error_creating_config_file" xml:space="preserve">
+    <value>Error creating config file "%1$s".</value>
+  </data>
+  <data name="expected_message_filename" xml:space="preserve">
+    <value>Expected the Custom message file name, but found "%1$s"</value>
+  </data>
+  <data name="unrecognized_argument" xml:space="preserve">
+    <value>Unrecognized argument: "%1$s"</value>
+  </data>
+  <data name="epubcheck_version_text" xml:space="preserve">
+    <value>EPUBCheck v%1$s</value>
+  </data>
+  <data name="incorrect_locale" xml:space="preserve">
+    <value>Argument "%1$s" to the --locale option is incorrect.</value>
+  </data>
+  <data name="missing_locale" xml:space="preserve">
+    <value>Argument to the --locale option is missing.</value>
+  </data>
+  <data name="incorrect_maxofeach" xml:space="preserve">
+    <value>Argument "%1$s" to the --maxOfEachMessage option must be a number or 'unlimited'.</value>
+  </data>
+  <data name="missing_maxofeach" xml:space="preserve">
+    <value>Argument to the --maxOfEachMessage option is missing.</value>
+  </data>
+  <data name="help_text" xml:space="preserve">
+    <value>EPUBCheck v%1$s
+
+When running this tool, the first argument should be the name (with the path)
+of the file to check.
+
+To specify a validation profile (to run checks against a specific EPUB 3 profile
+or extension specification), use the -profile option:
+
+Validation profiles supported:
+--profile default        = the default validation profile
+--profile dict           = validates against the EPUB Dictionaries and Glossaries specification
+--profile edupub         = validates against the EDUPUB Profile
+--profile idx            = validates against the EPUB Indexes specification
+--profile preview        = validates against the EPUB Previews specification
+
+If checking a non-epub file, the epub version of the file must
+be specified using -v and the type of the file using -mode.
+The default version is: 3.0.
+
+Modes and versions supported:
+--mode opf -v 2.0
+--mode opf -v 3.0
+--mode xhtml -v 2.0
+--mode xhtml -v 3.0
+--mode svg -v 2.0
+--mode svg -v 3.0
+--mode nav -v 3.0
+--mode mo  -v 3.0        = for Media Overlays validation
+--mode exp               = for expanded EPUB archives
+
+This tool also accepts the following options:
+--save                   = saves the epub created from the expanded epub
+--out &lt;file&gt;             = output an assessment XML document file (use - to output to console)
+--xmp &lt;file&gt;             = output an assessment XMP document file (use - to output to console)
+--json &lt;file&gt;            = output an assessment JSON document file (use - to output to console)
+-m &lt;file&gt;                = same as --mode
+-p &lt;profile&gt;             = same as --profile
+-o &lt;file&gt;                = same as --out
+-x &lt;file&gt;                = same as --xmp
+-j &lt;file&gt;                = same as --json
+--maxOfEachMessage NUM   = limit the number of messages reported for each message-ID-and-text combination to NUM.
+                           This option only applies when producing a report in one of the JSON or XML formats.
+                           By default, if this option is not set, the report will only include a maximum of 25
+                           messages for each message-ID-and-text combination.
+                           The keyword 'unlimited' or a negative value can be used to unset the limit and include
+                           all the messages to the report.
+
+--failonwarnings         = By default, the tool returns a 1 if errors are found in the file or 0 if no errors
+                           are found.  Using --failonwarnings will cause the process to exit with a status of
+                           1 if either warnings or errors are present and 0 only when there are no errors or warnings.
+-q, --quiet              = no message on console, except errors, only in the output
+-f, --fatal              = include only fatal errors in the output
+-e, --error              = include only error and fatal severity messages in ouput
+-w, --warn               = include fatal, error, and warn severity messages in output
+-u, --usage              = include ePub feature usage information in output
+                           (default is OFF); if enabled, usage information will
+                           always be included in the output file
+--locale &lt;locale&gt;        = output localized messages according to the provided IETF BCP 47 language tag string.
+
+-l, --listChecks [&lt;file&gt;]       = list message ids and severity levels to the custom message file named &lt;file&gt;
+                                  or the console
+-c, --customMessages [&lt;file&gt;]   = override message severity levels as defined in the custom message file named &lt;file&gt;
+
+--version                = displays the EPUBCheck version
+
+-h, -? or --help         = displays this help message
+</value>
+  </data>
+</root>
