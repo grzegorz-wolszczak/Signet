@@ -4,9 +4,117 @@ A C# port of the official [EPUBCheck](https://github.com/w3c/epubcheck) (W3C / D
 lives in this repository as a standalone command-line tool, with its checking core in a separate library
 that Signet itself uses for its "Validation Results".
 
-Status: **in progress — tasks 0.1–0.6 are done** (project skeleton, version, upstream pin, message and report model, message texts in English and Polish, conformance harness); the rest is not
-implemented yet. Research done in November 2026 against the upstream
+Status: **in progress — epic 0 (tasks 0.1–0.6) is done** (project skeleton, version, upstream pin, message and report
+model, message texts in English and Polish, conformance harness, command line); **next: task 1.1 + 1.2** (see
+"Handoff"). The checker itself is not implemented yet. Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
+
+## Handoff — read this first (for the next agent)
+
+The owner types **"kontynuuj"** (continue the work on EPUBCHECK). Do exactly this, **without asking questions**
+(everything below is already decided; ask only when something truly new and unspecified comes up, and then collect all
+questions into one message, as `AGENTS.md` demands).
+
+### What to do on "kontynuuj"
+
+1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **1.1 + 1.2 together**, see "Next task" below).
+   Do **one task** (or the pair named above), then stop. Do not start the next one.
+3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
+   built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
+   "Current state".
+4. Finish with the git routine below, then report in Polish in a few lines: what was done, the test numbers, and the
+   next task.
+
+### Git routine after a task (standing permission from the owner — do it without asking)
+
+1. Fix the warnings (the `IDExxxx` ones and any other) last, then run **all** tests of the EpubCheck projects (below)
+   and the whole solution build; `dotnet test` must be green, including the "leaves nothing behind" guard.
+2. Commit on `feat/epubcheck-port`, **nicely split** (one logical step per commit, each commit builds): Conventional
+   Commits (`feat`, `test`, `docs`, `build`, …), detailed body (what, why, trade-offs, impact), ending with the
+   `Co-Authored-By` line from the system reminder. A package version change is a separate `build` commit. Only
+   `*.md` changes need no build or test run.
+3. `git push origin feat/epubcheck-port`.
+4. **Merge into `main` after every task** (the owner chose this): `git fetch`; if `main` moved, rebase the branch on
+   it (it is the agent's own branch; `--force-with-lease` is fine); then `git switch main && git merge --ff-only
+   feat/epubcheck-port && git push origin main && git switch feat/epubcheck-port`. On conflicts or red tests after
+   the rebase: stop and report, do not force anything. (`main` has none of the work yet — the first merge brings
+   0.1–0.6 along; check `git log main..feat/epubcheck-port` first and that the whole solution still builds.)
+
+### Conventions (summary of what the repo demands)
+
+- Language: talk to the owner in **Polish with full diacritics**; code, comments, XML docs, commit messages, examples
+  and test names in **English**. `CLAUDE.md`/`AGENTS.md` rules apply (no GUI, no screenshots, no asking-by-assuming).
+- C# `nullable enable`, `ImplicitUsings disable`, `TreatWarningsAsErrors`. `Signet.EpubCheck.Core` must **not**
+  reference `Signet.Core`. Repeated literals become constants (`feedback_constants_not_literals`).
+- Tests: xUnit.v3 (`xunit.v3.mtp-off`) + AwesomeAssertions + Moq + AutoFixture; every test has `// Arrange`, `// Act`,
+  `// Assert` (or `// Act & Assert`); temporary files only in a `TempDir`; nothing left in `%TEMP%` (each test
+  project has its own `TestIsolationSetup.cs`). No `Assert.*` for state, no asserted timings.
+- **Obvious upstream bugs and typos are not ported**: fix them and list each in `UPSTREAM.md` ("deliberate
+  deviations"). The one exception: the typos in the help text stay (`cli.feature` compares it exactly).
+- User-visible texts: English (default) + Polish only, through `.resx` (the messages keep Java's `%1$s` / `%d`
+  placeholders). New tool texts go to `ToolMessages` / `CliPortMessages` (Cli) or `PortMessages` (Core) in both
+  languages; the Polish text is a draft for the owner's review.
+- A case found by the work goes into a corpus book (`tests/corpus/broken/`), not into a note.
+- Generated files are regenerated, not edited: `scripts/epubcheck/generate_message_ids.py` (`MessageId.g.cs`,
+  `DefaultSeverities.g.cs`, `FeatureKind.g.cs`), `scripts/epubcheck/properties_to_resx.py` (the `.resx` copies of
+  upstream's `.properties`), `scripts/epubcheck/import_upstream_tests.sh` (`tests/corpus/epubcheck`).
+
+### Where things are
+
+| What | Where |
+|---|---|
+| Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Util/`, `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
+| Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; `ValidateFile` still says "checker not implemented") |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (125), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 59 passed, 1228 skipped) |
+| Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
+| Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
+| Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
+
+Commands (from the repo root):
+
+```
+dotnet build Signet.slnx
+dotnet test tests/Signet.EpubCheck.Core.Tests
+dotnet test tests/Signet.EpubCheck.Cli.Tests
+dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enabled features only
+SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
+```
+
+### Next task: 1.1 + 1.2 (IEpubSource + OCF / ZIP checker)
+
+Do them as one piece: the source abstraction has no meaning without its first consumer.
+
+- **Port** (upstream `com.adobe.epubcheck.ocf` and `api`): `OCFChecker` (the order of the checks), `OCFZipChecker`
+  and `OCFResources`/`OCFZipResources`/`OCFDirectoryResources` (→ `IEpubSource` implementations: ZIP file, folder,
+  in-memory), `OCFFilenameChecker` (ICU4J → .NET: normalization, character categories; case folding needs care, see
+  `UPSTREAM.md`), `OCFContainer`, the `mimetype` rules, `META-INF` checks (`PKG-*`). `container.xml`/`encryption.xml`
+  parsing is **3.1** and the schemas are epic 2 — in 1.2 only what needs no schema (the entry list, the ZIP structure,
+  names, `mimetype`, `META-INF` contents).
+- **Plug into the CLI**: `ToolRun.ValidateFile` must call the checker for a ZIP (and later for the other modes), print
+  the messages through `ConsoleReport` and return the real exit code; remove the "checker not implemented" branch for
+  what is now covered; the `PendingScenarios` of `cli.feature` that only waited for the checker (14 — see the reasons
+  in `ConformanceCorpus`) are re-checked and removed where possible.
+- **Plug into the harness**: a real `IEpubChecker` that builds the report like the scenarios expect; add
+  `epub3/04-ocf/ocf.feature` to `EnabledFeatures`. Scenarios that need later tasks (e.g. `OPF-060` needs the OPF, schema
+  errors need epic 2) go to `PendingScenarios` **with the reason and the task id**, each one listed — do not leave a
+  scenario failing and do not hide a failing one as pending when 1.2 should pass it.
+- **Also decide inside the task, without asking**: the `IEpubSource` shape (entries with name, order, compression
+  method, sizes, bytes; read-only; `IDisposable`), error handling for broken archives (FATAL `PKG-*` as upstream; no
+  exceptions leaking out of the checker), `System.IO.Compression` vs. own reader (use `System.IO.Compression`; take
+  the central directory by hand only where upstream needs facts the framework hides, e.g. the order of entries and the
+  `mimetype` extra field).
+- Tests: unit tests per class + the conformance scenarios; fixtures are the upstream ones in `tests/corpus/epubcheck`;
+  add a corpus book under `tests/corpus/broken` for any case that upstream's fixtures do not cover.
+- When done, the plan's milestone **M1** moves closer: after 1.1–1.2 only the walking-skeleton remainder is left
+  (4.1 is done). Then the next task is **1.3 WHATWG URL parser**, then 1.4, then epic 2.
+
+### Current state of the conformance run (after 0.6)
+
+`cli/cli.feature` is the only enabled feature: 23 of its 53 scenarios run and pass; 30 are pending with reasons
+(checker 14, report writers 13, `--save` archive 1 [line 205], French messages 3 [lines 366/371/376]). The CHK
+scenarios with `-mode exp` pass partly because the tool exits 1 anyway (no checker yet) — re-check them when the
+checker lands.
 
 ## Decisions taken
 
@@ -24,16 +132,20 @@ implemented yet. Research done in November 2026 against the upstream
 | Scope | Everything: EPUB 2 and 3, all profiles (`default`, `dict`, `edupub`, `idx`, `preview`), all modes, all report formats. |
 | Signet | Signet's validation moves onto this library (it must end up more complete than today's). Signet-only rules (footnotes, CMYK images, file-name portability, …) stay as a **separate rule set with their own codes**, next to the EPUBCheck results; `ValidationFix`es attach to message ids. |
 | Test fixtures | Upstream fixtures (BSD-3) are copied into `tests/corpus` with their license. |
+| Remote files | Checking a file by `http(s)://` URL (upstream's `URLResourceProvider`) is **not supported, permanently** (owner's decision, November 2026): the tool prints `Checking a remote file is not supported: "<url>"` and exits 1 (the one upstream scenario, `cli.feature:197`, expects 1). Listed in `UPSTREAM.md`. The tool and the library never touch the network. |
+| Workflow | One task per "kontynuuj", then stop. After each task: nicely split Conventional Commits on `feat/epubcheck-port`, push, **merge into `main`** and push it (standing permission; details in "Handoff"). |
 | Feature files | Parsed with the official **`Gherkin`** NuGet package (cucumber/gherkin, MIT, netstandard2.0, 42.0.1 at the time of writing) — we write only the step bindings, not a parser. Test-only dependency; its addition is a separate `build` commit. |
 
 ## Open items
 
 - **Polish translations** (about 320 messages and the CLI texts) are drafted by the agent and need the owner's review.
+- No other open questions: every decision needed to continue is in "Decisions taken" and "Handoff".
 - The standalone build is self-contained single-file for `win-x64` and `linux-x64`; trimming off (resources,
   reflection); ReadyToRun optional; Native AOT not planned.
 
 (Resolved in November 2026: version suffix = Signet's scheme; platforms = Linux and Windows x64; schema error text =
-exactly Jing's.)
+exactly Jing's; remote `http(s)` files = never supported; git workflow = commit, push and merge into `main` after
+every task.)
 
 ## Upstream facts the plan rests on
 
@@ -52,7 +164,7 @@ exactly Jing's.)
 - Java libraries behind it: Jing (RELAX NG/NVDL), Saxon-HE 11.4 (XPath 2), ICU4J, galimatias (WHATWG URL),
   commons-compress, SAC (CSS), Jackson (JSON). There is no usable .NET equivalent of Jing + Saxon.
 - Own CSS parser (~5.8k lines in `org.idpf.epubcheck.util.css`).
-- Conformance suite: **1022 scenarios in 50 `.feature` files** (Cucumber), ~3.5k fixture files (~24 ready `.epub`,
+- Conformance suite: **1251 scenarios (outlines expanded) in 50 `.feature` files** (Cucumber), ~3.5k fixture files (~24 ready `.epub`,
   the rest unpacked folders) in `src/test/resources`, plus `cli.feature` (exact help text, return codes).
   Step vocabulary is small (see task 0.5).
 

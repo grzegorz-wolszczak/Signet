@@ -85,7 +85,7 @@ The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 - A language without texts (`--locale fr-FR`) falls back to the default locale of the user, and to English when that has
   none either; upstream has 12 languages, the port English and Polish (`cli.feature`'s three French scenarios are not
   meant to pass).
-- Files given by an `http://` or `https://` address are not fetched (not supported yet).
+- Files given by an `http://` or `https://` address are not fetched, and never will be (owner's decision, November 2026): the tool prints an error and exits 1, as the one upstream scenario (`cli.feature:197`) expects.
 - The texts that only the port has (`The EPUB checker is not implemented yet.`, ...) are in `CliPortMessages.resx`.
 
 Each further deviation from upstream is listed here, with the reason.
