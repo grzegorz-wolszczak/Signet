@@ -4,9 +4,9 @@ A C# port of the official [EPUBCheck](https://github.com/w3c/epubcheck) (W3C / D
 lives in this repository as a standalone command-line tool, with its checking core in a separate library
 that Signet itself uses for its "Validation Results".
 
-Status: **in progress — epic 0 and tasks 1.1–1.2 are done** (project skeleton, version, upstream pin, message and report
+Status: **in progress — epic 0 and tasks 1.1–1.3 are done** (project skeleton, version, upstream pin, message and report
 model, message texts in English and Polish, conformance harness, command line, EPUB source abstraction and OCF/ZIP
-checks); **next: task 1.3 WHATWG URL parser**.
+checks, WHATWG-style URL and URL-fragment parsing); **next: task 1.4 Utilities**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -19,7 +19,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **1.3 WHATWG URL parser**, see "Next task" below).
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **1.4 Utilities**, see "Next task" below).
    Do **one task** (or the pair named above), then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -66,7 +66,7 @@ questions into one message, as `AGENTS.md` demands).
 |---|---|
 | Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Util/`, `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
 | Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; `ValidateFile` still says "checker not implemented") |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (125), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 59 passed, 1228 skipped) |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (140), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 166 passed, 1121 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -81,10 +81,11 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 1.3 WHATWG URL parser
+### Next task: 1.4 Utilities
 
-Port upstream's galimatias replacement: WHATWG URL parsing, URL fragments and path normalization. Remove the URL-related
-OCF scenarios from `PendingScenarios` only when they pass; do not implement OPF or XML-schema checks yet.
+Port the MIME type parser, `CodePoints`, microsyntaxes, `PackageDocumentPeeker`, and prefix/vocabulary parsing. Keep
+URL-reference validation and resource existence scenarios pending: they now have parsing support, but require the
+content-document and resource-reference checks of tasks 3.5 and 3.6. Do not implement epic 2.
 
 **Done (2026-11-05):** `IEpubSource` has in-memory, directory and ZIP implementations. The ZIP source reads
 the central directory itself to retain ordering, raw UTF-8 validation and the first-entry local-header extra-field
@@ -255,8 +256,11 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   `mimetype`, duplicate entries, empty directories, file names (characters, normalization, case collisions) and broken
   archives. `epub3/04-ocf/ocf.feature` and `filename-checker.feature` are enabled; scenarios needing URL, XML schema
   or OPF work remain individually pending with their task ids.
-- **1.3 WHATWG URL parser (M).** Replacement for galimatias (`System.Uri` is not WHATWG), URL fragments, path
-  normalization.
+- **1.3 WHATWG URL parser (M). DONE.** `EpubUrl` parses absolute and relative references, resolves relative paths,
+  canonicalizes path percent-encoding and Unicode normalization, and removes dot segments without using `System.Uri`
+  as a URL parser. `EpubUrlFragment` parses HTML/XHTML, SVG and XML fragments, including fragment directives,
+  scheme-based fragments and media fragments. `unit-tests/url-fragment.feature` is enabled (41 scenarios); the OCF
+  URL scenarios remain pending because checking their references requires tasks 3.5 and 3.6.
 - **1.4 Utilities (M).** MIME type parser, `CodePoints`, microsyntaxes, `PackageDocumentPeeker`, prefix / vocabulary
   parsing (`vocab`, 24 files).
 
