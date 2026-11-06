@@ -22,8 +22,7 @@
     <!-- The URL test data of galimatias, read from the output folder. -->
     <None Include="Galimatias\TestData\*.txt" CopyToOutputDirectory="PreserveNewest" />
     <!-- The RELAX NG test suite of Jing (spectest.xml, James Clark), read from the output folder. -->
-    <None Include="Jing\TestData\spectest.xml" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="Jing\TestData\compacttest.xml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Jing\TestData\*.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

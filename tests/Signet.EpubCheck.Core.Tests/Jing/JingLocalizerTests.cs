@@ -14,6 +14,8 @@ public sealed class JingLocalizerTests
     private const int PatternMessageCount = 127;
     private const int ParseMessageCount = 38;
     private const int CompactMessageCount = 22;
+    private const int XsdDatatypeMessageCount = 55;
+    private const int RegexMessageCount = 13;
 
     private static readonly CultureInfo s_polish = CultureInfo.GetCultureInfo("pl");
 
@@ -22,6 +24,8 @@ public sealed class JingLocalizerTests
         { nameof(JingLocalizer.PatternManager), PatternMessageCount },
         { nameof(JingLocalizer.ParseManager), ParseMessageCount },
         { nameof(JingLocalizer.CompactManager), CompactMessageCount },
+        { nameof(JingLocalizer.XsdDatatypeManager), XsdDatatypeMessageCount },
+        { nameof(JingLocalizer.RegexManager), RegexMessageCount },
     };
 
     [Theory]
@@ -33,7 +37,9 @@ public sealed class JingLocalizerTests
         {
             nameof(JingLocalizer.PatternManager) => JingLocalizer.PatternManager,
             nameof(JingLocalizer.ParseManager) => JingLocalizer.ParseManager,
-            _ => JingLocalizer.CompactManager,
+            nameof(JingLocalizer.CompactManager) => JingLocalizer.CompactManager,
+            nameof(JingLocalizer.XsdDatatypeManager) => JingLocalizer.XsdDatatypeManager,
+            _ => JingLocalizer.RegexManager,
         };
         Hashtable english = Resources(manager, CultureInfo.InvariantCulture);
         Hashtable polish = Resources(manager, s_polish);

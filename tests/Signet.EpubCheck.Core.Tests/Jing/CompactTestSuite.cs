@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
-using Signet.EpubCheck.Core.Jing;
 using Signet.EpubCheck.Core.Jing.Parse;
 using Signet.EpubCheck.Core.Jing.Sax;
 
@@ -21,8 +20,7 @@ internal sealed record CompactTestCase(
     string Compact,
     string? Xml,
     IReadOnlyDictionary<string, string> CompactResources,
-    IReadOnlyDictionary<string, string> XmlResources,
-    string? PendingReason)
+    IReadOnlyDictionary<string, string> XmlResources)
 {
     private const string BaseUriPrefix = "file:///compacttest/";
     private const string CompactSchemaName = "c.rnc";
@@ -55,9 +53,6 @@ internal sealed record CompactTestCase(
 /// <summary>Reads <c>Jing/TestData/compacttest.xml</c> (Jing's <c>mod/rng-schema/test</c>).</summary>
 internal static class CompactTestSuite
 {
-    private const string XsdPendingReason = "uses the XML Schema datatypes (task 2.3)";
-    private const string ImplicitXsdPrefix = "xsd:";
-
     private static readonly Lazy<IReadOnlyList<CompactTestCase>> s_cases = new(Load);
 
     public static IReadOnlyList<CompactTestCase> Cases => s_cases.Value;
@@ -80,17 +75,13 @@ internal static class CompactTestSuite
             Dictionary<string, string> compactResources = Resources(compact);
             Dictionary<string, string> xmlResources = xmlPart is null ? [] : Resources(xmlPart);
             string compactText = schema.Value;
-            bool requiresXsd = new[] { compactText, xml ?? string.Empty }.Concat(compactResources.Values).Concat(xmlResources.Values)
-                .Any(t => t.Contains(WellKnownNamespaces.XmlSchemaDatatypes, StringComparison.Ordinal)
-                    || t.Contains(ImplicitXsdPrefix, StringComparison.Ordinal));
             cases.Add(new CompactTestCase(
                 cases.Count + 1,
                 schema.Name.LocalName == "correct",
                 compactText,
                 xml,
                 compactResources,
-                xmlResources,
-                requiresXsd ? XsdPendingReason : null));
+                xmlResources));
         }
 
         return cases;
