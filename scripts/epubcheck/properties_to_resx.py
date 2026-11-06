@@ -3,7 +3,7 @@
 
 Usage: properties_to_resx.py <in.properties> <out.resx> [--reference <ref.properties>] [--keep-leading-space KEY ...]
 
-The placeholders (%1$s) stay as they are: the custom messages files of EPUBCheck use them, and the texts stay
+The placeholders (%1$s, and {0} in Jing's bundles) stay as they are: the custom messages files of EPUBCheck use them, and the texts stay
 comparable with upstream's. The properties are read as Java reads them (comments, '=' / ':' / white space as the
 separator, white space before the value dropped, trailing white space kept, backslash escapes, line continuation),
 except for the keys named by --keep-leading-space, whose value keeps the white space before it (upstream's
@@ -125,7 +125,8 @@ def parse(path: Path, keep_leading_space) -> dict:
 
 
 def placeholders(text: str):
-    return sorted(re.findall(r"%\d+\$[sd]", text))
+    # EPUBCheck's own texts use String.format (%1$s), Jing's use MessageFormat ({0}).
+    return sorted(re.findall(r"%\d+\$[sd]|\{\d+\}", text))
 
 
 def main() -> None:
