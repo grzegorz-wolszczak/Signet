@@ -32,8 +32,8 @@ Re-implemented in C#: everything that is Java code in upstream.
 
 | Upstream | Replaced by |
 |---|---|
-| Jing 20181222 (RELAX NG, NVDL) | `Jing/`: a port of Jing (BSD-3-Clause, `Jing/LICENSE-jing.md`) — RELAX NG with its datatypes, NVDL; error wording is Jing's exactly |
-| Saxon-HE 11.4 (XPath 2.0 for Schematron) | own evaluator of the XPath 2.0 subset the `.sch` files use |
+| Jing 20181222 (RELAX NG, NVDL, Schematron) | `Jing/`: a port of Jing (BSD-3-Clause, `Jing/LICENSE-jing.md`) — RELAX NG with its datatypes, NVDL, Schematron; error wording is Jing's exactly |
+| Saxon-HE 11.4 (XPath 2.0 for Schematron) | `Jing/Validate/Schematron/XPath/`: own evaluator of the XPath 2.0 subset the `.sch` files use, in XPath 1.0 compatibility mode |
 | galimatias 0.1.3 (WHATWG URL of 2014) | `Galimatias/`: a port of galimatias (MIT, `Galimatias/LICENSE-galimatias.md`), checked against its own test data; IDNA by .NET's `IdnMapping` |
 | ICU4J — `Normalizer2`, `CaseMap` (`UnicodeUtils`), `UnicodeSet`, `UCharacter` (`OCFFilenameChecker`) | .NET string normalization; the code point sets of `OCFFilenameChecker` written out; full case folding from a generated table (`Util/CaseFolding.g.cs`) |
 | commons-compress, `java.util.zip` | `System.IO.Compression`; the central directory is read by hand (`ZipEpubSource`) |
@@ -181,6 +181,22 @@ NVDL (`Jing/Validate/`, a port of Jing's `validate.auto` and `validate.nvdl`):
   uses none of them.
 - The anonymous modes are numbered per schema; Jing numbers them across all the schemas of the process (the number shows
   only in the message about a nested mode defined twice).
+
+Schematron (`Jing/Validate/Schematron/`, in place of Jing's `validate.schematron` with its stylesheets and Saxon):
+
+- Jing compiles a schema to XSLT and Saxon runs it; the port evaluates the schema directly, with the semantics of the
+  compiled stylesheet (document order, first matching rule per pattern, global and local lets, phases, `extends`) and
+  the messages of Jing's `OutputHandler`. XPath is evaluated in XPath 1.0 compatibility mode, as Saxon runs a
+  `version="1.0"` stylesheet; numbers are doubles; regular expressions (`matches`, `tokenize`, `replace`) are run by
+  .NET's engine, not translated from XPath's syntax.
+- The errors Saxon would report in its own words (an XPath syntax error in the schema, a dynamic error while
+  validating) have the port's texts (`xpath_syntax_error`, `xpath_dynamic_error` in `SchematronMessages.resx`).
+- The position of a failed assertion is where `XmlReader` puts the element (the start of its start-tag), as for RELAX NG.
+- Not ported: `id()` (it needs the attribute types of a DTD), `document()`, keys (`sch:key`, `xsl:key`), diagnostics in
+  messages (Jing adds them only with its `diagnose` option, which EPUBCheck does not set), the `phase` option, and the
+  ID/IDREF checks Jing makes while it validates a schema against `iso-schematron.rnc`. EPUBCheck's schemas use none of
+  them.
+- Comments and processing instructions are not in the tree the expressions see (no EPUBCheck expression looks for them).
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
