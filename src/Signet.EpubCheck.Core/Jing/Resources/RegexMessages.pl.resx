@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="bad_block_name" xml:space="preserve">
+    <value>nierozpoznana nazwa bloku Unicode "{0}"</value>
+  </data>
+  <data name="bad_category" xml:space="preserve">
+    <value>nierozpoznana kategoria Unicode "{0}"</value>
+  </data>
+  <data name="bad_escape" xml:space="preserve">
+    <value>niedozwolona sekwencja ucieczki</value>
+  </data>
+  <data name="bad_property_name" xml:space="preserve">
+    <value>zła nazwa właściwości "{0}"</value>
+  </data>
+  <data name="empty_property_name" xml:space="preserve">
+    <value>nazwa właściwości nie może być pusta</value>
+  </data>
+  <data name="expected" xml:space="preserve">
+    <value>oczekiwano "{0}"</value>
+  </data>
+  <data name="expected_digit" xml:space="preserve">
+    <value>oczekiwano cyfry</value>
+  </data>
+  <data name="expected_eos" xml:space="preserve">
+    <value>znak niedozwolony w tym kontekście</value>
+  </data>
+  <data name="invalid_range" xml:space="preserve">
+    <value>dolna granica zakresu nie może mieć punktu kodowego Unicode większego niż górna</value>
+  </data>
+  <data name="invalid_surrogate" xml:space="preserve">
+    <value>niedozwolona para surogatów</value>
+  </data>
+  <data name="multi_range" xml:space="preserve">
+    <value>granice zakresu muszą być pojedynczymi znakami</value>
+  </data>
+  <data name="should_quote" xml:space="preserve">
+    <value>znak "{0}" musi być poprzedzony "\" w tym kontekście</value>
+  </data>
+  <data name="invalid_quantity_range" xml:space="preserve">
+    <value>dolna granica kwantyfikatora nie może być większa niż górna</value>
+  </data>
+</root>

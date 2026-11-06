@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="enumeration_param" xml:space="preserve">
+    <value>"enumeration" facet is not allowed as a parameter: use "value" element instead</value>
+  </data>
+  <data name="whiteSpace_param" xml:space="preserve">
+    <value>"whiteSpace" facet is not allowed as a parameter</value>
+  </data>
+  <data name="unrecognized_param" xml:space="preserve">
+    <value>unrecognized parameter "{0}"</value>
+  </data>
+  <data name="invalid_regex" xml:space="preserve">
+    <value>invalid regular expression: {0}</value>
+  </data>
+  <data name="not_ordered" xml:space="preserve">
+    <value>parameter can only be applied to ordered datatype</value>
+  </data>
+  <data name="invalid_limit" xml:space="preserve">
+    <value>"{0}" is not allowed by the base type: {1}</value>
+  </data>
+  <data name="no_length" xml:space="preserve">
+    <value>base datatype does not define a unit of length</value>
+  </data>
+  <data name="scale_not_derived_from_decimal" xml:space="preserve">
+    <value>"scale" parameter can only be applied to datatype derived from "decimal"</value>
+  </data>
+  <data name="scale_not_non_negative_integer" xml:space="preserve">
+    <value>"scale" parameter must be non negative integer</value>
+  </data>
+  <data name="length_not_non_negative_integer" xml:space="preserve">
+    <value>"length" parameter must be non negative integer</value>
+  </data>
+  <data name="precision_not_derived_from_decimal" xml:space="preserve">
+    <value>"precision" parameter can only be applied to datatype derived from "decimal"</value>
+  </data>
+  <data name="precision_not_positive_integer" xml:space="preserve">
+    <value>"precision" parameter must be positive integer</value>
+  </data>
+  <data name="regex_impl_not_found" xml:space="preserve">
+    <value>cannot find regular expression implementation; use JDK 1.4 or add Xerces2 to your classpath</value>
+  </data>
+  <data name="regex_internal_error" xml:space="preserve">
+    <value>internal error in regular expression for datatype {0}</value>
+  </data>
+  <data name="length_violation" xml:space="preserve">
+    <value>must be {0} with length equal to {1} (actual length was {2})</value>
+  </data>
+  <data name="max_length_violation" xml:space="preserve">
+    <value>must be {0} with length at most {1} (actual length was {2})</value>
+  </data>
+  <data name="min_length_violation" xml:space="preserve">
+    <value>must be {0} with length at least {1} (actual length was {2})</value>
+  </data>
+  <data name="min_inclusive_violation" xml:space="preserve">
+    <value>must be {0} greater than or equal to {1}</value>
+  </data>
+  <data name="min_exclusive_violation" xml:space="preserve">
+    <value>must be {0} greater than {1}</value>
+  </data>
+  <data name="max_inclusive_violation" xml:space="preserve">
+    <value>must be {0} less than or equal to {1}</value>
+  </data>
+  <data name="max_exclusive_violation" xml:space="preserve">
+    <value>must be {0} less than {1}</value>
+  </data>
+  <data name="pattern_violation" xml:space="preserve">
+    <value>must be {0} matching the regular expression "{1}"</value>
+  </data>
+  <data name="entity_violation" xml:space="preserve">
+    <value>must be a name declared in the DTD as an unparsed entity</value>
+  </data>
+  <data name="undeclared_prefix" xml:space="preserve">
+    <value>must be a QName whose prefix, if any, is declared (prefix "{0}" is not declared)</value>
+  </data>
+  <data name="precision_violation" xml:space="preserve">
+    <value>must be {0} with at most {1} significant digits (found {2} digits)</value>
+  </data>
+  <data name="precision_1_violation" xml:space="preserve">
+    <value>must be {0} with exactly one significant digit (found {1} digits)</value>
+  </data>
+  <data name="scale_violation" xml:space="preserve">
+    <value>must be a decimal number with at most {0} significant digits after the decimal point (found {1} digits)</value>
+  </data>
+  <data name="scale_0_violation" xml:space="preserve">
+    <value>must be a decimal number without any significant digits after the decimal point</value>
+  </data>
+  <data name="scale_1_violation" xml:space="preserve">
+    <value>must be a decimal number with at most one significant digit after the decimal point (found {0} digits)</value>
+  </data>
+  <data name="lexical_violation" xml:space="preserve">
+    <value>must be {0}</value>
+  </data>
+  <data name="lexical_space_string" xml:space="preserve">
+    <value>a string</value>
+  </data>
+  <data name="lexical_space_uri" xml:space="preserve">
+    <value>a URI</value>
+  </data>
+  <data name="lexical_space_boolean" xml:space="preserve">
+    <value>a boolean</value>
+  </data>
+  <data name="lexical_space_decimal" xml:space="preserve">
+    <value>a decimal number</value>
+  </data>
+  <data name="lexical_space_float" xml:space="preserve">
+    <value>a floating-point number</value>
+  </data>
+  <data name="lexical_space_duration" xml:space="preserve">
+    <value>a duration</value>
+  </data>
+  <data name="lexical_space_hex" xml:space="preserve">
+    <value>a hexadecimal string</value>
+  </data>
+  <data name="lexical_space_base64" xml:space="preserve">
+    <value>a base64 string</value>
+  </data>
+  <data name="lexical_space_integer" xml:space="preserve">
+    <value>an integer</value>
+  </data>
+  <data name="lexical_space_name" xml:space="preserve">
+    <value>an XML name</value>
+  </data>
+  <data name="lexical_space_ncname" xml:space="preserve">
+    <value>an XML name without colons</value>
+  </data>
+  <data name="lexical_space_nmtoken" xml:space="preserve">
+    <value>an XML NMTOKEN</value>
+  </data>
+  <data name="lexical_space_qname" xml:space="preserve">
+    <value>an XML QName</value>
+  </data>
+  <data name="lexical_space_list" xml:space="preserve">
+    <value>a whitespace-delimited list</value>
+  </data>
+  <data name="lexical_space_list_ncname" xml:space="preserve">
+    <value>a list of XML names without colons</value>
+  </data>
+  <data name="lexical_space_list_nmtoken" xml:space="preserve">
+    <value>a list of XML NMTOKENs</value>
+  </data>
+  <data name="lexical_space_date_y_m_d_time" xml:space="preserve">
+    <value>an ISO date and time</value>
+  </data>
+  <data name="lexical_space_time" xml:space="preserve">
+    <value>an ISO time</value>
+  </data>
+  <data name="lexical_space_date_y_m_d" xml:space="preserve">
+    <value>an ISO date</value>
+  </data>
+  <data name="lexical_space_date_y_m" xml:space="preserve">
+    <value>an ISO year and month</value>
+  </data>
+  <data name="lexical_space_date_y" xml:space="preserve">
+    <value>a year</value>
+  </data>
+  <data name="lexical_space_date_m_d" xml:space="preserve">
+    <value>an ISO month and day (of the form --MM-DD)</value>
+  </data>
+  <data name="lexical_space_date_m" xml:space="preserve">
+    <value>an ISO month (of the form --MM)</value>
+  </data>
+  <data name="lexical_space_date_d" xml:space="preserve">
+    <value>an ISO day of the month (of the form ---DD)</value>
+  </data>
+  <data name="lexical_space_language" xml:space="preserve">
+    <value>an RFC 3066 language identifier</value>
+  </data>
+</root>
