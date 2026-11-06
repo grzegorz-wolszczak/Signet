@@ -1,139 +1,141 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using Signet.EpubCheck.Core.Messages;
 using Signet.EpubCheck.Core.Reporting;
 
 namespace Signet.EpubCheck.Core.Ocf;
 
-/// <summary>Checks an OCF file name for characters that EPUB does not permit.</summary>
+/// <summary>
+/// Checks the path of a file of the container for the characters EPUB does not allow (upstream's
+/// <c>OCFFilenameChecker</c>). The whole path is checked as one string, as upstream does.
+/// </summary>
 public static class OCFFilenameChecker
 {
-    /// <summary>Checks one resource path and reports all applicable filename messages.</summary>
-    public static void Check(string path, EpubVersion version, IReport report)
+    private const string AsciiSet = "ASCII";
+    private const int FullStop = 0x002E;
+
+    // The sets of disallowed characters of EPUB 3, in upstream's order: a character is described by the first set it is in.
+    private static readonly (string Name, Func<int, bool> Contains)[] s_disallowedEpub3 =
+    [
+        (AsciiSet, static c => IsDisallowedInEpub2(c) || c == 0x007C), // and VERTICAL LINE '|'
+        ("NON CHARACTER", static c => c is >= 0xFDD0 and <= 0xFDEF || (c & 0xFFFE) == 0xFFFE),
+        ("CONTROL", static c => c is <= 0x001F or 0x007F or >= 0x0080 and <= 0x009F),
+        ("PRIVATE USE", static c => c is >= 0xE000 and <= 0xF8FF or >= 0xF0000 and <= 0xFFFFF or >= 0x100000 and <= 0x10FFFF),
+        ("SPECIALS", static c => c is >= 0xFFF0 and <= 0xFFFF),
+        ("DEPRECATED", static c => c == 0xE0001), // LANGUAGE TAG (CANCEL TAG is reinstated in emoji tag sequences)
+    ];
+
+    // Upstream prints ICU's character name, when the character has one. Of the disallowed characters, only these do
+    // (the controls, the private use characters and the non characters have no name).
+    private static readonly Dictionary<int, string> s_characterNames = new()
     {
-        ArgumentNullException.ThrowIfNull(path);
+        [0xFFF9] = "INTERLINEAR ANNOTATION ANCHOR",
+        [0xFFFA] = "INTERLINEAR ANNOTATION SEPARATOR",
+        [0xFFFB] = "INTERLINEAR ANNOTATION TERMINATOR",
+        [0xFFFC] = "OBJECT REPLACEMENT CHARACTER",
+        [0xFFFD] = "REPLACEMENT CHARACTER",
+        [0xE0001] = "LANGUAGE TAG",
+    };
+
+    /// <summary>
+    /// Checks <paramref name="filename"/> (a path in the container) and reports <see cref="MessageId.PKG_009"/>,
+    /// <see cref="MessageId.PKG_010"/>, <see cref="MessageId.PKG_011"/> and <see cref="MessageId.PKG_012"/> at
+    /// <paramref name="location"/> (by default, the path itself).
+    /// </summary>
+    public static void Check(string filename, EpubVersion version, IReport report, EpubLocation? location = null)
+    {
+        ArgumentNullException.ThrowIfNull(filename);
         ArgumentNullException.ThrowIfNull(report);
+        location ??= new EpubLocation(filename);
 
-        foreach (string component in path.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        LinkedHashSet disallowed = new();
+        bool hasSpaces = false;
+        bool isAsciiOnly = true;
+        int last = -1;
+        foreach (Rune rune in filename.EnumerateRunes())
         {
-            CheckComponent(component, version, report, path);
-        }
-    }
-
-    /// <summary>Normalizes an OCF path for collision detection.</summary>
-    public static string NormalizeForComparison(string path) =>
-        string.Concat(path.Normalize(NormalizationForm.FormC).EnumerateRunes().Select(static rune => FoldCase(rune)));
-
-    private static void CheckComponent(string component, EpubVersion version, IReport report, string path)
-    {
-        if (component.EndsWith('.'))
-        {
-            report.Message(MessageId.PKG_011, new EpubLocation(path), component);
-        }
-
-        HashSet<string> forbidden = new(StringComparer.Ordinal);
-        List<string> forbiddenInOrder = [];
-        bool whitespace = false;
-        bool nonAscii = false;
-        foreach (Rune rune in component.EnumerateRunes())
-        {
-            if (rune.Value > 0x7F)
+            int codePoint = rune.Value;
+            last = codePoint;
+            isAsciiOnly = isAsciiOnly && codePoint <= 0x7F;
+            hasSpaces = hasSpaces || Rune.IsWhiteSpace(rune);
+            if (version == EpubVersion.Version2)
             {
-                nonAscii = true;
-            }
-
-            if (Rune.IsWhiteSpace(rune))
-            {
-                whitespace = true;
-            }
-
-            if (IsForbidden(rune, version))
-            {
-                string description = Describe(rune);
-                if (forbidden.Add(description))
+                if (IsDisallowedInEpub2(codePoint))
                 {
-                    forbiddenInOrder.Add(description);
+                    disallowed.Add(Describe(codePoint, AsciiSet));
+                }
+
+                continue;
+            }
+
+            foreach ((string name, Func<int, bool> contains) in s_disallowedEpub3)
+            {
+                if (contains(codePoint))
+                {
+                    disallowed.Add(Describe(codePoint, name));
+                    break;
                 }
             }
         }
 
-        EpubLocation location = new(path);
-        if (forbidden.Count != 0)
+        if (last == FullStop)
         {
-            report.Message(MessageId.PKG_009, location, component, string.Join(", ", forbiddenInOrder));
+            report.Message(MessageId.PKG_011, location, filename);
         }
 
-        if (whitespace)
+        if (disallowed.Count != 0)
         {
-            report.Message(MessageId.PKG_010, location, component);
+            report.Message(MessageId.PKG_009, location, filename, string.Join(", ", disallowed.Items));
         }
 
-        if (nonAscii)
+        if (hasSpaces)
         {
-            report.Message(MessageId.PKG_012, location, component);
+            report.Message(MessageId.PKG_010, location, filename);
+        }
+
+        if (!isAsciiOnly)
+        {
+            report.Message(MessageId.PKG_012, location, filename);
         }
     }
 
-    private static bool IsForbidden(Rune rune, EpubVersion version)
+    // QUOTATION MARK, ASTERISK, COLON, LESS-THAN SIGN, GREATER-THAN SIGN, QUESTION MARK, REVERSE SOLIDUS. SOLIDUS is the
+    // path separator; FULL STOP is only disallowed as the last character.
+    private static bool IsDisallowedInEpub2(int codePoint) => codePoint is 0x22 or 0x2A or 0x3A or 0x3C or 0x3E or 0x3F or 0x5C;
+
+    private static string Describe(int codePoint, string setName)
     {
-        int value = rune.Value;
-        if (value is 0x22 or 0x2A or 0x3A or 0x3C or 0x3E or 0x3F or 0x5C ||
-            (version == EpubVersion.Version3 && value == 0x7C))
+        StringBuilder result = new(string.Format(CultureInfo.InvariantCulture, "U+{0:X4} ", codePoint));
+        if (setName == AsciiSet)
         {
-            return true;
+            return result.Append('(').Append(char.ConvertFromUtf32(codePoint)).Append(')').ToString();
         }
 
-        if (version != EpubVersion.Version3)
+        if (s_characterNames.TryGetValue(codePoint, out string? characterName))
         {
-            return false;
+            result.Append(characterName).Append(' ');
         }
 
-        UnicodeCategory category = Rune.GetUnicodeCategory(rune);
-        return category == UnicodeCategory.Control ||
-            category == UnicodeCategory.PrivateUse ||
-            (value >= 0xFDD0 && value <= 0xFDEF) ||
-            (value & 0xFFFE) == 0xFFFE ||
-            (value >= 0xFFF0 && value <= 0xFFFF) ||
-            value == 0xE0001;
+        return result.Append('(').Append(setName).Append(')').ToString();
     }
 
-    private static string Describe(Rune rune)
+    // The descriptions in the order they were first found, each once (upstream's LinkedHashSet).
+    private sealed class LinkedHashSet
     {
-        int value = rune.Value;
-        if (value <= 0x1F || (value >= 0x7F && value <= 0x9F))
-        {
-            return $"U+{value:X4} (CONTROL)";
-        }
+        private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
 
-        if ((value >= 0xE000 && value <= 0xF8FF) || (value >= 0xF0000 && value <= 0xFFFFD) || (value >= 0x100000 && value <= 0x10FFFD))
-        {
-            return $"U+{value:X4} (PRIVATE USE)";
-        }
+        public List<string> Items { get; } = [];
 
-        if ((value >= 0xFDD0 && value <= 0xFDEF) || (value & 0xFFFE) == 0xFFFE)
-        {
-            return $"U+{value:X4} (NON CHARACTER)";
-        }
+        public int Count => Items.Count;
 
-        if (value == 0xFFFD)
+        public void Add(string item)
         {
-            return "U+FFFD REPLACEMENT CHARACTER (SPECIALS)";
+            if (_seen.Add(item))
+            {
+                Items.Add(item);
+            }
         }
-
-        if (value is >= 0xFFF0 and <= 0xFFFF)
-        {
-            return $"U+{value:X4} (SPECIALS)";
-        }
-
-        return value == 0xE0001 ? "U+E0001 LANGUAGE TAG (DEPRECATED)" : $"U+{value:X4} ({rune})";
     }
-
-    private static string FoldCase(Rune rune) => rune.Value switch
-    {
-        0x00DF or 0x1E9E => "SS",
-        _ => rune.ToString().ToUpperInvariant(),
-    };
 }

@@ -35,13 +35,6 @@ internal sealed class OcfEpubChecker : IEpubChecker
             throw new ScenarioNotImplementedException("Checking individual documents is not implemented yet.");
         }
 
-        if (System.IO.Directory.Exists(request.Path))
-        {
-            using DirectoryEpubSource source = new(request.Path);
-            OCFChecker.Check(source, request.Version, request.Report);
-            return;
-        }
-
-        OCFChecker.CheckZip(request.Path, request.Version, request.Report);
+        OCFChecker.Check(request.Path, request.Version, request.Report);
     }
 }

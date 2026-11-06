@@ -3,74 +3,83 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Text;
 
 namespace Signet.EpubCheck.Core.Ocf;
 
-/// <summary>An EPUB source backed by a ZIP file.</summary>
+/// <summary>
+/// An EPUB source backed by a ZIP file. The central directory is read by hand (the order of the entries and strict UTF-8
+/// names are facts <see cref="ZipArchive"/> hides); the contents come from <see cref="ZipArchive"/>.
+/// </summary>
 public sealed class ZipEpubSource : IEpubSource
 {
+    // The texts of Java's ZipFile, which upstream prints in PKG-008.
+    internal const string EmptyZipMessage = "zip file is empty";
+    internal const string NoEndHeaderMessage = "zip END header not found";
+    internal const string BadCentralDirectoryMessage = "invalid CEN header (bad signature)";
+    internal const string TruncatedZipMessage = "invalid zip file (truncated)";
+
     private const uint CentralDirectorySignature = 0x02014B50;
     private const uint EndOfCentralDirectorySignature = 0x06054B50;
-    private const uint LocalFileHeaderSignature = 0x04034B50;
-    private readonly FileStream _stream;
+    private const uint Zip64EndOfCentralDirectorySignature = 0x06064B50;
+    private const uint Zip64LocatorSignature = 0x07064B50;
+    private const int EndOfCentralDirectoryLength = 22;
+    private const int Zip64LocatorLength = 20;
+    private const int CentralDirectoryHeaderLength = 46;
+
+    private static readonly UTF8Encoding s_strictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
     private readonly ZipArchive _archive;
-    private readonly Dictionary<EpubSourceEntry, ZipArchiveEntry> _entries;
+    private readonly ZipArchiveEntry[] _archiveEntries;
 
     /// <summary>Opens a ZIP file as an EPUB source.</summary>
+    /// <exception cref="InvalidDataException">The file is not a readable ZIP archive (the message says why).</exception>
+    /// <exception cref="EpubZipEncodingException">A file name of the archive is not UTF-8.</exception>
     public ZipEpubSource(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         Path = System.IO.Path.GetFullPath(path);
-        byte[] bytes = File.ReadAllBytes(Path);
-        List<CentralDirectoryEntry> centralEntries = ReadCentralDirectory(bytes);
-        if (centralEntries.Count == 0)
-        {
-            throw new InvalidDataException("ZIP file contains no entries.");
-        }
-
-        FirstEntryName = centralEntries[0].Name;
-        FirstEntryExtraLength = ReadLocalHeaderExtraLength(bytes, centralEntries[0].LocalHeaderOffset);
-
-        _stream = File.Open(Path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        FileStream stream = new(Path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        ZipArchive? archive = null;
         try
         {
-            _archive = new ZipArchive(_stream, ZipArchiveMode.Read, leaveOpen: false, entryNameEncoding: Encoding.UTF8);
-            if (_archive.Entries.Count != centralEntries.Count)
+            List<CentralDirectoryEntry> centralEntries = ReadCentralDirectory(stream);
+            archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false, entryNameEncoding: Encoding.UTF8);
+            if (archive.Entries.Count != centralEntries.Count)
             {
-                throw new InvalidDataException("ZIP central directory entries could not be read.");
+                throw new InvalidDataException(BadCentralDirectoryMessage);
             }
 
-            _entries = centralEntries.Select((entry, order) =>
+            EpubSourceEntry[] entries = new EpubSourceEntry[centralEntries.Count];
+            _archiveEntries = new ZipArchiveEntry[centralEntries.Count];
+            for (int order = 0; order < entries.Length; order++)
             {
-                bool isDirectory = entry.Name.EndsWith('/');
+                CentralDirectoryEntry entry = centralEntries[order];
+                ZipArchiveEntry archiveEntry = archive.Entries[order];
                 CompressionMethod method = entry.CompressionMethod switch
                 {
                     0 => CompressionMethod.Stored,
                     8 => CompressionMethod.Deflate,
                     _ => CompressionMethod.Other,
                 };
-                EpubSourceEntry metadata = new(entry.Name, order, method, entry.CompressedLength, entry.Length, isDirectory);
-                return new KeyValuePair<EpubSourceEntry, ZipArchiveEntry>(metadata, _archive.Entries[order]);
-            }).ToDictionary();
-            Entries = _entries.Keys.OrderBy(entry => entry.Order).ToArray();
+                entries[order] = new EpubSourceEntry(entry.Name, order, method, entry.CompressedLength, entry.Length,
+                    entry.Name.EndsWith('/'), archiveEntry.LastWriteTime.DateTime);
+                _archiveEntries[order] = archiveEntry;
+            }
+
+            Entries = entries;
+            _archive = archive;
         }
         catch
         {
-            _stream.Dispose();
+            archive?.Dispose();
+            stream.Dispose();
             throw;
         }
     }
 
     /// <summary>The full path of the archive.</summary>
     public string Path { get; }
-
-    /// <summary>The name of the first ZIP entry, decoded from the central directory.</summary>
-    public string FirstEntryName { get; }
-
-    /// <summary>The extra-field length declared in the first entry's local header.</summary>
-    public int FirstEntryExtraLength { get; }
 
     /// <inheritdoc />
     public bool IsPackaged => true;
@@ -87,113 +96,207 @@ public sealed class ZipEpubSource : IEpubSource
             throw new InvalidOperationException("A directory cannot be opened for reading.");
         }
 
-        return _entries[entry].Open();
+        if ((uint)entry.Order >= (uint)Entries.Count || !Entries[entry.Order].Equals(entry))
+        {
+            throw new ArgumentException("The entry does not belong to this source.", nameof(entry));
+        }
+
+        return _archiveEntries[entry.Order].Open();
     }
 
     /// <inheritdoc />
-    public void Dispose()
-    {
-        _archive.Dispose();
-    }
+    public void Dispose() => _archive.Dispose();
 
-    private static List<CentralDirectoryEntry> ReadCentralDirectory(byte[] bytes)
+    private static List<CentralDirectoryEntry> ReadCentralDirectory(FileStream stream)
     {
-        int end = FindEndOfCentralDirectory(bytes);
-        int count = BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(end + 10, 2));
-        int offset = checked((int)BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(end + 16, 4)));
-        List<CentralDirectoryEntry> entries = new(count);
-        for (int i = 0; i < count; i++)
+        long length = stream.Length;
+        if (length == 0)
         {
-            EnsureRange(bytes, offset, 46);
-            if (BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset, 4)) != CentralDirectorySignature)
+            throw new InvalidDataException(EmptyZipMessage);
+        }
+
+        long end = FindEndOfCentralDirectory(stream);
+        byte[] record = ReadAt(stream, end, EndOfCentralDirectoryLength);
+        long count = BinaryPrimitives.ReadUInt16LittleEndian(record.AsSpan(10, 2));
+        long size = BinaryPrimitives.ReadUInt32LittleEndian(record.AsSpan(12, 4));
+        long offset = BinaryPrimitives.ReadUInt32LittleEndian(record.AsSpan(16, 4));
+        if (count == ushort.MaxValue || size == uint.MaxValue || offset == uint.MaxValue)
+        {
+            (count, size, offset) = ReadZip64EndOfCentralDirectory(stream, end);
+        }
+
+        if (offset < 0 || size < 0 || offset + size > end || size > int.MaxValue)
+        {
+            throw new InvalidDataException(TruncatedZipMessage);
+        }
+
+        byte[] directory = ReadAt(stream, offset, (int)size);
+        List<CentralDirectoryEntry> entries = new((int)Math.Min(count, 1 << 16));
+        int position = 0;
+        for (long i = 0; i < count; i++)
+        {
+            EnsureRange(directory, position, CentralDirectoryHeaderLength);
+            ReadOnlySpan<byte> header = directory.AsSpan(position);
+            if (BinaryPrimitives.ReadUInt32LittleEndian(header) != CentralDirectorySignature)
             {
-                throw new InvalidDataException("ZIP central directory is invalid.");
+                throw new InvalidDataException(BadCentralDirectoryMessage);
             }
 
-            ushort flags = BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(offset + 8, 2));
-            ushort method = BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(offset + 10, 2));
-            uint compressedLength = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset + 20, 4));
-            uint length = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset + 24, 4));
-            int nameLength = BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(offset + 28, 2));
-            int extraLength = BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(offset + 30, 2));
-            int commentLength = BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(offset + 32, 2));
-            uint localHeaderOffset = BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset + 42, 4));
-            EnsureRange(bytes, offset + 46, checked(nameLength + extraLength + commentLength));
-            ReadOnlySpan<byte> rawName = bytes.AsSpan(offset + 46, nameLength);
-            if ((flags & 0x0800) == 0 && rawName.IndexOfAnyInRange((byte)0x80, byte.MaxValue) >= 0)
-            {
-                throw new EpubZipEncodingException();
-            }
+            ushort method = BinaryPrimitives.ReadUInt16LittleEndian(header[10..]);
+            long compressedLength = BinaryPrimitives.ReadUInt32LittleEndian(header[20..]);
+            long uncompressedLength = BinaryPrimitives.ReadUInt32LittleEndian(header[24..]);
+            int nameLength = BinaryPrimitives.ReadUInt16LittleEndian(header[28..]);
+            int extraLength = BinaryPrimitives.ReadUInt16LittleEndian(header[30..]);
+            int commentLength = BinaryPrimitives.ReadUInt16LittleEndian(header[32..]);
+            EnsureRange(directory, position + CentralDirectoryHeaderLength, nameLength + extraLength + commentLength);
+            ReadOnlySpan<byte> rawName = directory.AsSpan(position + CentralDirectoryHeaderLength, nameLength);
+            ReadOnlySpan<byte> extra = directory.AsSpan(position + CentralDirectoryHeaderLength + nameLength, extraLength);
+            (compressedLength, uncompressedLength) = ApplyZip64Sizes(extra, compressedLength, uncompressedLength);
 
+            // Like Java's ZipFile(file, UTF_8): every name is read as UTF-8, whether or not the entry sets the UTF-8 flag.
             string name;
             try
             {
-                name = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true).GetString(rawName);
+                name = s_strictUtf8.GetString(rawName);
             }
             catch (DecoderFallbackException ex)
             {
                 throw new EpubZipEncodingException(ex);
             }
 
-            entries.Add(new CentralDirectoryEntry(name, method, compressedLength, length, localHeaderOffset));
-            offset += 46 + nameLength + extraLength + commentLength;
+            entries.Add(new CentralDirectoryEntry(name, method, compressedLength, uncompressedLength));
+            position += CentralDirectoryHeaderLength + nameLength + extraLength + commentLength;
         }
 
         return entries;
     }
 
-    private static int FindEndOfCentralDirectory(byte[] bytes)
+    private static long FindEndOfCentralDirectory(FileStream stream)
     {
-        int minimumLength = 22;
-        if (bytes.Length < minimumLength)
+        long length = stream.Length;
+        if (length < EndOfCentralDirectoryLength)
         {
-            throw new InvalidDataException("ZIP file is too short.");
+            throw new InvalidDataException(NoEndHeaderMessage);
         }
 
-        int first = Math.Max(0, bytes.Length - minimumLength - ushort.MaxValue);
-        for (int index = bytes.Length - minimumLength; index >= first; index--)
+        // The record is the last thing in the file, followed only by a comment of at most 65535 bytes.
+        int tailLength = (int)Math.Min(length, EndOfCentralDirectoryLength + ushort.MaxValue);
+        long tailStart = length - tailLength;
+        byte[] tail = ReadAt(stream, tailStart, tailLength);
+        for (int index = tailLength - EndOfCentralDirectoryLength; index >= 0; index--)
         {
-            if (BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(index, 4)) == EndOfCentralDirectorySignature)
+            if (BinaryPrimitives.ReadUInt32LittleEndian(tail.AsSpan(index)) == EndOfCentralDirectorySignature)
             {
-                return index;
+                return tailStart + index;
             }
         }
 
-        throw new InvalidDataException("ZIP end of central directory record is missing.");
+        throw new InvalidDataException(NoEndHeaderMessage);
     }
 
-    private static int ReadLocalHeaderExtraLength(byte[] bytes, uint localHeaderOffset)
+    private static (long Count, long Size, long Offset) ReadZip64EndOfCentralDirectory(FileStream stream, long end)
     {
-        int offset = checked((int)localHeaderOffset);
-        EnsureRange(bytes, offset, 30);
-        if (BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset, 4)) != LocalFileHeaderSignature)
+        if (end < Zip64LocatorLength)
         {
-            throw new InvalidDataException("ZIP local file header is invalid.");
+            throw new InvalidDataException(NoEndHeaderMessage);
         }
 
-        return BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(offset + 28, 2));
+        byte[] locator = ReadAt(stream, end - Zip64LocatorLength, Zip64LocatorLength);
+        if (BinaryPrimitives.ReadUInt32LittleEndian(locator) != Zip64LocatorSignature)
+        {
+            throw new InvalidDataException(NoEndHeaderMessage);
+        }
+
+        long recordOffset = checked((long)BinaryPrimitives.ReadUInt64LittleEndian(locator.AsSpan(8)));
+        byte[] record = ReadAt(stream, recordOffset, 56);
+        if (BinaryPrimitives.ReadUInt32LittleEndian(record) != Zip64EndOfCentralDirectorySignature)
+        {
+            throw new InvalidDataException(NoEndHeaderMessage);
+        }
+
+        return (checked((long)BinaryPrimitives.ReadUInt64LittleEndian(record.AsSpan(32))),
+            checked((long)BinaryPrimitives.ReadUInt64LittleEndian(record.AsSpan(40))),
+            checked((long)BinaryPrimitives.ReadUInt64LittleEndian(record.AsSpan(48))));
+    }
+
+    // The ZIP64 extra field (id 1) holds, in this order, the sizes that the header marks with 0xFFFFFFFF.
+    private static (long Compressed, long Uncompressed) ApplyZip64Sizes(ReadOnlySpan<byte> extra, long compressed, long uncompressed)
+    {
+        while (extra.Length >= 4)
+        {
+            ushort id = BinaryPrimitives.ReadUInt16LittleEndian(extra);
+            int size = BinaryPrimitives.ReadUInt16LittleEndian(extra[2..]);
+            ReadOnlySpan<byte> data = extra.Slice(4, Math.Min(size, extra.Length - 4));
+            if (id == 1)
+            {
+                if (uncompressed == uint.MaxValue && data.Length >= 8)
+                {
+                    uncompressed = (long)BinaryPrimitives.ReadUInt64LittleEndian(data);
+                    data = data[8..];
+                }
+
+                if (compressed == uint.MaxValue && data.Length >= 8)
+                {
+                    compressed = (long)BinaryPrimitives.ReadUInt64LittleEndian(data);
+                }
+
+                break;
+            }
+
+            extra = extra[Math.Min(extra.Length, 4 + size)..];
+        }
+
+        return (compressed, uncompressed);
+    }
+
+    private static byte[] ReadAt(FileStream stream, long offset, int count)
+    {
+        if (offset < 0 || offset + count > stream.Length)
+        {
+            throw new InvalidDataException(TruncatedZipMessage);
+        }
+
+        byte[] buffer = new byte[count];
+        stream.Position = offset;
+        stream.ReadExactly(buffer);
+        return buffer;
     }
 
     private static void EnsureRange(byte[] bytes, int offset, int length)
     {
         if (offset < 0 || length < 0 || offset > bytes.Length - length)
         {
-            throw new InvalidDataException("ZIP file is truncated.");
+            throw new InvalidDataException(BadCentralDirectoryMessage);
         }
     }
 
-    private sealed record CentralDirectoryEntry(string Name, ushort CompressionMethod, uint CompressedLength, uint Length, uint LocalHeaderOffset);
+    private sealed record CentralDirectoryEntry(string Name, ushort CompressionMethod, long CompressedLength, long Length);
 }
 
-internal sealed class EpubZipEncodingException : Exception
+/// <summary>A file name of a ZIP archive is not encoded as UTF-8 (upstream's <c>PKG-027</c>).</summary>
+public sealed class EpubZipEncodingException : Exception
 {
+    /// <summary>Creates the exception.</summary>
     public EpubZipEncodingException()
         : base("ZIP file names are not encoded as UTF-8.")
     {
     }
 
+    /// <summary>Creates the exception with the message.</summary>
+    public EpubZipEncodingException(string message)
+        : base(message)
+    {
+    }
+
+    /// <summary>Creates the exception with the decoding error that caused it.</summary>
     public EpubZipEncodingException(Exception innerException)
         : base("ZIP file names are not encoded as UTF-8.", innerException)
+    {
+    }
+
+    /// <summary>Creates the exception with the message and the error that caused it.</summary>
+    public EpubZipEncodingException(string message, Exception innerException)
+        : base(message, innerException)
     {
     }
 }

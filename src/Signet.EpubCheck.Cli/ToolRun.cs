@@ -179,8 +179,27 @@ internal sealed class ToolRun
             return 1;
         }
 
-        OCFChecker.CheckZip(path, _version, report);
-        return report.ErrorCount + report.FatalErrorCount == 0 ? 0 : 1;
+        OCFChecker.Check(path, _version, report);
+        return Result(report);
+    }
+
+    // Upstream's result of a check: the closing sentence and the exit code (warnings fail only with --failonwarnings).
+    private int Result(ConsoleReport report)
+    {
+        if (report.ErrorCount == 0 && report.FatalErrorCount == 0)
+        {
+            if (report.WarningCount == 0)
+            {
+                _output.Println(_messages.Get("no_errors__or_warnings"));
+                return 0;
+            }
+
+            _output.PrintError(_messages.Get("there_were_warnings"));
+            return FailOnWarnings ? 1 : 0;
+        }
+
+        _output.PrintError(_messages.Get("there_were_errors"));
+        return 1;
     }
 
     // The modes upstream has a checker for: none (a whole EPUB), opf, xhtml, svg (EPUB 2 and 3), mo and nav (EPUB 3 only).
