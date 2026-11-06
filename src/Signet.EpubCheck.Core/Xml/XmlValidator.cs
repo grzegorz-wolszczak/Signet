@@ -1,16 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Signet.EpubCheck.Core.Jing;
 using Signet.EpubCheck.Core.Jing.Sax;
 using Signet.EpubCheck.Core.Jing.Validate;
+using Signet.EpubCheck.Core.Reporting;
 
 namespace Signet.EpubCheck.Core.Xml;
 
 /// <summary>
 /// A compiled schema of EPUBCheck (upstream's <c>XMLValidator</c>): one of the embedded schemas, read once; validators
 /// made from it (one per document) can run in parallel. A <c>.rnc</c> schema is read in RELAX NG's compact syntax, any
-/// other by the language its root element says (Jing's <c>AutoSchemaReader</c>).
+/// other by the language its root element says (Jing's <c>AutoSchemaReader</c>). As in EPUBCheck, the message of a
+/// failed Schematron assertion is its statement alone (upstream empties Jing's <c>assertion failed:</c> and
+/// <c>report:</c>), so that <see cref="ReportingErrorHandler"/> sees its <c>WARNING:</c> / <c>USAGE:</c> prefix.
 /// </summary>
 public sealed class XmlValidator
 {
@@ -32,7 +36,8 @@ public sealed class XmlValidator
             Schema = schemaName.EndsWith(CompactExtension, StringComparison.Ordinal)
                 ? new RelaxNgSchemaReader { Syntax = RelaxNgSyntax.Compact, ErrorHandler = errors, Resolver = SchemaResources.Resolver }
                     .CreateSchema(source)
-                : new AutoSchemaReader { ErrorHandler = errors, Resolver = SchemaResources.Resolver }.CreateSchema(source);
+                : new AutoSchemaReader { ErrorHandler = errors, Resolver = SchemaResources.Resolver, SchematronStatementsOnly = true }
+                    .CreateSchema(source);
         }
         catch (Exception e) when (e is IncorrectSchemaException or SaxException)
         {
@@ -51,6 +56,14 @@ public sealed class XmlValidator
     /// <summary>Whether the schema is normative: the errors against an informative one are reported as <c>RSC-025</c> /
     /// <c>RSC-024</c> instead of <c>RSC-005</c> / <c>RSC-017</c> (upstream's <c>ReportingErrorHandler</c>).</summary>
     public bool IsNormative { get; }
+
+    /// <summary>
+    /// A validator of one document whose errors are reported to <paramref name="report"/> at <paramref name="location"/>
+    /// (what upstream's <c>XMLParser.addValidator</c> makes); the messages of the schema languages are in the language of
+    /// <paramref name="culture"/> (upstream: the locale of the report). Feed it the events of the document.
+    /// </summary>
+    public IValidator CreateValidator(IReport report, EpubLocation location, CultureInfo? culture = null) =>
+        Schema.CreateValidator(new ReportingErrorHandler(report, location, IsNormative), culture);
 
     private sealed class ErrorCollector : ISaxErrorHandler
     {
