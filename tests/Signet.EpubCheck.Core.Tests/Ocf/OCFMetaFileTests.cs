@@ -272,6 +272,56 @@ public sealed class OCFMetaFileTests
         report.Messages.Should().BeEmpty();
     }
 
+    [Fact]
+    public void Check_FileOfAnEpub2NoPackageDocumentDeclares_ReportsOpf003WithItsEncodedPath()
+    {
+        // Arrange
+        string package = Package("2.0").Replace("/>", "><manifest/></package>");
+        using MemoryEpubSource source = Source(Container(Rootfile("package.opf")), package, "caf\u00e9.xhtml", "<a/>", "META-INF/other.xml", "<a/>");
+        CollectingReport report = new() { ReportingLevel = Severity.Usage };
+
+        // Act
+        OCFChecker.Check(source, EpubVersion.Version2, report, s_publication);
+
+        // Assert
+        report.Messages.Should().ContainSingle(m => m.Message.Id == MessageId.OPF_003).Which.Arguments[0].Should().Be("caf%C3%A9.xhtml");
+    }
+
+    [Fact]
+    public void Check_FileDeclaredInThePackageDocument_IsNotReportedAsUndeclared()
+    {
+        // Arrange
+        string package = "<package xmlns=\"" + Opf + "\" version=\"2.0\" unique-identifier=\"u\"><manifest>"
+            + "<item id=\"a\" href=\"a.xhtml\" media-type=\"application/xhtml+xml\"/></manifest></package>";
+        using MemoryEpubSource source = Source(Container(Rootfile("package.opf")), package, "a.xhtml", "<a/>");
+        CollectingReport report = new();
+
+        // Act
+        OCFChecker.Check(source, EpubVersion.Version2, report, s_publication);
+
+        // Assert
+        report.Messages.Select(m => m.Message.Id).Should().NotContain(MessageId.OPF_003);
+    }
+
+    [Fact]
+    public void Check_ObfuscatedResourceThatIsNotAFont_ReportsPkg026()
+    {
+        // Arrange
+        string package = "<package xmlns=\"" + Opf + "\" version=\"2.0\" unique-identifier=\"u\"><manifest>"
+            + "<item id=\"a\" href=\"a.xhtml\" media-type=\"application/xhtml+xml\"/></manifest></package>";
+        string encryption = "<encryption xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\" xmlns:enc=\"http://www.w3.org/2001/04/xmlenc#\">"
+            + "<enc:EncryptedData><enc:EncryptionMethod Algorithm=\"http://www.idpf.org/2008/embedding\"/>"
+            + "<enc:CipherData><enc:CipherReference URI=\"a.xhtml\"/></enc:CipherData></enc:EncryptedData></encryption>";
+        using MemoryEpubSource source = Source(Container(Rootfile("package.opf")), package, "a.xhtml", "<a/>", "META-INF/encryption.xml", encryption);
+        CollectingReport report = new();
+
+        // Act
+        OCFChecker.Check(source, EpubVersion.Version2, report, s_publication);
+
+        // Assert
+        report.Messages.Should().ContainSingle(m => m.Message.Id == MessageId.PKG_026).Which.Arguments.Should().Equal("application/xhtml+xml", "package.opf");
+    }
+
     private static string Container(string rootfiles) =>
         "<container version=\"1.0\" xmlns=\"" + ContainerNamespace + "\"><rootfiles>" + rootfiles + "</rootfiles></container>";
 
