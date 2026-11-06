@@ -30,6 +30,9 @@ public sealed class XmlEventReader
     /// <summary>The handler of the notations and unparsed entities of the internal DTD subset.</summary>
     public IDtdHandler? DtdHandler { get; set; }
 
+    /// <summary>The handler of the document type declaration and the entities of the internal subset.</summary>
+    public IDeclarationHandler? DeclarationHandler { get; set; }
+
     /// <summary>The handler of a document that is not well-formed (told before the reader throws).</summary>
     public ISaxErrorHandler? ErrorHandler { get; set; }
 
@@ -52,6 +55,7 @@ public sealed class XmlEventReader
             using XmlReader reader = XmlReader.Create(stream, settings, input.SystemId ?? string.Empty);
             locator.Reader = reader as IXmlLineInfo;
             Handler.SetDocumentLocator(locator);
+            DeclarationHandler?.SetDocumentLocator(locator);
             Handler.StartDocument();
             Read(reader, locator);
             Handler.EndDocument();
@@ -99,6 +103,7 @@ public sealed class XmlEventReader
                     Handler.ProcessingInstruction(reader.Name, reader.Value);
                     break;
                 case XmlNodeType.DocumentType:
+                    DeclarationHandler?.StartDtd(reader.Name, NullIfEmpty(reader.GetAttribute("PUBLIC")), NullIfEmpty(reader.GetAttribute("SYSTEM")));
                     ReportDtdDeclarations(reader.Name, reader.Value);
                     break;
             }
@@ -108,7 +113,7 @@ public sealed class XmlEventReader
     // The reader has already checked the subset: it is parsed again only to see its declarations.
     private void ReportDtdDeclarations(string rootName, string internalSubset)
     {
-        if (DtdHandler is null || internalSubset.Length == 0)
+        if ((DtdHandler is null && DeclarationHandler is null) || internalSubset.Length == 0)
         {
             return;
         }
@@ -123,17 +128,27 @@ public sealed class XmlEventReader
         XmlDocumentType doctype = document.DocumentType!;
         foreach (XmlNotation notation in doctype.Notations)
         {
-            DtdHandler.NotationDecl(notation.Name, notation.PublicId, notation.SystemId);
+            DtdHandler?.NotationDecl(notation.Name, notation.PublicId, notation.SystemId);
         }
 
         foreach (XmlEntity entity in doctype.Entities)
         {
             if (entity.NotationName is { } notationName)
             {
-                DtdHandler.UnparsedEntityDecl(entity.Name, entity.PublicId, entity.SystemId, notationName);
+                DtdHandler?.UnparsedEntityDecl(entity.Name, entity.PublicId, entity.SystemId, notationName);
+            }
+            else if (entity.SystemId is not null || entity.PublicId is not null)
+            {
+                DeclarationHandler?.ExternalEntityDecl(entity.Name, entity.PublicId, entity.SystemId);
+            }
+            else
+            {
+                DeclarationHandler?.InternalEntityDecl(entity.Name, entity.InnerText);
             }
         }
     }
+
+    private static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
 
     private List<string> StartElement(XmlReader reader, AttributeList attributes)
     {

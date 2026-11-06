@@ -162,6 +162,22 @@ public interface IDtdHandler
     void UnparsedEntityDecl(string name, string? publicId, string? systemId, string notationName);
 }
 
+/// <summary>Receives the declarations of a document type (the part of SAX's <c>LexicalHandler</c> and <c>DeclHandler</c> EPUBCheck uses).</summary>
+public interface IDeclarationHandler
+{
+    /// <summary>Gives the locator that tells where the following events are.</summary>
+    void SetDocumentLocator(ILocator locator);
+
+    /// <summary>The document type declaration: the name of the root element and the external identifiers.</summary>
+    void StartDtd(string rootName, string? publicId, string? systemId);
+
+    /// <summary>The declaration of an internal general entity.</summary>
+    void InternalEntityDecl(string name, string value);
+
+    /// <summary>The declaration of an external parsed general entity.</summary>
+    void ExternalEntityDecl(string name, string? publicId, string? systemId);
+}
+
 /// <summary>Receives the problems found while reading or validating (SAX's <c>ErrorHandler</c>). A handler may throw to stop.</summary>
 public interface ISaxErrorHandler
 {
