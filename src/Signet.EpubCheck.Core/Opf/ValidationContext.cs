@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using Signet.EpubCheck.Core.Galimatias;
 using Signet.EpubCheck.Core.Ocf;
+using Signet.EpubCheck.Core.References;
 using Signet.EpubCheck.Core.Reporting;
 using Signet.EpubCheck.Core.Util;
 using Signet.EpubCheck.Core.Vocab;
@@ -53,8 +54,20 @@ public sealed record ValidationContext
     /// <summary>The publication types (<c>dc:type</c>).</summary>
     public IReadOnlySet<PublicationType> PublicationTypes { get; init; } = new HashSet<PublicationType>();
 
-    /// <summary>EPUBCheck's own properties of the check (upstream's <c>EpubCheckVocab</c>: <c>multiple-rendition</c>, …).</summary>
-    public IReadOnlySet<EpubCheckVocab.Property> Properties { get; init; } = new HashSet<EpubCheckVocab.Property>();
+    /// <summary>The properties of the checked resource (those of its manifest item) and EPUBCheck's own of the check (<c>epubcheck:multiple-rendition</c>, …).</summary>
+    public IReadOnlySet<VocabProperty> Properties { get; init; } = new HashSet<VocabProperty>();
+
+    /// <summary>What the checkers of the documents found in them (shared by the documents of one package document).</summary>
+    public FeatureReport FeatureReport { get; init; } = new();
+
+    /// <summary>The resources of the publication, or <c>null</c> without a container.</summary>
+    public ResourceRegistry? ResourceRegistry { get; init; }
+
+    /// <summary>The references between the resources, or <c>null</c> without a container.</summary>
+    public ReferenceRegistry? ReferenceRegistry { get; init; }
+
+    /// <summary>The manifest item of the checked resource, if the package document declares it.</summary>
+    public OPFItem? OpfItem => ResourceRegistry?.GetOpfItem(Url);
 
     /// <summary>The path of the resource in messages: relative to the container, or the file path.</summary>
     public string Path => ComputePath();
@@ -80,13 +93,23 @@ public sealed record ValidationContext
     }
 
     /// <summary>Whether the check has the property <paramref name="property"/>.</summary>
-    public bool HasProperty(EpubCheckVocab.Property property) => Properties.Contains(property);
+    public bool HasProperty(VocabProperty property) => Properties.Contains(property);
+
+    /// <summary>Whether the check has EPUBCheck's property <paramref name="property"/>.</summary>
+    public bool HasProperty(EpubCheckVocab.Property property) => Properties.Contains(EpubCheckVocab.Vocab.Get(property));
 
     /// <summary>This context with <paramref name="property"/> added.</summary>
-    public ValidationContext WithProperty(EpubCheckVocab.Property property)
+    public ValidationContext WithProperty(VocabProperty property)
     {
-        HashSet<EpubCheckVocab.Property> properties = new(Properties) { property };
+        HashSet<VocabProperty> properties = new(Properties) { property };
         return this with { Properties = properties };
+    }
+
+    /// <summary>This context with the container <paramref name="container"/> and new registries for it (upstream's <c>builder.container</c>).</summary>
+    public ValidationContext WithContainer(OCFContainer container)
+    {
+        ResourceRegistry resources = new();
+        return this with { Container = container, ResourceRegistry = resources, ReferenceRegistry = new ReferenceRegistry(container, resources) };
     }
 
     private string ComputePath()

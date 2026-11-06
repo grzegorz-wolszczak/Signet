@@ -49,7 +49,7 @@ internal sealed class OCFCheckerState
             if (_container is null)
             {
                 _container = _containerBuilder.Build();
-                _context = _context with { Container = _container };
+                _context = _context.WithContainer(_container);
             }
 
             return _container;
@@ -148,7 +148,7 @@ internal sealed class OCFCheckerState
 
     public void SetProfile(EpubProfile profile) => _context = _context with { Profile = profile };
 
-    public void AddProperty(EpubCheckVocab.Property property) => _context = _context.WithProperty(property);
+    public void AddProperty(EpubCheckVocab.Property property) => _context = _context.WithProperty(EpubCheckVocab.Vocab.Get(property));
 
     // A LinkedHashMap's put: the value is replaced, the key keeps its place.
     private static void Put<T>(List<KeyValuePair<Url, T>> map, Url key, T value)

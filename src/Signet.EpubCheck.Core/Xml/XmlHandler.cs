@@ -123,6 +123,15 @@ public abstract class XmlHandler : IContentHandler
     /// <summary>The URL <paramref name="value"/> refers to, resolved against the base; <c>null</c> when it does not parse (reported).</summary>
     protected Url? CheckUrl(string? value) => _urlChecker.CheckUrl(value, Location());
 
+    /// <summary>Registers a reference from the current place to <paramref name="url"/> (nothing when there is no container).</summary>
+    protected void RegisterReference(Url? url, ReferenceType type, bool hasIntrinsicFallback = false)
+    {
+        if (url is not null)
+        {
+            Context.ReferenceRegistry?.RegisterReference(url, type, Location(), hasIntrinsicFallback);
+        }
+    }
+
     /// <summary>An element starts: <see cref="CurrentElement"/> is it.</summary>
     protected virtual void StartElement()
     {
