@@ -116,15 +116,10 @@ public static class OCFChecker
         CheckPackageDocuments(state, validationVersion, report, location);
     }
 
-    // Each package document is checked by the checker of the version; the checker of EPUB 3 package documents comes with
-    // task 3.3, so only EPUB 2 is checked (and the consistency of the container with what the documents declare).
+    // Each package document is checked by the checker of the version (upstream's CheckerFactory), then the consistency of
+    // the container with what the documents declare.
     private static void CheckPackageDocuments(OCFCheckerState state, EpubVersion version, IReport report, EpubLocation location)
     {
-        if (version != EpubVersion.Version2)
-        {
-            return;
-        }
-
         List<OPFHandler> handlers = [];
         foreach (Url packageDocument in state.PackageDocuments)
         {
@@ -134,23 +129,24 @@ public static class OCFChecker
                 MimeType = MediaTypes.PackageDocument,
                 PublicationTypes = state.PublicationTypesOf(packageDocument),
             };
-            OPFChecker checker = new(context);
+            OPFChecker checker = version == EpubVersion.Version3 ? new OPFChecker30(context) : new OPFChecker(context);
             checker.Check();
             handlers.Add(checker.OpfHandler!);
         }
 
-        CheckContainerConsistency(state, handlers, report, location);
+        CheckContainerConsistency(state, version, handlers, report, location);
     }
 
     // Upstream: the files of the container that neither belong to the OCF (META-INF, mimetype) nor are declared by the
     // container file or one of the package documents are reported (OPF-003); an obfuscated resource must be a font (PKG-026).
-    private static void CheckContainerConsistency(OCFCheckerState state, List<OPFHandler> handlers, IReport report, EpubLocation location)
+    private static void CheckContainerConsistency(OCFCheckerState state, EpubVersion version, List<OPFHandler> handlers, IReport report, EpubLocation location)
     {
         foreach (Url resource in state.Container.Resources)
         {
             string path = (resource.Path ?? string.Empty).Length > 0 ? resource.Path![1..] : string.Empty;
             if (!path.StartsWith("META-INF/", StringComparison.Ordinal) && !path.StartsWith("META-INF\\", StringComparison.Ordinal)
-                && path != OCFChecker.MimeTypePath && !state.IsDeclared(resource) && !handlers.Exists(handler => handler.GetItemByUrl(resource) is not null))
+                && path != OCFChecker.MimeTypePath && !state.IsDeclared(resource) && !handlers.Exists(handler => handler.GetItemByUrl(resource) is not null
+                    || (version == EpubVersion.Version3 && ((OPFHandler30)handler).LinkedResources.HasResource(resource))))
             {
                 report.Message(MessageId.OPF_003, location, path);
             }
