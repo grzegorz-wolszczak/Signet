@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`) is done**; **next: task 3.2 OPF 2**.
+epic 3: **3.1 (the files of `META-INF`) and 3.2 (OPF 2) are done**; **next: task 3.3 OPF 3**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.2 OPF 2**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.3 OPF 3**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -87,14 +87,14 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 3.2 OPF 2
+### Next task: 3.3 OPF 3
 
-The package document of EPUB 2: port upstream's `OPFChecker` (its `OPFHandler` and the items, spine and guide it builds), the
-validators `OPF_20_RNG` / `OPF_20_SCH` / `IDUNIQUE_20_SCH` (`Xml.XmlValidators`, loaded and mapped to messages since 2.6 and
-2.7), the declaration handler of `XmlParser` (DOCTYPE and entity checks, which needs the DTD events of the reader and the
-bundled DTDs of `schema/20/dtd`), and hook the checker into `OCFChecker` (which already reads `container.xml`, finds the
-package documents and their version, and leaves the checks of the package documents and of the resources they declare to
-the OPF tasks, 3.2 and 3.3: the end of upstream's `OCFChecker.check`, `OPF-003` and `PKG-026`, belongs there).
+The package document of EPUB 3: port `OPFChecker30` and `OPFHandler30` (properties, refinements, collections, linked
+resources, vocabularies, `OPF-0xx`/`RSC-0xx` checks), on top of `Opf/OPFChecker` and `Opf/OPFHandler` (done in 3.2, made to be
+subclassed: `CreateHandler`, `Validators`, `CheckItem`, `CheckItemAfterResourceValidation`). `OPFChecker.Validators()` lists
+only the EPUB 2 schemas for now; the EPUB 3 ones (`Opf30Rnc`, `Opf30Sch`, the collections, the profiles) are in
+`Xml.XmlValidators`. `OCFChecker.CheckPackageDocuments` runs the package documents of EPUB 2 only: EPUB 3 joins it with this
+task, with the consistency check of the container (`OPF-003`, `PKG-026`; linked resources count as declared).
 
 ### Current state of the conformance run
 
@@ -382,7 +382,19 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   document); the one that needs `RSC-004` waits for the resource checks. Not done, deliberately: the declaration handler of
   the parser (task 3.2), the mapping document of multiple renditions (task 3.11), the checks after the package documents
   (3.2/3.3), `PKG-026`.
-- **3.2 OPF 2 (L).** `opf.rng/sch`, manifest, spine, `guide`, fallback chains.
+- **3.2 OPF 2 (L). DONE.** `Opf/OPFChecker` (upstream's `OPFChecker`, the EPUB 2 checker, with the shared parts), `OPFHandler`
+  (items, spine, guide, unique identifier, Dublin Core: `OPF-030`, `OPF-047`–`OPF-055`, `OPF-062`/`OPF-063`, `OPF-072`,
+  `OPF-085`, facts), `OPFItem` / `OPFItems` / `OPFReference`, `FallbackChainResolver` (`OPF-040`, `OPF-041`, `OPF-045`),
+  `OpfMediaTypes` (the blessed and core media types), `Util/DateParser` (with the error texts of Java's calendar). Checks:
+  manifest items (`OPF-035`–`OPF-039`, `OPF-074`, `OPF-099`), spine (`OPF-033`, `OPF-034`, `OPF-042`–`OPF-044`), guide
+  (`OPF-031`, `OPF-032`), `PKG-020`, items count and declared media types. `Xml/DeclarationHandler` (DOCTYPE checks `HTM-004`,
+  `HTM-009`, `OPF-073`, external entities `HTM-003`) with the DOCTYPE and entity events of `XmlEventReader`.
+  `OCFChecker` runs the package documents of EPUB 2 and then the consistency of the container (`OPF-003`, `PKG-026`). The
+  conformance harness checks a single package document (EPUB 2) and no longer gives the version in EPUB mode (upstream's
+  `EpubCheck(file, report, profile)` does not); `epub2/ocf-publication`, `opf-package-document` and `opf-publication` are
+  enabled. Not done, deliberately: the resource and reference registries and the checks of the resources an item declares
+  (`CheckItemContent`: NCX 3.4, content documents 3.5, `RSC-007`/`RSC-032` and the reference checker 3.6); six scenarios of
+  `opf-publication.feature` wait for them.
 - **3.3 OPF 3 (XL).** `package-30.rnc/sch`, `OPFChecker30` / `OPFHandler30`, `properties`, refinements, collections,
   vocabularies.
 - **3.4 Navigation (M).** `nav` (`NAV-*`), NCX (`NCX-*`).
