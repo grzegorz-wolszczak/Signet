@@ -113,7 +113,7 @@ internal sealed class SchematronValidator : IValidator, IDtdHandler
 
     private void Report(AssertionItem assertion, XdmNode node, XPathContext context)
     {
-        StringBuilder message = new(_localizer.Message(assertion.IsReport ? "report" : "failed_assertion"));
+        StringBuilder message = new(_schema.StatementsOnly ? string.Empty : _localizer.Message(assertion.IsReport ? "report" : "failed_assertion"));
         if (assertion.Statement is not null)
         {
             message.Append(Environment.NewLine).Append(Indent);
