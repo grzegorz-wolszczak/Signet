@@ -19,6 +19,9 @@ internal static class ConformanceCorpus
     public static readonly IReadOnlySet<string> EnabledFeatures = new HashSet<string>(StringComparer.Ordinal)
     {
         "cli/cli.feature",
+        "epub2/ocf-publication.feature",
+        "epub2/opf-package-document.feature",
+        "epub2/opf-publication.feature",
         "epub3/04-ocf/filename-checker.feature",
         "epub3/04-ocf/ocf.feature",
         "epub3/C-viewport-meta-tag/viewport-syntax.feature",
@@ -68,7 +71,17 @@ internal static class ConformanceCorpus
         AddOcf(pending, "Needs content-document and resource-reference checks (tasks 3.5 and 3.6).",
             118, 131, 137, 145, 151, 157, 169, 175, 181, 187, 193, 199, 207, 213, 218, 223, 229, 235, 240, 245, 255, 261, 270);
         AddOcf(pending, "RSC-004 comes from PublicationResourceChecker, which runs with the package document checks (tasks 3.2 and 3.3).", 319);
+        AddFeature(pending, "epub2/opf-publication.feature", "Needs the resource and reference registries (RSC-007, RSC-008, RSC-032: task 3.6).", 60, 65, 86, 96, 145);
+        AddFeature(pending, "epub2/opf-publication.feature", "Needs the NCX checker (CHK-008 for an item the checker cannot be made for: task 3.4).", 117);
         return pending;
+    }
+
+    private static void AddFeature(Dictionary<string, string> pending, string feature, string reason, params int[] lines)
+    {
+        foreach (int line in lines)
+        {
+            pending.Add($"{feature}:{line}", reason);
+        }
     }
 
     private static void AddOcf(Dictionary<string, string> pending, string reason, params int[] lines)

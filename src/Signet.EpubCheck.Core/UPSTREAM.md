@@ -231,6 +231,20 @@ The XML parser and the OCF flow (`Xml/`, `Ocf/`, `References/`, upstream's `XMLP
   events, they come with the OPF 2 task.
 - `EPUBVersion.toString` is `3.4` for EPUB 3, as in the command line; upstream still says `3.3`.
 
+The package document (`Opf/`, upstream's `OPFChecker`, `OPFHandler`, `OPFItem`, `FallbackChainResolver`, `DateParser`):
+
+- A guide `reference` whose URL did not parse (`RSC-020` is reported) is skipped when the guide is checked; upstream fails with
+  a null pointer there.
+- `FallbackChainResolver` names the `fallback`, not the `fallback-style`, in `OPF-041`, as upstream does (kept: the message
+  tells the item's fallback attribute).
+- `DateParser` keeps the texts of Java's `GregorianCalendar` (`... class java.lang.IllegalArgumentException MONTH`); it
+  returns the year only, which is all `OPFHandler` uses. Java's calendar is Julian before 1582, so 1500-02-29 is valid.
+- `UUID.fromString` is Java's lenient one: five groups of up to 16 hexadecimal digits, a trailing empty group allowed.
+- The resources of the manifest are not registered or checked yet (`ResourceRegistry`, `ReferenceRegistry`,
+  `ResourceReferencesChecker`, `CheckItemContent`), nor are references of the guide registered: they come with 3.4–3.6.
+- `OCFChecker` checks EPUB 3 package documents from task 3.3 on; until then the container consistency (`OPF-003`) is
+  reported for EPUB 2 only.
+
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
 - The reason of an argument error is printed on the error stream (`Version number omitted from the -v argument.`,
