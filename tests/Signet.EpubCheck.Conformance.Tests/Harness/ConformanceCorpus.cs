@@ -21,6 +21,7 @@ internal static class ConformanceCorpus
         "cli/cli.feature",
         "epub3/04-ocf/filename-checker.feature",
         "epub3/04-ocf/ocf.feature",
+        "epub3/C-viewport-meta-tag/viewport-syntax.feature",
         "unit-tests/url-fragment.feature",
     };
 

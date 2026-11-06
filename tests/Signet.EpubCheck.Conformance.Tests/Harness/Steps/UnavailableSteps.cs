@@ -27,11 +27,6 @@ internal static class UnavailableSteps
             "JSON at {string} are all {string}",
             "JSON at {string} are all {bool}");
 
-        Unavailable(steps, "The viewport parser is not implemented yet (task 3.5).",
-            "parsing viewport {string}",
-            "no error is returned",
-            "the parsed viewport equals {multimap}",
-            "error {error} is returned");
     }
 
     private static void Unavailable(StepRegistry steps, string reason, params string[] expressions) =>
