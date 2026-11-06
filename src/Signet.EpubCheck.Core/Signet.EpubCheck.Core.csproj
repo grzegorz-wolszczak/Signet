@@ -17,6 +17,9 @@
   <ItemGroup>
     <!-- Jing's RELAX NG schema of NVDL, which NVDL schemas are validated with (Jing's validate/nvdl/resources/nvdl.rng). -->
     <EmbeddedResource Include="Jing\Resources\nvdl.rng" LogicalName="Signet.EpubCheck.Core.Jing.Resources.nvdl.rng" />
+    <!-- Jing's RELAX NG schemas of ISO Schematron and Schematron 1.5 (Jing's validate/schematron/resources). -->
+    <EmbeddedResource Include="Jing\Resources\iso-schematron.rnc" LogicalName="Signet.EpubCheck.Core.Jing.Resources.iso-schematron.rnc" />
+    <EmbeddedResource Include="Jing\Resources\schematron.rnc" LogicalName="Signet.EpubCheck.Core.Jing.Resources.schematron.rnc" />
   </ItemGroup>
 
 </Project>

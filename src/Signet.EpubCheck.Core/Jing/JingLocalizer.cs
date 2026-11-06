@@ -35,6 +35,9 @@ internal sealed class JingLocalizer
     private static readonly ResourceManager s_autoSchemaMessages =
         new("Signet.EpubCheck.Core.Jing.Resources.AutoSchemaMessages", typeof(JingLocalizer).Assembly);
 
+    private static readonly ResourceManager s_schematronMessages =
+        new("Signet.EpubCheck.Core.Jing.Resources.SchematronMessages", typeof(JingLocalizer).Assembly);
+
     private static readonly ConcurrentDictionary<(ResourceManager, string), JingLocalizer> s_instances = new();
 
     private const string GroupedIntegerFormat = "#,##0";
@@ -69,6 +72,9 @@ internal sealed class JingLocalizer
     /// <summary>The raw resources of the schema language detection, for the tests.</summary>
     internal static ResourceManager AutoSchemaManager => s_autoSchemaMessages;
 
+    /// <summary>The raw resources of Schematron, for the tests.</summary>
+    internal static ResourceManager SchematronManager => s_schematronMessages;
+
     /// <summary>The messages of schema building and validation (Jing's <c>SchemaBuilderImpl.localizer</c>).</summary>
     public static JingLocalizer ForPattern(CultureInfo? culture) => Get(s_patternMessages, culture);
 
@@ -89,6 +95,9 @@ internal sealed class JingLocalizer
 
     /// <summary>The messages of the schema language detection (Jing's <c>AutoSchemaReceiver</c> localizer).</summary>
     public static JingLocalizer ForAutoSchema(CultureInfo? culture) => Get(s_autoSchemaMessages, culture);
+
+    /// <summary>The messages of Schematron schemas and validation (Jing's Schematron localizers).</summary>
+    public static JingLocalizer ForSchematron(CultureInfo? culture) => Get(s_schematronMessages, culture);
 
     /// <summary>
     /// An integer as <c>MessageFormat</c> writes a number argument: with the grouping separator of the language

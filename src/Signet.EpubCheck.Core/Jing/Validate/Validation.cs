@@ -5,6 +5,7 @@ using Signet.EpubCheck.Core.Jing.Datatype;
 using Signet.EpubCheck.Core.Jing.Parse;
 using Signet.EpubCheck.Core.Jing.Sax;
 using Signet.EpubCheck.Core.Jing.Validate.Nvdl;
+using Signet.EpubCheck.Core.Jing.Validate.Schematron;
 
 namespace Signet.EpubCheck.Core.Jing.Validate;
 
@@ -61,13 +62,19 @@ internal interface ISchemaLanguage
 }
 
 /// <summary>
-/// Reads a schema in the language its root element says (Jing's <c>AutoSchemaReader</c>): RELAX NG in the XML syntax or
-/// NVDL. Jing starts parsing and hands the events to the reader of the language once it sees the root element; the port
+/// Reads a schema in the language its root element says (Jing's <c>AutoSchemaReader</c>): RELAX NG in the XML syntax,
+/// NVDL, ISO Schematron or Schematron 1.5. Jing starts parsing and hands the events to the reader of the language once it sees the root element; the port
 /// reads up to the root element, then lets the reader of the language read the whole document.
 /// </summary>
 public sealed class AutoSchemaReader
 {
-    private static readonly List<ISchemaLanguage> s_languages = [new RelaxNgLanguage(), new NvdlLanguage()];
+    private static readonly List<ISchemaLanguage> s_languages =
+    [
+        new RelaxNgLanguage(),
+        new NvdlLanguage(),
+        new SchematronLanguage(SchematronLanguage.IsoNamespace),
+        new SchematronLanguage(SchematronLanguage.Schematron15Namespace),
+    ];
 
     /// <summary>Where the errors of the schema go.</summary>
     public ISaxErrorHandler? ErrorHandler { get; init; }
@@ -90,26 +97,10 @@ public sealed class AutoSchemaReader
         return CreateSchema(source, new SchemaReadSettings(ErrorHandler, Resolver, DatatypeLibraryFactory, Culture), isAttributesSchema: false);
     }
 
-    /// <summary>Registers another schema language (Schematron, task 2.5).</summary>
-    internal static void Register(ISchemaLanguage language)
-    {
-        lock (s_languages)
-        {
-            if (!s_languages.Exists(l => string.Equals(l.NamespaceUri, language.NamespaceUri, StringComparison.Ordinal)))
-            {
-                s_languages.Add(language);
-            }
-        }
-    }
-
     internal static ISchema CreateSchema(InputSource source, SchemaReadSettings settings, bool isAttributesSchema)
     {
         (string ns, FixedLocator? locator) = RootNamespace(source, settings.ErrorHandler);
-        ISchemaLanguage? language;
-        lock (s_languages)
-        {
-            language = s_languages.Find(l => string.Equals(l.NamespaceUri, ns, StringComparison.Ordinal));
-        }
+        ISchemaLanguage? language = s_languages.Find(l => string.Equals(l.NamespaceUri, ns, StringComparison.Ordinal));
 
         if (language is null)
         {
