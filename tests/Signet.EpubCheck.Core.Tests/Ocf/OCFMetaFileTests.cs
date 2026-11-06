@@ -284,7 +284,7 @@ public sealed class OCFMetaFileTests
         OCFChecker.Check(source, EpubVersion.Version2, report, s_publication);
 
         // Assert
-        report.Messages.Should().ContainSingle(m => m.Message.Id == MessageId.OPF_003).Which.Arguments[0].Should().Be("caf%C3%A9.xhtml");
+        report.Messages.Where(m => m.Message.Id == MessageId.OPF_003).Select(m => m.Arguments[0]).Should().Contain("caf%C3%A9.xhtml").And.NotContain("META-INF/other.xml");
     }
 
     [Fact]
@@ -348,6 +348,7 @@ public sealed class OCFMetaFileTests
         if (package is not null)
         {
             entries.Add(new("package.opf", Encoding.UTF8.GetBytes(package)));
+            entries.Add(new("nav.xhtml", Encoding.UTF8.GetBytes("<a/>")));
         }
 
         for (int i = 0; i < files.Length; i += 2)

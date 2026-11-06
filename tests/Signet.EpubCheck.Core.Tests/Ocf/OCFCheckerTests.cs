@@ -17,6 +17,7 @@ namespace Signet.EpubCheck.Core.Tests.Ocf;
 public sealed class OCFCheckerTests
 {
     private const string PackagePath = "package.opf";
+    private const string NavPath = "nav.xhtml";
 
     // A container file that declares one package document, and a package document the checks of the OCF layer accept.
     private const string ValidContainer = "<container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">"
@@ -124,7 +125,7 @@ public sealed class OCFCheckerTests
     public void Check_WrongMimetype_ReportsPkg007(string content, string expected)
     {
         // Arrange
-        using MemoryEpubSource source = new([File("mimetype", content), File(OCFChecker.ContainerPath, ValidContainer), File(PackagePath, ValidPackage)]);
+        using MemoryEpubSource source = new([File("mimetype", content), File(OCFChecker.ContainerPath, ValidContainer), File(PackagePath, ValidPackage), File(NavPath, string.Empty)]);
         CollectingReport report = new();
 
         // Act
@@ -138,7 +139,7 @@ public sealed class OCFCheckerTests
     public void Check_MimetypeWithWhitespaceInPolish_LocalizesTheWholeText()
     {
         // Arrange
-        using MemoryEpubSource source = new([File("mimetype", " application/epub+zip"), File(OCFChecker.ContainerPath, ValidContainer), File(PackagePath, ValidPackage)]);
+        using MemoryEpubSource source = new([File("mimetype", " application/epub+zip"), File(OCFChecker.ContainerPath, ValidContainer), File(PackagePath, ValidPackage), File(NavPath, string.Empty)]);
         CollectingReport report = new(new LocalizedMessageDictionary(CultureInfo.GetCultureInfo("pl")));
         string english = new CollectingReport().Dictionary.Format(new CollectingReport().Dictionary.GetMessage(MessageId.PKG_007), "whitespace");
 
@@ -209,7 +210,7 @@ public sealed class OCFCheckerTests
         // Arrange (Java reads every name as UTF-8; many tools do not set the flag)
         using TempDir dir = new();
         string path = dir.Combine("book.epub");
-        TestZip.WriteEpub(path, TestZip.Entry.Of(OCFChecker.ContainerPath, ValidContainer, utf8Flag: false), TestZip.Entry.Of(PackagePath, ValidPackage, utf8Flag: false),
+        TestZip.WriteEpub(path, TestZip.Entry.Of(OCFChecker.ContainerPath, ValidContainer, utf8Flag: false), TestZip.Entry.Of(PackagePath, ValidPackage, utf8Flag: false), TestZip.Entry.Of(NavPath, string.Empty, utf8Flag: false),
             TestZip.Entry.Of("EPUB/café.xhtml", string.Empty, utf8Flag: false));
         CollectingReport report = new() { ReportingLevel = Severity.Usage }; // PKG-012 is a usage
 
@@ -246,6 +247,7 @@ public sealed class OCFCheckerTests
             new TestZip.Entry(Encoding.ASCII.GetBytes("mimetype"), Encoding.ASCII.GetBytes(OCFChecker.EpubMimeType), Extra: [0xFE, 0xCA, 0, 0]),
             TestZip.Entry.Of(OCFChecker.ContainerPath, ValidContainer),
             TestZip.Entry.Of(PackagePath, ValidPackage),
+            TestZip.Entry.Of(NavPath, string.Empty),
         ]);
         CollectingReport report = new();
 
@@ -265,6 +267,7 @@ public sealed class OCFCheckerTests
         TestZip.Write(path, [
             TestZip.Entry.Of(OCFChecker.ContainerPath, ValidContainer),
             TestZip.Entry.Of(PackagePath, ValidPackage),
+            TestZip.Entry.Of(NavPath, string.Empty),
             TestZip.Entry.Of("mimetype", OCFChecker.EpubMimeType),
         ]);
         CollectingReport report = new();
@@ -284,6 +287,7 @@ public sealed class OCFCheckerTests
         Directory.CreateDirectory(dir.Combine("META-INF"));
         System.IO.File.WriteAllText(dir.Combine("META-INF", "container.xml"), ValidContainer);
         System.IO.File.WriteAllText(dir.Combine(PackagePath), ValidPackage);
+        System.IO.File.WriteAllText(dir.Combine(NavPath), string.Empty);
         CollectingReport report = new();
 
         // Act
@@ -297,6 +301,6 @@ public sealed class OCFCheckerTests
 
     // A valid expanded publication (mimetype, container file) with the given extra entries.
     private static MemoryEpubSource Expanded(params string[] names) =>
-        new(new[] { File("mimetype", OCFChecker.EpubMimeType), File(OCFChecker.ContainerPath, ValidContainer), File(PackagePath, ValidPackage) }
+        new(new[] { File("mimetype", OCFChecker.EpubMimeType), File(OCFChecker.ContainerPath, ValidContainer), File(PackagePath, ValidPackage), File(NavPath, string.Empty) }
             .Concat(names.Select(name => File(name, string.Empty))));
 }
