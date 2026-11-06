@@ -7,7 +7,8 @@ that Signet itself uses for its "Validation Results".
 Status: **in progress — epics 0 and 1 are done** (project skeleton, version, upstream pin, message and report model,
 message texts in English and Polish, conformance harness, command line, EPUB sources and OCF/ZIP checks, galimatias URL
 parser and URL fragments, MIME types, viewport, package-document peeker, vocabularies); tasks 1.1–1.4 were reviewed and
-re-ported on 2026-11-06 (see "Review of November 2026"); **next: task 2.1 RELAX NG model and validator**.
+re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing) is done**;
+**next: task 2.2 compact syntax `.rnc` parser**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -20,7 +21,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **2.1 RELAX NG model and validator**, see "Next
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **2.2 Compact syntax `.rnc` parser**, see "Next
    task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -39,7 +40,8 @@ questions into one message, as `AGENTS.md` demands).
    separate `build` commit. Only `*.md` changes need no build or test run.
 3. `git pull --ff-only` before starting (and `git fetch` before pushing; if `main` moved, rebase your own unpushed
    commits on it), then `git push origin main`. On conflicts or red tests after a rebase: stop and report, never
-   force-push `main`.
+   force-push `main` (the one exception so far: on 2026-11-06 the owner asked to rewrite four commit messages that held a
+   literal `\n`; `main` was force-pushed with the same trees).
    (The branch `feat/epubcheck-port` was merged into `main` on 2026-11-05 and is no longer used.)
 
 ### Conventions (summary of what the repo demands)
@@ -66,9 +68,9 @@ questions into one message, as `AGENTS.md` demands).
 
 | What | Where |
 |---|---|
-| Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
+| Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Jing/` (the RELAX NG engine, a port of Jing, BSD-3), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
 | Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-file modes still say "checker not implemented") |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (1154, incl. ports of upstream's JUnit tests and galimatias' URL data), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 203 passed, 1084 skipped) |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (1607 passed, 9 skipped, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's RELAX NG test suite `Jing/TestData/spectest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 203 passed, 1084 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -83,13 +85,13 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 2.1 RELAX NG model and validator
+### Next task: 2.2 Compact syntax `.rnc` parser
 
-XML syntax loading, simplification (`include`, `ref`, `externalRef`, `define combine`, `grammar`) and a streaming
-derivative-based validator over `XmlReader` with line and column; the error wording follows Jing exactly (see the task
-in "Tasks" and "Risks"). Port Jing's behaviour, not a validator of your own design: clone Jing's sources (the version
-upstream depends on, `pom.xml`) into the scratchpad next to EPUBCheck's and read them. The schemas themselves are
-imported in 2.6; 2.1 is tested on small schemas of its own and on Jing's own test suite where one exists.
+Port Jing's compact syntax parser (`com.thaiopensource.relaxng.parse.compact`, JavaCC grammar `CompactSyntax.jj`, of
+Jing 20181222 — clone `https://github.com/relaxng/jing-trang`, tag `V20181222`, into the scratchpad) onto the
+`ISchemaBuilder`/`ISubParser` interfaces of `Jing/Parse/` that 2.1 ported: the builder, the patterns and the validator
+are done. Its message bundle goes to a `.resx` in English and Polish like the other Jing bundles. Test
+it on Jing's compact-syntax tests and by loading each `.rnc` of upstream with its `.rng` counterpart (same pattern).
 
 ### Current state of the conformance run
 
@@ -260,10 +262,17 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
 
 ### Epic 2 — Schema engine (critical path)
 
-- **2.1 RELAX NG model and validator (XL).** XML syntax loading, simplification (`include`, `ref`, `externalRef`,
-  `define combine`, `grammar`), streaming derivative-based validation over `XmlReader` with line/column; error messages
-  **exactly as Jing words them** (e.g. `element "x" not allowed here; expected …`); the wording is part of the
-  expected behaviour and is covered by the `the message contains '…'` scenarios.
+- **2.1 RELAX NG model and validator (XL). DONE.** `Jing/` ports Jing 20181222 (the version upstream depends on):
+  the XML syntax parser with `include`, `externalRef`, `grammar`, `parentRef` and `define`/`start` combining
+  (`Parse/`), the schema builder with the restrictions of section 7 (`Patterns/SchemaBuilderImpl`, `Restrictions`),
+  the pattern model with its memo, derivatives and Jing's error recovery (`PatternMatcher`), the builtin datatypes, and
+  a validator fed by `XmlReader` with line and column (`Sax/XmlEventReader`, `PatternValidator`). Public entry points:
+  `RelaxNgSchemaReader.CreateSchema` → `RelaxNgSchema.CreateValidator` (`RelaxNgSchema.cs`). The messages are Jing's
+  bundles word for word (`Resources/*.resx`, Polish drafts beside them). Tested on Jing's own suite (`spectest.xml`,
+  385 cases: 376 pass, the 9 with XSD datatypes are skipped until 2.3), ports of `PatternMatcherTest` and
+  `NameClassNormalizerTest`, and 22 tests of the wording. Deliberately not here: ID/IDREF checks and the feasible mode
+  (upstream does not use them), the compact syntax (2.2), XSD datatypes (2.3), mapping to `RSC-005` (2.7). The
+  deviations from Jing are in `UPSTREAM.md`.
 - **2.2 Compact syntax `.rnc` parser (M).** 129 files; verify equivalence with the `.rng` counterparts.
 - **2.3 Datatypes (M).** XSD datatypes only (via `XmlSchemaDatatype` or own, incl. XSD-regex → .NET translation);
   the `whattf` library is not needed (see "Upstream facts").

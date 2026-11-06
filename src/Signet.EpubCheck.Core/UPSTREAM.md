@@ -32,7 +32,7 @@ Re-implemented in C#: everything that is Java code in upstream.
 
 | Upstream | Replaced by |
 |---|---|
-| Jing (RELAX NG, NVDL) | own engine in `Signet.EpubCheck.Core`; error wording follows Jing's exactly |
+| Jing 20181222 (RELAX NG, NVDL) | `Jing/`: a port of Jing (BSD-3-Clause, `Jing/LICENSE-jing.md`) — RELAX NG today, NVDL in task 2.4; error wording is Jing's exactly |
 | Saxon-HE 11.4 (XPath 2.0 for Schematron) | own evaluator of the XPath 2.0 subset the `.sch` files use |
 | galimatias 0.1.3 (WHATWG URL of 2014) | `Galimatias/`: a port of galimatias (MIT, `Galimatias/LICENSE-galimatias.md`), checked against its own test data; IDNA by .NET's `IdnMapping` |
 | ICU4J — `Normalizer2`, `CaseMap` (`UnicodeUtils`), `UnicodeSet`, `UCharacter` (`OCFFilenameChecker`) | .NET string normalization; the code point sets of `OCFFilenameChecker` written out; full case folding from a generated table (`Util/CaseFolding.g.cs`) |
@@ -113,6 +113,29 @@ Vocabularies (`Vocab/`, upstream's `com.adobe.epubcheck.vocab`):
   `URI.Parser`); an IPv6 literal in brackets is checked with .NET's `IPAddress` instead of the JDK's own reader.
 - The enums of properties and their names are generated from the Java sources by `scripts/epubcheck/generate_vocabs.py`
   (`Vocab/Vocabularies.g.cs`); a property list (`ParsePropertyList`) keeps its order, as upstream's `ImmutableSet`.
+
+RELAX NG (`Jing/`, a port of Jing 20181222, tag `V20181222` of `relaxng/jing-trang`, the version upstream depends on):
+
+- Ported: the XML syntax parser (`rng-parse`), the schema builder with its restrictions (section 7 of the RELAX NG
+  specification), the pattern model with derivative-based validation and Jing's error recovery, the builtin datatype
+  library, and the message bundles (`Jing/Resources/PatternMessages.resx`, `ParseMessages.resx`, copies of Jing's
+  `.properties` made by `scripts/epubcheck/properties_to_resx.py`; the Polish `*.pl.resx` are drafts written for the port).
+  The texts keep Java's `MessageFormat` placeholders (`{0}`), filled by `JingLocalizer.Format`.
+- Jing's own RELAX NG test suite (`spectest.xml`) runs as Jing's `TestDriver` runs it: all 376 cases without XML Schema
+  datatypes pass; the 9 that use them wait for task 2.3.
+- Not ported, because upstream does not use them: the ID/IDREF checks (`CHECK_ID_IDREF`, `IdTypeMap`), the feasible
+  mode (`FeasibleTransform`), the compact syntax (task 2.2), the datatype libraries other than the builtin one (XSD in 2.3).
+- SAX is replaced by `XmlReader` (`Jing/Sax/XmlEventReader`): DTDs are parsed for entities and default attributes, no
+  external resource is fetched. The position of an error is where `XmlReader` is — the start of the node — while Xerces
+  reports the end of the start tag, so a column can differ from upstream's (the line is the same unless a tag spans lines).
+  DTD notations and unparsed entities are not reported to the validator (`XmlReader` does not expose them; no EPUB schema
+  uses `ENTITY` datatypes).
+- Jing looks up `datatype_requires_param` and `datatype_requires_param_detail`, keys its bundle does not have (Java then
+  fails with a missing resource); the port uses the keys that exist, `datatype_requires_parameter(_detail)`.
+- Where Jing's output order depends on a `HashSet` or `HashMap` (the reasons of a `data` failure, the undefined
+  references of a grammar), the port keeps the order in which they were found, so the messages are stable.
+- `GetPrefix` of the validator context compares namespace URIs by value; Jing compares references, which with Xerces
+  (it interns the URIs) is the same.
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
