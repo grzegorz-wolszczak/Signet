@@ -1,6 +1,7 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Xml;
+using Signet.EpubCheck.Core.Galimatias;
 
 namespace Signet.EpubCheck.Core.Util;
 
@@ -50,7 +51,7 @@ public sealed class EpubUrlFragment : IEquatable<EpubUrlFragment>
     public bool IsMediaFragment { get; }
 
     /// <summary>Parses a URL fragment according to a target MIME type.</summary>
-    public static EpubUrlFragment Parse(EpubUrl? url, string? mimeType = null) =>
+    public static EpubUrlFragment Parse(Url? url, string? mimeType = null) =>
         url?.Fragment is null ? None : Parse(url.Fragment, mimeType);
 
     /// <summary>Parses a fragment without its leading number sign according to a target MIME type.</summary>
@@ -202,6 +203,6 @@ public sealed class EpubUrlFragment : IEquatable<EpubUrlFragment>
 
     private static string Decode(string value)
     {
-        return EpubUrl.PercentDecode(value);
+        return Galimatias.UrlUtils.PercentDecode(value);
     }
 }

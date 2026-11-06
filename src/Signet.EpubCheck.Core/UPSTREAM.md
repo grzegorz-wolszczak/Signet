@@ -34,7 +34,7 @@ Re-implemented in C#: everything that is Java code in upstream.
 |---|---|
 | Jing (RELAX NG, NVDL) | own engine in `Signet.EpubCheck.Core`; error wording follows Jing's exactly |
 | Saxon-HE 11.4 (XPath 2.0 for Schematron) | own evaluator of the XPath 2.0 subset the `.sch` files use |
-| galimatias (WHATWG URL) | own URL parser |
+| galimatias 0.1.3 (WHATWG URL of 2014) | `Galimatias/`: a port of galimatias (MIT, `Galimatias/LICENSE-galimatias.md`), checked against its own test data; IDNA by .NET's `IdnMapping` |
 | ICU4J — `Normalizer2`, `CaseMap` (`UnicodeUtils`), `UnicodeSet`, `UCharacter` (`OCFFilenameChecker`) | .NET string normalization; the code point sets of `OCFFilenameChecker` written out; full case folding from a generated table (`Util/CaseFolding.g.cs`) |
 | commons-compress, `java.util.zip` | `System.IO.Compression`; the central directory is read by hand (`ZipEpubSource`) |
 | SAC + upstream's own CSS parser | port of upstream's CSS parser |
@@ -89,6 +89,20 @@ The OCF container (`Ocf/`, upstream's `com.adobe.epubcheck.ocf`):
   (`yyyy-MM-dd'T'HH:mm:ss'Z'`, UTC); upstream prints Java's `FileTime` there.
 - Case folding (duplicate names, `OPF-060`) uses a table generated from `CaseFolding.txt` of Unicode 16.0.0 (ICU4J 77.1,
   the version upstream uses) by `scripts/epubcheck/generate_case_folding.py`: .NET has no case folding.
+
+URLs (`Galimatias/`, a port of galimatias 0.1.3, and `Util/EpubCheckUrlUtils`, upstream's `URLUtils`):
+
+- URLs are parsed as galimatias 0.1.3 parses them (the URL standard of 2014: "relative" schemes, scheme data), not
+  as today's URL standard: EPUBCheck's behaviour depends on that parser. All 802 cases of galimatias' test data pass.
+- IDNA (UTS #46) is .NET's `IdnMapping` instead of ICU4J. ICU's `IDNA.DEFAULT` is transitional processing, so the
+  deviation characters (`ß`, `ς`, ZWJ, ZWNJ) are mapped before `IdnMapping`, which is nontransitional; ASCII domain
+  names are only lower-cased and checked for empty and too long labels (what ICU reports for them), because .NET would
+  also reject a label starting or ending with a hyphen, which galimatias accepts.
+- Fixed bugs of galimatias: `withFragment`/`withQuery` made every URL hierarchical (`urn:x#y` without its fragment became
+  `urn://`); `relativize` removed the prefix with `String.replaceFirst`, a regular expression (a path with `(` threw);
+  `equals` compared the path of one URL with the host of the other; the user info was percent-encoded per UTF-16 unit, so
+  a character outside the BMP became `%3F%3F`.
+- The `toJavaURI`-based helpers of upstream's `URLUtils` (`toFile`, `toFilePath`) use .NET's `Uri` for `file:` URLs.
 
 Vocabularies (`Vocab/`, upstream's `com.adobe.epubcheck.vocab`):
 
