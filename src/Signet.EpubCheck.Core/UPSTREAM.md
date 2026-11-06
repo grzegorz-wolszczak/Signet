@@ -218,6 +218,19 @@ The schemas of EPUBCheck (`Xml/`, upstream's `XMLValidator`, `XMLValidators`, `R
 - `ReportingErrorHandler`: a message that is only `WARNING:` or `USAGE:` gives an empty text; upstream's `substring`
   throws for it.
 
+The XML parser and the OCF flow (`Xml/`, `Ocf/`, `References/`, upstream's `XMLParser`, `OCFChecker`, `URLChecker`):
+
+- XML is read with `XmlReader` instead of Xerces. A document that is not well-formed gives `RSC-016` with the message of
+  .NET's reader, not Xerces' text, and the position is where the reader stopped. The encoding is sniffed as upstream
+  does, but a document that declares another encoding (`RSC-028`) is then decoded by .NET.
+- An `OCFContainer` has no `ImmutableMap`s: the files are keyed by their normalized URL; the root URL is
+  `https://<guid>.epubcheck.w3c.org`, as upstream's, so the URLs in messages that print the container-relative path match.
+- `ValidationContext` is an immutable record (`with` replaces upstream's builder); it holds only what the ported checks use.
+- A package document peeked at without a version at all (upstream fails an assertion there) uses the version asked for.
+- A DOCTYPE and entity declarations are not checked yet (upstream's `DeclarationHandler`): the reader does not give the
+  events, they come with the OPF 2 task.
+- `EPUBVersion.toString` is `3.4` for EPUB 3, as in the command line; upstream still says `3.3`.
+
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
 - The reason of an argument error is printed on the error stream (`Version number omitted from the -v argument.`,
