@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Signet.EpubCheck.Core.Messages;
+using Signet.EpubCheck.Core.Ncx;
 using Signet.EpubCheck.Core.Ocf;
 using Signet.EpubCheck.Core.Reporting;
+using Signet.EpubCheck.Core.Util;
+using Signet.EpubCheck.Core.Vocab;
 using Signet.EpubCheck.Core.Xml;
 
 namespace Signet.EpubCheck.Core.Opf;
@@ -14,7 +17,7 @@ namespace Signet.EpubCheck.Core.Opf;
 /// spine and guide are checked. The checks of the resources the manifest declares (content documents, the NCX, the
 /// resource references) come with the tasks that own those resources.
 /// </summary>
-public class OPFChecker(ValidationContext context)
+public class OPFChecker(ValidationContext context) : IChecker
 {
     private const string PackageMimeType = "opf";
 
@@ -75,8 +78,10 @@ public class OPFChecker(ValidationContext context)
 
         IReadOnlyList<OPFItem> items = handler.Items;
         Report.Info(null, FeatureKind.ItemsCount, items.Count.ToString(CultureInfo.InvariantCulture));
+        Context.ResourceRegistry!.RegisterResource(Context.Url, Context.MimeType);
         foreach (OPFItem item in items)
         {
+            Context.ResourceRegistry.RegisterResource(item);
             Report.Info(item.Path, FeatureKind.DeclaredMimetype, item.MimeType);
         }
 
@@ -97,9 +102,33 @@ public class OPFChecker(ValidationContext context)
         return false;
     }
 
-    /// <summary>Checks the resource an item declares (a content document, the NCX…); nothing yet: those checkers come later.</summary>
+    /// <summary>
+    /// Checks the resource an item declares with the checker of its kind: the NCX, the navigation document (task 3.5) or the one
+    /// <see cref="CheckerFactory"/> picks. A checker that cannot be made for the item (its media type is not the one the kind
+    /// needs) is <c>CHK-008</c>.
+    /// </summary>
     protected virtual void CheckItemContent(OPFItem item)
     {
+        if (item.HasDataUrl || EpubCheckUrlUtils.DocUrl(item.Url).Equals(Context.Url))
+        {
+            return;
+        }
+
+        ValidationContext itemContext = Context with
+        {
+            Url = item.Url,
+            MimeType = item.MimeType,
+            Properties = new HashSet<VocabProperty>(item.Properties),
+        };
+        try
+        {
+            IChecker checker = item.IsNcx ? new NCXChecker(itemContext) : CheckerFactory.NewChecker(itemContext);
+            checker.Check();
+        }
+        catch (InvalidOperationException)
+        {
+            Report.Message(MessageId.CHK_008, Context.Location(), item.Path);
+        }
     }
 
     /// <summary>Checks an item once the resources were validated.</summary>

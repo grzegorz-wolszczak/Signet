@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Signet.EpubCheck.Core.Galimatias;
 using Signet.EpubCheck.Core.Messages;
+using Signet.EpubCheck.Core.References;
 using Signet.EpubCheck.Core.Reporting;
 using Signet.EpubCheck.Core.Util;
 using Signet.EpubCheck.Core.Vocab;
@@ -450,6 +451,7 @@ public partial class OPFHandler30 : OPFHandler
                 Report.Info(Path, FeatureKind.Reference, href);
             }
 
+            RegisterReference(url, ReferenceType.Link);
             string? rel = element.GetAttribute("rel");
             IReadOnlyList<VocabProperty> relSet = ProcessLinkRel(rel);
             IReadOnlySet<PackageVocabs.LinkrelProperty> relEnum = VocabProperty.Filter<PackageVocabs.LinkrelProperty>(relSet);
@@ -545,18 +547,37 @@ public partial class OPFHandler30 : OPFHandler
         {
             string value = ((string?)element.GetPrivateData(TextKey) ?? string.Empty).Trim();
             _metadataBuilders.First!.Value.Meta(element.GetAttribute("id"), property, value, element.GetAttribute("refines"));
-            if (_metadataBuilders.Count == 1 && property.PrefixedName == "rendition:spread" && value == "portrait")
+            if (_metadataBuilders.Count == 1)
             {
-                Report.Message(
-                    MessageId.OPF_086,
-                    Location(),
-                    "rendition:spread portrait",
-                    LocalizedMessages.GetInstance(Context.Culture).GetSuggestion(MessageId.OPF_086, null));
+                ReportTopLevelMeta(element, property, value);
             }
         }
 
         VocabUtil.ParseProperty(element.GetAttribute("scheme"), _metaVocabs, VocabContext, Location());
     }
+
+    private void ReportTopLevelMeta(XMLElement element, VocabProperty property, string value)
+    {
+        switch (property.PrefixedName)
+        {
+            case "media:active-class":
+                Context.FeatureReport.Report(FeatureKind.MediaOverlaysActiveClass, Location(), PrivateDataText(element));
+                break;
+            case "media:playback-active-class":
+                Context.FeatureReport.Report(FeatureKind.MediaOverlaysPlaybackActiveClass, Location(), PrivateDataText(element));
+                break;
+            case "rendition:spread" when value == "portrait":
+                Report.Message(
+                    MessageId.OPF_086,
+                    Location(),
+                    "rendition:spread portrait",
+                    LocalizedMessages.GetInstance(Context.Culture).GetSuggestion(MessageId.OPF_086, null));
+                break;
+        }
+    }
+
+    // Upstream passes the whole map of private data of the element, which is how its string form is: {text=...}.
+    private static string PrivateDataText(XMLElement element) => "{" + TextKey + "=" + (string?)element.GetPrivateData(TextKey) + "}";
 
     private void ProcessDublinCoreElement(XMLElement element)
     {

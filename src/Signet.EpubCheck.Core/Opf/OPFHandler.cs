@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Signet.EpubCheck.Core.Galimatias;
 using Signet.EpubCheck.Core.Messages;
+using Signet.EpubCheck.Core.References;
 using Signet.EpubCheck.Core.Reporting;
 using Signet.EpubCheck.Core.Util;
 using Signet.EpubCheck.Core.Xml;
@@ -285,9 +286,14 @@ public partial class OPFHandler : XmlHandler
     {
         string? href = element.GetAttribute("href");
         Url? url = CheckUrl(href);
-        if (url is not null && Context.IsRemote(url))
+        if (url is not null)
         {
-            Report.Info(Path, FeatureKind.Reference, href);
+            if (Context.IsRemote(url))
+            {
+                Report.Info(Path, FeatureKind.Reference, href);
+            }
+
+            RegisterReference(url, ReferenceType.Generic);
         }
 
         EpubLocation location = Location();
@@ -402,6 +408,7 @@ public partial class OPFHandler : XmlHandler
 
         Uid = text.Trim();
         Report.Info(null, FeatureKind.UniqueIdent, Uid);
+        Context.FeatureReport.Report(FeatureKind.UniqueIdent, Location(), Uid);
         string? scheme = element.GetAttributeNS(OpfNamespace, "scheme");
         if ((Uid.StartsWith(UuidPrefix, StringComparison.Ordinal) || string.Equals(scheme, "uuid", StringComparison.OrdinalIgnoreCase))
             && !IsUuid(Uid.Replace(UuidPrefix, string.Empty, StringComparison.Ordinal)))

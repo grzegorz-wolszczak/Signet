@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Signet.EpubCheck.Core.Messages;
+using Signet.EpubCheck.Core.References;
 using Signet.EpubCheck.Core.Util;
 using Signet.EpubCheck.Core.Vocab;
 using Signet.EpubCheck.Core.Xml;
@@ -94,6 +95,12 @@ public class OPFChecker30(ValidationContext context) : OPFChecker(context)
         if (!item.IsRemote && item.Url.Fragment is not null)
         {
             Report.Message(MessageId.OPF_091, item.Location);
+        }
+
+        if (Context.ReferenceRegistry is { } references && !string.IsNullOrEmpty(item.MediaOverlay)
+            && handler.GetItemById(item.MediaOverlay) is { } overlay)
+        {
+            references.RegisterReference(overlay.Url, ReferenceType.MediaOverlay, item.Location);
         }
     }
 
