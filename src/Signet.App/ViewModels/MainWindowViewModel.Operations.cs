@@ -124,6 +124,7 @@ public sealed partial class MainWindowViewModel : IBookOperationHost
 
     private void ExitBookOperation()
     {
+        RememberOperationResult();
         IsBookOperationBusy = false;
         _actions.SetBusy(false, BookOperationActionIds);
     }

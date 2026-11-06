@@ -334,8 +334,8 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.Exit, () => CloseWindowRequested?.Invoke(this, EventArgs.Empty));
 
         // Code Editor actions — routed to the active tab.
-        _actions.SetHandler(AppActionIds.Undo, () => ActiveTab?.Undo());
-        _actions.SetHandler(AppActionIds.Redo, () => ActiveTab?.Redo());
+        _actions.SetHandler(AppActionIds.Undo, () => RunAsyncAction(UndoActiveTabOrBookOperation));
+        _actions.SetHandler(AppActionIds.Redo, () => RunAsyncAction(RedoActiveTabOrBookOperation));
         _actions.SetHandler(AppActionIds.GoToLine, () => GoToLineRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.CssPropertyReference, () => CssPropertyReferenceRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.About, () => AboutRequested?.Invoke(this, EventArgs.Empty));

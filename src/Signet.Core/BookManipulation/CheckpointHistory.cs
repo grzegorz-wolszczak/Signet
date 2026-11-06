@@ -108,6 +108,12 @@ public sealed class CheckpointHistory : IDisposable
     /// <summary>Whether it is possible to move to the state after the current one.</summary>
     public bool CanRedo => IsOpen && Position < _states.Count - 1;
 
+    /// <summary>Whether a file was edited in an editor since the last move between states (or the opening of the history).</summary>
+    public bool HasEditsSinceMove => _editedSinceMove.Count > 0;
+
+    /// <summary>Whether a file was edited in an editor in the current state since it became the live one (after a checkpoint or a move).</summary>
+    public bool HasEditsInCurrentState => IsOpen && Current.EditedBookPaths.Count > 0;
+
     /// <summary>The description of the state <see cref="Undo"/> leads to (<c>null</c> when there is none or it has no name).</summary>
     public string? UndoMessage => CanUndo ? _states[Position - 1].Message : null;
 
