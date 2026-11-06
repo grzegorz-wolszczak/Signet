@@ -43,6 +43,11 @@ internal sealed class ScenarioWorld
     // URL fragment steps
     public EpubUrlFragment? LastFragment { get; set; }
 
+    /// <summary>The viewport the last "parsing viewport" step parsed, and the errors it reported.</summary>
+    public ViewportMeta? LastViewport { get; set; }
+
+    public List<ViewportMetaParseError> ViewportErrors { get; } = [];
+
     // CLISteps
     public StringWriter StdOut { get; } = new();
 
