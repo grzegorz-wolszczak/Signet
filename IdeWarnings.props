@@ -4,61 +4,206 @@
        fail the build, although TreatWarningsAsErrors turns the other warnings (compiler, CAxxxx) into errors. The severity of
        each rule is set in .editorconfig (an editorconfig cannot exempt a warning from TreatWarningsAsErrors; this list can).
        A rule set to "error" there stays an error. The range covers the numbers the IDE rules use; ids that do not exist are
-       harmless. -->
+       harmless.
+       Each id says what its rule checks (the titles of the .NET documentation, "Code-style rules", November 2026; the ids
+       without a documented rule are named after Roslyn's IDEDiagnosticIds). MSBuild drops the comments from the value. -->
   <PropertyGroup>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);
-      IDE0001;IDE0002;IDE0003;IDE0004;IDE0005;IDE0006;IDE0007;IDE0008;
-      IDE0009;IDE0010;IDE0011;IDE0012;IDE0013;IDE0014;IDE0015;IDE0016;
-      IDE0017;IDE0018;IDE0019;IDE0020;IDE0021;IDE0022;IDE0023;IDE0024;
-      IDE0025;IDE0026;IDE0027;IDE0028;IDE0029;IDE0030;IDE0031;IDE0032;
-      IDE0033;IDE0034;IDE0035;IDE0036;IDE0037;IDE0038;IDE0039;IDE0040;
-      IDE0041;IDE0042;IDE0043;IDE0044;IDE0045;IDE0046;IDE0047;IDE0048;
-      IDE0049;IDE0050;IDE0051;IDE0052;IDE0053;IDE0054;IDE0055;IDE0056;
-      IDE0057;IDE0058;IDE0059;IDE0060;IDE0061;IDE0062;IDE0063;IDE0064;
-      IDE0065;IDE0066;IDE0067;IDE0068;IDE0069;IDE0070;IDE0071;IDE0072;
-      IDE0073;IDE0074;IDE0075;IDE0076;IDE0077;IDE0078;IDE0079;IDE0080;
-      IDE0081;IDE0082;IDE0083;IDE0084;IDE0085;IDE0086;IDE0087;IDE0088;
-      IDE0089;IDE0090;IDE0091;IDE0092;IDE0093;IDE0094;IDE0095;IDE0096;
-      IDE0097;IDE0098;IDE0099;IDE0100;IDE0101;IDE0102;IDE0103;IDE0104;
-      IDE0105;IDE0106;IDE0107;IDE0108;IDE0109;IDE0110;IDE0111;IDE0112;
-      IDE0113;IDE0114;IDE0115;IDE0116;IDE0117;IDE0118;IDE0119;IDE0120;
-      IDE0121;IDE0122;IDE0123;IDE0124;IDE0125;IDE0126;IDE0127;IDE0128;
-      IDE0129;IDE0130;IDE0131;IDE0132;IDE0133;IDE0134;IDE0135;IDE0136;
-      IDE0137;IDE0138;IDE0139;IDE0140;IDE0141;IDE0142;IDE0143;IDE0144;
-      IDE0145;IDE0146;IDE0147;IDE0148;IDE0149;IDE0150;IDE0151;IDE0152;
-      IDE0153;IDE0154;IDE0155;IDE0156;IDE0157;IDE0158;IDE0159;IDE0160;
-      IDE0161;IDE0162;IDE0163;IDE0164;IDE0165;IDE0166;IDE0167;IDE0168;
-      IDE0169;IDE0170;IDE0171;IDE0172;IDE0173;IDE0174;IDE0175;IDE0176;
-      IDE0177;IDE0178;IDE0179;IDE0180;IDE0181;IDE0182;IDE0183;IDE0184;
-      IDE0185;IDE0186;IDE0187;IDE0188;IDE0189;IDE0190;IDE0191;IDE0192;
-      IDE0193;IDE0194;IDE0195;IDE0196;IDE0197;IDE0198;IDE0199;IDE0200;
-      IDE0201;IDE0202;IDE0203;IDE0204;IDE0205;IDE0206;IDE0207;IDE0208;
-      IDE0209;IDE0210;IDE0211;IDE0212;IDE0213;IDE0214;IDE0215;IDE0216;
-      IDE0217;IDE0218;IDE0219;IDE0220;IDE0221;IDE0222;IDE0223;IDE0224;
-      IDE0225;IDE0226;IDE0227;IDE0228;IDE0229;IDE0230;IDE0231;IDE0232;
-      IDE0233;IDE0234;IDE0235;IDE0236;IDE0237;IDE0238;IDE0239;IDE0240;
-      IDE0241;IDE0242;IDE0243;IDE0244;IDE0245;IDE0246;IDE0247;IDE0248;
-      IDE0249;IDE0250;IDE0251;IDE0252;IDE0253;IDE0254;IDE0255;IDE0256;
-      IDE0257;IDE0258;IDE0259;IDE0260;IDE0261;IDE0262;IDE0263;IDE0264;
-      IDE0265;IDE0266;IDE0267;IDE0268;IDE0269;IDE0270;IDE0271;IDE0272;
-      IDE0273;IDE0274;IDE0275;IDE0276;IDE0277;IDE0278;IDE0279;IDE0280;
-      IDE0281;IDE0282;IDE0283;IDE0284;IDE0285;IDE0286;IDE0287;IDE0288;
-      IDE0289;IDE0290;IDE0291;IDE0292;IDE0293;IDE0294;IDE0295;IDE0296;
-      IDE0297;IDE0298;IDE0299;IDE0300;IDE0301;IDE0302;IDE0303;IDE0304;
-      IDE0305;IDE0306;IDE0307;IDE0308;IDE0309;IDE0310;IDE0311;IDE0312;
-      IDE0313;IDE0314;IDE0315;IDE0316;IDE0317;IDE0318;IDE0319;IDE0320;
-      IDE0321;IDE0322;IDE0323;IDE0324;IDE0325;IDE0326;IDE0327;IDE0328;
-      IDE0329;IDE0330;IDE0331;IDE0332;IDE0333;IDE0334;IDE0335;IDE0336;
-      IDE0337;IDE0338;IDE0339;IDE0340;IDE0341;IDE0342;IDE0343;IDE0344;
-      IDE0345;IDE0346;IDE0347;IDE0348;IDE0349;IDE0350;IDE0351;IDE0352;
-      IDE0353;IDE0354;IDE0355;IDE0356;IDE0357;IDE0358;IDE0359;IDE0360;
-      IDE0361;IDE0362;IDE0363;IDE0364;IDE0365;IDE0366;IDE0367;IDE0368;
-      IDE0369;IDE0370;IDE0371;IDE0372;IDE0373;IDE0374;IDE0375;IDE0376;
-      IDE0377;IDE0378;IDE0379;IDE0380;IDE0381;IDE0382;IDE0383;IDE0384;
-      IDE0385;IDE0386;IDE0387;IDE0388;IDE0389;IDE0390;IDE0391;IDE0392;
-      IDE0393;IDE0394;IDE0395;IDE0396;IDE0397;IDE0398;IDE0399;IDE0400;
-      IDE1005;IDE1006;IDE2000;IDE2001;IDE2002;IDE2003;IDE2004;IDE2005;
-      IDE2006</WarningsNotAsErrors>
+      IDE0001; <!-- Simplify name: a type name is written more fully than needed (e.g. `System.IO.File` where `using System.IO;` is present). -->
+      IDE0002; <!-- Simplify member access: a static member is qualified more than needed (e.g. a containing type name that can be dropped). -->
+      IDE0003; <!-- Remove this. qualification: `this.` before a field, property, method or event where the style says not to use it. -->
+      IDE0004; <!-- Remove unnecessary cast: a cast to the type the expression already has. -->
+      IDE0005; <!-- Remove unnecessary using directive: a `using` none of the code of the file needs. -->
+      IDE0006; <!-- Internal: the IDE could not build the project for IntelliSense (not a code style rule). -->
+      IDE0007; <!-- Use `var` instead of an explicit type in a local declaration. -->
+      IDE0008; <!-- Use an explicit type instead of `var` in a local declaration. -->
+      IDE0009; <!-- Add this. qualification: a member access without `this.` where the style asks for it. -->
+      IDE0010; <!-- Add missing cases to a switch statement over an enum. -->
+      IDE0011; <!-- Add braces: an if/else/for/while/... body without curly braces. -->
+      IDE0012; <!-- Old id (replaced by IDE0049): use the language keyword (int) instead of the framework type (Int32) in declarations. -->
+      IDE0013; <!-- Old id (replaced by IDE0049): use the language keyword instead of the framework type in member access (int.Parse). -->
+      IDE0014; <!-- Old id (replaced by IDE0049): use the framework type (Int32) instead of the keyword in declarations. -->
+      IDE0015; <!-- Old id (replaced by IDE0049): use the framework type instead of the keyword in member access (Int32.Parse). -->
+      IDE0016; <!-- Use a throw expression: `x ?? throw ...` instead of an if-null-throw followed by an assignment. -->
+      IDE0017; <!-- Use an object initializer (`new T { A = 1 }`) instead of assigning properties after `new`. -->
+      IDE0018; <!-- Inline variable declaration: declare an out variable in the call (`out var x`) instead of before it. -->
+      IDE0019; <!-- Use pattern matching (`is T t`) instead of `as` followed by a null check. -->
+      IDE0020; <!-- Use pattern matching (`is T t`) instead of an `is` check followed by a cast (the cast result kept in a variable). -->
+      IDE0021; <!-- Expression body (`=>`) or block body for constructors. -->
+      IDE0022; <!-- Expression body (`=>`) or block body for methods. -->
+      IDE0023; <!-- Expression body (`=>`) or block body for conversion operators. -->
+      IDE0024; <!-- Expression body (`=>`) or block body for operators. -->
+      IDE0025; <!-- Expression body (`=>`) or block body for properties. -->
+      IDE0026; <!-- Expression body (`=>`) or block body for indexers. -->
+      IDE0027; <!-- Expression body (`=>`) or block body for get/set accessors. -->
+      IDE0028; <!-- Use a collection initializer or expression instead of Add calls after `new`. -->
+      IDE0029; <!-- Use `??` instead of a ternary null check (`x != null ? x : y`), reference types. -->
+      IDE0030; <!-- Use `??` instead of a ternary null check on a nullable value type (`x.HasValue ? x.Value : y`). -->
+      IDE0031; <!-- Use null propagation (`x?.Y`) instead of a ternary or if null check. -->
+      IDE0032; <!-- Use an auto property instead of a property backed by a private field that adds nothing. -->
+      IDE0033; <!-- Use the tuple element name given in the declaration (`t.Count`) instead of `t.Item1`. -->
+      IDE0034; <!-- Simplify `default(T)` to `default`. -->
+      IDE0035; <!-- Remove unreachable code (after return/throw/break). -->
+      IDE0036; <!-- Order modifiers: modifiers in the configured order (public static readonly ...). -->
+      IDE0037; <!-- Use the inferred member name in a tuple or anonymous type (`(x, y)` instead of `(x: x, y: y)`). -->
+      IDE0038; <!-- Use pattern matching (`is T t`) instead of an `is` check followed by a cast (no variable). -->
+      IDE0039; <!-- Use a local function instead of a lambda stored in a local variable. -->
+      IDE0040; <!-- Accessibility modifiers: add (or remove) explicit `private`/`internal`/... on members and types. -->
+      IDE0041; <!-- Use `is null` instead of `ReferenceEquals(x, null)` or `(object)x == null`. -->
+      IDE0042; <!-- Deconstruct a tuple into variables (`var (a, b) = ...`) instead of using the tuple's fields. -->
+      IDE0043; <!-- Invalid format string: a composite format string (`string.Format`) with a wrong placeholder. -->
+      IDE0044; <!-- Add the readonly modifier to a private field assigned only in its declaration or constructor. -->
+      IDE0045; <!-- Use a conditional expression (`?:`) for an if/else that only assigns. -->
+      IDE0046; <!-- Use a conditional expression (`?:`) for an if/else that only returns. -->
+      IDE0047; <!-- Remove unnecessary parentheses. -->
+      IDE0048; <!-- Add parentheses for clarity where operators of different precedence are mixed. -->
+      IDE0049; <!-- Use the language keyword (int, string) or the framework type name (Int32, String), as configured. -->
+      IDE0050; <!-- Convert an anonymous type to a tuple. -->
+      IDE0051; <!-- Remove an unused private member (never referenced). -->
+      IDE0052; <!-- Remove an unread private member (written but never read). -->
+      IDE0053; <!-- Expression body or block body for lambdas. -->
+      IDE0054; <!-- Use compound assignment (`x += 1` instead of `x = x + 1`). -->
+      IDE0055; <!-- Fix formatting: indentation, spaces, new lines (all formatting rules of .editorconfig). -->
+      IDE0056; <!-- Use the index operator (`a[^1]` instead of `a[a.Length - 1]`). -->
+      IDE0057; <!-- Use the range operator (`s[1..]` instead of `s.Substring(1)`). -->
+      IDE0058; <!-- Remove unused expression value: a call whose result is ignored (use a discard `_ =`). -->
+      IDE0059; <!-- Remove unnecessary value assignment: a value assigned to a variable and never read. -->
+      IDE0060; <!-- Remove an unused parameter. -->
+      IDE0061; <!-- Expression body or block body for local functions. -->
+      IDE0062; <!-- Make a local function `static` (it captures nothing). -->
+      IDE0063; <!-- Use a simple `using` declaration (`using var x = ...;`) instead of a using block. -->
+      IDE0064; <!-- Make struct fields writable: a readonly field in a struct whose `this` is assigned. -->
+      IDE0065; <!-- `using` directive placement: inside or outside the namespace, as configured. -->
+      IDE0066; <!-- Use a switch expression instead of a switch statement. -->
+      IDE0067; <!-- Old id (moved to CA2000): dispose objects before losing scope. -->
+      IDE0068; <!-- Old id (moved to CA1063): use the recommended dispose pattern. -->
+      IDE0069; <!-- Old id (moved to CA2213): disposable fields should be disposed. -->
+      IDE0070; <!-- Use System.HashCode.Combine instead of a hand-written GetHashCode. -->
+      IDE0071; <!-- Simplify interpolation: drop a needless `.ToString()` or padding call in an interpolated string. -->
+      IDE0072; <!-- Add missing cases to a switch expression over an enum. -->
+      IDE0073; <!-- Use file header: every file starts with the configured header (file_header_template). -->
+      IDE0074; <!-- Use coalesce compound assignment (`x ??= y`). -->
+      IDE0075; <!-- Simplify a conditional expression (`c ? true : false` to `c`). -->
+      IDE0076; <!-- Remove an invalid global SuppressMessageAttribute (its target does not exist). -->
+      IDE0077; <!-- Avoid the legacy target format in a global SuppressMessageAttribute. -->
+      IDE0078; <!-- Use pattern matching combinators (`x is 1 or 2` instead of `x == 1 || x == 2`). -->
+      IDE0079; <!-- Remove unnecessary suppression: a #pragma or SuppressMessage that suppresses nothing. -->
+      IDE0080; <!-- Remove the unnecessary null-forgiving operator (`!`) in an `is` expression. -->
+      IDE0081; <!-- Visual Basic: remove `ByVal`. -->
+      IDE0082; <!-- Convert `typeof(T).Name` to `nameof(T)`. -->
+      IDE0083; <!-- Use the `not` pattern (`x is not null` instead of `!(x is null)`). -->
+      IDE0084; <!-- Visual Basic: use the `IsNot` operator. -->
+      <!-- IDE0085..IDE0089: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0085;IDE0086;IDE0087;IDE0088;IDE0089;
+      IDE0090; <!-- Simplify `new` expression: target-typed `new()` when the type is already written on the left. -->
+      <!-- IDE0091..IDE0099: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0091;IDE0092;IDE0093;IDE0094;IDE0095;IDE0096;IDE0097;IDE0098;IDE0099;
+      IDE0100; <!-- Remove an unnecessary equality operator (`x == true`). -->
+      <!-- IDE0101..IDE0109: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0101;IDE0102;IDE0103;IDE0104;IDE0105;IDE0106;IDE0107;IDE0108;IDE0109;
+      IDE0110; <!-- Remove an unnecessary discard (`_` in a pattern that does not need it). -->
+      <!-- IDE0111..IDE0119: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0111;IDE0112;IDE0113;IDE0114;IDE0115;IDE0116;IDE0117;IDE0118;IDE0119;
+      IDE0120; <!-- Simplify a LINQ expression (`Where(p).Any()` to `Any(p)`). -->
+      IDE0121; <!-- Simplify a LINQ type check and cast (`Where(x => x is T).Cast<T>()` to `OfType<T>()`). -->
+      <!-- IDE0122..IDE0129: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0122;IDE0123;IDE0124;IDE0125;IDE0126;IDE0127;IDE0128;IDE0129;
+      IDE0130; <!-- Namespace does not match the folder structure. -->
+      <!-- IDE0131..IDE0139: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0131;IDE0132;IDE0133;IDE0134;IDE0135;IDE0136;IDE0137;IDE0138;IDE0139;
+      IDE0140; <!-- Visual Basic: simplify object creation (`Dim x As New T`). -->
+      <!-- IDE0141..IDE0149: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0141;IDE0142;IDE0143;IDE0144;IDE0145;IDE0146;IDE0147;IDE0148;IDE0149;
+      IDE0150; <!-- Prefer a `null` check over a type check (`x is not null` instead of `x is T` when x is already a T). -->
+      <!-- IDE0151..IDE0159: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0151;IDE0152;IDE0153;IDE0154;IDE0155;IDE0156;IDE0157;IDE0158;IDE0159;
+      IDE0160; <!-- Use a block-scoped namespace (`namespace X { }`). -->
+      IDE0161; <!-- Use a file-scoped namespace (`namespace X;`). -->
+      <!-- IDE0162..IDE0169: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0162;IDE0163;IDE0164;IDE0165;IDE0166;IDE0167;IDE0168;IDE0169;
+      IDE0170; <!-- Simplify a property pattern (`{ A.B: 1 }` instead of `{ A: { B: 1 } }`). -->
+      <!-- IDE0171..IDE0179: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0171;IDE0172;IDE0173;IDE0174;IDE0175;IDE0176;IDE0177;IDE0178;IDE0179;
+      IDE0180; <!-- Use a tuple to swap values (`(a, b) = (b, a)`). -->
+      <!-- IDE0181..IDE0199: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0181;IDE0182;IDE0183;IDE0184;IDE0185;IDE0186;IDE0187;IDE0188;IDE0189;IDE0190;IDE0191;IDE0192;IDE0193;IDE0194;IDE0195;IDE0196;IDE0197;IDE0198;IDE0199;
+      IDE0200; <!-- Remove an unnecessary lambda expression (pass the method group instead of `x => M(x)`). -->
+      <!-- IDE0201..IDE0209: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0201;IDE0202;IDE0203;IDE0204;IDE0205;IDE0206;IDE0207;IDE0208;IDE0209;
+      IDE0210; <!-- Convert to top-level statements (Program.cs without Main). -->
+      IDE0211; <!-- Convert to a `Program.Main` style program (from top-level statements). -->
+      <!-- IDE0212..IDE0219: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0212;IDE0213;IDE0214;IDE0215;IDE0216;IDE0217;IDE0218;IDE0219;
+      IDE0220; <!-- Add an explicit cast in a foreach loop whose element type is converted implicitly. -->
+      IDE0221; <!-- Add an explicit cast where a conversion is hidden. -->
+      <!-- IDE0222..IDE0229: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0222;IDE0223;IDE0224;IDE0225;IDE0226;IDE0227;IDE0228;IDE0229;
+      IDE0230; <!-- Use a UTF-8 string literal (`"abc"u8`) instead of a byte array. -->
+      <!-- IDE0231..IDE0239: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0231;IDE0232;IDE0233;IDE0234;IDE0235;IDE0236;IDE0237;IDE0238;IDE0239;
+      IDE0240; <!-- Nullable directive is redundant (`#nullable` repeating the project setting). -->
+      IDE0241; <!-- Nullable directive is unnecessary (nothing nullable-sensitive in its scope). -->
+      <!-- IDE0242..IDE0249: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0242;IDE0243;IDE0244;IDE0245;IDE0246;IDE0247;IDE0248;IDE0249;
+      IDE0250; <!-- Struct can be made `readonly`. -->
+      IDE0251; <!-- Struct member can be made `readonly`. -->
+      <!-- IDE0252..IDE0259: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0252;IDE0253;IDE0254;IDE0255;IDE0256;IDE0257;IDE0258;IDE0259;
+      IDE0260; <!-- Use pattern matching instead of `as` followed by a member access (`x is T { P: ... }`). -->
+      <!-- IDE0261..IDE0269: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0261;IDE0262;IDE0263;IDE0264;IDE0265;IDE0266;IDE0267;IDE0268;IDE0269;
+      IDE0270; <!-- Null check can be simplified: `??` (or `?? throw`) instead of an if null check after an assignment. -->
+      <!-- IDE0271..IDE0279: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0271;IDE0272;IDE0273;IDE0274;IDE0275;IDE0276;IDE0277;IDE0278;IDE0279;
+      IDE0280; <!-- Use `nameof` instead of a string literal naming a parameter in an attribute. -->
+      <!-- IDE0281..IDE0289: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0281;IDE0282;IDE0283;IDE0284;IDE0285;IDE0286;IDE0287;IDE0288;IDE0289;
+      IDE0290; <!-- Use a primary constructor (`class C(int x)`). -->
+      <!-- IDE0291..IDE0299: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0291;IDE0292;IDE0293;IDE0294;IDE0295;IDE0296;IDE0297;IDE0298;IDE0299;
+      IDE0300; <!-- Use a collection expression (`[1, 2]`) for an array. -->
+      IDE0301; <!-- Use a collection expression (`[]`) for an empty collection (Array.Empty, Enumerable.Empty). -->
+      IDE0302; <!-- Use a collection expression for `stackalloc`. -->
+      IDE0303; <!-- Use a collection expression instead of a `Create()` call (ImmutableArray.Create, ...). -->
+      IDE0304; <!-- Use a collection expression instead of a builder (CreateBuilder + Add + ToImmutable). -->
+      IDE0305; <!-- Use a collection expression instead of a fluent call (`.ToList()`, `.ToArray()`). -->
+      IDE0306; <!-- Use a collection expression instead of `new List<T>(...)`. -->
+      <!-- IDE0307..IDE0319: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0307;IDE0308;IDE0309;IDE0310;IDE0311;IDE0312;IDE0313;IDE0314;IDE0315;IDE0316;IDE0317;IDE0318;IDE0319;
+      IDE0320; <!-- Make an anonymous function `static` (it captures nothing). -->
+      <!-- IDE0321..IDE0329: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0321;IDE0322;IDE0323;IDE0324;IDE0325;IDE0326;IDE0327;IDE0328;IDE0329;
+      IDE0330; <!-- Prefer System.Threading.Lock over locking on an object. -->
+      <!-- IDE0331..IDE0339: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0331;IDE0332;IDE0333;IDE0334;IDE0335;IDE0336;IDE0337;IDE0338;IDE0339;
+      IDE0340; <!-- Use an unbound generic type in nameof (`nameof(List<>)`). -->
+      <!-- IDE0341..IDE0349: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0341;IDE0342;IDE0343;IDE0344;IDE0345;IDE0346;IDE0347;IDE0348;IDE0349;
+      IDE0350; <!-- Use an implicitly typed lambda (drop the parameter types). -->
+      <!-- IDE0351..IDE0359: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0351;IDE0352;IDE0353;IDE0354;IDE0355;IDE0356;IDE0357;IDE0358;IDE0359;
+      IDE0360; <!-- Simplify a property accessor (to the `field` keyword or an auto accessor). -->
+      <!-- IDE0361..IDE0369: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0361;IDE0362;IDE0363;IDE0364;IDE0365;IDE0366;IDE0367;IDE0368;IDE0369;
+      IDE0370; <!-- Remove an unnecessary suppression (null-forgiving `!` that changes nothing). -->
+      <!-- IDE0371..IDE0379: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0371;IDE0372;IDE0373;IDE0374;IDE0375;IDE0376;IDE0377;IDE0378;IDE0379;
+      IDE0380; <!-- Remove an unnecessary `unsafe` modifier. -->
+      <!-- IDE0381..IDE0389: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0381;IDE0382;IDE0383;IDE0384;IDE0385;IDE0386;IDE0387;IDE0388;IDE0389;
+      IDE0390; <!-- Make method synchronous: an `async` method without `await` (returning Task). -->
+      IDE0391; <!-- Make method synchronous: an `async` method without `await` (returning void or ValueTask...). -->
+      <!-- IDE0392..IDE0400: no rule has these ids (yet); listed so that a rule added later is covered too. -->
+      IDE0392;IDE0393;IDE0394;IDE0395;IDE0396;IDE0397;IDE0398;IDE0399;IDE0400;
+      IDE1005; <!-- Use a conditional delegate call (`handler?.Invoke()` instead of a null check and a call). -->
+      IDE1006; <!-- Naming styles: a symbol does not follow the naming rules of .editorconfig. -->
+      IDE2000; <!-- Avoid multiple blank lines. -->
+      IDE2001; <!-- An embedded statement must be on its own line (`if (x) return;` on one line). -->
+      IDE2002; <!-- No blank line between consecutive braces. -->
+      IDE2003; <!-- A blank line is required between a block and the statement after it. -->
+      IDE2004; <!-- No blank line after the colon of a constructor initializer. -->
+      IDE2005; <!-- No blank line after a conditional expression token (`?` or `:`). -->
+      IDE2006 <!-- No blank line after the arrow (`=>`) of an expression body. --></WarningsNotAsErrors>
   </PropertyGroup>
 
 </Project>
