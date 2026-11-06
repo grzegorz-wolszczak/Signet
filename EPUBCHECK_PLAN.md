@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2) and 3.3 (OPF 3) are done**; **next: task 3.4 navigation (nav, NCX)**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3) and 3.4 (NCX and the registries) are done**; **next: task 3.5 content documents (with the navigation document)**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.4 Navigation**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.5 Content documents**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -87,13 +87,16 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 3.4 Navigation (nav, NCX)
+### Next task: 3.5 Content documents (with the navigation document)
 
-The navigation document of EPUB 3 (`NavChecker`, `NavHandler`, `epub-nav-30.rnc/sch`, `NAV-*`) and the NCX of EPUB 2
-(`NCXChecker`, `NCXHandler`, `ncx.rng/sch`, `NCX-*`). They are the checkers `OPFChecker.CheckItemContent` calls for the item
-with the `nav` property and the item the spine's `toc` names (the hook is there and does nothing yet; item checkers need the
-resource and reference registries of 3.6 for their links, so port the registry types with the first checker that fills them).
-`XmlParser` and `XmlHandler` are ready; the validators are in `Xml.XmlValidators`.
+`OPSChecker`, `OPSHandler`, `OPSHandler30` (XHTML, SVG, EPUB 2 XHTML), `XHTML5` schemas via NVDL, and — moved here from 3.4 because
+`NavHandler` extends `OPSHandler30` — `NavChecker` / `NavHandler` (`NAV-*`). The infrastructure is in place since 3.4:
+`CheckerFactory.NewChecker` (add the checker of each media type there), `PublicationResourceChecker` (`RSC-001`, `RSC-004`),
+`ValidationContext` with `ResourceRegistry`, `ReferenceRegistry` and `FeatureReport`, `XmlHandler.RegisterReference`, and
+`OPFChecker.CheckItemContent`, which calls the checker of each manifest item (and builds the item context). Register the ids of
+a document in the resource registry, the references in the reference registry and the features (`HAS_SCRIPTS`, `PAGE_BREAK`,
+`SECTIONS`, `TOC_LINKS`, …) in the feature report, as upstream's handlers do; that gives the checks of `OPFChecker30` that wait
+for features (`NAV-003`–`NAV-008`, `OPF-066`, `OPF-078`, `OPF-079`, `HTM-051`).
 
 ### Current state of the conformance run
 
@@ -407,7 +410,17 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   (`NAV-003`–`NAV-008`, `OPF-066`, `OPF-078`, `OPF-079`, `HTM-051`: tasks 3.5 and 3.11), the total duration of media overlays
   (`MED-016`, `SmilClock`: task 3.9), the checks after the resources were validated (`RSC-006`, `OPF-096`, `OPF-097`,
   `MED-010`–`MED-013`: task 3.6); `featureReport` and `registerReference` are not ported yet.
-- **3.4 Navigation (M).** `nav` (`NAV-*`), NCX (`NCX-*`).
+- **3.4 Navigation (M). DONE, narrowed.** The NCX and the infrastructure every checker of a resource needs: `Ncx/NCXChecker` and
+  `NCXHandler` (`NCX-001`, `NCX-004`, `NCX-006`, `OBS-001` in EPUB 3, `ncx.rng/sch`, the references of `content`);
+  `References/` — `ReferenceType`, `Reference`, `ReferenceRegistry`, `Resource`, `ResourceRegistry` (upstream's
+  `org.w3c.epubcheck.core.references` without `ResourceReferencesChecker`); `Reporting/FeatureReport`; `Opf/PublicationResourceChecker`
+  (`RSC-001`, `RSC-004`, with upstream's quirky control flow), `IChecker` and `CheckerFactory`. `ValidationContext` has the
+  registries and the feature report (`WithContainer` makes new registries, as upstream's builder does). `OPFChecker.CheckPackage`
+  registers the resources and checks each item with its checker (`CheckItemContent`; a checker that cannot be made for the item
+  is `CHK-008`); the handlers register the references of the guide, of `link` and of media overlays, and the features
+  `UNIQUE_IDENT` and the media overlay classes. `epub2/ncx-publication.feature` is enabled and `opf-publication.feature:117` passes
+  (`CHK-008`). The navigation document (`NavChecker`, `NavHandler`, `NAV-*`) moved to 3.5: `NavHandler` extends `OPSHandler30`.
+  Not done, deliberately: `ResourceReferencesChecker` (task 3.6), so `RSC-007`, `RSC-008`, `RSC-010`, `RSC-032`… wait for it.
 - **3.5 Content documents (XL).** `OPSChecker` / `OPSHandler`(30), XHTML5, EPUB 2 XHTML, SVG, MathML, DTBook,
   `epub-xhtml-30.sch`, entities, encodings.
 - **3.6 References and resource graph (L).** `RSC-*`, fragments, remote resources, unused resources, external identifiers.

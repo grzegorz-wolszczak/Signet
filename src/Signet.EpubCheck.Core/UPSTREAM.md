@@ -256,6 +256,16 @@ EPUB 3 package documents (`Opf/OPFChecker30`, `OPFHandler30`, `MetadataSet`, `Ut
 - `MetadataSet` keeps the order of Guava's `LinkedListMultimap`; a refinement replaces its source at the end of the list of
   refiners of the refined element.
 
+Resources and references (`References/`, `Ncx/`, `Opf/PublicationResourceChecker`, upstream's `org.w3c.epubcheck.core`):
+
+- The registries are thread-safe where upstream's are synchronized, and the feature report keeps each feature once, in the
+  order it was reported (a `LinkedHashMultimap`).
+- `PublicationResourceChecker.Check` keeps the control flow of upstream, which looks like a slip but is the behaviour: in a
+  container, the checks after the content run even when the resource was not found or could not be read.
+- The NCX is compared to the unique identifier after Java's `trim` (characters up to U+0020), not .NET's white space.
+- A checker that upstream cannot make (a precondition on the media type fails with `IllegalStateException`) throws
+  `InvalidOperationException` here; `OPFChecker.CheckItemContent` reports it as `CHK-008`.
+
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
 - The reason of an argument error is printed on the error stream (`Version number omitted from the -v argument.`,
