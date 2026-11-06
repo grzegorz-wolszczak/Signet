@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="no_comment_support" xml:space="preserve">
+    <value>SAX parser "{0}" cannot report comments</value>
+  </data>
+  <data name="any_name_except_contains_any_name" xml:space="preserve">
+    <value>"except" in "anyName" contains "anyName"</value>
+  </data>
+  <data name="attribute_multi_pattern" xml:space="preserve">
+    <value>"attribute" pattern must contain at most one pattern</value>
+  </data>
+  <data name="combine_attribute_bad_value" xml:space="preserve">
+    <value>bad value "{0}" for "combine" attribute; value must be "choice" or "interleave"</value>
+  </data>
+  <data name="expected_define" xml:space="preserve">
+    <value>found "{0}" element but expected "define" or "start" or "include" or "div" element</value>
+  </data>
+  <data name="expected_empty" xml:space="preserve">
+    <value>found "{0}" element but expected empty content</value>
+  </data>
+  <data name="expected_except" xml:space="preserve">
+    <value>found "{0}" element but expected "except"</value>
+  </data>
+  <data name="expected_grammar" xml:space="preserve">
+    <value>found "{0}" element but expected "grammar" element</value>
+  </data>
+  <data name="expected_name" xml:space="preserve">
+    <value>found "{0}" element but expected a name</value>
+  </data>
+  <data name="expected_name_class" xml:space="preserve">
+    <value>found "{0}" element but expected a name-class</value>
+  </data>
+  <data name="expected_param_except" xml:space="preserve">
+    <value>only "param" and "except" child elements are allowed</value>
+  </data>
+  <data name="expected_pattern" xml:space="preserve">
+    <value>found "{0}" element but expected a pattern</value>
+  </data>
+  <data name="fragment_identifier_datatype_library" xml:space="preserve">
+    <value>URI in value of "datatypeLibrary" attribute must not have a fragment identifier</value>
+  </data>
+  <data name="href_fragment_id" xml:space="preserve">
+    <value>fragment identifier ignored in value of "href" attribute</value>
+  </data>
+  <data name="illegal_attribute_ignored" xml:space="preserve">
+    <value>illegal attribute "{0}" ignored</value>
+  </data>
+  <data name="illegal_characters_ignored" xml:space="preserve">
+    <value>illegal characters ignored</value>
+  </data>
+  <data name="illegal_name_attribute" xml:space="preserve">
+    <value>illegal "name" attribute</value>
+  </data>
+  <data name="invalid_ncname" xml:space="preserve">
+    <value>"{0}" is not a valid local name</value>
+  </data>
+  <data name="invalid_uri" xml:space="preserve">
+    <value>"{0}" is not a valid URI reference according to RFC 2396</value>
+  </data>
+  <data name="missing_children" xml:space="preserve">
+    <value>missing children</value>
+  </data>
+  <data name="missing_href_attribute" xml:space="preserve">
+    <value>missing "href" attribute</value>
+  </data>
+  <data name="missing_name_attribute" xml:space="preserve">
+    <value>missing "name" attribute</value>
+  </data>
+  <data name="missing_name_class" xml:space="preserve">
+    <value>expected child element specifying name class</value>
+  </data>
+  <data name="missing_type_attribute" xml:space="preserve">
+    <value>missing "type" attribute</value>
+  </data>
+  <data name="multiple_except" xml:space="preserve">
+    <value>at most one "except" child element is allowed</value>
+  </data>
+  <data name="name_contains_foreign_element" xml:space="preserve">
+    <value>"name" element cannot contain foreign elements</value>
+  </data>
+  <data name="ns_name_except_contains_any_name" xml:space="preserve">
+    <value>"except" in "nsName" contains "anyName"</value>
+  </data>
+  <data name="ns_name_except_contains_ns_name" xml:space="preserve">
+    <value>"except" in "nsName" contains "nsName"</value>
+  </data>
+  <data name="param_after_except" xml:space="preserve">
+    <value>"param" is not allowed after "except"</value>
+  </data>
+  <data name="param_contains_foreign_element" xml:space="preserve">
+    <value>"param" element cannot contain foreign elements</value>
+  </data>
+  <data name="qualified_attribute" xml:space="preserve">
+    <value>attribute name "{0}" incorrectly qualified with RELAX NG namespace URI</value>
+  </data>
+  <data name="relative_datatype_library" xml:space="preserve">
+    <value>URI in value of "datatypeLibrary" attribute must not be relative</value>
+  </data>
+  <data name="root_bad_namespace_uri" xml:space="preserve">
+    <value>namespace URI of document element must be "{0}"</value>
+  </data>
+  <data name="start_multi_pattern" xml:space="preserve">
+    <value>"start" pattern must contain at most one pattern</value>
+  </data>
+  <data name="too_many_children" xml:space="preserve">
+    <value>too many child elements: only one child element is allowed</value>
+  </data>
+  <data name="undefined_prefix" xml:space="preserve">
+    <value>undefined prefix "{0}"</value>
+  </data>
+  <data name="value_contains_foreign_element" xml:space="preserve">
+    <value>"value" element cannot contain foreign elements</value>
+  </data>
+  <data name="wrong_uri_version" xml:space="preserve">
+    <value>namespace URI has wrong version: expected "{0}" but got "{1}"</value>
+  </data>
+</root>
