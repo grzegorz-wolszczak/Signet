@@ -14,4 +14,9 @@
     <InternalsVisibleTo Include="Signet.EpubCheck.Core.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Jing's RELAX NG schema of NVDL, which NVDL schemas are validated with (Jing's validate/nvdl/resources/nvdl.rng). -->
+    <EmbeddedResource Include="Jing\Resources\nvdl.rng" LogicalName="Signet.EpubCheck.Core.Jing.Resources.nvdl.rng" />
+  </ItemGroup>
+
 </Project>
