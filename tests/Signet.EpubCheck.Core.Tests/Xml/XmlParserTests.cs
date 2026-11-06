@@ -192,6 +192,41 @@ public sealed class XmlParserTests
             m.Message.Id == MessageId.HTM_054 && (string)m.Arguments[1]! == "idpf.org");
     }
 
+    [Theory]
+    [InlineData(EpubVersion.Version2, "opf", "<!DOCTYPE package PUBLIC \"-//X//EN\" \"x.dtd\"><package/>", MessageId.HTM_009)]
+    [InlineData(EpubVersion.Version3, "application/xhtml+xml", "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0//EN\" \"x.dtd\"><html/>", MessageId.HTM_004)]
+    [InlineData(EpubVersion.Version3, "image/svg+xml", "<!DOCTYPE svg PUBLIC \"-//X//EN\" \"x.dtd\"><svg/>", MessageId.OPF_073)]
+    [InlineData(EpubVersion.Version3, "application/xml", "<!DOCTYPE a [<!ENTITY e SYSTEM \"e.txt\">]><a/>", MessageId.HTM_003)]
+    [InlineData(EpubVersion.Version2, "application/xhtml+xml", "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0//EN\" \"x.dtd\"><html/>", MessageId.HTM_004)]
+    public void Process_DoctypeThatTheVersionDoesNotAllow_IsReported(EpubVersion version, string mimeType, string document, MessageId expected)
+    {
+        // Arrange
+        Recorder recorder = new();
+
+        // Act
+        ParseResult result = Parse(document, recorder, mimeType: mimeType, version: version);
+
+        // Assert
+        result.Messages.Select(m => m.Message.Id).Should().Contain(expected);
+    }
+
+    [Theory]
+    [InlineData(EpubVersion.Version3, "application/xhtml+xml", "<!DOCTYPE html><html/>")]
+    [InlineData(EpubVersion.Version3, "application/xhtml+xml", "<!DOCTYPE html SYSTEM \"about:legacy-compat\"><html/>")]
+    [InlineData(EpubVersion.Version3, "image/svg+xml", "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"><svg/>")]
+    [InlineData(EpubVersion.Version2, "opf", "<!DOCTYPE package PUBLIC \"+//ISBN 0-9673008-1-9//DTD OEB 1.2 Package//EN\" \"http://openebook.org/dtds/oeb-1.2/oebpkg12.dtd\"><package/>")]
+    public void Process_DoctypeThatTheVersionAllows_IsNotReported(EpubVersion version, string mimeType, string document)
+    {
+        // Arrange
+        Recorder recorder = new();
+
+        // Act
+        ParseResult result = Parse(document, recorder, mimeType: mimeType, version: version);
+
+        // Assert
+        result.Messages.Should().BeEmpty();
+    }
+
     private static ParseResult Parse(string document, Recorder recorder, bool reporting = true, string mimeType = "application/xml",
         EpubVersion version = EpubVersion.Version3) =>
         Parse(Encoding.UTF8.GetBytes(document), recorder, reporting, mimeType, version);
