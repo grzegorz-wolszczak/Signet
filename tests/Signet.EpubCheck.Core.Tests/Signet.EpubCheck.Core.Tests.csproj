@@ -19,6 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The URL test data of galimatias, read from the output folder. -->
+    <None Include="Galimatias\TestData\*.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The copy of upstream's test resources (tests/corpus/epubcheck), for the ports of upstream's JUnit tests. -->
     <AssemblyMetadata Include="CorpusRoot" Value="$(MSBuildThisFileDirectory)..\corpus" />
   </ItemGroup>
