@@ -124,12 +124,12 @@ RELAX NG (`Jing/`, a port of Jing 20181222, tag `V20181222` of `relaxng/jing-tra
 - Jing's own RELAX NG test suite (`spectest.xml`) runs as Jing's `TestDriver` runs it: all 376 cases without XML Schema
   datatypes pass; the 9 that use them wait for task 2.3.
 - Not ported, because upstream does not use them: the ID/IDREF checks (`CHECK_ID_IDREF`, `IdTypeMap`), the feasible
-  mode (`FeasibleTransform`), the datatype libraries other than the builtin one (XSD in 2.3).
+  mode (`FeasibleTransform`).
 - SAX is replaced by `XmlReader` (`Jing/Sax/XmlEventReader`): DTDs are parsed for entities and default attributes, no
   external resource is fetched. The position of an error is where `XmlReader` is — the start of the node — while Xerces
   reports the end of the start tag, so a column can differ from upstream's (the line is the same unless a tag spans lines).
-  DTD notations and unparsed entities are not reported to the validator (`XmlReader` does not expose them; no EPUB schema
-  uses `ENTITY` datatypes).
+  `XmlReader` does not expose the declarations of a DTD: the notations and unparsed entities of the internal subset are
+  read from it again with `XmlDocument` (an external subset is never read, as nothing is fetched).
 - Jing looks up `datatype_requires_param` and `datatype_requires_param_detail`, keys its bundle does not have (Java then
   fails with a missing resource); the port uses the keys that exist, `datatype_requires_parameter(_detail)`.
 - Where Jing's output order depends on a `HashSet` or `HashMap` (the reasons of a `data` failure, the undefined
@@ -142,6 +142,30 @@ RELAX NG (`Jing/`, a port of Jing 20181222, tag `V20181222` of `relaxng/jing-tra
   JavaCC "special tokens" (only Trang uses them; Jing's schema builder throws them away). Where Jing's character stream
   stores the first half of a surrogate pair without a position (a stale buffer value, seen only if a token started with
   one), the port gives both halves the position of the pair.
+
+XML Schema datatypes (`Jing/Datatype/Xsd/`, a port of Jing's `xsd-datatype` and of its java regex `Translator`):
+
+- Jing prints the classes of a regular expression for `java.util.regex` (`\p{Lu}`, `\p{InGreek}`), so their
+  characters are those of the JDK that runs EPUBCheck. .NET matches UTF-16 units and has other class names: the port
+  computes each class as a set of code points from .NET's Unicode data (`CharUnicodeInfo`, `UnicodeRanges`, with Jing's
+  own corrections for Unicode 3.1) and prints it with surrogate pairs, so a character outside the BMP is one character,
+  as in Java. The sets can differ where .NET's Unicode version differs from the JDK's.
+- `\i` and `\c` are the XML 1.0 name characters (BMP only), as Jing intends; Jing builds them from Unicode categories
+  plus exceptions generated when Jing was built, so on a newer JDK they also take characters assigned later.
+- Jing's translator gives no argument to `bad_category` for a two-letter name, so its message says
+  `unrecognized Unicode category "{0}"`; the port names the category.
+- Typos of Jing's bundles fixed: `in ths context` (`should_quote`), `does not define a units of length` (`no_length`).
+- A `length`/`minLength`/`maxLength` value written as a very small fraction (`0.0000001`) is refused like any fraction;
+  Jing tests the text of the canonical `BigDecimal` for a point, Java writes it `1E-7`, and Jing takes it as too big.
+- The date/time types and `duration` have no length (Jing gives them the length of a string, and a length facet then
+  fails on the value); a length facet on them is refused when the schema is read.
+- Values that are equal have equal hash codes (Jing's `duration` hashes the scale of the seconds, `double` hashes 0 and
+  -0 apart).
+- The datatype messages are in the language of the schema reader (`RelaxNgSchemaReader.Culture`): the datatypes are made
+  when the schema is read.
+- Kept as Jing has them: `totalDigits` and `fractionDigits` count the digits as written (trailing zeros included, as
+  Java's `BigDecimal` scale); a time zone must be between -13:00 and +14:00 and a year at most 292278994 (the limits of
+  Java's `GregorianCalendar`).
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
