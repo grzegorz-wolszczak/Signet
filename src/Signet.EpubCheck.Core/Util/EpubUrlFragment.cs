@@ -7,12 +7,14 @@ namespace Signet.EpubCheck.Core.Util;
 /// <summary>A URL fragment parsed according to the MIME type of its target resource.</summary>
 public sealed class EpubUrlFragment : IEquatable<EpubUrlFragment>
 {
-    private static readonly Regex s_schemeBased = new(@"^(\w+)\(.*\)$", RegexOptions.CultureInvariant);
-    private static readonly Regex s_htmlMedia = new(@"^(t|xywh|track|id|xyn|xyr)=[^&]+(&[^&=]+=[^&]+)*$", RegexOptions.CultureInvariant);
-    private static readonly Regex s_svgView = new(@"^svgView\(.+\)$", RegexOptions.CultureInvariant);
-    private static readonly Regex s_spatial = new(@"^xywh=(pixel:|percent:)?\d+,\d+,\d+,\d+$", RegexOptions.CultureInvariant);
-    private static readonly Regex s_temporal = new(@"^t=(?:npt:)?(?:([0-9.:]+)(?:,([0-9.:]+))?|,([0-9.:]+))$", RegexOptions.CultureInvariant);
-    private static readonly Regex s_nptTime = new(@"^((\d+)|([0-5]\d:[0-5]\d)|(\d+:[0-5]\d:[0-5]\d))(\.\d*)?$", RegexOptions.CultureInvariant);
+    // Upstream's patterns, used with Java's Matcher.matches(): the whole string must match (\A...\z), and \w and \d
+    // are ASCII only, as in Java ([A-Za-z0-9_] and [0-9]).
+    private static readonly Regex s_schemeBased = new(@"\A([A-Za-z0-9_]+)\(.*\)\z", RegexOptions.CultureInvariant);
+    private static readonly Regex s_htmlMedia = new(@"\A(t|xywh|track|id|xyn|xyr)=[^&]+(&[^&=]+=[^&]+)*\z", RegexOptions.CultureInvariant);
+    private static readonly Regex s_svgView = new(@"\AsvgView\(.+\)\z", RegexOptions.CultureInvariant);
+    private static readonly Regex s_spatial = new(@"\Axywh=(pixel:|percent:)?[0-9]+,[0-9]+,[0-9]+,[0-9]+\z", RegexOptions.CultureInvariant);
+    private static readonly Regex s_temporal = new(@"\At=(?:npt:)?(?:([0-9.:]+)(?:,([0-9.:]+))?|,([0-9.:]+))\z", RegexOptions.CultureInvariant);
+    private static readonly Regex s_nptTime = new(@"\A(([0-9]+)|([0-5][0-9]:[0-5][0-9])|([0-9]+:[0-5][0-9]:[0-5][0-9]))(\.[0-9]*)?\z", RegexOptions.CultureInvariant);
 
     private EpubUrlFragment(string? fragment, string id, string scheme, bool isMediaFragment, bool isValid)
     {
@@ -179,8 +181,14 @@ public sealed class EpubUrlFragment : IEquatable<EpubUrlFragment>
 
     private static bool IsSvg(string? mimeType) => string.Equals(mimeType, "image/svg+xml", StringComparison.OrdinalIgnoreCase);
 
+    // XmlConvert.VerifyNCName throws on an empty name instead of rejecting it.
     private static bool IsNcName(string value)
     {
+        if (value.Length == 0)
+        {
+            return false;
+        }
+
         try
         {
             XmlConvert.VerifyNCName(value);
