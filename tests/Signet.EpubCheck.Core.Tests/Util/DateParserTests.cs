@@ -49,6 +49,6 @@ public sealed class DateParserTests
     public void Parse_InvalidDate_ThrowsWithUpstreamsText(string value, string message)
     {
         // Act & Assert
-        value.Invoking(v => DateParser.Parse(v)).Should().Throw<InvalidDateException>().WithMessage(message);
+        FluentActions.Invoking(() => DateParser.Parse(value)).Should().Throw<InvalidDateException>().WithMessage(message);
     }
 }
