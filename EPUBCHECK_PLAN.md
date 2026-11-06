@@ -4,9 +4,10 @@ A C# port of the official [EPUBCheck](https://github.com/w3c/epubcheck) (W3C / D
 lives in this repository as a standalone command-line tool, with its checking core in a separate library
 that Signet itself uses for its "Validation Results".
 
-Status: **in progress — epic 0 and tasks 1.1–1.4 are done** (project skeleton, version, upstream pin, message and report
-model, message texts in English and Polish, conformance harness, command line, EPUB source abstraction and OCF/ZIP
-checks, WHATWG-style URL and URL-fragment parsing, raw parsing utilities); **next: task 2.1 RELAX NG model and validator**.
+Status: **in progress — epics 0 and 1 are done** (project skeleton, version, upstream pin, message and report model,
+message texts in English and Polish, conformance harness, command line, EPUB sources and OCF/ZIP checks, galimatias URL
+parser and URL fragments, MIME types, viewport, package-document peeker, vocabularies); tasks 1.1–1.4 were reviewed and
+re-ported on 2026-11-06 (see "Review of November 2026"); **next: task 2.1 RELAX NG model and validator**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -19,8 +20,8 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **1.4 Utilities**, see "Next task" below).
-   Do **one task** (or the pair named above), then stop. Do not start the next one.
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **2.1 RELAX NG model and validator**, see "Next
+   task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
    "Current state".
@@ -57,16 +58,17 @@ questions into one message, as `AGENTS.md` demands).
   languages; the Polish text is a draft for the owner's review.
 - A case found by the work goes into a corpus book (`tests/corpus/broken/`), not into a note.
 - Generated files are regenerated, not edited: `scripts/epubcheck/generate_message_ids.py` (`MessageId.g.cs`,
-  `DefaultSeverities.g.cs`, `FeatureKind.g.cs`), `scripts/epubcheck/properties_to_resx.py` (the `.resx` copies of
-  upstream's `.properties`), `scripts/epubcheck/import_upstream_tests.sh` (`tests/corpus/epubcheck`).
+  `DefaultSeverities.g.cs`, `FeatureKind.g.cs`), `scripts/epubcheck/generate_case_folding.py` (`CaseFolding.g.cs`),
+  `scripts/epubcheck/generate_vocabs.py` (`Vocabularies.g.cs`), `scripts/epubcheck/properties_to_resx.py` (the `.resx`
+  copies of upstream's `.properties`), `scripts/epubcheck/import_upstream_tests.sh` (`tests/corpus/epubcheck`).
 
 ### Where things are
 
 | What | Where |
 |---|---|
-| Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Util/`, `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
-| Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; `ValidateFile` still says "checker not implemented") |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (140), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 166 passed, 1121 skipped) |
+| Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
+| Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-file modes still say "checker not implemented") |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (1154, incl. ports of upstream's JUnit tests and galimatias' URL data), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 203 passed, 1084 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -83,47 +85,35 @@ SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   
 
 ### Next task: 2.1 RELAX NG model and validator
 
-Implement the RELAX NG model and streaming derivative-based validator. URL-reference validation and resource
-existence scenarios remain pending for content-document and resource-reference checks of tasks 3.5 and 3.6.
+XML syntax loading, simplification (`include`, `ref`, `externalRef`, `define combine`, `grammar`) and a streaming
+derivative-based validator over `XmlReader` with line and column; the error wording follows Jing exactly (see the task
+in "Tasks" and "Risks"). Port Jing's behaviour, not a validator of your own design: clone Jing's sources (the version
+upstream depends on, `pom.xml`) into the scratchpad next to EPUBCheck's and read them. The schemas themselves are
+imported in 2.6; 2.1 is tested on small schemas of its own and on Jing's own test suite where one exists.
 
-**Done (2026-11-05):** `IEpubSource` has in-memory, directory and ZIP implementations. The ZIP source reads
-the central directory itself to retain ordering, raw UTF-8 validation and the first-entry local-header extra-field
-length; its content streams still come from `System.IO.Compression`. `OCFChecker` handles basic archive failures,
-`mimetype`, duplicate canonical/case-folded names, directory entries, filename characters and the presence of
-`META-INF/container.xml`; the CLI and conformance harness call it. The standalone filename steps are also bound.
-`ocf.feature` and `filename-checker.feature` are enabled: 65 scenarios pass and 35 are pending with their task ids
-(URL, XML schema and OPF work). No parser for `container.xml` or `encryption.xml` is included here.
+### Current state of the conformance run
 
-- **Port** (upstream `com.adobe.epubcheck.ocf` and `api`): `OCFChecker` (the order of the checks), `OCFZipChecker`
-  and `OCFResources`/`OCFZipResources`/`OCFDirectoryResources` (→ `IEpubSource` implementations: ZIP file, folder,
-  in-memory), `OCFFilenameChecker` (ICU4J → .NET: normalization, character categories; case folding needs care, see
-  `UPSTREAM.md`), `OCFContainer`, the `mimetype` rules, `META-INF` checks (`PKG-*`). `container.xml`/`encryption.xml`
-  parsing is **3.1** and the schemas are epic 2 — in 1.2 only what needs no schema (the entry list, the ZIP structure,
-  names, `mimetype`, `META-INF` contents).
-- **Plug into the CLI**: `ToolRun.ValidateFile` must call the checker for a ZIP (and later for the other modes), print
-  the messages through `ConsoleReport` and return the real exit code; remove the "checker not implemented" branch for
-  what is now covered; the `PendingScenarios` of `cli.feature` that only waited for the checker (14 — see the reasons
-  in `ConformanceCorpus`) are re-checked and removed where possible.
-- **Plug into the harness**: a real `IEpubChecker` that builds the report like the scenarios expect; add
-  `epub3/04-ocf/ocf.feature` to `EnabledFeatures`. Scenarios that need later tasks (e.g. `OPF-060` needs the OPF, schema
-  errors need epic 2) go to `PendingScenarios` **with the reason and the task id**, each one listed — do not leave a
-  scenario failing and do not hide a failing one as pending when 1.2 should pass it.
-- **Also decide inside the task, without asking**: the `IEpubSource` shape (entries with name, order, compression
-  method, sizes, bytes; read-only; `IDisposable`), error handling for broken archives (FATAL `PKG-*` as upstream; no
-  exceptions leaking out of the checker), `System.IO.Compression` vs. own reader (use `System.IO.Compression`; take
-  the central directory by hand only where upstream needs facts the framework hides, e.g. the order of entries and the
-  `mimetype` extra field).
-- Tests: unit tests per class + the conformance scenarios; fixtures are the upstream ones in `tests/corpus/epubcheck`;
-  add a corpus book under `tests/corpus/broken` for any case that upstream's fixtures do not cover.
-- When done, the plan's milestone **M1** moves closer: after 1.1–1.2 only the walking-skeleton remainder is left
-  (4.1 is done). Then the next task is **1.3 WHATWG URL parser**, then 1.4, then epic 2.
+Enabled features: `cli/cli.feature`, `epub3/04-ocf/ocf.feature`, `epub3/04-ocf/filename-checker.feature`,
+`unit-tests/url-fragment.feature`, `epub3/C-viewport-meta-tag/viewport-syntax.feature`: 203 scenarios pass, the
+others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id
+(the checker of later epics, report writers 4.2, `--save` 3.12, French messages that are never meant to pass,
+`PKG-025` of 3.3, references 3.5/3.6, schemas 2.x, `container.xml` 3.1).
 
-### Current state of the conformance run (after 0.6)
+### Review of November 2026 (what to keep doing)
 
-`cli/cli.feature` is the only enabled feature: 23 of its 53 scenarios run and pass; 30 are pending with reasons
-(checker 14, report writers 13, `--save` archive 1 [line 205], French messages 3 [lines 366/371/376]). The CHK
-scenarios with `-mode exp` pass partly because the tool exits 1 anyway (no checker yet) — re-check them when the
-checker lands.
+On 2026-11-06 tasks 1.1–1.4 were reviewed against upstream and largely redone: the OCF checks diverged from upstream (a
+`PKG-025` heuristic written to make a scenario pass, file names checked per segment, case folding by upper-casing,
+valid UTF-8 names rejected), the URL parser was not WHATWG/galimatias, and the "utilities" were written from scratch
+instead of ported. Lessons, binding for every next task:
+
+- **Port, do not reinvent.** Read the upstream class and port it state by state; where upstream relies on a library
+  (galimatias, Jing, Saxon, ICU), port or match that library's behaviour.
+- **Use upstream's own tests as the oracle**: the `.feature` scenarios *and* the JUnit tests in `src/test/java` (and
+  a library's own tests, like galimatias' URL data). Port them before or with the code.
+- **Never tune the code to a scenario** with a heuristic; a scenario that needs a later task goes to `PendingScenarios`.
+- **Run the whole solution's tests** at the end (`dotnet test Signet.slnx`), not only the EpubCheck projects: the
+  import of the fixtures had broken 41 Signet tests that sweep `tests/corpus` (fixed by `CorpusPaths.EnumerateFiles`).
+- No magic numbers (named constants grouped in static classes), detailed commit bodies with real line breaks.
 
 ## Decisions taken
 
@@ -250,19 +240,23 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
 ### Epic 1 — Raw input layer (read-only)
 
 - **1.1 EPUB source abstraction (M). DONE.** `IEpubSource` has ZIP, expanded-directory and in-memory implementations;
-  entries retain name, order, compression method and sizes, and open read-only streams.
-- **1.2 OCF / ZIP checker (L). DONE.** `OCFChecker`, ZIP central-directory reading and `OCFFilenameChecker` cover
-  `mimetype`, duplicate entries, empty directories, file names (characters, normalization, case collisions) and broken
-  archives. `epub3/04-ocf/ocf.feature` and `filename-checker.feature` are enabled; scenarios needing URL, XML schema
-  or OPF work remain individually pending with their task ids.
-- **1.3 WHATWG URL parser (M). DONE.** `EpubUrl` parses absolute and relative references, resolves relative paths,
-  canonicalizes path percent-encoding and Unicode normalization, and removes dot segments without using `System.Uri`
-  as a URL parser. `EpubUrlFragment` parses HTML/XHTML, SVG and XML fragments, including fragment directives,
-  scheme-based fragments and media fragments. `unit-tests/url-fragment.feature` is enabled (41 scenarios); the OCF
-  URL scenarios remain pending because checking their references requires tasks 3.5 and 3.6.
-- **1.4 Utilities (M). DONE.** Added the MIME type parser and serializer, `CodePoints`, viewport meta microsyntax,
-  package-document metadata peeker, and the prefix/property vocabulary parser. URL-reference validation and resource
-  existence checks deliberately remain pending for tasks 3.5 and 3.6; this task performs parsing only.
+  entries keep name, order, compression method, sizes and time stamp, and open read-only streams. `ZipEpubSource` reads
+  only the central directory by hand (order, strict UTF-8 names as Java's `ZipFile(file, UTF_8)`, ZIP64); the
+  directory source refuses symbolic links (upstream's `OCFDirectoryResources`).
+- **1.2 OCF / ZIP checker (L). DONE.** `OCFChecker` in upstream's order (`OCFZipChecker` on the first 58 bytes, the
+  container structure, `mimetype`, `container.xml`), `OCFFilenameChecker` on the whole path with upstream's code point
+  sets and ICU's character names, full Unicode case folding (`Util/CaseFolding.g.cs`, Unicode 16.0.0), the resource
+  facts of the reports. `ocf.feature` and `filename-checker.feature` are enabled. Not here: parsing `container.xml` and
+  `encryption.xml` (3.1), `PKG-025` (3.3, from the manifest).
+- **1.3 WHATWG URL parser (M). DONE.** `Galimatias/` ports galimatias 0.1.3, the URL library upstream uses (the URL
+  standard of 2014); all 802 cases of its test data pass; IDNA through .NET's `IdnMapping` with ICU's transitional
+  mapping. `Util/EpubCheckUrlUtils` ports upstream's `URLUtils`; `EpubUrlFragment` (upstream's `URLFragment`) parses
+  fragments by media type; `unit-tests/url-fragment.feature` is enabled. Checking references is 3.5/3.6.
+- **1.4 Utilities (M). DONE.** Ports of upstream's `MIMETypeParser` (all 54 cases of its JUnit test), `CodePoints`,
+  `ViewportMeta` (`viewport-syntax.feature` enabled, 34 scenarios), `PackageDocumentPeeker` (the 19 cases of
+  `OPFPeekerTest` on its fixtures), and the `vocab` package: every vocabulary (generated from the Java enums by
+  `scripts/epubcheck/generate_vocabs.py`), `VocabUtil`, `PrefixDeclarationParser` with a `java.net.URI` syntax check
+  (`VocabTest`, `PrefixParsingTest`, `PropertyTest` ported).
 
 ### Epic 2 — Schema engine (critical path)
 
