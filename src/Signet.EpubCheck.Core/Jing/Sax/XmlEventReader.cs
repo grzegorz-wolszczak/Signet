@@ -13,8 +13,9 @@ namespace Signet.EpubCheck.Core.Jing.Sax;
 /// </summary>
 /// <remarks>
 /// The locator gives the position <see cref="XmlReader"/> knows: the start of the node (the name of a start-tag), where
-/// a SAX parser gives the end of the tag. Notations and unparsed entities are not reported: <see cref="XmlReader"/>
-/// does not expose the declarations of the DTD.
+/// a SAX parser gives the end of the tag. <see cref="XmlReader"/> does not expose the declarations of the DTD: the
+/// notations and unparsed entities of the internal subset are read from it with <see cref="XmlDocument"/>; an external
+/// subset is never read.
 /// </remarks>
 public sealed class XmlEventReader
 {
@@ -24,7 +25,7 @@ public sealed class XmlEventReader
     /// <summary>The handler the next events go to.</summary>
     public IContentHandler? ContentHandler { get; set; }
 
-    /// <summary>The handler of DTD declarations (not called: see the remarks of the class).</summary>
+    /// <summary>The handler of the notations and unparsed entities of the internal DTD subset.</summary>
     public IDtdHandler? DtdHandler { get; set; }
 
     /// <summary>The handler of a document that is not well-formed (told before the reader throws).</summary>
@@ -92,6 +93,39 @@ public sealed class XmlEventReader
                 case XmlNodeType.ProcessingInstruction:
                     Handler.ProcessingInstruction(reader.Name, reader.Value);
                     break;
+                case XmlNodeType.DocumentType:
+                    ReportDtdDeclarations(reader.Name, reader.Value);
+                    break;
+            }
+        }
+    }
+
+    // The reader has already checked the subset: it is parsed again only to see its declarations.
+    private void ReportDtdDeclarations(string rootName, string internalSubset)
+    {
+        if (DtdHandler is null || internalSubset.Length == 0)
+        {
+            return;
+        }
+
+        XmlReaderSettings settings = new() { DtdProcessing = DtdProcessing.Parse, XmlResolver = null };
+        XmlDocument document = new() { XmlResolver = null };
+        using (XmlReader subset = XmlReader.Create(new StringReader("<!DOCTYPE " + rootName + " [" + internalSubset + "]><" + rootName + "/>"), settings))
+        {
+            document.Load(subset);
+        }
+
+        XmlDocumentType doctype = document.DocumentType!;
+        foreach (XmlNotation notation in doctype.Notations)
+        {
+            DtdHandler.NotationDecl(notation.Name, notation.PublicId, notation.SystemId);
+        }
+
+        foreach (XmlEntity entity in doctype.Entities)
+        {
+            if (entity.NotationName is { } notationName)
+            {
+                DtdHandler.UnparsedEntityDecl(entity.Name, entity.PublicId, entity.SystemId, notationName);
             }
         }
     }
