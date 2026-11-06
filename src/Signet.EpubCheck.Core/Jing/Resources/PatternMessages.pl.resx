@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="illegal_href_attribute" xml:space="preserve">
+    <value>niedozwolony atrybut "href"</value>
+  </data>
+  <data name="ns_attribute_ignored" xml:space="preserve">
+    <value>atrybut "ns" został zignorowany</value>
+  </data>
+  <data name="reference_to_undefined" xml:space="preserve">
+    <value>odwołanie do niezdefiniowanego wzorca "{0}"</value>
+  </data>
+  <data name="missing_start_element" xml:space="preserve">
+    <value>brak elementu "start"</value>
+  </data>
+  <data name="recursive_reference" xml:space="preserve">
+    <value>niedozwolone rekurencyjne odwołanie do wzorca "{0}"</value>
+  </data>
+  <data name="recursive_include" xml:space="preserve">
+    <value>rekurencyjne dołączenie adresu URL "{0}"</value>
+  </data>
+  <data name="duplicate_define" xml:space="preserve">
+    <value>wiele definicji "{0}" bez atrybutu "combine"</value>
+  </data>
+  <data name="duplicate_start" xml:space="preserve">
+    <value>wiele definicji start bez atrybutu "combine"</value>
+  </data>
+  <data name="conflict_combine_define" xml:space="preserve">
+    <value>sprzeczne wartości atrybutu "combine" w definicji "{0}"</value>
+  </data>
+  <data name="conflict_combine_start" xml:space="preserve">
+    <value>sprzeczne wartości atrybutu "combine" w definicji start</value>
+  </data>
+  <data name="missing_start_replacement" xml:space="preserve">
+    <value>element "start" w "include" niczego nie zastępuje</value>
+  </data>
+  <data name="missing_define_replacement" xml:space="preserve">
+    <value>definicja "{0}" w "include" niczego nie zastępuje</value>
+  </data>
+  <data name="interleave_string" xml:space="preserve">
+    <value>przeplot (interleave) elementu "string" lub "data"</value>
+  </data>
+  <data name="group_string" xml:space="preserve">
+    <value>grupa elementu "string" lub "data"</value>
+  </data>
+  <data name="one_or_more_string" xml:space="preserve">
+    <value>powtórzenie elementu "string" lub "data"</value>
+  </data>
+  <data name="unrecognized_datatype" xml:space="preserve">
+    <value>nie rozpoznano typu danych "{1}" z biblioteki "{0}"</value>
+  </data>
+  <data name="unsupported_datatype_detail" xml:space="preserve">
+    <value>typ danych "{1}" z biblioteki "{0}" nie jest obsługiwany: {2}</value>
+  </data>
+  <data name="unrecognized_datatype_library" xml:space="preserve">
+    <value>nie rozpoznano biblioteki typów danych "{0}"</value>
+  </data>
+  <data name="unrecognized_builtin_datatype" xml:space="preserve">
+    <value>nie ma wbudowanego typu danych "{0}": musi to być "string" albo "token"</value>
+  </data>
+  <data name="invalid_value" xml:space="preserve">
+    <value>"{0}" nie jest poprawną wartością tego typu danych</value>
+  </data>
+  <data name="parent_ref_outside_grammar" xml:space="preserve">
+    <value>odwołanie do nieistniejącej gramatyki nadrzędnej</value>
+  </data>
+  <data name="ref_outside_grammar" xml:space="preserve">
+    <value>odwołanie do nieistniejącej gramatyki</value>
+  </data>
+  <data name="expected_one_name_class" xml:space="preserve">
+    <value>znaleziono element "{0}", a nie oczekiwano już żadnej treści</value>
+  </data>
+  <data name="builtin_param" xml:space="preserve">
+    <value>wbudowane typy danych nie mają parametrów</value>
+  </data>
+  <data name="invalid_param_display" xml:space="preserve">
+    <value>niepoprawny parametr:
+{0}</value>
+  </data>
+  <data name="invalid_param_detail_display" xml:space="preserve">
+    <value>niepoprawny parametr: {0}:
+{1}</value>
+  </data>
+  <data name="display_param" xml:space="preserve">
+    <value>{0}&gt;&gt;&gt;&gt;{1}</value>
+  </data>
+  <data name="invalid_param_detail" xml:space="preserve">
+    <value>niepoprawny parametr: {0}</value>
+  </data>
+  <data name="invalid_param" xml:space="preserve">
+    <value>niepoprawny parametr</value>
+  </data>
+  <data name="invalid_params_detail" xml:space="preserve">
+    <value>niepoprawne parametry: {0}</value>
+  </data>
+  <data name="invalid_params" xml:space="preserve">
+    <value>niepoprawne parametry</value>
+  </data>
+  <data name="datatype_requires_parameter" xml:space="preserve">
+    <value>tego typu danych nie można użyć bez parametrów</value>
+  </data>
+  <data name="datatype_requires_parameter_detail" xml:space="preserve">
+    <value>tego typu danych nie można użyć bez parametrów: {0}</value>
+  </data>
+  <data name="attribute_contains_attribute" xml:space="preserve">
+    <value>wzorzec atrybutu nie może zawierać wzorca atrybutu (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki attribute//attribute)</value>
+  </data>
+  <data name="attribute_contains_element" xml:space="preserve">
+    <value>wzorzec atrybutu nie może zawierać wzorca elementu (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki attribute//ref)</value>
+  </data>
+  <data name="data_except_contains_attribute" xml:space="preserve">
+    <value>wzorzec danych nie może wykluczać wzorca atrybutu (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki data/except//attribute)</value>
+  </data>
+  <data name="data_except_contains_element" xml:space="preserve">
+    <value>wzorzec danych nie może wykluczać wzorca elementu (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki data/except//ref)</value>
+  </data>
+  <data name="data_except_contains_empty" xml:space="preserve">
+    <value>wzorzec danych nie może wykluczać wzorca pustego (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki data/except//empty)</value>
+  </data>
+  <data name="data_except_contains_group" xml:space="preserve">
+    <value>wzorzec danych nie może wykluczać grupy (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki data/except//group)</value>
+  </data>
+  <data name="data_except_contains_interleave" xml:space="preserve">
+    <value>wzorzec danych nie może wykluczać grupy przeplatanej (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki data/except//interleave)</value>
+  </data>
+  <data name="data_except_contains_list" xml:space="preserve">
+    <value>wzorzec danych nie może wykluczać wzorca listy (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki data/except//list)</value>
+  </data>
+  <data name="data_except_contains_one_or_more" xml:space="preserve">
+    <value>wzorzec danych nie może wykluczać powtórzenia (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki data/except//oneOrMore)</value>
+  </data>
+  <data name="data_except_contains_text" xml:space="preserve">
+    <value>wzorzec danych nie może wykluczać wzorca tekstu (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki data/except//text)</value>
+  </data>
+  <data name="list_contains_attribute" xml:space="preserve">
+    <value>wzorzec listy nie może zawierać wzorca atrybutu (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki list//attribute)</value>
+  </data>
+  <data name="list_contains_element" xml:space="preserve">
+    <value>wzorzec listy nie może zawierać wzorca elementu (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki list//ref)</value>
+  </data>
+  <data name="list_contains_list" xml:space="preserve">
+    <value>wzorzec listy nie może zawierać wzorca listy (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki list//list)</value>
+  </data>
+  <data name="list_contains_text" xml:space="preserve">
+    <value>wzorzec listy nie może zawierać wzorca tekstu (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki list//text)</value>
+  </data>
+  <data name="list_contains_interleave" xml:space="preserve">
+    <value>wzorzec listy nie może zawierać wzorca przeplotu (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki list//interleave)</value>
+  </data>
+  <data name="one_or_more_contains_group_contains_attribute" xml:space="preserve">
+    <value>grupa atrybutów nie może być powtarzalna (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki oneOrMore//group//attribute)</value>
+  </data>
+  <data name="one_or_more_contains_interleave_contains_attribute" xml:space="preserve">
+    <value>przeplatana grupa atrybutów nie może być powtarzalna (sekcja 7.1 specyfikacji RELAX NG wymaga, aby uproszczona postać XML schematu nie zawierała elementów pasujących do ścieżki oneOrMore//interleave//attribute)</value>
+  </data>
+  <data name="start_contains_attribute" xml:space="preserve">
+    <value>znaleziono element pasujący do zakazanej ścieżki start//attribute w uproszczonej postaci XML schematu (zob. sekcja 7.1 specyfikacji RELAX NG)</value>
+  </data>
+  <data name="start_contains_data" xml:space="preserve">
+    <value>znaleziono element pasujący do zakazanej ścieżki start//data w uproszczonej postaci XML schematu (zob. sekcja 7.1 specyfikacji RELAX NG)</value>
+  </data>
+  <data name="start_contains_empty" xml:space="preserve">
+    <value>znaleziono element pasujący do zakazanej ścieżki start//empty w uproszczonej postaci XML schematu (zob. sekcja 7.1 specyfikacji RELAX NG)</value>
+  </data>
+  <data name="start_contains_group" xml:space="preserve">
+    <value>znaleziono element pasujący do zakazanej ścieżki start//group w uproszczonej postaci XML schematu (zob. sekcja 7.1 specyfikacji RELAX NG)</value>
+  </data>
+  <data name="start_contains_interleave" xml:space="preserve">
+    <value>znaleziono element pasujący do zakazanej ścieżki start//interleave w uproszczonej postaci XML schematu (zob. sekcja 7.1 specyfikacji RELAX NG)</value>
+  </data>
+  <data name="start_contains_list" xml:space="preserve">
+    <value>znaleziono element pasujący do zakazanej ścieżki start//list w uproszczonej postaci XML schematu (zob. sekcja 7.1 specyfikacji RELAX NG)</value>
+  </data>
+  <data name="start_contains_one_or_more" xml:space="preserve">
+    <value>znaleziono element pasujący do zakazanej ścieżki start//oneOrMore w uproszczonej postaci XML schematu (zob. sekcja 7.1 specyfikacji RELAX NG)</value>
+  </data>
+  <data name="start_contains_text" xml:space="preserve">
+    <value>znaleziono element pasujący do zakazanej ścieżki start//text w uproszczonej postaci XML schematu (zob. sekcja 7.1 specyfikacji RELAX NG)</value>
+  </data>
+  <data name="start_contains_value" xml:space="preserve">
+    <value>znaleziono element pasujący do zakazanej ścieżki start//value w uproszczonej postaci XML schematu (zob. sekcja 7.1 specyfikacji RELAX NG)</value>
+  </data>
+  <data name="duplicate_attribute" xml:space="preserve">
+    <value>powtórzony atrybut</value>
+  </data>
+  <data name="duplicate_attribute_name" xml:space="preserve">
+    <value>powtórzony atrybut {0}</value>
+  </data>
+  <data name="duplicate_attribute_ns" xml:space="preserve">
+    <value>atrybuty z przestrzeni nazw "{0}" mogą wystąpić więcej niż raz</value>
+  </data>
+  <data name="interleave_element_overlap" xml:space="preserve">
+    <value>nakładające się nazwy elementów w argumentach "interleave"</value>
+  </data>
+  <data name="interleave_element_overlap_name" xml:space="preserve">
+    <value>element {0} może wystąpić w więcej niż jednym argumencie "interleave"</value>
+  </data>
+  <data name="interleave_element_overlap_ns" xml:space="preserve">
+    <value>elementy z przestrzeni nazw "{0}" mogą wystąpić w więcej niż jednym argumencie "interleave"</value>
+  </data>
+  <data name="interleave_text_overlap" xml:space="preserve">
+    <value>oba argumenty "interleave" zawierają "text"</value>
+  </data>
+  <data name="open_name_class_not_repeated" xml:space="preserve">
+    <value>atrybut z "nsName" lub "anyName" musi być w "oneOrMore"</value>
+  </data>
+  <data name="xmlns_uri_attribute" xml:space="preserve">
+    <value>atrybut nie może mieć przestrzeni nazw "http://www.w3.org/2000/xmlns"</value>
+  </data>
+  <data name="xmlns_attribute" xml:space="preserve">
+    <value>atrybut nie może się nazywać "xmlns"</value>
+  </data>
+  <data name="unknown_element" xml:space="preserve">
+    <value>element {0} nie jest nigdzie dozwolony{1}</value>
+  </data>
+  <data name="unexpected_element_required_element_missing" xml:space="preserve">
+    <value>element {0} nie jest jeszcze dozwolony; brak wymaganego elementu {1}</value>
+  </data>
+  <data name="unexpected_element_required_elements_missing" xml:space="preserve">
+    <value>element {0} nie jest jeszcze dozwolony; brak wymaganych elementów {1}</value>
+  </data>
+  <data name="element_not_allowed_yet" xml:space="preserve">
+    <value>element {0} nie jest jeszcze dozwolony{1}</value>
+  </data>
+  <data name="out_of_context_element" xml:space="preserve">
+    <value>element {0} nie jest tu dozwolony{1}</value>
+  </data>
+  <data name="no_attributes_allowed" xml:space="preserve">
+    <value>znaleziono atrybut {0}, a w tym miejscu nie są dozwolone żadne atrybuty</value>
+  </data>
+  <data name="invalid_attribute_name" xml:space="preserve">
+    <value>atrybut {0} nie jest tu dozwolony{1}</value>
+  </data>
+  <data name="invalid_attribute_value" xml:space="preserve">
+    <value>wartość atrybutu {0} jest niepoprawna{1}</value>
+  </data>
+  <data name="required_attributes_missing_expected" xml:space="preserve">
+    <value>w elemencie {0} brakuje co najmniej jednego wymaganego atrybutu{1}</value>
+  </data>
+  <data name="required_attribute_missing" xml:space="preserve">
+    <value>w elemencie {0} brakuje wymaganego atrybutu {1}</value>
+  </data>
+  <data name="required_attributes_missing" xml:space="preserve">
+    <value>w elemencie {0} brakuje wymaganych atrybutów {1}</value>
+  </data>
+  <data name="incomplete_element_required_elements_missing_expected" xml:space="preserve">
+    <value>element {0} jest niekompletny{1}</value>
+  </data>
+  <data name="incomplete_element_required_element_missing" xml:space="preserve">
+    <value>element {0} jest niekompletny; brak wymaganego elementu {1}</value>
+  </data>
+  <data name="incomplete_element_required_elements_missing" xml:space="preserve">
+    <value>element {0} jest niekompletny; brak wymaganych elementów {1}</value>
+  </data>
+  <data name="text_not_allowed" xml:space="preserve">
+    <value>tekst nie jest tu dozwolony{0}</value>
+  </data>
+  <data name="document_incomplete" xml:space="preserve">
+    <value>dokument został dopasowany tylko częściowo</value>
+  </data>
+  <data name="invalid_element_value" xml:space="preserve">
+    <value>treść znakowa elementu {0} jest niepoprawna{1}</value>
+  </data>
+  <data name="blank_not_allowed" xml:space="preserve">
+    <value>pusta treść elementu {0} nie jest dozwolona{1}</value>
+  </data>
+  <data name="schema_allows_nothing" xml:space="preserve">
+    <value>schemat niczego nie dopuszcza: jest równoważny &lt;notAllowed/&gt;</value>
+  </data>
+  <data name="id_element_name_class" xml:space="preserve">
+    <value>wzorzec "element" zawierający wzorzec "attribute" z typem ID innym niż null musi mieć klasę nazw złożoną wyłącznie z elementów "choice" i "name"</value>
+  </data>
+  <data name="id_attribute_name_class" xml:space="preserve">
+    <value>wzorzec "attribute" z typem ID innym niż null musi mieć klasę nazw będącą pojedynczą nazwą</value>
+  </data>
+  <data name="id_parent" xml:space="preserve">
+    <value>wzorzec "data" lub "value" z typem ID innym niż null musi być dzieckiem wzorca "attribute"</value>
+  </data>
+  <data name="id_type_conflict" xml:space="preserve">
+    <value>sprzeczne typy ID atrybutu {1} elementu {0}</value>
+  </data>
+  <data name="id_no_tokens" xml:space="preserve">
+    <value>wartość atrybutu typu ID nie zawiera żadnego tokenu</value>
+  </data>
+  <data name="id_multiple_tokens" xml:space="preserve">
+    <value>wartość atrybutu typu ID zawiera wiele tokenów</value>
+  </data>
+  <data name="idref_no_tokens" xml:space="preserve">
+    <value>wartość atrybutu typu IDREF nie zawiera żadnego tokenu</value>
+  </data>
+  <data name="idref_multiple_tokens" xml:space="preserve">
+    <value>wartość atrybutu typu IDREF zawiera wiele tokenów</value>
+  </data>
+  <data name="idrefs_no_tokens" xml:space="preserve">
+    <value>wartość atrybutu typu IDREFS nie zawiera żadnego tokenu</value>
+  </data>
+  <data name="missing_id" xml:space="preserve">
+    <value>IDREF "{0}" nie ma pasującego ID</value>
+  </data>
+  <data name="duplicate_id" xml:space="preserve">
+    <value>ID "{0}" zostało już zdefiniowane</value>
+  </data>
+  <data name="first_id" xml:space="preserve">
+    <value>pierwsze wystąpienie ID "{0}"</value>
+  </data>
+  <data name="name_absent_namespace" xml:space="preserve">
+    <value>"{0}"</value>
+  </data>
+  <data name="name_with_namespace" xml:space="preserve">
+    <value>"{1}" z przestrzeni nazw "{0}"</value>
+  </data>
+  <data name="qname" xml:space="preserve">
+    <value>"{0}"</value>
+  </data>
+  <data name="qnames_nsdecls" xml:space="preserve">
+    <value>{0} (z {1})</value>
+  </data>
+  <data name="or_list_pair" xml:space="preserve">
+    <value>{0} lub {1}</value>
+  </data>
+  <data name="or_list_many_first" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="or_list_many_middle" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="or_list_many_last" xml:space="preserve">
+    <value>{0} lub {1}</value>
+  </data>
+  <data name="and_list_pair" xml:space="preserve">
+    <value>{0} i {1}</value>
+  </data>
+  <data name="and_list_many_first" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="and_list_many_middle" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="and_list_many_last" xml:space="preserve">
+    <value>{0} i {1}</value>
+  </data>
+  <data name="expected" xml:space="preserve">
+    <value>; oczekiwano {0}</value>
+  </data>
+  <data name="element_end_tag" xml:space="preserve">
+    <value>znacznika zamykającego elementu</value>
+  </data>
+  <data name="text" xml:space="preserve">
+    <value>tekstu</value>
+  </data>
+  <data name="data" xml:space="preserve">
+    <value>danych</value>
+  </data>
+  <data name="element_list" xml:space="preserve">
+    <value>elementu {0}</value>
+  </data>
+  <data name="element_other_ns" xml:space="preserve">
+    <value>elementu z innej przestrzeni nazw</value>
+  </data>
+  <data name="expected_attribute" xml:space="preserve">
+    <value>; oczekiwano atrybutu {0}</value>
+  </data>
+  <data name="expected_attribute_or_other_ns" xml:space="preserve">
+    <value>; oczekiwano atrybutu {0} lub atrybutu z innej przestrzeni nazw</value>
+  </data>
+  <data name="data_failures" xml:space="preserve">
+    <value>; {0}</value>
+  </data>
+  <data name="token_failures" xml:space="preserve">
+    <value>; token {0} jest niepoprawny; {1}</value>
+  </data>
+  <data name="missing_token" xml:space="preserve">
+    <value>; brak tokenu; {0}</value>
+  </data>
+  <data name="expected_data" xml:space="preserve">
+    <value>; oczekiwano danych</value>
+  </data>
+  <data name="require_values" xml:space="preserve">
+    <value>musi być równa {0}</value>
+  </data>
+  <data name="require_qnames" xml:space="preserve">
+    <value>musi być nazwą kwalifikowaną (QName) równą {0}</value>
+  </data>
+  <data name="require_datatype" xml:space="preserve">
+    <value>musi być poprawną wartością typu danych {0}</value>
+  </data>
+</root>
