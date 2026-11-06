@@ -212,6 +212,11 @@ The schemas of EPUBCheck (`Xml/`, upstream's `XMLValidator`, `XMLValidators`, `R
 - Upstream's enum reads all 50 schemas when it is first used; the port reads each one the first time it is asked for
   (thread-safe), and keeps it. A schema with errors throws `InvalidOperationException` with Jing's messages, where
   upstream prints the stack traces and throws an `Error` (`Internal error`).
+- EPUBCheck empties Jing's `assertion failed:` and `report:` by shipping its own copy of Jing's Schematron bundle; the
+  port's Jing keeps Jing's texts and has an option for EPUBCheck's (`SchematronStatementsOnly`), which `XmlValidator`
+  sets.
+- `ReportingErrorHandler`: a message that is only `WARNING:` or `USAGE:` gives an empty text; upstream's `substring`
+  throws for it.
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
