@@ -34,11 +34,6 @@ public sealed class SpecTestSuiteTests
     {
         // Arrange
         SpecTestCase test = SpecTestSuite.Get(number);
-        if (test.PendingReason is not null)
-        {
-            Assert.Skip(test.PendingReason);
-        }
-
         CollectingErrorHandler schemaErrors = new();
         RelaxNgSchemaReader reader = new() { ErrorHandler = schemaErrors, Resolver = test.CreateResolver() };
 

@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
-using Signet.EpubCheck.Core.Jing;
 using Signet.EpubCheck.Core.Jing.Parse;
 using Signet.EpubCheck.Core.Jing.Sax;
 
@@ -19,8 +18,7 @@ internal sealed record SpecTestCase(
     string Schema,
     IReadOnlyDictionary<string, string> Resources,
     IReadOnlyList<string> ValidInstances,
-    IReadOnlyList<string> InvalidInstances,
-    string? PendingReason)
+    IReadOnlyList<string> InvalidInstances)
 {
     // The schema of a case is written where Jing's prep.xsl writes it: NNN/c.rng or NNN/i.rng.
     private const string BaseUriPrefix = "file:///spectest/";
@@ -51,8 +49,6 @@ internal sealed record SpecTestCase(
 /// <summary>Reads <c>Jing/TestData/spectest.xml</c> as Jing's <c>prep.xsl</c> splits it into files.</summary>
 internal static class SpecTestSuite
 {
-    private const string XsdPendingReason = "uses the XML Schema datatypes (task 2.3)";
-
     private static readonly Lazy<IReadOnlyList<SpecTestCase>> s_cases = new(Load);
 
     public static IReadOnlyList<SpecTestCase> Cases => s_cases.Value;
@@ -77,9 +73,6 @@ internal static class SpecTestSuite
             Dictionary<string, string> resources = new(StringComparer.Ordinal);
             AddResources(testCase, string.Empty, resources);
             string schemaText = Content(schema);
-            bool requiresXsd = testCase.AncestorsAndSelf().Any(e => e.Elements("requires").Any())
-                || schemaText.Contains(WellKnownNamespaces.XmlSchemaDatatypes, StringComparison.Ordinal)
-                || resources.Values.Any(r => r.Contains(WellKnownNamespaces.XmlSchemaDatatypes, StringComparison.Ordinal));
             cases.Add(new SpecTestCase(
                 cases.Count + 1,
                 string.Join(", ", testCase.Elements("section").Select(s => s.Value)),
@@ -87,8 +80,7 @@ internal static class SpecTestSuite
                 schemaText,
                 resources,
                 testCase.Elements("valid").Select(Content).ToList(),
-                testCase.Elements("invalid").Select(Content).ToList(),
-                requiresXsd ? XsdPendingReason : null));
+                testCase.Elements("invalid").Select(Content).ToList()));
         }
 
         return cases;

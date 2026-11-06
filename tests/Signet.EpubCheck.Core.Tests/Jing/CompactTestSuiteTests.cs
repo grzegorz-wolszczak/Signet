@@ -37,11 +37,6 @@ public sealed class CompactTestSuiteTests
     {
         // Arrange
         CompactTestCase test = CompactTestSuite.Get(number);
-        if (test.PendingReason is not null)
-        {
-            Assert.Skip(test.PendingReason);
-        }
-
         CollectingErrorHandler compactErrors = new();
         CollectingErrorHandler xmlErrors = new();
 
