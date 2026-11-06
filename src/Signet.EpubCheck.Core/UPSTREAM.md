@@ -58,7 +58,8 @@ The datatype library `http://whattf.org/datatype-draft` is **not** needed: upstr
 - `ReportBase.ReportingLevel` throws for a level outside `Usage`–`Fatal`; upstream prints a message and keeps the old level.
 - `MessageId`, `DefaultSeverities` and `FeatureKind` are generated from the upstream sources by
   `scripts/epubcheck/generate_message_ids.py`; they are not edited by hand. `Util/CaseFolding.g.cs` is generated from
-  the Unicode Character Database by `scripts/epubcheck/generate_case_folding.py`.
+  the Unicode Character Database by `scripts/epubcheck/generate_case_folding.py`, `Vocab/Vocabularies.g.cs` from the
+  vocabulary classes by `scripts/epubcheck/generate_vocabs.py`.
 
 - The message texts keep upstream's placeholders (`%1$s`, filled by `JavaFormat`, a subset of Java's `String.format`),
   not .NET's `{0}`: the custom messages files people write for upstream keep working, and the English resource stays a
@@ -88,6 +89,16 @@ The OCF container (`Ocf/`, upstream's `com.adobe.epubcheck.ocf`):
   (`yyyy-MM-dd'T'HH:mm:ss'Z'`, UTC); upstream prints Java's `FileTime` there.
 - Case folding (duplicate names, `OPF-060`) uses a table generated from `CaseFolding.txt` of Unicode 16.0.0 (ICU4J 77.1,
   the version upstream uses) by `scripts/epubcheck/generate_case_folding.py`: .NET has no case folding.
+
+Vocabularies (`Vocab/`, upstream's `com.adobe.epubcheck.vocab`):
+
+- A prefix declared twice in a `prefix` attribute keeps its first URI. Upstream collects the mappings in Guava's
+  `ImmutableMap.Builder`, whose `build()` throws on a repeated key, so such a package document stops the check with an
+  unexpected error.
+- The URIs of prefix declarations are checked as `java.net.URI(String)` does (`Util/JavaUri`, after the JDK's
+  `URI.Parser`); an IPv6 literal in brackets is checked with .NET's `IPAddress` instead of the JDK's own reader.
+- The enums of properties and their names are generated from the Java sources by `scripts/epubcheck/generate_vocabs.py`
+  (`Vocab/Vocabularies.g.cs`); a property list (`ParsePropertyList`) keeps its order, as upstream's `ImmutableSet`.
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
