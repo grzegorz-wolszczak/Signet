@@ -1,20 +1,30 @@
 namespace Signet.EpubCheck.Core.Util;
 
-/// <summary>Code point predicates defined by Infra and MIME Sniffing.</summary>
+/// <summary>
+/// The code point classes of the WHATWG Infra and MIME Sniffing standards (upstream's
+/// <c>org.w3c.epubcheck.util.infra.CodePoints</c>).
+/// </summary>
 public static class CodePoints
 {
-    public static bool IsAsciiWhitespace(int value) => value is 0x20 or 0x09 or 0x0A or 0x0C or 0x0D;
+    /// <summary>ASCII whitespace: TAB, LF, FF, CR or SPACE.</summary>
+    public static bool IsAsciiWhitespace(int c) => c is 0x0020 or 0x0009 or 0x000A or 0x000C or 0x000D;
 
-    public static bool IsAsciiDigit(int value) => value is >= '0' and <= '9';
+    /// <summary>An ASCII digit, <c>0</c> to <c>9</c>.</summary>
+    public static bool IsAsciiDigit(int c) => c is >= 0x0030 and <= 0x0039;
 
-    public static bool IsAsciiAlpha(int value) => value is >= 'A' and <= 'Z' or >= 'a' and <= 'z';
+    /// <summary>An ASCII letter, <c>A</c> to <c>Z</c> or <c>a</c> to <c>z</c>.</summary>
+    public static bool IsAsciiAlpha(int c) => c is >= 0x0041 and <= 0x005A or >= 0x0061 and <= 0x007A;
 
-    public static bool IsAsciiAlphanum(int value) => IsAsciiAlpha(value) || IsAsciiDigit(value);
+    /// <summary>An ASCII letter or digit.</summary>
+    public static bool IsAsciiAlphanum(int c) => IsAsciiAlpha(c) || IsAsciiDigit(c);
 
-    public static bool IsHttpTokenCodePoint(int value) =>
-        IsAsciiAlphanum(value) || value is '!' or '#' or '$' or '%' or '&' or '\'' or '*' or '+' or '-' or '.' or '^' or '_' or '`' or '|' or '~';
+    /// <summary>A code point of an HTTP token: an ASCII letter or digit, or one of <c>!#$%&amp;'*+-.^_`|~</c>.</summary>
+    public static bool IsHttpTokenCodePoint(int c) =>
+        IsAsciiAlphanum(c) || c is '!' or '#' or '$' or '%' or '&' or '\'' or '*' or '+' or '-' or '.' or '^' or '_' or '`' or '|' or '~';
 
-    public static bool IsHttpQuotedStringTokenCodePoint(int value) => value == '\t' || value is >= 0x20 and <= 0x7E or >= 0x80 and <= 0xFF;
+    /// <summary>A code point of an HTTP quoted string: TAB, SPACE to <c>~</c>, or U+0080 to U+00FF.</summary>
+    public static bool IsHttpQuotedStringTokenCodePoint(int c) => c == 0x0009 || c is >= 0x0020 and <= 0x007E or >= 0x0080 and <= 0x00FF;
 
-    public static bool IsHttpWhitespace(int value) => value is ' ' or '\t' or '\n' or '\r';
+    /// <summary>HTTP whitespace: TAB, LF, CR or SPACE.</summary>
+    public static bool IsHttpWhitespace(int c) => c is 0x0020 or 0x0009 or 0x000A or 0x000D;
 }
