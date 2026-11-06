@@ -124,7 +124,7 @@ RELAX NG (`Jing/`, a port of Jing 20181222, tag `V20181222` of `relaxng/jing-tra
 - Jing's own RELAX NG test suite (`spectest.xml`) runs as Jing's `TestDriver` runs it: all 376 cases without XML Schema
   datatypes pass; the 9 that use them wait for task 2.3.
 - Not ported, because upstream does not use them: the ID/IDREF checks (`CHECK_ID_IDREF`, `IdTypeMap`), the feasible
-  mode (`FeasibleTransform`), the compact syntax (task 2.2), the datatype libraries other than the builtin one (XSD in 2.3).
+  mode (`FeasibleTransform`), the datatype libraries other than the builtin one (XSD in 2.3).
 - SAX is replaced by `XmlReader` (`Jing/Sax/XmlEventReader`): DTDs are parsed for entities and default attributes, no
   external resource is fetched. The position of an error is where `XmlReader` is — the start of the node — while Xerces
   reports the end of the start tag, so a column can differ from upstream's (the line is the same unless a tag spans lines).
@@ -136,6 +136,12 @@ RELAX NG (`Jing/`, a port of Jing 20181222, tag `V20181222` of `relaxng/jing-tra
   references of a grammar), the port keeps the order in which they were found, so the messages are stable.
 - `GetPrefix` of the validator context compares namespace URIs by value; Jing compares references, which with Xerces
   (it interns the URIs) is the same.
+- The compact syntax (`Jing/Parse/Compact/`) is a hand-written port of Jing's JavaCC grammar `CompactSyntax.jj`, not
+  generated code: the same tokens (longest match, keywords before identifiers, three lexical states), the same
+  productions and lookahead, the same errors at the same line and column. Comments are skipped instead of being kept as
+  JavaCC "special tokens" (only Trang uses them; Jing's schema builder throws them away). Where Jing's character stream
+  stores the first half of a surrogate pair without a position (a stale buffer value, seen only if a token started with
+  one), the port gives both halves the position of the pair.
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 

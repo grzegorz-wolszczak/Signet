@@ -7,8 +7,8 @@ that Signet itself uses for its "Validation Results".
 Status: **in progress — epics 0 and 1 are done** (project skeleton, version, upstream pin, message and report model,
 message texts in English and Polish, conformance harness, command line, EPUB sources and OCF/ZIP checks, galimatias URL
 parser and URL fragments, MIME types, viewport, package-document peeker, vocabularies); tasks 1.1–1.4 were reviewed and
-re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing) is done**;
-**next: task 2.2 compact syntax `.rnc` parser**.
+re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing) and 2.2 (its compact
+syntax) are done**; **next: task 2.3 datatypes (Jing's XML Schema datatype library)**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -21,7 +21,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **2.2 Compact syntax `.rnc` parser**, see "Next
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **2.3 Datatypes**, see "Next
    task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -70,7 +70,7 @@ questions into one message, as `AGENTS.md` demands).
 |---|---|
 | Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Jing/` (the RELAX NG engine, a port of Jing, BSD-3), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
 | Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-file modes still say "checker not implemented") |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (1607 passed, 9 skipped, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's RELAX NG test suite `Jing/TestData/spectest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 203 passed, 1084 skipped) |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (1711 passed, 16 skipped, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's RELAX NG test suites `Jing/TestData/spectest.xml` and `compacttest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 203 passed, 1084 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -85,13 +85,16 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 2.2 Compact syntax `.rnc` parser
+### Next task: 2.3 Datatypes
 
-Port Jing's compact syntax parser (`com.thaiopensource.relaxng.parse.compact`, JavaCC grammar `CompactSyntax.jj`, of
-Jing 20181222 — clone `https://github.com/relaxng/jing-trang`, tag `V20181222`, into the scratchpad) onto the
-`ISchemaBuilder`/`ISubParser` interfaces of `Jing/Parse/` that 2.1 ported: the builder, the patterns and the validator
-are done. Its message bundle goes to a `.resx` in English and Polish like the other Jing bundles. Test
-it on Jing's compact-syntax tests and by loading each `.rnc` of upstream with its `.rng` counterpart (same pattern).
+Port Jing's XML Schema datatype library (`mod/xsd-datatype`, `com.thaiopensource.datatype.xsd`: `DatatypeLibraryImpl`,
+the datatypes and their facets, and the XSD regular expression translator of `mod/regex`
+(`com.thaiopensource.datatype.xsd.regex.java.Translator`), which turns an XSD pattern into a Java regex — here into a
+.NET one) of Jing 20181222, with its message bundles in English and Polish. EPUBCheck gets it through Jing's
+`DatatypeLibraryLoader` for `http://www.w3.org/2001/XMLSchema-datatypes`; plug it in as the default
+`RelaxNgSchemaReader.DatatypeLibraryFactory`, so that the 9 skipped cases of `spectest.xml` and the 7 of
+`compacttest.xml` run (remove `XsdPendingReason` from both loaders). Port Jing's tests of the regex translator and the
+datatypes (`mod/xsd-datatype/test`, `mod/regex/test`) where they exist.
 
 ### Current state of the conformance run
 
@@ -273,7 +276,21 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   `NameClassNormalizerTest`, and 22 tests of the wording. Deliberately not here: ID/IDREF checks and the feasible mode
   (upstream does not use them), the compact syntax (2.2), XSD datatypes (2.3), mapping to `RSC-005` (2.7). The
   deviations from Jing are in `UPSTREAM.md`.
-- **2.2 Compact syntax `.rnc` parser (M).** 129 files; verify equivalence with the `.rng` counterparts.
+- **2.2 Compact syntax `.rnc` parser (M). DONE.** `Jing/Parse/Compact/` ports Jing's `CompactSyntax.jj` (JavaCC) by
+  hand: `CompactCharStream` (Jing's edited `JavaCharStream`: line ends, `\x{…}` escapes, characters XML forbids, Jing's
+  line and column with tabs to the next multiple of 8, decoded lazily so errors come in Jing's order), `CompactLexer`
+  (the token manager with its three lexical states; comments are skipped, documentation lines are tokens),
+  `CompactSyntax` (the productions one by one, including the lookahead that tells a grammar from a pattern at the top
+  level) and `CompactParseable` (UTF-8 unless a UTF-16 byte order mark). `RelaxNgSchemaReader.Syntax` chooses the
+  syntax (EPUBCheck: `.rnc` → compact); included documents are read in the same syntax. Messages: Jing's bundle
+  (`Resources/CompactMessages.resx`, Polish draft). Tested on Jing's `compacttest.xml` (87 cases: 80 pass — a correct
+  case must give the same errors as its XML counterpart and the same simplified pattern; 7 with XSD datatypes wait for
+  2.3) and on positions, escapes, messages and validation with a compact schema. The plan's "equivalence with the `.rng`
+  counterparts" does not apply: upstream's `.rnc` (EPUB 3, `schema/30`) and `.rng` (EPUB 2, `schema/20`) are different
+  schemas. Instead all 129 `.rnc` of upstream were loaded once (with a stand-in XSD library): the 25 top-level schemas
+  load without errors, the 104 modules report only what a fragment lacks (undefined references, no `start`), and the one
+  syntax error is `mod/html5/web-forms2-scripting.rnc`, a file of comments that nothing includes (Jing fails on it the
+  same way).
 - **2.3 Datatypes (M).** XSD datatypes only (via `XmlSchemaDatatype` or own, incl. XSD-regex → .NET translation);
   the `whattf` library is not needed (see "Upstream facts").
 - **2.4 NVDL (L).** 10 files; first list the constructs upstream really uses, implement that set.
