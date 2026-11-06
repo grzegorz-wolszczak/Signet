@@ -8,8 +8,9 @@ Status: **in progress — epics 0 and 1 are done** (project skeleton, version, u
 message texts in English and Polish, conformance harness, command line, EPUB sources and OCF/ZIP checks, galimatias URL
 parser and URL fragments, MIME types, viewport, package-document peeker, vocabularies); tasks 1.1–1.4 were reviewed and
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
-syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset) and 2.6
-(upstream's schemas embedded and loaded) are done**; **next: task 2.7 mapping schema errors to messages**.
+syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
+(upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
+**next: task 3.1 `container.xml`, `encryption.xml`, `metadata.xml`, signatures**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -22,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **2.7 Mapping to messages**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.1 `container.xml`, `encryption.xml`, `metadata.xml`, signatures**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -86,13 +87,13 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 2.7 Mapping to messages
+### Next task: 3.1 `container.xml`, `encryption.xml`, `metadata.xml`, signatures
 
-Port upstream's `ReportingErrorHandler` (`com.adobe.epubcheck.xml.handlers`) and what `XMLParser` does with the
-validators: an error of RELAX NG / NVDL becomes `RSC-005` (`RSC-025` for an informative schema, `XmlValidator.IsNormative`),
-a warning `RSC-017` / `RSC-024`, with the location of the error in the checked file; the prefixes upstream's Schematron
-messages carry (`WARNING:`, `USAGE:`, …) are handled as there. The schemas are `Xml.XmlValidators` (2.6); use upstream's
-JUnit tests and the scenarios that only need schema errors as the oracle.
+The first checker that parses a file: port upstream's `ValidationContext` (the part these checkers use) and `XMLParser`
+with its handlers (`XMLEncodingSniffer`, `DeclarationHandler`, `PreprocessingDefaultHandler`, `DefaultResolver`, the
+parser's own errors through `ReportingErrorHandler`), then `OCFContainerFileChecker`/`ContainerHandler`, the
+encryption, metadata and signatures checkers with their schemas (`Xml.XmlValidators`), and enable the scenarios that
+then pass. Use upstream's JUnit tests and the `.feature` scenarios as the oracle.
 
 ### Current state of the conformance run
 
@@ -346,7 +347,21 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   `tests/Signet.Benchmarks/SchemaLoadBenchmarks` and `BASELINE-EPUBCHECK.md` (all 50 schemas: ~0.66 s on first use,
   ~0.34 s warm, Release). Not done, deliberately: the catalog is embedded but not read; upstream does not read it
   either (every reference between the schemas is relative).
-- **2.7 Mapping to messages (M).** Schema errors → `RSC-005` with location; Schematron assertions → proper ids.
+- **2.7 Mapping to messages (M). DONE.** `Xml/ReportingErrorHandler` ports upstream's `ReportingErrorHandler`: a warning
+  is `RSC-017` (`RSC-024` for an informative schema), an error `RSC-005` (`RSC-025`), or `RSC-017` / `RSC-024` when its
+  message starts with `WARNING:` and `RSC-036` when with `USAGE:` (prefix and space dropped), a fatal error `RSC-016`;
+  always at the line and column of the error in the checked file. `XmlValidator.CreateValidator(report, location,
+  culture)` is what `XMLParser.addValidator` makes. EPUBCheck overrides Jing's Schematron bundle (`report=` and
+  `failed_assertion=` empty, `src/main/resources/com/thaiopensource/validate/schematron/resources`), so its Schematron
+  messages are the statement alone and the prefixes reach the handler: the port's Jing got the option
+  `SchematronStatementsOnly` (`AutoSchemaReader`, `NvdlSchemaReader`, passed to the schemas an NVDL schema uses), set by
+  `XmlValidator`; Jing's own behaviour stays the default. The other bundles EPUBCheck overrides (`relaxng/pattern`,
+  `datatype/xsd`) have the same English texts as Jing's. Tests: the mapping, and the fixtures of the upstream scenarios
+  whose messages come from the schemas alone, checked with the validators upstream's checkers use for them (guide
+  duplicates `RSC-017`, nested `page-list` `RSC-017`, the four obsolete attributes `RSC-036`, SVG errors against the
+  informative schema `RSC-025`). Not done, deliberately: the rest of `XMLParser` (encoding sniffing, `RSC-027`/`RSC-028`/
+  `HTM-058`, `DeclarationHandler`, `PreprocessingDefaultHandler`, `DefaultResolver`, the parser's own errors) needs
+  upstream's `ValidationContext` and comes with the first checker that parses a file, task 3.1.
 
 ### Epic 3 — Publication rules
 
