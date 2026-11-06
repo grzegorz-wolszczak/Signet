@@ -21,7 +21,7 @@ public sealed class ElementIdsTests
     {
         string malformedDir = $"{Path.DirectorySeparatorChar}malformed{Path.DirectorySeparatorChar}";
         TheoryData<string> data = new();
-        foreach (string path in Directory.EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories))
+        foreach (string path in CorpusPaths.EnumerateFiles("*.xhtml"))
         {
             if (!path.Contains(malformedDir, StringComparison.Ordinal))
             {

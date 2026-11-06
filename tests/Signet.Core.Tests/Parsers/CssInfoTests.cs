@@ -371,7 +371,7 @@ public sealed class CssInfoTests
     public static TheoryData<string> AllCorpusCss()
     {
         TheoryData<string> data = new();
-        foreach (string path in Directory.EnumerateFiles(CorpusPaths.Root, "*.css", SearchOption.AllDirectories))
+        foreach (string path in CorpusPaths.EnumerateFiles("*.css"))
         {
             data.Add(path);
         }

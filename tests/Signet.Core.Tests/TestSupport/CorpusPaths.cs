@@ -69,6 +69,22 @@ public static class CorpusPaths
             || path.Contains($"{separator}broken{separator}", StringComparison.Ordinal);
     }
 
+    /// <summary>The folder of EPUBCheck's conformance fixtures, which only the EPUBCheck tests read.</summary>
+    public const string EpubCheckFolder = "epubcheck";
+
+    /// <summary>
+    /// The files of Signet's corpus matching <paramref name="pattern"/>, in all subfolders — without
+    /// <c>epubcheck/</c>: EPUBCheck's ~3500 conformance fixtures, most of them invalid on purpose, are not Signet's books
+    /// (they are read by <c>Signet.EpubCheck.Conformance.Tests</c>). A test that sweeps the corpus uses this, not
+    /// <see cref="Directory.EnumerateFiles(string, string, SearchOption)"/> on <see cref="Root"/>.
+    /// </summary>
+    public static IEnumerable<string> EnumerateFiles(string pattern)
+    {
+        string epubCheck = Path.Combine(Root, EpubCheckFolder) + Path.DirectorySeparatorChar;
+        return Directory.EnumerateFiles(Root, pattern, SearchOption.AllDirectories)
+            .Where(path => !path.StartsWith(epubCheck, StringComparison.Ordinal));
+    }
+
     /// <summary>The directories of all valid EPUBs — for parametrized tests.</summary>
     public static IReadOnlyList<string> ValidEpubDirs { get; } =
     [

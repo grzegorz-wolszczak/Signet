@@ -28,8 +28,7 @@ public sealed class WellFormedCheckerTests
     public static TheoryData<string> AllCorpusMarkup()
     {
         TheoryData<string> data = new();
-        foreach (string path in Directory
-                     .EnumerateFiles(CorpusPaths.Root, "*.*", SearchOption.AllDirectories)
+        foreach (string path in CorpusPaths.EnumerateFiles("*.*")
                      .Where(p => p.EndsWith(".xhtml", StringComparison.Ordinal)
                                  || p.EndsWith(".opf", StringComparison.Ordinal)
                                  || p.EndsWith(".ncx", StringComparison.Ordinal))

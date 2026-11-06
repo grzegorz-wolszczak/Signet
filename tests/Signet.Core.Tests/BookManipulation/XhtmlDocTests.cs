@@ -46,7 +46,7 @@ public sealed class XhtmlDocTests
     public static TheoryData<string> AllCorpusXhtml()
     {
         TheoryData<string> data = new();
-        foreach (string path in Directory.EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories))
+        foreach (string path in CorpusPaths.EnumerateFiles("*.xhtml"))
         {
             data.Add(path);
         }

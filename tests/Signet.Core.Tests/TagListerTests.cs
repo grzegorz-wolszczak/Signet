@@ -23,8 +23,7 @@ public sealed class TagListerTests
     public static TheoryData<string> AllCorpusXhtml()
     {
         TheoryData<string> data = new();
-        foreach (string path in Directory
-                     .EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories)
+        foreach (string path in CorpusPaths.EnumerateFiles("*.xhtml")
                      .Where(p => !CorpusPaths.IsFaultyOnPurpose(p)))
         {
             data.Add(path);
