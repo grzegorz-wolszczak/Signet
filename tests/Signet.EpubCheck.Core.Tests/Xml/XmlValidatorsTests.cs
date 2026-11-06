@@ -94,7 +94,7 @@ public sealed class XmlValidatorsTests
     }
 
     [Fact]
-    public void Validate_PackageWithoutNav_ReportsUpstreamsAssertion()
+    public void Validate_PackageWithoutNav_ReportsTheStatementOfUpstreamsAssertion()
     {
         // Arrange
         string package = Package(Manifest(navProperties: null));
@@ -104,7 +104,7 @@ public sealed class XmlValidatorsTests
 
         // Assert
         errors.ConvertAll(e => e.Message).Should().Equal(
-            "assertion failed:" + Environment.NewLine + "  Exactly one manifest item must declare the \"nav\" property (number of \"nav\" items: 0).");
+            Environment.NewLine + "  Exactly one manifest item must declare the \"nav\" property (number of \"nav\" items: 0).");
     }
 
     [Fact]
