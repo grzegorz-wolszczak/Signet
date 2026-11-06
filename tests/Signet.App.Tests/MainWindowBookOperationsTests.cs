@@ -918,6 +918,91 @@ public sealed class MainWindowBookOperationsTests : IDisposable
         });
     }
 
+    // Reported in November 2026: after Rename Class, Undo did nothing (the operation reloads the tabs, clearing their
+    // history). Undo with nothing to undo in the editor now reverts the whole operation, and Redo brings it back.
+    [Fact]
+    public async Task Undo_after_renaming_a_class_reverts_the_whole_rename_and_redo_brings_it_back()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            MainWindowViewModel sut = await RenamedClassBookAsync();
+            IBookWorkspace workspace = sut;
+
+            // Act
+            sut.Actions.Require(AppActionIds.Undo).Execute(null);
+            await sut.WhenIdleAsync();
+
+            // Assert
+            ChapterText(workspace).Should().Contain("class=\"c1\"").And.NotContain("class=\"lead\"");
+            workspace.CurrentBook!.GetCssResources().Single().GetText().Should().Contain(".c1").And.NotContain(".lead");
+            sut.CanRedoBookOperation.Should().BeTrue();
+
+            // Act
+            sut.Actions.Require(AppActionIds.Redo).Execute(null);
+            await sut.WhenIdleAsync();
+
+            // Assert
+            ChapterText(workspace).Should().Contain("class=\"lead\"");
+            workspace.CurrentBook!.GetCssResources().Single().GetText().Should().Contain(".lead");
+            sut.CanUndoBookOperation.Should().BeTrue();
+        });
+    }
+
+    [Fact]
+    public async Task Undo_after_renaming_a_class_and_editing_a_tab_does_not_revert_the_rename()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            MainWindowViewModel sut = await RenamedClassBookAsync();
+            IBookWorkspace workspace = sut;
+            HtmlResource chapter = workspace.CurrentBook!.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
+            sut.Tabs.OpenResources(new Resource[] { chapter });
+            CodeTabViewModel tab = sut.ActiveCodeTab!;
+            tab.Document.Text = tab.Document.Text.Replace("</body>", "<p>typed</p></body>", StringComparison.Ordinal);
+
+            // Assert
+            sut.CanUndoBookOperation.Should().BeFalse("an edit after the operation is not thrown away by Undo");
+
+            // Act
+            sut.Actions.Require(AppActionIds.Undo).Execute(null);
+            await sut.WhenIdleAsync();
+
+            // Assert
+            tab.Document.Text.Should().NotContain("typed", "Undo undid the edit in the editor");
+            workspace.CurrentBook!.GetCssResources().Single().GetText().Should().Contain(".lead", "the rename stays");
+        });
+    }
+
+    // A book whose chapter has class "c1" (styled in style.css), renamed to "lead" in the whole book behind a checkpoint.
+    private async Task<MainWindowViewModel> RenamedClassBookAsync()
+    {
+        TempDir temp = _disposables.Add(new TempDir());
+        string tree = temp.Combine("tree");
+        TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
+        string chapterPath = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
+        File.WriteAllText(
+            chapterPath,
+            File.ReadAllText(chapterPath).Replace("<p>Hello, world.</p>", "<p class=\"c1\">Hello, world.</p>", StringComparison.Ordinal));
+        File.AppendAllText(Path.Combine(tree, "EPUB", "styles", "style.css"), "\n.c1 { color: red }\n");
+        string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
+        MainWindowViewModel sut = _disposables.Add(new MainWindowViewModel());
+        sut.LoadBook(new ImportEpub(epub).GetBook(), epub);
+        ICodeTabHost host = sut;
+        Runs runs = new(sut);
+        ClassRenamer renamer = (await host.PrepareClassRenameAsync())!;
+        ClassRenameResult result = renamer.Rename(
+            ClassRenameRequest.ForElement(new ClassAtCaret("c1", ElementPath), ClassRenameScope.Everywhere), "lead");
+        await host.ApplyClassRename(result, runs.Runner);
+        return sut;
+    }
+
+    private static string ChapterText(IBookWorkspace workspace) =>
+        workspace.CurrentBook!.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText();
+
     [Fact]
     public async Task Renaming_an_id_in_the_whole_book_runs_behind_a_checkpoint()
     {

@@ -103,7 +103,76 @@ public sealed partial class MainWindowViewModel
     public async Task<bool> AddCheckpointBeforeAsync(string operation)
     {
         ArgumentNullException.ThrowIfNull(operation);
-        return await AddCheckpointAsync(Strings.Format("Checkpoint_Before", operation)).ConfigureAwait(true);
+        bool created = await AddCheckpointAsync(Strings.Format("Checkpoint_Before", operation)).ConfigureAwait(true);
+        if (created && IsBookOperationBusy)
+        {
+            _operationCheckpointTaken = true;
+        }
+
+        return created;
+    }
+
+    // Undo and Redo of a whole book operation. A book-wide operation (Rename Class, Cleanup, …) changes several files and
+    // reloads the open tabs, which clears their undo history; it runs behind a "before" checkpoint. When the operation
+    // ends (ExitBookOperation), the state it left the book in is remembered: while that state is the current one and
+    // nothing was edited since, Undo with no undo history in the active editor reverts the operation as a whole
+    // ("Revert to before …"), and Redo then brings it back.
+    private bool _operationCheckpointTaken;
+    private CheckpointState? _operationResultState;
+
+    // Called by ExitBookOperation: the operation that just ended took its "before" checkpoint (and kept it).
+    private void RememberOperationResult()
+    {
+        if (_operationCheckpointTaken)
+        {
+            _operationCheckpointTaken = false;
+            _operationResultState = _checkpoints.IsOpen ? _checkpoints.Current : null;
+        }
+    }
+
+    /// <summary>Whether Undo would revert the last book operation (see <see cref="UndoActiveTabOrBookOperation"/>).</summary>
+    public bool CanUndoBookOperation =>
+        _currentBook is not null
+        && _operationResultState is { } state
+        && _checkpoints.CanUndo
+        && ReferenceEquals(_checkpoints.Current, state)
+        && !_checkpoints.HasEditsInCurrentState
+        && !_tabManager.OpenTabViews.Any(view => view.IsModified);
+
+    /// <summary>Whether Redo would bring back the book operation that Undo reverted.</summary>
+    public bool CanRedoBookOperation =>
+        _currentBook is not null
+        && _operationResultState is { } state
+        && _checkpoints.CanRedo
+        && ReferenceEquals(_checkpoints.States[_checkpoints.Position + 1], state)
+        && !_checkpoints.HasEditsSinceMove
+        && !_tabManager.OpenTabViews.Any(view => view.IsModified);
+
+    /// <summary>
+    /// Undo: in the active editor when it has something to undo; otherwise, right after a book operation, the whole
+    /// operation (the same as "Revert to before …", with its confirmation when files would disappear or come back).
+    /// </summary>
+    public Task UndoActiveTabOrBookOperation()
+    {
+        if (ActiveTab is not { CanUndo: true } && CanUndoBookOperation)
+        {
+            return RequestRevertToBeforeAsync();
+        }
+
+        ActiveTab?.Undo();
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Redo: in the active editor when it has something to redo; otherwise the book operation Undo reverted.</summary>
+    public Task RedoActiveTabOrBookOperation()
+    {
+        if (ActiveTab is not { CanRedo: true } && CanRedoBookOperation)
+        {
+            return RequestRevertToAfterAsync();
+        }
+
+        ActiveTab?.Redo();
+        return Task.CompletedTask;
     }
 
     // A checkpoint named `message` (empty: an unnamed one) taken off the UI thread under a progress window; see AddCheckpointBeforeAsync.
@@ -162,7 +231,11 @@ public sealed partial class MainWindowViewModel
     /// Rolls back the checkpoint created right before an operation that was cancelled or
     /// changed nothing.
     /// </summary>
-    public void RewindCheckpoint() => _checkpoints.Rewind();
+    public void RewindCheckpoint()
+    {
+        _operationCheckpointTaken = false;
+        _checkpoints.Rewind();
+    }
 
     /// <summary>
     /// "Revert to before …": restores the state before the current one right away, or — when that would remove,
@@ -193,6 +266,7 @@ public sealed partial class MainWindowViewModel
     /// </summary>
     public bool AbandonCheckpoint()
     {
+        _operationCheckpointTaken = false;
         if (_currentBook is not { } live || !_checkpoints.IsOpen)
         {
             return false;

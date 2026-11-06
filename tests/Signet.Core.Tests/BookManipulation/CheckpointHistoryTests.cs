@@ -80,6 +80,41 @@ public sealed class CheckpointHistoryTests
 
     [Theory]
     [AutoData]
+    public void Edits_are_told_apart_by_state_and_by_move(string message)
+    {
+        // Arrange
+        using TempDir temp = new();
+        using CheckpointHistory history = new();
+        Book book = Load(temp, CorpusPaths.Epub3Minimal);
+        history.Open(book);
+        string chapter = Chapter(book).BookPath;
+
+        // Act
+        history.MarkEdited(chapter);
+        history.AddCheckpoint(book, message);
+
+        // Assert (the checkpoint takes the edits of the live state with it; the move bookkeeping keeps them)
+        history.HasEditsInCurrentState.Should().BeFalse();
+        history.HasEditsSinceMove.Should().BeTrue();
+
+        // Act
+        Book reverted = history.Undo(book)!;
+        book.Dispose();
+
+        // Assert
+        history.HasEditsSinceMove.Should().BeFalse();
+
+        // Act
+        history.MarkEdited(chapter);
+
+        // Assert
+        history.HasEditsSinceMove.Should().BeTrue();
+        history.HasEditsInCurrentState.Should().BeTrue();
+        reverted.Dispose();
+    }
+
+    [Theory]
+    [AutoData]
     public void AddCheckpointCancellable_cancelled_leaves_nothing_behind(string message)
     {
         // Arrange
