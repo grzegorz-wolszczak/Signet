@@ -128,6 +128,7 @@ public static class OCFChecker
                 Url = packageDocument,
                 MimeType = MediaTypes.PackageDocument,
                 PublicationTypes = state.PublicationTypesOf(packageDocument),
+                FeatureReport = new FeatureReport(),
             };
             OPFChecker checker = version == EpubVersion.Version3 ? new OPFChecker30(context) : new OPFChecker(context);
             checker.Check();
