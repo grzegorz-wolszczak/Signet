@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Signet.Core\Signet.Core.csproj" />
+    <ProjectReference Include="..\..\src\Signet.EpubCheck.Core\Signet.EpubCheck.Core.csproj" />
     <!-- SyntheticBook / TempDir / EpubBuilder / TestIsolation. -->
     <ProjectReference Include="..\Signet.Core.Tests\Signet.Core.Tests.csproj" />
   </ItemGroup>
