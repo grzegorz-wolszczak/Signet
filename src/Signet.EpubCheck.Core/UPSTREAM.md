@@ -32,7 +32,7 @@ Re-implemented in C#: everything that is Java code in upstream.
 
 | Upstream | Replaced by |
 |---|---|
-| Jing 20181222 (RELAX NG, NVDL) | `Jing/`: a port of Jing (BSD-3-Clause, `Jing/LICENSE-jing.md`) — RELAX NG today, NVDL in task 2.4; error wording is Jing's exactly |
+| Jing 20181222 (RELAX NG, NVDL) | `Jing/`: a port of Jing (BSD-3-Clause, `Jing/LICENSE-jing.md`) — RELAX NG with its datatypes, NVDL; error wording is Jing's exactly |
 | Saxon-HE 11.4 (XPath 2.0 for Schematron) | own evaluator of the XPath 2.0 subset the `.sch` files use |
 | galimatias 0.1.3 (WHATWG URL of 2014) | `Galimatias/`: a port of galimatias (MIT, `Galimatias/LICENSE-galimatias.md`), checked against its own test data; IDNA by .NET's `IdnMapping` |
 | ICU4J — `Normalizer2`, `CaseMap` (`UnicodeUtils`), `UnicodeSet`, `UCharacter` (`OCFFilenameChecker`) | .NET string normalization; the code point sets of `OCFFilenameChecker` written out; full case folding from a generated table (`Util/CaseFolding.g.cs`) |
@@ -166,6 +166,21 @@ XML Schema datatypes (`Jing/Datatype/Xsd/`, a port of Jing's `xsd-datatype` and 
 - Kept as Jing has them: `totalDigits` and `fractionDigits` count the digits as written (trailing zeros included, as
   Java's `BigDecimal` scale); a time zone must be between -13:00 and +14:00 and a year at most 292278994 (the limits of
   Java's `GregorianCalendar`).
+
+NVDL (`Jing/Validate/`, a port of Jing's `validate.auto` and `validate.nvdl`):
+
+- `AutoSchemaReader` reads a schema up to its root element to learn its language, then lets the reader of that language
+  read it from the start; Jing hands the events of the same parse to the reader it picks (rewinding the input for RELAX
+  NG). The result is the same; a schema document is opened twice.
+- Where Jing goes through a `Hashtable` (the modes when it checks for undefined modes and cycles, the namespaces of the
+  attributes of an element), the port goes in the order the modes were first named and the attributes are written, so
+  the order of the messages is stable.
+- No NVDL option is supported: an `option` with `mustSupport` is reported as `option "…" not recognized`. Jing's options
+  are those of its RELAX NG reader (`check-id-idref`, `feasible`), which the port does not have (EPUBCheck uses no option).
+- Not ported: MNS and NRL (older languages Jing also reads) and W3C XML Schema sub-schemas (Jing uses Xerces); EPUBCheck
+  uses none of them.
+- The anonymous modes are numbered per schema; Jing numbers them across all the schemas of the process (the number shows
+  only in the message about a nested mode defined twice).
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
