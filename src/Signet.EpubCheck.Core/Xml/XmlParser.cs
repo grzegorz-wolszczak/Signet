@@ -17,9 +17,8 @@ namespace Signet.EpubCheck.Core.Xml;
 /// cannot be read (<c>PKG-008</c>). The handlers see the document after <see cref="PreprocessingHandler"/>.
 /// </summary>
 /// <remarks>
-/// Not ported yet, because the checks that need them come later: the declaration handler (DOCTYPE and entity checks,
-/// <c>HTM-003</c>, <c>HTM-004</c>, <c>HTM-009</c>, <c>HTM-011</c>, <c>OPF-073</c>), which needs the DTD events of the
-/// reader, and the resolver of the bundled DTDs of EPUB 2.
+/// Not ported yet, because the checks that need them come later: the entities used but not declared (<c>HTM-011</c>),
+/// and the resolver of the bundled DTDs of EPUB 2 (the reader reads no external DTD).
 /// </remarks>
 public sealed class XmlParser
 {
@@ -66,7 +65,13 @@ public sealed class XmlParser
             InputSource source = Source(bytes);
             ReportingErrorHandler? errors = _reporting ? new ReportingErrorHandler(report, _context.Location()) : null;
             PreprocessingHandler handler = new(new Tee(_contentHandlers), _context);
-            new XmlEventReader { ContentHandler = handler, DtdHandler = new DtdTee(_dtdHandlers), ErrorHandler = errors }.Parse(source);
+            new XmlEventReader
+            {
+                ContentHandler = handler,
+                DtdHandler = new DtdTee(_dtdHandlers),
+                DeclarationHandler = new DeclarationHandler(_context),
+                ErrorHandler = errors,
+            }.Parse(source);
         }
         catch (SaxAbortException)
         {
