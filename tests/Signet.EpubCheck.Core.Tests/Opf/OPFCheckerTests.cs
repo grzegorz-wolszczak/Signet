@@ -302,6 +302,7 @@ public sealed class OPFCheckerTests
         [
             new KeyValuePair<string, byte[]>("package.opf", Encoding.UTF8.GetBytes(package)),
             new KeyValuePair<string, byte[]>("ch1.xhtml", [.. "<a/>"u8]),
+            new KeyValuePair<string, byte[]>("c.png", [0]),
         ]);
         OCFContainer.Builder builder = new(source);
         foreach (EpubSourceEntry entry in source.Entries)
@@ -310,14 +311,13 @@ public sealed class OPFCheckerTests
         }
 
         OCFContainer container = builder.Build();
-        ValidationContext context = new()
+        ValidationContext context = new ValidationContext
         {
             Url = container.RootUrl.Resolve("package.opf"),
             Report = report,
             Version = EpubVersion.Version2,
             MimeType = "application/oebps-package+xml",
-            Container = container,
-        };
+        }.WithContainer(container);
         new OPFChecker(context).Check();
         return [.. report.Messages.Where(m => m.Message.Id is not MessageId.RSC_005 and not MessageId.RSC_017)];
     }
