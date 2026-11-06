@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`) and 3.2 (OPF 2) are done**; **next: task 3.3 OPF 3**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2) and 3.3 (OPF 3) are done**; **next: task 3.4 navigation (nav, NCX)**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.3 OPF 3**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.4 Navigation**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -87,14 +87,13 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 3.3 OPF 3
+### Next task: 3.4 Navigation (nav, NCX)
 
-The package document of EPUB 3: port `OPFChecker30` and `OPFHandler30` (properties, refinements, collections, linked
-resources, vocabularies, `OPF-0xx`/`RSC-0xx` checks), on top of `Opf/OPFChecker` and `Opf/OPFHandler` (done in 3.2, made to be
-subclassed: `CreateHandler`, `Validators`, `CheckItem`, `CheckItemAfterResourceValidation`). `OPFChecker.Validators()` lists
-only the EPUB 2 schemas for now; the EPUB 3 ones (`Opf30Rnc`, `Opf30Sch`, the collections, the profiles) are in
-`Xml.XmlValidators`. `OCFChecker.CheckPackageDocuments` runs the package documents of EPUB 2 only: EPUB 3 joins it with this
-task, with the consistency check of the container (`OPF-003`, `PKG-026`; linked resources count as declared).
+The navigation document of EPUB 3 (`NavChecker`, `NavHandler`, `epub-nav-30.rnc/sch`, `NAV-*`) and the NCX of EPUB 2
+(`NCXChecker`, `NCXHandler`, `ncx.rng/sch`, `NCX-*`). They are the checkers `OPFChecker.CheckItemContent` calls for the item
+with the `nav` property and the item the spine's `toc` names (the hook is there and does nothing yet; item checkers need the
+resource and reference registries of 3.6 for their links, so port the registry types with the first checker that fills them).
+`XmlParser` and `XmlHandler` are ready; the validators are in `Xml.XmlValidators`.
 
 ### Current state of the conformance run
 
@@ -395,8 +394,19 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   enabled. Not done, deliberately: the resource and reference registries and the checks of the resources an item declares
   (`CheckItemContent`: NCX 3.4, content documents 3.5, `RSC-007`/`RSC-032` and the reference checker 3.6); six scenarios of
   `opf-publication.feature` wait for them.
-- **3.3 OPF 3 (XL).** `package-30.rnc/sch`, `OPFChecker30` / `OPFHandler30`, `properties`, refinements, collections,
-  vocabularies.
+- **3.3 OPF 3 (XL). DONE.** `Opf/OPFChecker30` (schemas of EPUB 3 and of the profile or publication type; items `RSC-029`,
+  `PKG-025`, `OPF-090`, `OPF-091`; spine items `OPF-043`, `OPF-044`, `OPF-077`, `OPF-100`; linked resources `OPF-067`;
+  collections: dictionary, index, preview `OPF-071`, `OPF-075`, `OPF-076`, `OPF-081`–`OPF-084`) and `OPFHandler30` (the vocabularies
+  of the `prefix` attribute, the properties of items, itemrefs, links and `meta`, `OPF-012`, `OPF-065`, `OPF-070`, `OPF-086`,
+  `OPF-089`, `OPF-092`–`OPF-095`, `OPF-098`, `OBS-001`, the rendition facts). New model: `MetadataSet` (with refinements and
+  cycle detection), `LinkedResource(s)`, `CollectionNode` / `ResourceCollections` (upstream's `ResourceCollection`; renamed because
+  .NET reserves the suffix), `Util/LanguageTag` (BCP 47 well-formedness with Java's error texts), `Reporting/QuietReport`.
+  `OCFChecker` runs EPUB 3 package documents too and the container consistency counts linked resources. Conformance:
+  `epub3/05-package-document/package-document.feature` is enabled (the scenarios that need content document properties and the
+  reference checks wait: 25). Not done, deliberately: the checks that use the features content documents report
+  (`NAV-003`–`NAV-008`, `OPF-066`, `OPF-078`, `OPF-079`, `HTM-051`: tasks 3.5 and 3.11), the total duration of media overlays
+  (`MED-016`, `SmilClock`: task 3.9), the checks after the resources were validated (`RSC-006`, `OPF-096`, `OPF-097`,
+  `MED-010`–`MED-013`: task 3.6); `featureReport` and `registerReference` are not ported yet.
 - **3.4 Navigation (M).** `nav` (`NAV-*`), NCX (`NCX-*`).
 - **3.5 Content documents (XL).** `OPSChecker` / `OPSHandler`(30), XHTML5, EPUB 2 XHTML, SVG, MathML, DTBook,
   `epub-xhtml-30.sch`, entities, encodings.

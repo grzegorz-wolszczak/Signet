@@ -40,7 +40,7 @@ internal sealed class OcfEpubChecker : IEpubChecker
                 // (the step "configured to check EPUB 3 rules" sets the version of the single-document checkers only).
                 OCFChecker.Check(request.Path, EpubVersion.Unknown, request.Report, request.Profile);
                 break;
-            case CheckerMode.PackageDocument when request.Version == EpubVersion.Version2:
+            case CheckerMode.PackageDocument:
                 ValidationContext context = new()
                 {
                     Url = EpubCheckUrlUtils.ToUrl(request.Path),
@@ -50,7 +50,7 @@ internal sealed class OcfEpubChecker : IEpubChecker
                     Profile = request.Profile,
                     MimeType = MediaTypes.PackageDocument,
                 };
-                new OPFChecker(context).Check();
+                (request.Version == EpubVersion.Version2 ? new OPFChecker(context) : new OPFChecker30(context)).Check();
                 break;
             default:
                 throw new ScenarioNotImplementedException("Checking this kind of single document is not implemented yet.");

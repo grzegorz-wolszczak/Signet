@@ -24,6 +24,7 @@ internal static class ConformanceCorpus
         "epub2/opf-publication.feature",
         "epub3/04-ocf/filename-checker.feature",
         "epub3/04-ocf/ocf.feature",
+        "epub3/05-package-document/package-document.feature",
         "epub3/C-viewport-meta-tag/viewport-syntax.feature",
         "unit-tests/url-fragment.feature",
     };
@@ -73,6 +74,9 @@ internal static class ConformanceCorpus
         AddOcf(pending, "RSC-004 comes from PublicationResourceChecker, which runs with the package document checks (tasks 3.2 and 3.3).", 319);
         AddFeature(pending, "epub2/opf-publication.feature", "Needs the resource and reference registries (RSC-007, RSC-008, RSC-032: task 3.6).", 60, 65, 86, 96, 145);
         AddFeature(pending, "epub2/opf-publication.feature", "Needs the NCX checker (CHK-008 for an item the checker cannot be made for: task 3.4).", 117);
+        AddFeature(pending, "epub3/05-package-document/package-document.feature",
+            "Needs the content document checks (the properties remote-resources, scripted, svg, switch: task 3.5) and the resource and reference checks (RSC-001, RSC-006, RSC-008, RSC-011, OPF-096: task 3.6).",
+            410, 416, 422, 428, 487, 500, 570, 576, 582, 588, 594, 600, 606, 612, 626, 632, 638, 651, 657, 663, 672, 723, 729, 773, 780);
         return pending;
     }
 
