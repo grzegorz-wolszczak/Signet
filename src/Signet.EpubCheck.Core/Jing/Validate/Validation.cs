@@ -48,7 +48,8 @@ internal sealed record SchemaReadSettings(
     ISaxErrorHandler? ErrorHandler,
     ISchemaResolver Resolver,
     IDatatypeLibraryFactory? DatatypeLibraryFactory,
-    CultureInfo? Culture);
+    CultureInfo? Culture,
+    bool SchematronStatementsOnly = false);
 
 /// <summary>A schema language that <see cref="AutoSchemaReader"/> recognizes by the namespace of the root element (Jing's <c>SchemaReceiverFactory</c>).</summary>
 internal interface ISchemaLanguage
@@ -88,13 +89,17 @@ public sealed class AutoSchemaReader
     /// <summary>The language of the messages about the schema.</summary>
     public CultureInfo? Culture { get; init; }
 
+    /// <summary>Whether the message of a failed Schematron assertion or report is only its statement, without Jing's
+    /// <c>assertion failed:</c> / <c>report:</c> before it (EPUBCheck empties those two texts of Jing's bundle).</summary>
+    public bool SchematronStatementsOnly { get; init; }
+
     /// <summary>Reads the schema of <paramref name="source"/>.</summary>
     /// <exception cref="IncorrectSchemaException">The schema has errors (reported to <see cref="ErrorHandler"/>).</exception>
     /// <exception cref="SaxParseException">A schema document is not well-formed, or its language is not known.</exception>
     public ISchema CreateSchema(InputSource source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        return CreateSchema(source, new SchemaReadSettings(ErrorHandler, Resolver, DatatypeLibraryFactory, Culture), isAttributesSchema: false);
+        return CreateSchema(source, new SchemaReadSettings(ErrorHandler, Resolver, DatatypeLibraryFactory, Culture, SchematronStatementsOnly), isAttributesSchema: false);
     }
 
     internal static ISchema CreateSchema(InputSource source, SchemaReadSettings settings, bool isAttributesSchema)

@@ -24,13 +24,17 @@ public sealed class NvdlSchemaReader
     /// <summary>The language of the messages about the schema.</summary>
     public CultureInfo? Culture { get; init; }
 
+    /// <summary>Whether the messages of the Schematron schemas it uses are only the statements (see
+    /// <see cref="AutoSchemaReader.SchematronStatementsOnly"/>).</summary>
+    public bool SchematronStatementsOnly { get; init; }
+
     /// <summary>Reads the NVDL schema of <paramref name="source"/> and the schemas it uses.</summary>
     /// <exception cref="IncorrectSchemaException">The schema has errors (reported to <see cref="ErrorHandler"/>).</exception>
     /// <exception cref="SaxParseException">A schema document is not well-formed.</exception>
     public ISchema CreateSchema(InputSource source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        return NvdlSchema.Read(source, new SchemaReadSettings(ErrorHandler, Resolver, DatatypeLibraryFactory, Culture), isAttributesSchema: false);
+        return NvdlSchema.Read(source, new SchemaReadSettings(ErrorHandler, Resolver, DatatypeLibraryFactory, Culture, SchematronStatementsOnly), isAttributesSchema: false);
     }
 }
 

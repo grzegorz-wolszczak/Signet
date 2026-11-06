@@ -36,12 +36,16 @@ internal sealed class SchematronSchema : ISchema
         [SchematronLanguage.Schematron15Namespace] = new(() => LoadCompact("schematron.rnc")),
     };
 
-    private SchematronSchema(string? baseUri)
+    private SchematronSchema(string? baseUri, bool statementsOnly)
     {
         BaseUri = baseUri;
+        StatementsOnly = statementsOnly;
     }
 
     public string? BaseUri { get; }
+
+    // Whether a message leaves out Jing's "assertion failed:" / "report:" (EPUBCheck's empty texts for them).
+    public bool StatementsOnly { get; }
 
     public List<CompiledPattern> Patterns { get; } = [];
 
@@ -61,7 +65,7 @@ internal sealed class SchematronSchema : ISchema
             throw new IncorrectSchemaException();
         }
 
-        Compiler compiler = new(new SchematronSchema(source.SystemId), ns, ceh, JingLocalizer.ForSchematron(settings.Culture), source.SystemId);
+        Compiler compiler = new(new SchematronSchema(source.SystemId, settings.SchematronStatementsOnly), ns, ceh, JingLocalizer.ForSchematron(settings.Culture), source.SystemId);
         SchematronSchema schema = compiler.Compile(builder.Document!);
         return ceh.HadErrorOrFatalError ? throw new IncorrectSchemaException() : schema;
     }
