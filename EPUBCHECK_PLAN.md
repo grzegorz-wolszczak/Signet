@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-**next: task 3.1 `container.xml`, `encryption.xml`, `metadata.xml`, signatures**.
+epic 3: **3.1 (the files of `META-INF`) is done**; **next: task 3.2 OPF 2**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.1 `container.xml`, `encryption.xml`, `metadata.xml`, signatures**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.2 OPF 2**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -87,13 +87,14 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 3.1 `container.xml`, `encryption.xml`, `metadata.xml`, signatures
+### Next task: 3.2 OPF 2
 
-The first checker that parses a file: port upstream's `ValidationContext` (the part these checkers use) and `XMLParser`
-with its handlers (`XMLEncodingSniffer`, `DeclarationHandler`, `PreprocessingDefaultHandler`, `DefaultResolver`, the
-parser's own errors through `ReportingErrorHandler`), then `OCFContainerFileChecker`/`ContainerHandler`, the
-encryption, metadata and signatures checkers with their schemas (`Xml.XmlValidators`), and enable the scenarios that
-then pass. Use upstream's JUnit tests and the `.feature` scenarios as the oracle.
+The package document of EPUB 2: port upstream's `OPFChecker` (its `OPFHandler` and the items, spine and guide it builds), the
+validators `OPF_20_RNG` / `OPF_20_SCH` / `IDUNIQUE_20_SCH` (`Xml.XmlValidators`, loaded and mapped to messages since 2.6 and
+2.7), the declaration handler of `XmlParser` (DOCTYPE and entity checks, which needs the DTD events of the reader and the
+bundled DTDs of `schema/20/dtd`), and hook the checker into `OCFChecker` (which already reads `container.xml`, finds the
+package documents and their version, and leaves the checks of the package documents and of the resources they declare to
+the OPF tasks, 3.2 and 3.3: the end of upstream's `OCFChecker.check`, `OPF-003` and `PKG-026`, belongs there).
 
 ### Current state of the conformance run
 
@@ -365,7 +366,22 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
 
 ### Epic 3 — Publication rules
 
-- **3.1 `container.xml`, `encryption.xml`, `metadata.xml`, signatures (M).**
+- **3.1 `container.xml`, `encryption.xml`, `metadata.xml`, signatures (M). DONE.** The XML layer and the OCF flow of
+  upstream's `OCFChecker` up to the package documents. `Xml/XmlParser` (upstream's `XMLParser`: encoding sniffing with
+  `XMLEncodingSniffer` and `HTM-058`/`RSC-027`/`RSC-028`, the UTF-8 BOM, handlers and validators fed from one parse, errors
+  through `ReportingErrorHandler`, `PKG-008`, `RSC-016`), `PreprocessingHandler` (upstream's `PreprocessingDefaultHandler`:
+  custom elements, `data-*` and custom-namespace attributes, `HTM-061`, `HTM-054`), `XmlHandler` (the base of the content
+  handlers: `XMLElement` chain, `xml:base`/`base`, locations, `HTM-001`), `HTMLUtils`, `References/URLChecker` (`RSC-020`,
+  `RSC-026`, `RSC-030`, `RSC-033`), `Opf/ValidationContext` (a record; `with` is the builder), `Ocf/OCFContainer` (files by
+  URL under a root URL unique to the check, encryption), `OCFCheckerState`, `OCFMetaFile`. `OCFChecker` now: reads
+  `container.xml` (`OPF-016`, `OPF-017`, mapping document), `RSC-003`, `OPF-002`, peeks at each package document
+  (`OPF-001`, `RSC-016`, renditions count), checks version (`PKG-001`) and profile (`PKG-023`, `OPF-064`), `PKG-013`,
+  `RSC-019`, validates `encryption.xml` (with the schemas; `RSC-007`, `OBS-001`, encrypted and obfuscated resources),
+  `container.xml` (again, with the schemas), `metadata.xml` and `signatures.xml`, and the file extension (`PKG-016`,
+  `PKG-017`, `PKG-024`). Six scenarios of `ocf.feature` pass now (container, encryption, signatures, missing package
+  document); the one that needs `RSC-004` waits for the resource checks. Not done, deliberately: the declaration handler of
+  the parser (task 3.2), the mapping document of multiple renditions (task 3.11), the checks after the package documents
+  (3.2/3.3), `PKG-026`.
 - **3.2 OPF 2 (L).** `opf.rng/sch`, manifest, spine, `guide`, fallback chains.
 - **3.3 OPF 3 (XL).** `package-30.rnc/sch`, `OPFChecker30` / `OPFHandler30`, `properties`, refinements, collections,
   vocabularies.

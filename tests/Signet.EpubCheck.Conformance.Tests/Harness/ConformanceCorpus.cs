@@ -67,8 +67,7 @@ internal static class ConformanceCorpus
             77, 82, 95, 108);
         AddOcf(pending, "Needs content-document and resource-reference checks (tasks 3.5 and 3.6).",
             118, 131, 137, 145, 151, 157, 169, 175, 181, 187, 193, 199, 207, 213, 218, 223, 229, 235, 240, 245, 255, 261, 270);
-        AddOcf(pending, "Needs XML schema validation and OCF container parsing (tasks 2.1-2.5 and 3.1).",
-            280, 302, 313, 319, 329, 338, 350);
+        AddOcf(pending, "RSC-004 comes from PublicationResourceChecker, which runs with the package document checks (tasks 3.2 and 3.3).", 319);
         return pending;
     }
 
