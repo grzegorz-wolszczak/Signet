@@ -327,7 +327,14 @@ public sealed class OCFMetaFileTests
 
     private static string Rootfile(string path) => "<rootfile full-path=\"" + path + "\" media-type=\"application/oebps-package+xml\"/>";
 
-    private static string Package(string version) => "<package xmlns=\"" + Opf + "\" version=\"" + version + "\" unique-identifier=\"u\"/>";
+    // A package document the checks of its version accept (EPUB 3: a navigation document item; EPUB 2: an NCX item).
+    private static string Package(string version) => version == "3.0"
+        ? "<package xmlns=\"" + Opf + "\" version=\"3.0\" unique-identifier=\"uid\" xml:lang=\"en\">"
+            + "<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:identifier id=\"uid\">urn:uuid:12345678-1234-1234-1234-123456789abc</dc:identifier>"
+            + "<dc:title>T</dc:title><dc:language>en</dc:language><meta property=\"dcterms:modified\">2026-01-01T00:00:00Z</meta></metadata>"
+            + "<manifest><item id=\"nav\" href=\"nav.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/></manifest>"
+            + "<spine><itemref idref=\"nav\"/></spine></package>"
+        : "<package xmlns=\"" + Opf + "\" version=\"" + version + "\" unique-identifier=\"u\"/>";
 
     // An expanded publication: mimetype, the container file, the package document "package.opf" when given, and the
     // other files (names and contents in pairs).

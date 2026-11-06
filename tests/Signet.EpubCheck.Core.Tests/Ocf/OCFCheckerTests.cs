@@ -22,7 +22,11 @@ public sealed class OCFCheckerTests
     private const string ValidContainer = "<container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\">"
         + "<rootfiles><rootfile full-path=\"package.opf\" media-type=\"application/oebps-package+xml\"/></rootfiles></container>";
 
-    private const string ValidPackage = "<package xmlns=\"http://www.idpf.org/2007/opf\" version=\"3.0\" unique-identifier=\"uid\"/>";
+    private const string ValidPackage = "<package xmlns=\"http://www.idpf.org/2007/opf\" version=\"3.0\" unique-identifier=\"uid\" xml:lang=\"en\">"
+        + "<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:identifier id=\"uid\">urn:uuid:12345678-1234-1234-1234-123456789abc</dc:identifier>"
+        + "<dc:title>T</dc:title><dc:language>en</dc:language><meta property=\"dcterms:modified\">2026-01-01T00:00:00Z</meta></metadata>"
+        + "<manifest><item id=\"nav\" href=\"nav.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/></manifest>"
+        + "<spine><itemref idref=\"nav\"/></spine></package>";
 
     private static readonly EpubLocation s_publication = new("book.epub");
     private readonly Fixture _fixture = new();
@@ -213,7 +217,7 @@ public sealed class OCFCheckerTests
         OCFChecker.Check(path, EpubVersion.Version3, report);
 
         // Assert
-        report.Messages.Select(message => message.Message.Id).Should().Equal(MessageId.PKG_012);
+        report.Messages.Select(message => message.Message.Id).Should().Equal(MessageId.PKG_012, MessageId.OPF_003); // the file is not declared
     }
 
     [Fact]
