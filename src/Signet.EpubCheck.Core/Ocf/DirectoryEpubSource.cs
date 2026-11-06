@@ -5,40 +5,51 @@ using System.Linq;
 
 namespace Signet.EpubCheck.Core.Ocf;
 
-/// <summary>An EPUB source backed by an expanded EPUB directory.</summary>
+/// <summary>An EPUB source backed by an expanded EPUB directory (upstream's <c>OCFDirectoryResources</c>).</summary>
 public sealed class DirectoryEpubSource : IEpubSource
 {
-    private readonly string _root;
-    private readonly Dictionary<EpubSourceEntry, string> _paths;
+    /// <summary>The text of the error a symbolic link in the directory causes (upstream's).</summary>
+    internal const string SymbolicLinkMessage = "symbolic links are disallowed";
 
-    /// <summary>Opens an expanded EPUB directory.</summary>
+    private readonly string[] _paths;
+
+    /// <summary>Opens an expanded EPUB directory. Entries are in ordinal order of their paths; a directory ends with <c>/</c>.</summary>
+    /// <exception cref="DirectoryNotFoundException">The directory does not exist.</exception>
+    /// <exception cref="IOException">The directory contains a symbolic link (upstream does not follow them either).</exception>
     public DirectoryEpubSource(string root)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
-        _root = Path.GetFullPath(root);
-        if (!Directory.Exists(_root))
+        Root = Path.GetFullPath(root);
+        if (!Directory.Exists(Root))
         {
-            throw new DirectoryNotFoundException(_root);
+            throw new DirectoryNotFoundException(Root);
         }
 
-        string[] paths = Directory.EnumerateFileSystemEntries(_root, "*", SearchOption.AllDirectories)
-            .OrderBy(path => path, StringComparer.Ordinal)
-            .ToArray();
-        _paths = paths.Select((path, order) =>
+        EnumerationOptions options = new() { RecurseSubdirectories = true, AttributesToSkip = 0, IgnoreInaccessible = false };
+        List<(string Name, FileSystemInfo Info)> found = [];
+        foreach (FileSystemInfo info in new DirectoryInfo(Root).EnumerateFileSystemInfos("*", options))
         {
-            bool isDirectory = Directory.Exists(path);
-            string name = Path.GetRelativePath(_root, path).Replace(Path.DirectorySeparatorChar, '/');
-            if (isDirectory)
+            if (info.LinkTarget is not null)
             {
-                name += "/";
+                throw new IOException(SymbolicLinkMessage);
             }
 
-            long length = isDirectory ? 0 : new FileInfo(path).Length;
-            EpubSourceEntry entry = new(name, order, CompressionMethod.Stored, length, length, isDirectory);
-            return new KeyValuePair<EpubSourceEntry, string>(entry, path);
-        }).ToDictionary();
-        Entries = _paths.Keys.OrderBy(entry => entry.Order).ToArray();
+            string name = Path.GetRelativePath(Root, info.FullName).Replace(Path.DirectorySeparatorChar, '/');
+            found.Add((info is DirectoryInfo ? name + "/" : name, info));
+        }
+
+        found.Sort((left, right) => StringComparer.Ordinal.Compare(left.Name, right.Name));
+        _paths = found.Select(entry => entry.Info.FullName).ToArray();
+        Entries = found.Select((entry, order) =>
+        {
+            bool isDirectory = entry.Info is DirectoryInfo;
+            long length = entry.Info is FileInfo file ? file.Length : 0;
+            return new EpubSourceEntry(entry.Name, order, CompressionMethod.Stored, length, length, isDirectory, entry.Info.CreationTimeUtc);
+        }).ToArray();
     }
+
+    /// <summary>The full path of the directory.</summary>
+    public string Root { get; }
 
     /// <inheritdoc />
     public bool IsPackaged => false;
@@ -55,7 +66,12 @@ public sealed class DirectoryEpubSource : IEpubSource
             throw new InvalidOperationException("A directory cannot be opened for reading.");
         }
 
-        return File.OpenRead(_paths[entry]);
+        if ((uint)entry.Order >= (uint)Entries.Count || !Entries[entry.Order].Equals(entry))
+        {
+            throw new ArgumentException("The entry does not belong to this source.", nameof(entry));
+        }
+
+        return File.OpenRead(_paths[entry.Order]);
     }
 
     /// <inheritdoc />

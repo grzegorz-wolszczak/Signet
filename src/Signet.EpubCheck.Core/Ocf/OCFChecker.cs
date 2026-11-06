@@ -1,162 +1,217 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using Signet.EpubCheck.Core.Messages;
 using Signet.EpubCheck.Core.Reporting;
+using Signet.EpubCheck.Core.Util;
 
 namespace Signet.EpubCheck.Core.Ocf;
 
-/// <summary>Checks the read-only OCF layer of an EPUB source.</summary>
+/// <summary>
+/// Checks the OCF container of a publication (upstream's <c>OCFChecker</c>), in upstream's order: the ZIP header, the
+/// container structure (duplicate names, file names, empty directories), the <c>mimetype</c> file and the presence of
+/// <c>META-INF/container.xml</c>. The parsing of <c>container.xml</c> and what follows it come with later tasks.
+/// </summary>
 public static class OCFChecker
 {
-    private const string MimeTypeEntryName = "mimetype";
-    private const string MimeTypeValue = "application/epub+zip";
+    /// <summary>The path of the <c>mimetype</c> file in the container.</summary>
+    public const string MimeTypePath = "mimetype";
 
-    /// <summary>Checks an EPUB archive. Broken archives are reported, never exposed as archive exceptions.</summary>
-    public static void CheckZip(string path, EpubVersion version, IReport report)
+    /// <summary>The path of the container file in the container.</summary>
+    public const string ContainerPath = "META-INF/container.xml";
+
+    /// <summary>The only content the <c>mimetype</c> file may have.</summary>
+    public const string EpubMimeType = "application/epub+zip";
+
+    // The localized argument of PKG-007 that adds "with no whitespace or newline." (PKG_007.whitespace).
+    private const string WhitespaceArgument = "whitespace";
+    private const string CreationDateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+
+    /// <summary>
+    /// Checks the publication at <paramref name="path"/>: a ZIP file (packaged) or a directory (expanded). Archives that
+    /// cannot be read are reported (<see cref="MessageId.PKG_008"/>, <see cref="MessageId.PKG_027"/>), never thrown.
+    /// </summary>
+    public static void Check(string path, EpubVersion version, IReport report)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(report);
 
-        if (!CheckZipHeader(path, report))
+        EpubLocation location = new(path);
+        bool packaged = File.Exists(path);
+        if (packaged)
         {
+            OCFZipChecker.Check(path, report, location);
+        }
+
+        IEpubSource source;
+        try
+        {
+            source = packaged ? new ZipEpubSource(path) : new DirectoryEpubSource(path);
+        }
+        catch (EpubZipEncodingException ex)
+        {
+            report.Message(MessageId.PKG_027, location, ex.Message);
+            return;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            report.Message(MessageId.PKG_008, location, ex.Message);
             return;
         }
 
-        try
+        using (source)
         {
-            using ZipEpubSource source = new(path);
-            Check(source, version, report);
-        }
-        catch (EpubZipEncodingException)
-        {
-            report.Message(MessageId.PKG_027, new EpubLocation(path));
-        }
-        catch (InvalidDataException ex)
-        {
-            report.Message(MessageId.PKG_008, new EpubLocation(path), ex.Message.ToLowerInvariant());
-        }
-        catch (IOException ex)
-        {
-            report.Message(MessageId.PKG_008, new EpubLocation(path), ex.Message);
+            Check(source, version, report, location);
         }
     }
 
-    /// <summary>Checks an already-open EPUB source.</summary>
-    public static void Check(IEpubSource source, EpubVersion version, IReport report)
+    /// <summary>
+    /// Checks an open source, reporting the problems of the publication as a whole at <paramref name="location"/>. The
+    /// ZIP header is not checked here (it needs the file: <see cref="Check(string, EpubVersion, IReport)"/>).
+    /// </summary>
+    public static void Check(IEpubSource source, EpubVersion version, IReport report, EpubLocation location)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(report);
+        ArgumentNullException.ThrowIfNull(location);
 
-        CheckEntries(source, version, report);
-        if (source is ZipEpubSource zipSource)
-        {
-            CheckZipContainer(zipSource, report);
-        }
-
-        CheckMimeType(source, report);
-        CheckContainer(source, report);
+        CheckContainerStructure(source, version, report, location);
+        CheckMimeTypeFile(source, report, location);
+        CheckContainerFile(source, report, location);
     }
 
-    private static bool CheckZipHeader(string path, IReport report)
+    private static void CheckContainerStructure(IEpubSource source, EpubVersion version, IReport report, EpubLocation location)
     {
-        byte[] header = new byte[58];
-        int read;
-        using (FileStream stream = File.OpenRead(path))
-        {
-            read = stream.Read(header);
-        }
-
-        EpubLocation location = new(path);
-        if (read < header.Length)
-        {
-            report.Message(MessageId.PKG_003, location);
-            report.Message(MessageId.PKG_008, location, "zip file is empty");
-            return false;
-        }
-
-        if (header[0] != (byte)'P' || header[1] != (byte)'K')
-        {
-            report.Message(MessageId.PKG_004, location);
-            report.Message(MessageId.PKG_008, location, "corrupted ZIP header");
-            return false;
-        }
-
-        return true;
-    }
-
-    private static void CheckEntries(IEpubSource source, EpubVersion version, IReport report)
-    {
-        HashSet<string> normalizedNames = new(StringComparer.Ordinal);
+        HashSet<string> normalizedPaths = new(StringComparer.Ordinal);
+        List<string> filePaths = [];
+        List<string> directoryPaths = [];
         foreach (EpubSourceEntry entry in source.Entries)
         {
-            OCFFilenameChecker.Check(entry.Name, version, report);
-            if (!normalizedNames.Add(OCFFilenameChecker.NormalizeForComparison(entry.Name)))
+            if (entry.IsDirectory)
             {
-                report.Message(MessageId.OPF_060, new EpubLocation(entry.Name), entry.Name);
+                directoryPaths.Add(entry.Name);
+                continue;
             }
 
-            if (entry.IsDirectory && !source.Entries.Any(other => !ReferenceEquals(other, entry) && other.Name.StartsWith(entry.Name, StringComparison.Ordinal)))
+            filePaths.Add(entry.Name);
+            if (!normalizedPaths.Add(UnicodeUtils.CanonicalCaseFold(entry.Name)))
             {
-                report.Message(MessageId.PKG_014, new EpubLocation(entry.Name), entry.Name);
+                report.Message(MessageId.OPF_060, location, entry.Name);
             }
 
-            if (entry.Name.StartsWith("META-INF/", StringComparison.Ordinal) && IsPublicationResourceInMetaInf(entry.Name))
+            OCFFilenameChecker.Check(entry.Name, version, report, location);
+            ReportFeatures(source, entry, report);
+        }
+
+        // Directory names end with '/', so "a/" does not take "ab.xhtml" for its content.
+        foreach (string directoryPath in directoryPaths)
+        {
+            if (!filePaths.Any(filePath => filePath.StartsWith(directoryPath, StringComparison.Ordinal)))
             {
-                report.Message(MessageId.PKG_025, new EpubLocation(entry.Name));
+                report.Message(MessageId.PKG_014, location, directoryPath);
             }
         }
     }
 
-    private static void CheckZipContainer(ZipEpubSource source, IReport report)
+    private static void ReportFeatures(IEpubSource source, EpubSourceEntry entry, IReport report)
     {
-        if (source.FirstEntryName != MimeTypeEntryName && source.Entries.Any(entry => entry.Name == MimeTypeEntryName))
+        report.Info(entry.Name, FeatureKind.Size, entry.Length.ToString(CultureInfo.InvariantCulture));
+        report.Info(entry.Name, FeatureKind.CompressedSize, entry.CompressedLength.ToString(CultureInfo.InvariantCulture));
+        report.Info(entry.Name, FeatureKind.CompressionMethod, entry.CompressionMethod switch
         {
-            report.Message(MessageId.PKG_006, new EpubLocation(source.Path));
-        }
-        else if (source.FirstEntryExtraLength != 0)
+            CompressionMethod.Stored => "Stored",
+            CompressionMethod.Deflate => "Deflated",
+            _ => "Unsupported",
+        });
+        report.Info(entry.Name, FeatureKind.Sha256, Sha256(source, entry));
+
+        // The creation date is reported once, for the container file.
+        if (entry.Name == ContainerPath && entry.Timestamp is DateTime timestamp)
         {
-            report.Message(MessageId.PKG_005, new EpubLocation(source.Path), source.FirstEntryExtraLength);
+            report.Info(entry.Name, FeatureKind.CreationDate, timestamp.ToString(CreationDateFormat, CultureInfo.InvariantCulture));
         }
     }
 
-    private static void CheckMimeType(IEpubSource source, IReport report)
+    private static string Sha256(IEpubSource source, EpubSourceEntry entry)
     {
-        EpubSourceEntry? entry = source.Entries.FirstOrDefault(candidate => candidate.Name == MimeTypeEntryName);
+        try
+        {
+            using Stream stream = source.OpenRead(entry);
+            return Convert.ToHexStringLower(SHA256.HashData(stream));
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            return string.Empty;
+        }
+    }
+
+    private static void CheckMimeTypeFile(IEpubSource source, IReport report, EpubLocation location)
+    {
+        EpubSourceEntry? entry = source.Entries.FirstOrDefault(candidate => !candidate.IsDirectory && candidate.Name == MimeTypePath);
         if (entry is null)
         {
-            report.Message(MessageId.PKG_006, new EpubLocation(MimeTypeEntryName));
+            // A packaged container's missing mimetype is reported by the ZIP header check.
+            if (!source.IsPackaged)
+            {
+                report.Message(MessageId.PKG_006, new EpubLocation(MimeTypePath));
+            }
+
             return;
         }
 
-        using Stream stream = source.OpenRead(entry);
-        using StreamReader reader = new(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: false);
-        string value = reader.ReadToEnd();
-        if (value != MimeTypeValue)
+        string content;
+        try
         {
-            string suffix = value.Trim() == MimeTypeValue ? " with no whitespace or newline." : string.Empty;
-            report.Message(MessageId.PKG_007, new EpubLocation(MimeTypeEntryName), suffix);
+            using Stream stream = source.OpenRead(entry);
+            using StreamReader reader = new(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: false);
+            content = reader.ReadToEnd();
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            return; // as upstream: a file that cannot be read is reported elsewhere
+        }
+
+        string trimmed = JavaTrim(content);
+        if (trimmed != EpubMimeType)
+        {
+            report.Message(MessageId.PKG_007, location, string.Empty);
+        }
+        else if (content != EpubMimeType)
+        {
+            report.Message(MessageId.PKG_007, location, WhitespaceArgument);
+        }
+
+        report.Info(null, FeatureKind.FormatName, trimmed);
+    }
+
+    private static void CheckContainerFile(IEpubSource source, IReport report, EpubLocation location)
+    {
+        if (!source.Entries.Any(entry => !entry.IsDirectory && entry.Name == ContainerPath) && report.FatalErrorCount == 0)
+        {
+            // Not reported when a fatal error was already reported.
+            report.Message(MessageId.RSC_002, location);
         }
     }
 
-    private static void CheckContainer(IEpubSource source, IReport report)
+    // Java's String.trim(): removes the characters up to U+0020 at both ends.
+    private static string JavaTrim(string value)
     {
-        if (!source.Entries.Any(entry => entry.Name == "META-INF/container.xml"))
+        int start = 0;
+        int end = value.Length;
+        while (start < end && value[start] <= ' ')
         {
-            report.Message(MessageId.RSC_002, new EpubLocation("META-INF/container.xml"), "container.xml");
-        }
-    }
-
-    private static bool IsPublicationResourceInMetaInf(string name)
-    {
-        if (name == "META-INF/" || name is "META-INF/container.xml" or "META-INF/encryption.xml" or "META-INF/metadata.xml" or "META-INF/manifest.xml" or "META-INF/rights.xml" or "META-INF/signatures.xml")
-        {
-            return false;
+            start++;
         }
 
-        string extension = Path.GetExtension(name);
-        return extension is ".css" or ".gif" or ".htm" or ".html" or ".jpeg" or ".jpg" or ".ncx" or ".opf" or ".png" or ".svg" or ".xhtml";
+        while (end > start && value[end - 1] <= ' ')
+        {
+            end--;
+        }
+
+        return value[start..end];
     }
 }

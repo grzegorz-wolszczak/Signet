@@ -35,8 +35,8 @@ Re-implemented in C#: everything that is Java code in upstream.
 | Jing (RELAX NG, NVDL) | own engine in `Signet.EpubCheck.Core`; error wording follows Jing's exactly |
 | Saxon-HE 11.4 (XPath 2.0 for Schematron) | own evaluator of the XPath 2.0 subset the `.sch` files use |
 | galimatias (WHATWG URL) | own URL parser |
-| ICU4J — `Normalizer2`, `CaseMap` (`UnicodeUtils`), `UnicodeSet`, `UCharacter` (`OCFFilenameChecker`) | .NET string normalization and Unicode categories; case folding to be written where .NET has none |
-| commons-compress, `java.util.zip` | `System.IO.Compression` |
+| ICU4J — `Normalizer2`, `CaseMap` (`UnicodeUtils`), `UnicodeSet`, `UCharacter` (`OCFFilenameChecker`) | .NET string normalization; the code point sets of `OCFFilenameChecker` written out; full case folding from a generated table (`Util/CaseFolding.g.cs`) |
+| commons-compress, `java.util.zip` | `System.IO.Compression`; the central directory is read by hand (`ZipEpubSource`) |
 | SAC + upstream's own CSS parser | port of upstream's CSS parser |
 | Jackson | `System.Text.Json` |
 | imageio (images) | own header readers |
@@ -57,7 +57,8 @@ The datatype library `http://whattf.org/datatype-draft` is **not** needed: upstr
   always writes the hyphen (`HTM-053`) and still accepts the underscore when it reads an id (`MessageIds.TryParse`).
 - `ReportBase.ReportingLevel` throws for a level outside `Usage`–`Fatal`; upstream prints a message and keeps the old level.
 - `MessageId`, `DefaultSeverities` and `FeatureKind` are generated from the upstream sources by
-  `scripts/epubcheck/generate_message_ids.py`; they are not edited by hand.
+  `scripts/epubcheck/generate_message_ids.py`; they are not edited by hand. `Util/CaseFolding.g.cs` is generated from
+  the Unicode Character Database by `scripts/epubcheck/generate_case_folding.py`.
 
 - The message texts keep upstream's placeholders (`%1$s`, filled by `JavaFormat`, a subset of Java's `String.format`),
   not .NET's `{0}`: the custom messages files people write for upstream keep working, and the English resource stays a
@@ -71,6 +72,22 @@ The datatype library `http://whattf.org/datatype-draft` is **not** needed: upstr
 - 77 of the 323 ids have no text, as in upstream (all of them are `SUPPRESSED` by default, and `--listChecks` writes an empty
   field for them). When one is reported anyway — its severity was raised by a custom messages file — upstream prints an empty
   message; the port prints `No description is available for ACC-001.` (`PortMessages.resx`, English and Polish).
+
+The OCF container (`Ocf/`, upstream's `com.adobe.epubcheck.ocf`):
+
+- The ZIP header check tests `header[0] != 'P' || header[1] != 'K'`; upstream writes `&&`, so a file starting with
+  `PX` passes as a ZIP header.
+- `PKG-027` (file names not in UTF-8) is reported only when a name cannot be decoded as UTF-8. Upstream reports it for
+  every Java error starting with `invalid CEN header`, also a broken central directory, which is `PKG-008` here.
+  Like Java's `ZipFile(file, UTF_8)`, every name is read as UTF-8, whether or not the entry sets the UTF-8 flag.
+- The `SHA-256` fact of a resource is the full hexadecimal digest; upstream drops the leading zero of each byte
+  (`Integer.toHexString`), so its digests are not the real ones.
+- Directories of an expanded publication end with `/`, as in a ZIP. Upstream's empty-directory check (`PKG-014`)
+  compares by prefix, so for an expanded publication a directory `a` counts the file `ab.xhtml` as its content.
+- The creation date of an expanded publication's `container.xml` has the format of a ZIP one
+  (`yyyy-MM-dd'T'HH:mm:ss'Z'`, UTC); upstream prints Java's `FileTime` there.
+- Case folding (duplicate names, `OPF-060`) uses a table generated from `CaseFolding.txt` of Unicode 16.0.0 (ICU4J 77.1,
+  the version upstream uses) by `scripts/epubcheck/generate_case_folding.py`: .NET has no case folding.
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 

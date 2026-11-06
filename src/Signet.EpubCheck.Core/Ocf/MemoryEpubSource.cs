@@ -5,23 +5,25 @@ using System.Linq;
 
 namespace Signet.EpubCheck.Core.Ocf;
 
-/// <summary>An EPUB source backed by bytes, intended for validating unsaved in-memory edits.</summary>
+/// <summary>An expanded EPUB source backed by bytes, intended for validating unsaved in-memory edits.</summary>
 public sealed class MemoryEpubSource : IEpubSource
 {
-    private readonly Dictionary<EpubSourceEntry, byte[]> _contents;
+    private readonly byte[][] _contents;
 
-    /// <summary>Creates an expanded source from named byte arrays.</summary>
+    /// <summary>Creates an expanded source from named byte arrays, in the given order; a name ending with <c>/</c> is a directory.</summary>
     public MemoryEpubSource(IEnumerable<KeyValuePair<string, byte[]>> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        _contents = entries.Select((entry, order) =>
+        KeyValuePair<string, byte[]>[] items = entries.ToArray();
+        foreach ((string name, byte[] content) in items)
         {
-            ArgumentNullException.ThrowIfNull(entry.Key);
-            ArgumentNullException.ThrowIfNull(entry.Value);
-            EpubSourceEntry metadata = new(entry.Key, order, CompressionMethod.Stored, entry.Value.Length, entry.Value.Length, entry.Key.EndsWith('/'));
-            return new KeyValuePair<EpubSourceEntry, byte[]>(metadata, entry.Value);
-        }).ToDictionary();
-        Entries = _contents.Keys.OrderBy(entry => entry.Order).ToArray();
+            ArgumentNullException.ThrowIfNull(name);
+            ArgumentNullException.ThrowIfNull(content);
+        }
+
+        _contents = items.Select(item => item.Value).ToArray();
+        Entries = items.Select((item, order) => new EpubSourceEntry(
+            item.Key, order, CompressionMethod.Stored, item.Value.Length, item.Value.Length, item.Key.EndsWith('/'))).ToArray();
     }
 
     /// <inheritdoc />
@@ -34,7 +36,17 @@ public sealed class MemoryEpubSource : IEpubSource
     public Stream OpenRead(EpubSourceEntry entry)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        return new MemoryStream(_contents[entry], writable: false);
+        if (entry.IsDirectory)
+        {
+            throw new InvalidOperationException("A directory cannot be opened for reading.");
+        }
+
+        if ((uint)entry.Order >= (uint)Entries.Count || !Entries[entry.Order].Equals(entry))
+        {
+            throw new ArgumentException("The entry does not belong to this source.", nameof(entry));
+        }
+
+        return new MemoryStream(_contents[entry.Order], writable: false);
     }
 
     /// <inheritdoc />

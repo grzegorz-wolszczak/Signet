@@ -55,18 +55,19 @@ internal static class ConformanceCorpus
 
         // cli/cli.feature: the command line is done (task 0.6); these scenarios check a publication or write a report.
         Add("Needs the EPUB checker of the port (epics 1-3 of EPUBCHECK_PLAN.md).",
-            126, 150, 155, 166, 172, 178, 187, 230, 234, 241, 248, 259, 395);
+            155, 166, 172, 187, 230, 234, 241, 248, 259, 395);
         Add("Needs the EPUB archive built from an expanded EPUB (task 3.12) and the checker.", 205);
         Add("Needs the XML, XMP and JSON report writers (task 4.2).",
             220, 269, 276, 283, 290, 297, 317, 322, 327, 332, 337, 342, 347);
         Add("Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).",
             366, 371, 376);
+        AddOcf(pending, "PKG-025 is reported for manifest items in META-INF, which needs the OPF 3 checks (task 3.3).", 18);
         AddOcf(pending, "Needs the single-document checker and OPF parser (tasks 2.1-2.5).",
             77, 82, 95, 108);
         AddOcf(pending, "Needs content-document and resource-reference checks (tasks 3.5 and 3.6).",
             118, 131, 137, 145, 151, 157, 169, 175, 181, 187, 193, 199, 207, 213, 218, 223, 229, 235, 240, 245, 255, 261, 270);
         AddOcf(pending, "Needs XML schema validation and OCF container parsing (tasks 2.1-2.5 and 3.1).",
-            280, 293, 302, 313, 319, 329, 338, 350);
+            280, 302, 313, 319, 329, 338, 350);
         return pending;
     }
 
