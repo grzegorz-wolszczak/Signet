@@ -113,6 +113,64 @@ public static class OCFChecker
         CheckRenditions(state, validationVersion, report, location);
         CheckEncryptionFile(state, report);
         CheckOtherMetaFiles(state, report);
+        CheckPackageDocuments(state, validationVersion, report, location);
+    }
+
+    // Each package document is checked by the checker of the version; the checker of EPUB 3 package documents comes with
+    // task 3.3, so only EPUB 2 is checked (and the consistency of the container with what the documents declare).
+    private static void CheckPackageDocuments(OCFCheckerState state, EpubVersion version, IReport report, EpubLocation location)
+    {
+        if (version != EpubVersion.Version2)
+        {
+            return;
+        }
+
+        List<OPFHandler> handlers = [];
+        foreach (Url packageDocument in state.PackageDocuments)
+        {
+            ValidationContext context = state.Context() with
+            {
+                Url = packageDocument,
+                MimeType = MediaTypes.PackageDocument,
+                PublicationTypes = state.PublicationTypesOf(packageDocument),
+            };
+            OPFChecker checker = new(context);
+            checker.Check();
+            handlers.Add(checker.OpfHandler!);
+        }
+
+        CheckContainerConsistency(state, handlers, report, location);
+    }
+
+    // Upstream: the files of the container that neither belong to the OCF (META-INF, mimetype) nor are declared by the
+    // container file or one of the package documents are reported (OPF-003); an obfuscated resource must be a font (PKG-026).
+    private static void CheckContainerConsistency(OCFCheckerState state, List<OPFHandler> handlers, IReport report, EpubLocation location)
+    {
+        foreach (Url resource in state.Container.Resources)
+        {
+            string path = (resource.Path ?? string.Empty).Length > 0 ? resource.Path![1..] : string.Empty;
+            if (!path.StartsWith("META-INF/", StringComparison.Ordinal) && !path.StartsWith("META-INF\\", StringComparison.Ordinal)
+                && path != OCFChecker.MimeTypePath && !state.IsDeclared(resource) && !handlers.Exists(handler => handler.GetItemByUrl(resource) is not null))
+            {
+                report.Message(MessageId.OPF_003, location, path);
+            }
+
+            if (state.IsObfuscated(resource))
+            {
+                foreach (OPFHandler handler in handlers)
+                {
+                    if (handler.GetItemByUrl(resource) is { } item)
+                    {
+                        if (!OpfMediaTypes.IsBlessedFontType(item.MimeType))
+                        {
+                            report.Message(MessageId.PKG_026, state.ObfuscationLocation(resource), item.MimeType, handler.PackagePath);
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private static void CheckContainerStructure(IEpubSource source, OCFCheckerState state, EpubVersion version, IReport report, EpubLocation location)
