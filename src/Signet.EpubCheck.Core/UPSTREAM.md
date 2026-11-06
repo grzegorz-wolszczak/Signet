@@ -242,8 +242,19 @@ The package document (`Opf/`, upstream's `OPFChecker`, `OPFHandler`, `OPFItem`, 
 - `UUID.fromString` is Java's lenient one: five groups of up to 16 hexadecimal digits, a trailing empty group allowed.
 - The resources of the manifest are not registered or checked yet (`ResourceRegistry`, `ReferenceRegistry`,
   `ResourceReferencesChecker`, `CheckItemContent`), nor are references of the guide registered: they come with 3.4–3.6.
-- `OCFChecker` checks EPUB 3 package documents from task 3.3 on; until then the container consistency (`OPF-003`) is
-  reported for EPUB 2 only.
+
+EPUB 3 package documents (`Opf/OPFChecker30`, `OPFHandler30`, `MetadataSet`, `Util/LanguageTag`):
+
+- `ResourceCollection` is `CollectionNode` (a type name ending in `Collection` is reserved by the .NET design rules); `Roles`
+  is `CollectionRole`.
+- Language tags are checked by `LanguageTag.Validate`, a port of the parsing in the JDK's `LanguageTag` (the part that Java's
+  `Locale.Builder.setLanguageTag` runs), with its messages (`Invalid subtag: x [at index n]`). The check Java's builder makes
+  afterwards on the parsed tag is not ported.
+- An item with `properties` but no `media-type` (the schema reports it) does not fail: the type is taken as empty (upstream
+  fails with a null pointer).
+- `Item` handling reads the builder by the `id` as written, as upstream does, while the base class keys by the trimmed id.
+- `MetadataSet` keeps the order of Guava's `LinkedListMultimap`; a refinement replaces its source at the end of the list of
+  refiners of the refined element.
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
