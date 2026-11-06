@@ -8,7 +8,7 @@ Status: **in progress — epics 0 and 1 are done** (project skeleton, version, u
 message texts in English and Polish, conformance harness, command line, EPUB sources and OCF/ZIP checks, galimatias URL
 parser and URL fragments, MIME types, viewport, package-document peeker, vocabularies); tasks 1.1–1.4 were reviewed and
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
-syntax) and 2.3 (its XML Schema datatypes and regular expressions) are done**; **next: task 2.4 NVDL**.
+syntax), 2.3 (its XML Schema datatypes and regular expressions) and 2.4 (NVDL) are done**; **next: task 2.5 Schematron**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -21,8 +21,8 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **2.4 NVDL**, see "Next
-   task" below). Do **one task**, then stop. Do not start the next one.
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **2.5 Schematron + XPath 2.0 subset**, see
+   "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
    "Current state".
@@ -70,7 +70,7 @@ questions into one message, as `AGENTS.md` demands).
 |---|---|
 | Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Jing/` (the RELAX NG engine, a port of Jing, BSD-3), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
 | Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-file modes still say "checker not implemented") |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (2048 passed, none skipped, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 203 passed, 1084 skipped) |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (2074 passed, 4 skipped — the NVDL cases with MNS or W3C XML Schema, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 203 passed, 1084 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -85,17 +85,19 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 2.4 NVDL
+### Next task: 2.5 Schematron + XPath 2.0 subset
 
-Port Jing's NVDL implementation (`mod/nvdl`, `com.thaiopensource.validate.nvdl`, 57 files, ~7800 lines of Jing
-20181222) as far as EPUBCheck uses it: it reads its 10 `.nvdl` schemas (`schema/30/*.nvdl`, `schema/20/rng/*.nvdl`)
-through Jing's `AutoSchemaReader`, which hands an NVDL document to the NVDL schema reader. First list the NVDL
-constructs those 10 files use (modes, `namespace`/`anyNamespace` rules, `validate`/`attach`/`unwrap`/`allow`/`reject`
-actions, `context`, `useMode`, schemas referenced as `.rnc`/`.rng`/`.sch`), then port the reader and the dispatching
-validator for that set with Jing's messages (bundle in English and Polish) and Jing's NVDL test suite
-(`mod/nvdl/test/nvdltest.xml`, 12 cases; MNS and NRL, its older languages, are not needed). The validators an NVDL
-schema dispatches to are RELAX NG (done) and Schematron (task 2.5): until 2.5, a Schematron section can be a
-validator that accepts everything, marked pending in the tests.
+EPUBCheck validates the `.sch` sections of its NVDL schemas (and a few `.sch` alone) with Jing's `mod/schematron`
+(`SchemaReaderImpl`, `ValidatorImpl`, `OutputHandler`: the ISO schema is compiled to XSLT by
+`resources/iso-schematron.xsl` and run by Saxon-HE 11.4 through upstream's own
+`org.idpf.epubcheck.util.saxon.SaxonSchemaReaderFactory`, with upstream's XPath extension functions). The port has no
+XSLT 2.0 engine: implement Schematron directly (patterns, rules with their context, `assert`/`report`, `let`,
+`value-of`, `name`, abstract patterns/rules and `extends` if the 29 `.sch` files use them, `phase` if used) over an
+evaluator of the XPath 2.0 subset those files use, and produce the messages exactly as Jing's `OutputHandler` writes them
+(the `.feature` scenarios compare them). First list the constructs and XPath functions the 29 files use (they are in
+`schema/30/*.sch`, `schema/30/mod/*.sch` of upstream). Register the language with `AutoSchemaReader.Register` (namespace
+`http://purl.oclc.org/dsdl/schematron`), so the 8 EPUB 3 NVDL schemas that load only up to their `.sch` today (see 2.4)
+load and validate. Jing's Schematron messages (bundle in English and Polish) and its tests (`mod/schematron/test`) if any.
 
 ### Current state of the conformance run
 
@@ -307,7 +309,19 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   schemas as Jing's `xsdtest.xsl` does (240 cases: literals, classes of equal values, lengths, order), a port of
   `DatatypeLibraryImplTest`, and message tests. All 129 `.rnc` of upstream load with the real library as they did with
   the stand-in of 2.2. Deviations from Jing are listed in `UPSTREAM.md`.
-- **2.4 NVDL (L).** 10 files; first list the constructs upstream really uses, implement that set.
+- **2.4 NVDL (L). DONE.** `Jing/Validate/Nvdl/` ports Jing's NVDL implementation in full (not only the constructs
+  upstream's 10 files use: they use modes, `namespace`/`anyNamespace` with `match`, `validate` with `schemaType`,
+  `context` paths, `useMode`, `attach`, `allow`, `reject`; the port also has `unwrap`, `attachPlaceholder`, `trigger`,
+  `cancelNestedActions`, included and nested modes, wildcards): the schema reader validates the NVDL document with Jing's
+  `nvdl.rng` (embedded) while it builds the modes, and the validator cuts the document into sections and dispatches them
+  to the sub-validators, attributes filtered by namespace. `Jing/Validate/Validation.cs` brings Jing's validate layer:
+  `ISchema`/`IValidator` (RELAX NG schemas implement them) and `AutoSchemaReader`, which picks the language from the
+  root element (RELAX NG, NVDL; Schematron registers itself in 2.5). A `.rnc` media type gives a compact schema, as in
+  Jing. Messages: Jing's NVDL and auto-reader bundles with Polish drafts. Tested on Jing's `nvdltest.xml` (12 cases: the
+  8 without MNS or W3C XML Schema pass, those 4 are skipped: EPUBCheck uses neither) and message tests. Of upstream's
+  10 `.nvdl`, the 2 of EPUB 2 and `epub-svg-30-informative.nvdl` load and validate; the other 7 stop at their `.sch`
+  section until 2.5. Not ported: NVDL options (Jing's only ones are its RELAX NG reader's `check-id-idref` and `feasible`;
+  an option that must be supported is reported as unknown), MNS and NRL (Jing's older languages).
 - **2.5 Schematron + XPath 2.0 subset (XL).** List the constructs used by the 29 `.sch` files; parser and evaluator of
   that XPath 2.0 subset (functions above, quantifiers, `for`), custom functions (line, column, system id); patterns,
   rules, asserts/reports, `let`.
