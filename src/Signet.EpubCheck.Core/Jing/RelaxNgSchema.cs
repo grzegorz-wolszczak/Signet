@@ -6,6 +6,7 @@ using Signet.EpubCheck.Core.Jing.Parse;
 using Signet.EpubCheck.Core.Jing.Parse.Compact;
 using Signet.EpubCheck.Core.Jing.Patterns;
 using Signet.EpubCheck.Core.Jing.Sax;
+using Signet.EpubCheck.Core.Jing.Validate;
 
 namespace Signet.EpubCheck.Core.Jing;
 
@@ -50,6 +51,9 @@ public sealed class RelaxNgSchemaReader
     /// <summary>The syntax of the schema and of the documents it includes.</summary>
     public RelaxNgSyntax Syntax { get; init; } = RelaxNgSyntax.Xml;
 
+    /// <summary>Whether the schema validates the attributes of an NVDL attribute section (Jing's <c>WrapProperty.ATTRIBUTE_OWNER</c>).</summary>
+    internal bool IsAttributesSchema { get; init; }
+
     /// <summary>Where the errors of the schema go (none: they are only counted).</summary>
     public ISaxErrorHandler? ErrorHandler { get; init; }
 
@@ -66,6 +70,16 @@ public sealed class RelaxNgSchemaReader
     /// <summary>The language of the messages about the schema (<see cref="CultureInfo.CurrentUICulture"/> when <c>null</c>).</summary>
     public CultureInfo? Culture { get; init; }
 
+    internal static RelaxNgSchemaReader From(SchemaReadSettings settings, RelaxNgSyntax syntax, bool isAttributesSchema) => new()
+    {
+        ErrorHandler = settings.ErrorHandler,
+        Resolver = settings.Resolver,
+        DatatypeLibraryFactory = settings.DatatypeLibraryFactory,
+        Culture = settings.Culture,
+        Syntax = syntax,
+        IsAttributesSchema = isAttributesSchema,
+    };
+
     /// <summary>Reads, simplifies and checks the schema of <paramref name="source"/>.</summary>
     /// <exception cref="IncorrectSchemaException">The schema has errors (reported to <see cref="ErrorHandler"/>).</exception>
     /// <exception cref="SaxParseException">A schema document in the XML syntax is not well-formed.</exception>
@@ -80,7 +94,7 @@ public sealed class RelaxNgSchemaReader
         try
         {
             IDatatypeLibraryFactory datatypes = DatatypeLibraryFactory ?? XsdDatatypeLibraryFactory.For(Culture);
-            Pattern start = SchemaBuilderImpl.Parse(parseable, ErrorHandler, datatypes, spb, isAttributesPattern: false, patternLocalizer);
+            Pattern start = SchemaBuilderImpl.Parse(parseable, ErrorHandler, datatypes, spb, IsAttributesSchema, patternLocalizer);
             return new RelaxNgSchema(spb, start);
         }
         catch (IllegalSchemaException e)
@@ -91,7 +105,7 @@ public sealed class RelaxNgSchemaReader
 }
 
 /// <summary>A simplified, checked RELAX NG schema (Jing's <c>PatternSchema</c>); validators made from it can run in parallel.</summary>
-public sealed class RelaxNgSchema
+public sealed class RelaxNgSchema : ISchema
 {
     private readonly SchemaPatternBuilder _spb;
     private readonly Pattern _start;
@@ -106,6 +120,9 @@ public sealed class RelaxNgSchema
     internal Pattern Start => _start;
 
     /// <summary>A validator whose errors go to <paramref name="errorHandler"/>, worded in the language of <paramref name="culture"/>.</summary>
+    IValidator ISchema.CreateValidator(ISaxErrorHandler errorHandler, CultureInfo? culture) => CreateValidator(errorHandler, culture);
+
+    /// <summary>A validator whose errors go to <paramref name="errorHandler"/>, worded in the language of <paramref name="culture"/>.</summary>
     public RelaxNgValidator CreateValidator(ISaxErrorHandler errorHandler, CultureInfo? culture = null)
     {
         ArgumentNullException.ThrowIfNull(errorHandler);
@@ -115,7 +132,7 @@ public sealed class RelaxNgSchema
 }
 
 /// <summary>Validates one document at a time against a schema (Jing's <c>Validator</c>): feed it the events of the document.</summary>
-public sealed class RelaxNgValidator
+public sealed class RelaxNgValidator : IValidator
 {
     private readonly PatternValidator _validator;
     private readonly ISaxErrorHandler _errorHandler;

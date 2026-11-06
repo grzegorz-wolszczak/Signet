@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="reject_element" xml:space="preserve">
+    <value>elementy z przestrzeni nazw "{0}" są niedozwolone</value>
+  </data>
+  <data name="reject_attribute" xml:space="preserve">
+    <value>atrybuty z przestrzeni nazw "{0}" są niedozwolone</value>
+  </data>
+  <data name="undefined_mode" xml:space="preserve">
+    <value>tryb "{0}" nie jest zdefiniowany</value>
+  </data>
+  <data name="schema_fragment_id" xml:space="preserve">
+    <value>URI schematu nie może mieć identyfikatora fragmentu</value>
+  </data>
+  <data name="ns_absolute" xml:space="preserve">
+    <value>URI przestrzeni nazw musi być bezwzględnym URI</value>
+  </data>
+  <data name="unexpected_slash" xml:space="preserve">
+    <value>nieoczekiwany "/"</value>
+  </data>
+  <data name="expected_slash" xml:space="preserve">
+    <value>oczekiwano "/"</value>
+  </data>
+  <data name="expected_name" xml:space="preserve">
+    <value>oczekiwano nazwy</value>
+  </data>
+  <data name="empty_path" xml:space="preserve">
+    <value>pusta ścieżka</value>
+  </data>
+  <data name="invalid_name" xml:space="preserve">
+    <value>niepoprawna nazwa</value>
+  </data>
+  <data name="duplicate_path" xml:space="preserve">
+    <value>kontekst o ścieżce "{0}" jest już zdefiniowany</value>
+  </data>
+  <data name="duplicate_mode" xml:space="preserve">
+    <value>tryb "{0}" jest już zdefiniowany</value>
+  </data>
+  <data name="first_mode" xml:space="preserve">
+    <value>tryb "{0}" został po raz pierwszy zdefiniowany tutaj</value>
+  </data>
+  <data name="duplicate_attribute_action_any_namespace" xml:space="preserve">
+    <value>reguła dla atrybutów z dowolnej przestrzeni nazw jest już określona w tym trybie</value>
+  </data>
+  <data name="duplicate_attribute_action" xml:space="preserve">
+    <value>reguła dla atrybutów z przestrzeni nazw "{0}" jest już określona w tym trybie</value>
+  </data>
+  <data name="duplicate_element_action_any_namespace" xml:space="preserve">
+    <value>reguła dla elementów z dowolnej przestrzeni nazw jest już określona w tym trybie</value>
+  </data>
+  <data name="duplicate_element_action" xml:space="preserve">
+    <value>reguła dla elementów z przestrzeni nazw "{0}" jest już określona w tym trybie</value>
+  </data>
+  <data name="mode_cycle" xml:space="preserve">
+    <value>tryb "{0}" bezpośrednio lub pośrednio rozszerza sam siebie</value>
+  </data>
+  <data name="unknown_option" xml:space="preserve">
+    <value>nierozpoznana opcja "{0}"</value>
+  </data>
+  <data name="unsupported_option" xml:space="preserve">
+    <value>opcja "{0}" nie jest obsługiwana dla tego rodzaju schematu</value>
+  </data>
+  <data name="unsupported_option_arg" xml:space="preserve">
+    <value>podany argument opcji "{0}" nie jest obsługiwany</value>
+  </data>
+  <data name="duplicate_option" xml:space="preserve">
+    <value>opcji "{0}" nie można podać więcej niż raz</value>
+  </data>
+  <data name="option_requires_argument" xml:space="preserve">
+    <value>opcja "{0}" wymaga argumentu</value>
+  </data>
+  <data name="option_unexpected_argument" xml:space="preserve">
+    <value>opcja "{0}" nie przyjmuje argumentu</value>
+  </data>
+  <data name="option_bad_argument" xml:space="preserve">
+    <value>niepoprawny argument opcji "{0}"</value>
+  </data>
+  <data name="legacy_rnc_media_type" xml:space="preserve">
+    <value>typ multimediów application/x-rnc jest przestarzały, użyj application/relax-ng-compact-syntax</value>
+  </data>
+  <data name="embedded_schemas" xml:space="preserve">
+    <value>schematy osadzone nie są jeszcze obsługiwane</value>
+  </data>
+  <data name="no_schema" xml:space="preserve">
+    <value>akcja validate nie wskazuje schematu</value>
+  </data>
+</root>

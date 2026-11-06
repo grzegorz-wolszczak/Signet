@@ -29,6 +29,12 @@ internal sealed class JingLocalizer
     private static readonly ResourceManager s_regexMessages =
         new("Signet.EpubCheck.Core.Jing.Resources.RegexMessages", typeof(JingLocalizer).Assembly);
 
+    private static readonly ResourceManager s_nvdlMessages =
+        new("Signet.EpubCheck.Core.Jing.Resources.NvdlMessages", typeof(JingLocalizer).Assembly);
+
+    private static readonly ResourceManager s_autoSchemaMessages =
+        new("Signet.EpubCheck.Core.Jing.Resources.AutoSchemaMessages", typeof(JingLocalizer).Assembly);
+
     private static readonly ConcurrentDictionary<(ResourceManager, string), JingLocalizer> s_instances = new();
 
     private const string GroupedIntegerFormat = "#,##0";
@@ -57,6 +63,12 @@ internal sealed class JingLocalizer
     /// <summary>The raw resources of the regular expression translator, for the tests.</summary>
     internal static ResourceManager RegexManager => s_regexMessages;
 
+    /// <summary>The raw resources of NVDL, for the tests.</summary>
+    internal static ResourceManager NvdlManager => s_nvdlMessages;
+
+    /// <summary>The raw resources of the schema language detection, for the tests.</summary>
+    internal static ResourceManager AutoSchemaManager => s_autoSchemaMessages;
+
     /// <summary>The messages of schema building and validation (Jing's <c>SchemaBuilderImpl.localizer</c>).</summary>
     public static JingLocalizer ForPattern(CultureInfo? culture) => Get(s_patternMessages, culture);
 
@@ -71,6 +83,12 @@ internal sealed class JingLocalizer
 
     /// <summary>The messages of the regular expression translator (Jing's <c>Translator.localizer</c>).</summary>
     public static JingLocalizer ForRegex(CultureInfo? culture) => Get(s_regexMessages, culture);
+
+    /// <summary>The messages of NVDL schemas and validation (Jing's NVDL <c>SchemaImpl</c> and <c>ValidatorImpl</c> localizers).</summary>
+    public static JingLocalizer ForNvdl(CultureInfo? culture) => Get(s_nvdlMessages, culture);
+
+    /// <summary>The messages of the schema language detection (Jing's <c>AutoSchemaReceiver</c> localizer).</summary>
+    public static JingLocalizer ForAutoSchema(CultureInfo? culture) => Get(s_autoSchemaMessages, culture);
 
     /// <summary>
     /// An integer as <c>MessageFormat</c> writes a number argument: with the grouping separator of the language
