@@ -99,6 +99,12 @@ alone — `stray`, which nothing styles, included.
 there `note` and `stray` really are undefined and are removed. Both are asserted by
 `CleanupAnalysisTests.UndefinedClasses_on_the_broken_classes_book_strips_only_the_file_whose_css_names_classes_by_name`.
 
+**`combinators.xhtml`** sees `styles/combinators.css`, where `warn_center_1` is named only before a combinator:
+`div.warn_center_1 p`. Added in November 2026: "Go To Link Or Style" on the class looked for a definition among the
+selectors without a combinator only, and said the class had none. Asserted by
+`CssClassDefinitionLocatorTests.Find_on_the_broken_classes_book_finds_a_class_named_before_a_combinator`; the Cleanup test
+above also holds that the class is not taken for undefined.
+
 ## `languages`
 
 Several languages, stated in several ways, and soft hyphens where no language is. Added in November 2026 with

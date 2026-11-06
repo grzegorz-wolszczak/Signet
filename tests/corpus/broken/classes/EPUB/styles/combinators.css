@@ -1,0 +1,8 @@
+/* Added in November 2026: the class is named only in the compound before a combinator. "Go To Link Or Style" looked
+   for a definition among selectors without a combinator, so warn_center_1 seemed to have none. */
+div.warn_center_1 p {
+  line-height: 1.2;
+  text-indent: 0;
+  margin: 0;
+  text-align: center;
+}

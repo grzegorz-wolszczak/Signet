@@ -150,4 +150,66 @@ public sealed class CssClassDefinitionLocatorTests
         // Act & Assert
         CssClassDefinitionLocator.Find(html, string.Empty, ResolveCssInfo(book)).Should().BeNull();
     }
+
+    // tests/corpus/broken/classes, combinators.xhtml: the class is named only in "div.warn_center_1 p".
+    [Fact]
+    public void Find_on_the_broken_classes_book_finds_a_class_named_before_a_combinator()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Broken("classes"), temp)).GetBook();
+        HtmlResource html = book.GetHtmlResources().Single(h => h.Filename == "combinators.xhtml");
+        CssResource css = book.GetFolderKeeper().GetResourceTypeList<CssResource>().Single(c => c.Filename == "combinators.css");
+
+        // Act
+        CssClassDefinition? found = CssClassDefinitionLocator.Find(html, "warn_center_1", ResolveCssInfo(book));
+
+        // Assert
+        found.Should().NotBeNull();
+        found!.Value.BookPath.Should().Be(css.BookPath);
+        found.Value.Offset.Should().Be(css.GetText().IndexOf("div.warn_center_1 p", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Find_prefers_a_simple_class_selector_to_one_with_a_combinator_in_the_same_stylesheet()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadModifiedMinimal(
+            temp,
+            tree =>
+            {
+                AppendCss(tree, "div.note p { margin: 0 }\n.note:hover { color: blue }\np.note { color: red }");
+                SetChapter1Body(tree, "<p class=\"note\">hi</p>");
+            });
+        var html = book.GetHtmlResources().Single(h => h.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
+        string cssText = book.GetFolderKeeper().GetResourceTypeList<CssResource>().Single().GetText();
+
+        // Act
+        CssClassDefinition? found = CssClassDefinitionLocator.Find(html, "note", ResolveCssInfo(book));
+
+        // Assert
+        found!.Value.Offset.Should().Be(cssText.IndexOf("p.note {", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Find_finds_a_class_named_only_with_a_pseudo_class()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadModifiedMinimal(
+            temp,
+            tree =>
+            {
+                AppendCss(tree, ".note:hover { color: blue }");
+                SetChapter1Body(tree, "<p class=\"note\">hi</p>");
+            });
+        var html = book.GetHtmlResources().Single(h => h.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
+
+        // Act
+        CssClassDefinition? found = CssClassDefinitionLocator.Find(html, "note", ResolveCssInfo(book));
+
+        // Assert
+        found.Should().NotBeNull();
+    }
 }
