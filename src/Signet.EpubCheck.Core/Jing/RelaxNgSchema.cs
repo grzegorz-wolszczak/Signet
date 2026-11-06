@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using Signet.EpubCheck.Core.Jing.Datatype;
+using Signet.EpubCheck.Core.Jing.Datatype.Xsd;
 using Signet.EpubCheck.Core.Jing.Parse;
 using Signet.EpubCheck.Core.Jing.Parse.Compact;
 using Signet.EpubCheck.Core.Jing.Patterns;
@@ -55,7 +56,11 @@ public sealed class RelaxNgSchemaReader
     /// <summary>Finds the documents of <c>include</c> and <c>externalRef</c>.</summary>
     public ISchemaResolver Resolver { get; init; } = BasicSchemaResolver.Instance;
 
-    /// <summary>The datatype libraries besides the built-in one (none yet: the XML Schema datatypes come with task 2.3).</summary>
+    /// <summary>
+    /// The datatype libraries besides the built-in one; when <c>null</c>, the XML Schema datatypes
+    /// (<see cref="XsdDatatypeLibraryFactory"/>, with messages in the language of <see cref="Culture"/>), as Jing's
+    /// datatype library loader finds them.
+    /// </summary>
     public IDatatypeLibraryFactory? DatatypeLibraryFactory { get; init; }
 
     /// <summary>The language of the messages about the schema (<see cref="CultureInfo.CurrentUICulture"/> when <c>null</c>).</summary>
@@ -74,7 +79,8 @@ public sealed class RelaxNgSchemaReader
             : new SaxParseable(source, Resolver, ErrorHandler, JingLocalizer.ForParse(Culture));
         try
         {
-            Pattern start = SchemaBuilderImpl.Parse(parseable, ErrorHandler, DatatypeLibraryFactory, spb, isAttributesPattern: false, patternLocalizer);
+            IDatatypeLibraryFactory datatypes = DatatypeLibraryFactory ?? XsdDatatypeLibraryFactory.For(Culture);
+            Pattern start = SchemaBuilderImpl.Parse(parseable, ErrorHandler, datatypes, spb, isAttributesPattern: false, patternLocalizer);
             return new RelaxNgSchema(spb, start);
         }
         catch (IllegalSchemaException e)

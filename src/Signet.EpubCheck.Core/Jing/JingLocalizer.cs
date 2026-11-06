@@ -23,7 +23,15 @@ internal sealed class JingLocalizer
     private static readonly ResourceManager s_compactMessages =
         new("Signet.EpubCheck.Core.Jing.Resources.CompactMessages", typeof(JingLocalizer).Assembly);
 
+    private static readonly ResourceManager s_xsdDatatypeMessages =
+        new("Signet.EpubCheck.Core.Jing.Resources.XsdDatatypeMessages", typeof(JingLocalizer).Assembly);
+
+    private static readonly ResourceManager s_regexMessages =
+        new("Signet.EpubCheck.Core.Jing.Resources.RegexMessages", typeof(JingLocalizer).Assembly);
+
     private static readonly ConcurrentDictionary<(ResourceManager, string), JingLocalizer> s_instances = new();
+
+    private const string GroupedIntegerFormat = "#,##0";
 
     private readonly ResourceManager _manager;
     private readonly CultureInfo _culture;
@@ -43,6 +51,12 @@ internal sealed class JingLocalizer
     /// <summary>The raw resources of the compact syntax parser, for the tests.</summary>
     internal static ResourceManager CompactManager => s_compactMessages;
 
+    /// <summary>The raw resources of the XML Schema datatypes, for the tests.</summary>
+    internal static ResourceManager XsdDatatypeManager => s_xsdDatatypeMessages;
+
+    /// <summary>The raw resources of the regular expression translator, for the tests.</summary>
+    internal static ResourceManager RegexManager => s_regexMessages;
+
     /// <summary>The messages of schema building and validation (Jing's <c>SchemaBuilderImpl.localizer</c>).</summary>
     public static JingLocalizer ForPattern(CultureInfo? culture) => Get(s_patternMessages, culture);
 
@@ -51,6 +65,18 @@ internal sealed class JingLocalizer
 
     /// <summary>The messages of the compact syntax parser (Jing's <c>CompactSyntax.localizer</c>).</summary>
     public static JingLocalizer ForCompact(CultureInfo? culture) => Get(s_compactMessages, culture);
+
+    /// <summary>The messages of the XML Schema datatypes (Jing's <c>DatatypeBuilderImpl.localizer</c>).</summary>
+    public static JingLocalizer ForXsdDatatypes(CultureInfo? culture) => Get(s_xsdDatatypeMessages, culture);
+
+    /// <summary>The messages of the regular expression translator (Jing's <c>Translator.localizer</c>).</summary>
+    public static JingLocalizer ForRegex(CultureInfo? culture) => Get(s_regexMessages, culture);
+
+    /// <summary>
+    /// An integer as <c>MessageFormat</c> writes a number argument: with the grouping separator of the language
+    /// (<c>1,000</c> in English).
+    /// </summary>
+    public string Number(int value) => value.ToString(GroupedIntegerFormat, _culture);
 
     /// <summary>The text of <paramref name="key"/> with its arguments.</summary>
     /// <exception cref="MissingManifestResourceException">There is no such key.</exception>
