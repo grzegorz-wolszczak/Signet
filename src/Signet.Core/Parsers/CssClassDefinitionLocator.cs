@@ -18,7 +18,9 @@ public readonly record struct CssClassDefinition(string BookPath, int Offset);
 /// (in declaration order in <c>&lt;head&gt;</c>, as <see cref="HtmlResource.GetLinkedStylesheets"/>),
 /// then the <c>&lt;style&gt;</c> blocks inside the HTML file itself — the same order that
 /// <see cref="CssSelectorUsageAnalyzer"/> uses. No attempt is made to reproduce the full CSS cascade (specificity,
-/// <c>@media</c>) — the first hit wins, as with "go to definition" in code editors.
+/// <c>@media</c>) — the first hit wins, as with "go to definition" in code editors. In each source a selector naming the
+/// class on its own (<c>.note</c>, <c>p.note</c>) comes first; otherwise any selector naming it, also before a combinator
+/// or with a pseudo-class (<c>div.note p</c>, <c>.note:hover</c>).
 /// </remarks>
 public static class CssClassDefinitionLocator
 {
@@ -46,20 +48,42 @@ public static class CssClassDefinitionLocator
                 continue;
             }
 
-            IReadOnlyList<CssSelector> matches = info.GetClassSelectors(className);
-            if (matches.Count > 0)
+            if (FirstMatch(info, className) is CssSelector match)
             {
-                return new CssClassDefinition(cssBookPath, matches[0].Pos);
+                return new CssClassDefinition(cssBookPath, match.Pos);
             }
         }
 
         HtmlStyleInfo styleInfo = new(html.GetText());
         foreach (CssInfo block in styleInfo.Styles)
         {
-            IReadOnlyList<CssSelector> matches = block.GetClassSelectors(className);
-            if (matches.Count > 0)
+            if (FirstMatch(block, className) is CssSelector match)
             {
-                return new CssClassDefinition(html.BookPath, matches[0].Pos);
+                return new CssClassDefinition(html.BookPath, match.Pos);
+            }
+        }
+
+        return null;
+    }
+
+    // A simple class selector first; then the first selector naming the class anywhere (CssSelector.ClassName is set
+    // only for selectors without a combinator or a pseudo-class).
+    private static CssSelector? FirstMatch(CssInfo info, string className)
+    {
+        IReadOnlyList<CssSelector> simple = info.GetClassSelectors(className);
+        if (simple.Count > 0)
+        {
+            return simple[0];
+        }
+
+        foreach (CssSelector selector in info.GetAllSelectors())
+        {
+            foreach (string name in selector.ClassNames)
+            {
+                if (string.Equals(name, className, StringComparison.Ordinal))
+                {
+                    return selector;
+                }
             }
         }
 

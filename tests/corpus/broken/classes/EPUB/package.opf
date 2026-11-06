@@ -10,11 +10,14 @@
     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="attributes-css" href="styles/attributes.css" media-type="text/css"/>
     <item id="plain-css" href="styles/plain.css" media-type="text/css"/>
+    <item id="combinators-css" href="styles/combinators.css" media-type="text/css"/>
     <item id="attributes" href="text/attributes.xhtml" media-type="application/xhtml+xml"/>
     <item id="plain" href="text/plain.xhtml" media-type="application/xhtml+xml"/>
+    <item id="combinators" href="text/combinators.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine>
     <itemref idref="attributes"/>
     <itemref idref="plain"/>
+    <itemref idref="combinators"/>
   </spine>
 </package>
