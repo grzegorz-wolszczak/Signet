@@ -22,4 +22,12 @@
     <EmbeddedResource Include="Jing\Resources\schematron.rnc" LogicalName="Signet.EpubCheck.Core.Jing.Resources.schematron.rnc" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- EPUBCheck's schemas and the stylesheets its build runs on them (Xml/Schemas, see its README), named by their path
+         there: schema/30/package-30.rnc, util/sch/iso-sch-include.xsl, … (SchemaResources). -->
+    <EmbeddedResource Include="Xml\Schemas\schema\**\*.rnc;Xml\Schemas\schema\**\*.rng;Xml\Schemas\schema\**\*.nvdl;Xml\Schemas\schema\**\*.sch;Xml\Schemas\schema\**\*.xml;Xml\Schemas\schema\**\*.dtd;Xml\Schemas\schema\**\*.dtdinc"
+                      LogicalName="schema/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Xml\Schemas\util\**\*.xsl" LogicalName="util/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>
