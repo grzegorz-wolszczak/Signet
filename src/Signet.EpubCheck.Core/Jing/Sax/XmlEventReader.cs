@@ -21,6 +21,8 @@ public sealed class XmlEventReader
 {
     private const string XmlnsNamespace = "http://www.w3.org/2000/xmlns/";
     private const string XmlnsPrefix = "xmlns";
+    private const string DefaultXmlVersion = "1.0";
+    private const string VersionAttribute = "version";
 
     /// <summary>The handler the next events go to.</summary>
     public IContentHandler? ContentHandler { get; set; }
@@ -51,7 +53,7 @@ public sealed class XmlEventReader
             locator.Reader = reader as IXmlLineInfo;
             Handler.SetDocumentLocator(locator);
             Handler.StartDocument();
-            Read(reader);
+            Read(reader, locator);
             Handler.EndDocument();
         }
         catch (XmlException e)
@@ -64,7 +66,7 @@ public sealed class XmlEventReader
 
     private IContentHandler Handler => ContentHandler ?? throw new InvalidOperationException("No content handler");
 
-    private void Read(XmlReader reader)
+    private void Read(XmlReader reader, Locator locator)
     {
         Stack<List<string>> openPrefixes = new();
         AttributeList attributes = new();
@@ -72,6 +74,9 @@ public sealed class XmlEventReader
         {
             switch (reader.NodeType)
             {
+                case XmlNodeType.XmlDeclaration:
+                    locator.XmlVersion = reader.GetAttribute(VersionAttribute) ?? DefaultXmlVersion;
+                    break;
                 case XmlNodeType.Element:
                     List<string> prefixes = StartElement(reader, attributes);
                     if (reader.IsEmptyElement)
@@ -172,8 +177,10 @@ public sealed class XmlEventReader
         }
     }
 
-    private sealed class Locator(string? systemId) : ILocator
+    private sealed class Locator(string? systemId) : ILocator2
     {
+        public string XmlVersion { get; set; } = DefaultXmlVersion;
+
         public IXmlLineInfo? Reader { get; set; }
 
         public string? SystemId { get; } = systemId;

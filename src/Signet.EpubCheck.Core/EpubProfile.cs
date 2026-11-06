@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using Signet.EpubCheck.Core.Opf;
 using System.Globalization;
 
 namespace Signet.EpubCheck.Core;
@@ -44,4 +47,40 @@ public static class EpubProfiles
 
     /// <summary>The name of the profile as the command line spells it (lower case).</summary>
     public static string ToText(this EpubProfile profile) => profile.ToString().ToLower(CultureInfo.InvariantCulture);
+}
+
+/// <summary>What a publication's types say about the profile (upstream's <c>EPUBProfile</c> methods).</summary>
+public static class EpubProfileTypes
+{
+    /// <summary>The profile the publication types ask for, else <paramref name="profile"/> (upstream's <c>makeTypeCompatible</c>).</summary>
+    public static EpubProfile MakeTypeCompatible(this EpubProfile profile, IReadOnlySet<PublicationType> types)
+    {
+        ArgumentNullException.ThrowIfNull(types);
+        if (types.Contains(PublicationType.Dictionary))
+        {
+            return EpubProfile.Dict;
+        }
+
+        if (types.Contains(PublicationType.Edupub))
+        {
+            return EpubProfile.Edupub;
+        }
+
+        if (types.Contains(PublicationType.Index))
+        {
+            return EpubProfile.Idx;
+        }
+
+        return types.Contains(PublicationType.Preview) ? EpubProfile.Preview : profile;
+    }
+
+    /// <summary>The publication type of the profile.</summary>
+    public static PublicationType MatchingType(this EpubProfile profile) => profile switch
+    {
+        EpubProfile.Dict => PublicationType.Dictionary,
+        EpubProfile.Edupub => PublicationType.Edupub,
+        EpubProfile.Idx => PublicationType.Index,
+        EpubProfile.Preview => PublicationType.Preview,
+        _ => PublicationType.Epub,
+    };
 }

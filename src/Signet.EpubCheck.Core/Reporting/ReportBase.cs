@@ -11,6 +11,7 @@ namespace Signet.EpubCheck.Core.Reporting;
 public abstract class ReportBase : IReport
 {
     private Severity _reportingLevel = Severity.Info;
+    private CultureInfo? _culture;
 
     /// <summary>Creates a report with the default messages in the language of <see cref="CultureInfo.CurrentUICulture"/>.</summary>
     protected ReportBase()
@@ -32,8 +33,12 @@ public abstract class ReportBase : IReport
     public void SetLocale(CultureInfo culture)
     {
         ArgumentNullException.ThrowIfNull(culture);
+        _culture = culture;
         Dictionary = new LocalizedMessageDictionary(culture);
     }
+
+    /// <summary>The language of the messages, which also words the messages of the schema languages (upstream's locale holder).</summary>
+    public CultureInfo Culture => _culture ?? CultureInfo.CurrentUICulture;
 
     /// <summary>
     /// Takes the severities, texts and suggestions from a custom messages file (<c>--customMessages</c>); the problems of
@@ -43,6 +48,7 @@ public abstract class ReportBase : IReport
     public void SetOverrideFile(string overrideFile, CultureInfo? culture = null)
     {
         ArgumentNullException.ThrowIfNull(overrideFile);
+        _culture = culture ?? _culture;
         Dictionary = new OverriddenMessageDictionary(overrideFile, this, culture);
     }
 

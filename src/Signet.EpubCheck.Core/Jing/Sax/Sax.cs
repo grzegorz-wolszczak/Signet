@@ -18,6 +18,13 @@ public interface ILocator
     int ColumnNumber { get; }
 }
 
+/// <summary>A locator that also knows the XML version of the document (SAX's <c>Locator2</c>).</summary>
+public interface ILocator2 : ILocator
+{
+    /// <summary>The XML version of the document (<c>1.0</c> when it has no XML declaration).</summary>
+    string XmlVersion { get; }
+}
+
 /// <summary>A location that does not move (a copy of a <see cref="ILocator"/> taken at one moment).</summary>
 public sealed record FixedLocator(string? SystemId, int LineNumber, int ColumnNumber) : ILocator
 {
@@ -48,6 +55,26 @@ public interface IAttributes
     string GetValue(int index);
 }
 
+/// <summary>Helpers of <see cref="IAttributes"/>.</summary>
+public static class AttributesExtensions
+{
+    /// <summary>The value of the attribute <paramref name="localName"/> in the namespace <paramref name="uri"/> (empty
+    /// for none), or <c>null</c> (SAX's <c>Attributes.getValue(uri, localName)</c>).</summary>
+    public static string? GetValue(this IAttributes attributes, string uri, string localName)
+    {
+        ArgumentNullException.ThrowIfNull(attributes);
+        for (int i = 0; i < attributes.Length; i++)
+        {
+            if (attributes.GetLocalName(i) == localName && attributes.GetUri(i) == uri)
+            {
+                return attributes.GetValue(i);
+            }
+        }
+
+        return null;
+    }
+}
+
 /// <summary>A list of attributes.</summary>
 public sealed class AttributeList : IAttributes
 {
@@ -61,6 +88,25 @@ public sealed class AttributeList : IAttributes
 
     /// <summary>Removes all the attributes.</summary>
     public void Clear() => _attributes.Clear();
+
+    /// <summary>A copy of <paramref name="attributes"/>.</summary>
+    public static AttributeList CopyOf(IAttributes attributes)
+    {
+        ArgumentNullException.ThrowIfNull(attributes);
+        AttributeList copy = new();
+        for (int i = 0; i < attributes.Length; i++)
+        {
+            copy.Add(attributes.GetUri(i), attributes.GetLocalName(i), attributes.GetQName(i), attributes.GetValue(i));
+        }
+
+        return copy;
+    }
+
+    /// <summary>Removes attribute <paramref name="index"/>.</summary>
+    public void RemoveAt(int index) => _attributes.RemoveAt(index);
+
+    /// <summary>Replaces the value of attribute <paramref name="index"/>.</summary>
+    public void SetValue(int index, string value) => _attributes[index] = _attributes[index] with { Value = value };
 
     /// <inheritdoc />
     public string GetUri(int index) => _attributes[index].Uri;

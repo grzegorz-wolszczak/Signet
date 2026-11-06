@@ -74,3 +74,22 @@ public interface IGalimatiasErrorHandler
     /// <summary>A problem the parser stops at.</summary>
     void OnFatalError(GalimatiasParseException exception);
 }
+
+/// <summary>Turns every problem into a failure (galimatias' <c>StrictErrorHandler</c>): the parse throws at the first one.</summary>
+public sealed class StrictErrorHandler : IGalimatiasErrorHandler
+{
+    private StrictErrorHandler()
+    {
+    }
+
+    /// <summary>The handler.</summary>
+    public static StrictErrorHandler Instance { get; } = new();
+
+    /// <inheritdoc />
+    public void OnError(GalimatiasParseException exception) => throw exception;
+
+    /// <inheritdoc />
+    public void OnFatalError(GalimatiasParseException exception)
+    {
+    }
+}
