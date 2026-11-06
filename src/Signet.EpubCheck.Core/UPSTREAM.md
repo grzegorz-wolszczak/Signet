@@ -21,7 +21,9 @@ Imported verbatim (when the task that needs it lands; each import lists its sour
 - the **schemas** (`src/main/resources/com/adobe/epubcheck/schema`): RELAX NG (`.rnc`, `.rng`), NVDL, Schematron.
   They carry their own licenses, which come along: IDPF (MIT, `schema/30/LICENSE`), the Nu HTML Checker HTML5 schemas
   (MIT, Copyright © 2005–2007 Elika J. Etemad and Henri Sivonen, © 2007–2012 Mozilla Foundation; kept up to date with
-  Nu Html Checker `26.9.7.2`), the MathML and security schemas (W3C Software Notice and License);
+  Nu Html Checker `26.9.7.2`), the MathML and security schemas (W3C Software Notice and License). They are in
+  `Xml/Schemas/schema` with the two XSLT stylesheets of upstream's build (`src/main/util/sch` into `Xml/Schemas/util/sch`),
+  embedded under their paths (`scripts/epubcheck/import_upstream_schemas.sh`);
 - the **message ids**, their default severities and the English texts (`MessageBundle.properties`);
 - the **test fixtures** and the Cucumber `.feature` scenarios (`src/test/resources`) into `tests/corpus/epubcheck`
   (`scripts/epubcheck/import_upstream_tests.sh`; run by `tests/Signet.EpubCheck.Conformance.Tests`).
@@ -197,6 +199,19 @@ Schematron (`Jing/Validate/Schematron/`, in place of Jing's `validate.schematron
   ID/IDREF checks Jing makes while it validates a schema against `iso-schematron.rnc`. EPUBCheck's schemas use none of
   them.
 - Comments and processing instructions are not in the tree the expressions see (no EPUBCheck expression looks for them).
+
+The schemas of EPUBCheck (`Xml/`, upstream's `XMLValidator`, `XMLValidators`, `ResourceUtil`):
+
+- Upstream's build runs `iso-sch-include.xsl` and `iso-sch-abstract.xsl` (Saxon) on `schema/30/*-30.sch` and ships the
+  result; the port embeds the files as upstream has them in its sources and runs the same stylesheets (.NET's
+  `XslCompiledTransform`; they are XSLT 1.0) the first time such a file is opened (`SchemaResources`). A message of the
+  stylesheets (a broken `include`, a missing abstract pattern) is an error here; upstream's build only prints it.
+- An embedded file has the URI `resource:/schema/…`, upstream's a `jar:` URL; references between schemas resolve
+  against it, as upstream's `BasicResolver` resolves them. Like upstream, the port does not read
+  `schema/30/epub30-catalog.xml` (it is embedded, but no reference needs it: all of them are relative).
+- Upstream's enum reads all 50 schemas when it is first used; the port reads each one the first time it is asked for
+  (thread-safe), and keeps it. A schema with errors throws `InvalidOperationException` with Jing's messages, where
+  upstream prints the stack traces and throws an `Error` (`Internal error`).
 
 The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 
