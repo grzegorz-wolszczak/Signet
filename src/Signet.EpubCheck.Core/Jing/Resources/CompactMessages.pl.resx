@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="syntax_error" xml:space="preserve">
+    <value>błąd składni</value>
+  </data>
+  <data name="undeclared_prefix" xml:space="preserve">
+    <value>niezadeklarowany prefiks "{0}"</value>
+  </data>
+  <data name="xmlns_prefix" xml:space="preserve">
+    <value>prefiks nie może być "xmlns"</value>
+  </data>
+  <data name="unqualified_annotation_attribute" xml:space="preserve">
+    <value>atrybut adnotacji musi mieć URI przestrzeni nazw</value>
+  </data>
+  <data name="inherited_annotation_namespace" xml:space="preserve">
+    <value>URI przestrzeni nazw adnotacji nie może być dziedziczony</value>
+  </data>
+  <data name="xmlns_annotation_attribute" xml:space="preserve">
+    <value>atrybut adnotacji nie może się nazywać "xmlns"</value>
+  </data>
+  <data name="duplicate_attribute" xml:space="preserve">
+    <value>wiele atrybutów o nazwie lokalnej "{0}" i URI przestrzeni nazw "{1}"</value>
+  </data>
+  <data name="except_missing_parentheses" xml:space="preserve">
+    <value>wyrażenie z "-" wymaga nawiasów</value>
+  </data>
+  <data name="xmlns_annotation_attribute_uri" xml:space="preserve">
+    <value>atrybut adnotacji nie może mieć URI przestrzeni nazw "http://www.w3.org/2000/xmlns"</value>
+  </data>
+  <data name="xml_prefix_bad_uri" xml:space="preserve">
+    <value>prefiks "xml" można związać tylko z URI przestrzeni nazw "http://www.w3.org/XML/1998/namespace"</value>
+  </data>
+  <data name="xml_uri_bad_prefix" xml:space="preserve">
+    <value>tylko prefiks "xml" można związać z URI przestrzeni nazw "http://www.w3.org/XML/1998/namespace"</value>
+  </data>
+  <data name="illegal_hex_digit" xml:space="preserve">
+    <value>oczekiwano cyfry szesnastkowej</value>
+  </data>
+  <data name="char_code_too_big" xml:space="preserve">
+    <value>kod znaku musi być mniejszy niż 0x110000</value>
+  </data>
+  <data name="illegal_char_code" xml:space="preserve">
+    <value>kod znaku, który nie jest dozwolony</value>
+  </data>
+  <data name="illegal_char_code_ref" xml:space="preserve">
+    <value>odwołanie do znaku, którego kod nie jest dozwolony</value>
+  </data>
+  <data name="incomplete_escape" xml:space="preserve">
+    <value>niepełna sekwencja ucieczki</value>
+  </data>
+  <data name="any_name_except_contains_any_name" xml:space="preserve">
+    <value>"except" w "anyName" zawiera "anyName"</value>
+  </data>
+  <data name="ns_name_except_contains_any_name" xml:space="preserve">
+    <value>"except" w "nsName" zawiera "anyName"</value>
+  </data>
+  <data name="ns_name_except_contains_ns_name" xml:space="preserve">
+    <value>"except" w "nsName" zawiera "nsName"</value>
+  </data>
+  <data name="illegal_surrogate_pair" xml:space="preserve">
+    <value>niedozwolona para surogatów</value>
+  </data>
+  <data name="relax_ng_namespace" xml:space="preserve">
+    <value>adnotacje nie mogą mieć URI przestrzeni nazw "http://relaxng.org/ns/structure/1.0"</value>
+  </data>
+  <data name="top_level_follow_annotation" xml:space="preserve">
+    <value>wzorzec najwyższego poziomu nie może mieć adnotacji następujących</value>
+  </data>
+</root>

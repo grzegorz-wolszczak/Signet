@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using Signet.EpubCheck.Core.Jing.Datatype;
 using Signet.EpubCheck.Core.Jing.Parse;
+using Signet.EpubCheck.Core.Jing.Parse.Compact;
 using Signet.EpubCheck.Core.Jing.Patterns;
 using Signet.EpubCheck.Core.Jing.Sax;
 
@@ -28,12 +29,26 @@ public class IncorrectSchemaException : Exception
     }
 }
 
+/// <summary>The two syntaxes of RELAX NG.</summary>
+public enum RelaxNgSyntax
+{
+    /// <summary>The XML syntax (<c>.rng</c>).</summary>
+    Xml,
+
+    /// <summary>The compact syntax (<c>.rnc</c>).</summary>
+    Compact,
+}
+
 /// <summary>
-/// Reads RELAX NG schemas in the XML syntax (Jing's RNG <c>SchemaReader</c> as EPUBCheck configures it: no ID/IDREF
-/// checking, no "feasible" mode).
+/// Reads RELAX NG schemas (Jing's RNG <c>SchemaReader</c> and <c>CompactSchemaReader</c> as EPUBCheck configures them:
+/// no ID/IDREF checking, no "feasible" mode). EPUBCheck reads a schema whose name ends with <c>.rnc</c> in the compact
+/// syntax, any other in the XML syntax; the documents it includes are read in the same syntax.
 /// </summary>
 public sealed class RelaxNgSchemaReader
 {
+    /// <summary>The syntax of the schema and of the documents it includes.</summary>
+    public RelaxNgSyntax Syntax { get; init; } = RelaxNgSyntax.Xml;
+
     /// <summary>Where the errors of the schema go (none: they are only counted).</summary>
     public ISaxErrorHandler? ErrorHandler { get; init; }
 
@@ -48,13 +63,15 @@ public sealed class RelaxNgSchemaReader
 
     /// <summary>Reads, simplifies and checks the schema of <paramref name="source"/>.</summary>
     /// <exception cref="IncorrectSchemaException">The schema has errors (reported to <see cref="ErrorHandler"/>).</exception>
-    /// <exception cref="SaxParseException">A schema document is not well-formed.</exception>
+    /// <exception cref="SaxParseException">A schema document in the XML syntax is not well-formed.</exception>
     public RelaxNgSchema CreateSchema(InputSource source)
     {
         ArgumentNullException.ThrowIfNull(source);
         SchemaPatternBuilder spb = new();
         JingLocalizer patternLocalizer = JingLocalizer.ForPattern(Culture);
-        SaxParseable parseable = new(source, Resolver, ErrorHandler, JingLocalizer.ForParse(Culture));
+        ISubParseable parseable = Syntax == RelaxNgSyntax.Compact
+            ? new CompactParseable(source, Resolver, ErrorHandler, JingLocalizer.ForCompact(Culture))
+            : new SaxParseable(source, Resolver, ErrorHandler, JingLocalizer.ForParse(Culture));
         try
         {
             Pattern start = SchemaBuilderImpl.Parse(parseable, ErrorHandler, DatatypeLibraryFactory, spb, isAttributesPattern: false, patternLocalizer);
@@ -78,6 +95,9 @@ public sealed class RelaxNgSchema
         _spb = spb;
         _start = start;
     }
+
+    /// <summary>The simplified pattern of the schema (for the tests that compare two schemas).</summary>
+    internal Pattern Start => _start;
 
     /// <summary>A validator whose errors go to <paramref name="errorHandler"/>, worded in the language of <paramref name="culture"/>.</summary>
     public RelaxNgValidator CreateValidator(ISaxErrorHandler errorHandler, CultureInfo? culture = null)
