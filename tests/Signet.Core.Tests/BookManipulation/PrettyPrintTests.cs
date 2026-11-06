@@ -18,7 +18,7 @@ public sealed class PrettyPrintTests
     public static TheoryData<string> AllCorpusXhtml()
     {
         TheoryData<string> data = new();
-        foreach (string path in Directory.EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories))
+        foreach (string path in CorpusPaths.EnumerateFiles("*.xhtml"))
         {
             if (!CorpusPaths.IsFaultyOnPurpose(path))
             {
@@ -111,7 +111,7 @@ public sealed class PrettyPrintTests
     public void PrettyPrintXml_EveryCorpusPackageAndNcx_IsWellFormedAndIdempotent()
     {
         // Act
-        foreach (string path in Directory.EnumerateFiles(CorpusPaths.Root, "*.*", SearchOption.AllDirectories))
+        foreach (string path in CorpusPaths.EnumerateFiles("*.*"))
         {
             string mediaType = path.EndsWith(".opf", StringComparison.Ordinal)
                 ? "application/oebps-package+xml"

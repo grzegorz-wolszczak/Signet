@@ -18,7 +18,7 @@ public sealed class OpfDocumentTests
     public static TheoryData<string> AllCorpusOpfFiles()
     {
         TheoryData<string> data = new();
-        foreach (string file in Directory.EnumerateFiles(CorpusPaths.Root, "*.opf", SearchOption.AllDirectories))
+        foreach (string file in CorpusPaths.EnumerateFiles("*.opf"))
         {
             data.Add(file);
         }

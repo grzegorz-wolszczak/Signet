@@ -27,7 +27,7 @@ public sealed class CleanSourceTests
     public static TheoryData<string> AllCorpusXhtml()
     {
         TheoryData<string> data = new();
-        foreach (string path in Directory.EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories))
+        foreach (string path in CorpusPaths.EnumerateFiles("*.xhtml"))
         {
             data.Add(path);
         }
@@ -43,8 +43,7 @@ public sealed class CleanSourceTests
     public static TheoryData<string> SoundCorpusXhtml()
     {
         TheoryData<string> data = new();
-        foreach (string path in Directory
-                     .EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories)
+        foreach (string path in CorpusPaths.EnumerateFiles("*.xhtml")
                      .Where(p => !CorpusPaths.IsFaultyOnPurpose(p)))
         {
             data.Add(path);
