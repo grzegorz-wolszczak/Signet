@@ -13,11 +13,8 @@ namespace Signet.EpubCheck.Core.Ocf;
 /// </summary>
 public static class OCFZipChecker
 {
-    // The local file header (30 bytes), the name "mimetype" (8) and its content "application/epub+zip" (20).
-    private const int HeaderLength = 58;
-    private const int NameLengthOffset = 26;
-    private const int ExtraLengthOffset = 28;
-    private const int NameOffset = 30;
+    // The local file header, the name "mimetype" and its content "application/epub+zip" (upstream reads 58 bytes).
+    private static readonly int s_headerLength = ZipFormat.LocalHeader.Length + OCFChecker.MimeTypePath.Length + OCFChecker.EpubMimeType.Length;
 
     /// <summary>Checks the header of the ZIP file at <paramref name="path"/>; the messages point at <paramref name="location"/>.</summary>
     public static void Check(string path, IReport report, EpubLocation location)
@@ -26,7 +23,7 @@ public static class OCFZipChecker
         ArgumentNullException.ThrowIfNull(report);
         ArgumentNullException.ThrowIfNull(location);
 
-        byte[] header = new byte[HeaderLength];
+        byte[] header = new byte[s_headerLength];
         int read;
         try
         {
@@ -45,9 +42,9 @@ public static class OCFZipChecker
             return;
         }
 
-        int nameLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(NameLengthOffset));
-        int extraLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(ExtraLengthOffset));
-        if (header[0] != (byte)'P' || header[1] != (byte)'K')
+        int nameLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(ZipFormat.LocalHeader.NameLengthOffset));
+        int extraLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(ZipFormat.LocalHeader.ExtraLengthOffset));
+        if (header[0] != ZipFormat.LocalHeaderMagic[0] || header[1] != ZipFormat.LocalHeaderMagic[1])
         {
             report.Message(MessageId.PKG_004, location);
         }
@@ -59,7 +56,7 @@ public static class OCFZipChecker
         {
             report.Message(MessageId.PKG_005, location, extraLength);
         }
-        else if (Encoding.ASCII.GetString(header, NameOffset, nameLength) != OCFChecker.MimeTypePath)
+        else if (Encoding.ASCII.GetString(header, ZipFormat.LocalHeader.NameOffset, nameLength) != OCFChecker.MimeTypePath)
         {
             report.Message(MessageId.PKG_006, location);
         }

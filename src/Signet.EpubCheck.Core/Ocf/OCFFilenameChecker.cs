@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using Signet.EpubCheck.Core.Messages;
 using Signet.EpubCheck.Core.Reporting;
+using Signet.EpubCheck.Core.Util;
 
 namespace Signet.EpubCheck.Core.Ocf;
 
@@ -14,29 +15,34 @@ namespace Signet.EpubCheck.Core.Ocf;
 public static class OCFFilenameChecker
 {
     private const string AsciiSet = "ASCII";
-    private const int FullStop = 0x002E;
+    private const int FullStop = '.';
+    private const int VerticalLine = '|';
 
     // The sets of disallowed characters of EPUB 3, in upstream's order: a character is described by the first set it is in.
     private static readonly (string Name, Func<int, bool> Contains)[] s_disallowedEpub3 =
     [
-        (AsciiSet, static c => IsDisallowedInEpub2(c) || c == 0x007C), // and VERTICAL LINE '|'
-        ("NON CHARACTER", static c => c is >= 0xFDD0 and <= 0xFDEF || (c & 0xFFFE) == 0xFFFE),
-        ("CONTROL", static c => c is <= 0x001F or 0x007F or >= 0x0080 and <= 0x009F),
-        ("PRIVATE USE", static c => c is >= 0xE000 and <= 0xF8FF or >= 0xF0000 and <= 0xFFFFF or >= 0x100000 and <= 0x10FFFF),
-        ("SPECIALS", static c => c is >= 0xFFF0 and <= 0xFFFF),
-        ("DEPRECATED", static c => c == 0xE0001), // LANGUAGE TAG (CANCEL TAG is reinstated in emoji tag sequences)
+        (AsciiSet, static c => IsDisallowedInEpub2(c) || c == VerticalLine),
+        ("NON CHARACTER", static c => c is >= UnicodeRanges.NonCharactersFirst and <= UnicodeRanges.NonCharactersLast
+            || (c & UnicodeRanges.PlaneEndNonCharacterMask) == UnicodeRanges.PlaneEndNonCharacterMask),
+        ("CONTROL", static c => c is <= UnicodeRanges.C0ControlsLast or UnicodeRanges.Delete
+            or >= UnicodeRanges.C1ControlsFirst and <= UnicodeRanges.C1ControlsLast),
+        ("PRIVATE USE", static c => c is >= UnicodeRanges.PrivateUseFirst and <= UnicodeRanges.PrivateUseLast
+            or >= UnicodeRanges.SupplementaryPrivateUseAFirst and <= UnicodeRanges.SupplementaryPrivateUseALast
+            or >= UnicodeRanges.SupplementaryPrivateUseBFirst and <= UnicodeRanges.SupplementaryPrivateUseBLast),
+        ("SPECIALS", static c => c is >= UnicodeRanges.SpecialsFirst and <= UnicodeRanges.SpecialsLast),
+        ("DEPRECATED", static c => c == UnicodeRanges.LanguageTag), // LANGUAGE TAG (CANCEL TAG is reinstated in emoji tag sequences)
     ];
 
     // Upstream prints ICU's character name, when the character has one. Of the disallowed characters, only these do
     // (the controls, the private use characters and the non characters have no name).
     private static readonly Dictionary<int, string> s_characterNames = new()
     {
-        [0xFFF9] = "INTERLINEAR ANNOTATION ANCHOR",
-        [0xFFFA] = "INTERLINEAR ANNOTATION SEPARATOR",
-        [0xFFFB] = "INTERLINEAR ANNOTATION TERMINATOR",
-        [0xFFFC] = "OBJECT REPLACEMENT CHARACTER",
-        [0xFFFD] = "REPLACEMENT CHARACTER",
-        [0xE0001] = "LANGUAGE TAG",
+        [UnicodeRanges.InterlinearAnnotationAnchor] = "INTERLINEAR ANNOTATION ANCHOR",
+        [UnicodeRanges.InterlinearAnnotationSeparator] = "INTERLINEAR ANNOTATION SEPARATOR",
+        [UnicodeRanges.InterlinearAnnotationTerminator] = "INTERLINEAR ANNOTATION TERMINATOR",
+        [UnicodeRanges.ObjectReplacementCharacter] = "OBJECT REPLACEMENT CHARACTER",
+        [UnicodeRanges.ReplacementCharacter] = "REPLACEMENT CHARACTER",
+        [UnicodeRanges.LanguageTag] = "LANGUAGE TAG",
     };
 
     /// <summary>
@@ -58,7 +64,7 @@ public static class OCFFilenameChecker
         {
             int codePoint = rune.Value;
             last = codePoint;
-            isAsciiOnly = isAsciiOnly && codePoint <= 0x7F;
+            isAsciiOnly = isAsciiOnly && codePoint <= UnicodeRanges.AsciiLast;
             hasSpaces = hasSpaces || Rune.IsWhiteSpace(rune);
             if (version == EpubVersion.Version2)
             {
@@ -103,7 +109,7 @@ public static class OCFFilenameChecker
 
     // QUOTATION MARK, ASTERISK, COLON, LESS-THAN SIGN, GREATER-THAN SIGN, QUESTION MARK, REVERSE SOLIDUS. SOLIDUS is the
     // path separator; FULL STOP is only disallowed as the last character.
-    private static bool IsDisallowedInEpub2(int codePoint) => codePoint is 0x22 or 0x2A or 0x3A or 0x3C or 0x3E or 0x3F or 0x5C;
+    private static bool IsDisallowedInEpub2(int codePoint) => codePoint is '"' or '*' or ':' or '<' or '>' or '?' or '\\';
 
     private static string Describe(int codePoint, string setName)
     {
