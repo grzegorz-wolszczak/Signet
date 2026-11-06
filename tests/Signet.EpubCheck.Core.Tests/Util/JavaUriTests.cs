@@ -50,4 +50,50 @@ public sealed class JavaUriTests
         // Assert
         valid.Should().BeFalse();
     }
+
+    // The examples of RFC 2396, appendix C, as java.net.URI.resolve resolves them (it keeps the ".." above the root
+    // and the "." of an absolute path, which RFC 3986 removes).
+    [Theory]
+    [InlineData("g", "http://a/b/c/g")]
+    [InlineData("./g", "http://a/b/c/g")]
+    [InlineData("g/", "http://a/b/c/g/")]
+    [InlineData("/g", "http://a/g")]
+    [InlineData("//g", "http://g")]
+    [InlineData("?y", "http://a/b/c/?y")]
+    [InlineData("g?y", "http://a/b/c/g?y")]
+    [InlineData("#s", "http://a/b/c/d;p?q#s")]
+    [InlineData("g#s", "http://a/b/c/g#s")]
+    [InlineData(";x", "http://a/b/c/;x")]
+    [InlineData(".", "http://a/b/c/")]
+    [InlineData("..", "http://a/b/")]
+    [InlineData("../g", "http://a/b/g")]
+    [InlineData("../..", "http://a/")]
+    [InlineData("../../g", "http://a/g")]
+    [InlineData("../../../g", "http://a/../g")]
+    [InlineData("/./g", "http://a/./g")]
+    [InlineData("g.", "http://a/b/c/g.")]
+    [InlineData("./../g", "http://a/b/g")]
+    [InlineData("g;x=1/./y", "http://a/b/c/g;x=1/y")]
+    [InlineData("http:g", "http:g")]
+    public void Resolve_TheExamplesOfRfc2396_GivesWhatJavaGives(string reference, string expected)
+    {
+        // Arrange
+        const string Base = "http://a/b/c/d;p?q";
+
+        // Act
+        string resolved = JavaUri.Resolve(Base, reference);
+
+        // Assert
+        resolved.Should().Be(expected);
+    }
+
+    [Fact]
+    public void Resolve_FileUri_ResolvesAgainstItsFolder()
+    {
+        // Act
+        string resolved = JavaUri.Resolve("file:///spectest/001/c.rng", "sub/x.rng");
+
+        // Assert
+        resolved.Should().Be("file:///spectest/001/sub/x.rng");
+    }
 }

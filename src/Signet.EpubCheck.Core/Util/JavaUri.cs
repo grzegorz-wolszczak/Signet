@@ -10,7 +10,7 @@ namespace Signet.EpubCheck.Core.Util;
 /// which upstream uses to accept or reject some URIs (e.g. the URIs of prefix declarations, <c>OPF-006</c>). This
 /// follows the checks of the JDK's <c>URI.Parser</c>; an IPv6 literal is checked with <see cref="IPAddress"/>.
 /// </summary>
-public static class JavaUri
+public static partial class JavaUri
 {
     // The character classes of RFC 2396 as java.net.URI defines them.
     private const string Mark = "-_.!~*'()";
