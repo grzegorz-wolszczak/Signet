@@ -165,11 +165,13 @@ internal static class Naming
 
     private static bool IsNameStartChar(char c) => s_charTypes[c] == NameStartChar;
 
-    private static bool IsNameStartCharNs(char c) => IsNameStartChar(c) && c != PrefixSeparator;
+    /// <summary>Whether <paramref name="c"/> can start an NCName.</summary>
+    public static bool IsNameStartCharNs(char c) => IsNameStartChar(c) && c != PrefixSeparator;
 
     private static bool IsNameCharacter(char c) => s_charTypes[c] != 0;
 
-    private static bool IsNameCharNs(char c) => IsNameCharacter(c) && c != PrefixSeparator;
+    /// <summary>Whether <paramref name="c"/> can be in an NCName.</summary>
+    public static bool IsNameCharNs(char c) => IsNameCharacter(c) && c != PrefixSeparator;
 
     private static byte[] BuildCharTypes()
     {
