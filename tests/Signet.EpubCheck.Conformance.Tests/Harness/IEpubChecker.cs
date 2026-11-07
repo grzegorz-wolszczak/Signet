@@ -1,12 +1,6 @@
 using Signet.EpubCheck.Core;
 using Signet.EpubCheck.Core.Ocf;
-using Signet.EpubCheck.Core.Nav;
-using Signet.EpubCheck.Core.Opf;
-using Signet.EpubCheck.Core.Ops;
-using Signet.EpubCheck.Core.Overlay;
 using Signet.EpubCheck.Core.Reporting;
-using Signet.EpubCheck.Core.Util;
-using Signet.EpubCheck.Core.Util.Mime;
 
 namespace Signet.EpubCheck.Conformance.Tests.Harness;
 
@@ -43,46 +37,25 @@ internal sealed class OcfEpubChecker : IEpubChecker
                 // (the step "configured to check EPUB 3 rules" sets the version of the single-document checkers only).
                 OCFChecker.Check(request.Path, EpubVersion.Unknown, request.Report, request.Profile);
                 break;
-            case CheckerMode.PackageDocument:
-                (request.Version == EpubVersion.Version2 ? new OPFChecker(Single(request, MediaTypes.PackageDocument)) : new OPFChecker30(Single(request, MediaTypes.PackageDocument))).Check();
-                break;
-            case CheckerMode.XhtmlContentDocument:
-                new OPSChecker(Single(request, MediaTypes.Xhtml)).Check();
-                break;
-            case CheckerMode.SvgContentDocument:
-                new OPSChecker(Single(request, MediaTypes.Svg)).Check();
-                break;
-            case CheckerMode.MediaOverlaysDocument:
-                // Upstream's tool has the media overlay mode for EPUB 3 only.
-                if (request.Version != EpubVersion.Version3)
-                {
-                    throw new ScenarioNotImplementedException("The media overlay mode needs EPUB 3.");
-                }
-
-                new OverlayChecker(Single(request, MediaTypes.Smil)).Check();
-                break;
-            case CheckerMode.NavigationDocument:
-                // Upstream's tool has the navigation document mode for EPUB 3 only.
-                if (request.Version != EpubVersion.Version3)
-                {
-                    throw new ScenarioNotImplementedException("The navigation document mode needs EPUB 3.");
-                }
-
-                new NavChecker(Single(request, MediaTypes.Xhtml)).Check();
-                break;
             default:
-                throw new ScenarioNotImplementedException("Checking this kind of single document is not implemented yet.");
+                SingleDocumentKind kind = request.Mode switch
+                {
+                    CheckerMode.PackageDocument => SingleDocumentKind.PackageDocument,
+                    CheckerMode.XhtmlContentDocument => SingleDocumentKind.XhtmlContentDocument,
+                    CheckerMode.SvgContentDocument => SingleDocumentKind.SvgContentDocument,
+                    CheckerMode.MediaOverlaysDocument => SingleDocumentKind.MediaOverlaysDocument,
+                    CheckerMode.NavigationDocument => SingleDocumentKind.NavigationDocument,
+                    _ => throw new ScenarioNotImplementedException("Checking this kind of single document is not implemented yet."),
+                };
+
+                // Upstream's tool has the media overlay and navigation document modes for EPUB 3 only.
+                if (!SingleDocumentChecker.IsSupported(kind, request.Version))
+                {
+                    throw new ScenarioNotImplementedException($"The {kind} mode needs EPUB 3.");
+                }
+
+                SingleDocumentChecker.Check(request.Path, kind, request.Version, request.Profile, request.Report);
+                break;
         }
     }
-
-    // The context of a document checked alone, as upstream's tool makes it: the file's URL, the media type the mode gives.
-    private static ValidationContext Single(CheckRequest request, string mimeType) => new()
-    {
-        Url = EpubCheckUrlUtils.ToUrl(request.Path),
-        Report = request.Report,
-        Culture = (request.Report as ReportBase)?.Culture,
-        Version = request.Version,
-        Profile = request.Profile,
-        MimeType = mimeType,
-    };
 }
