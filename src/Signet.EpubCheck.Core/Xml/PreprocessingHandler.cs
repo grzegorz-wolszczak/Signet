@@ -53,6 +53,22 @@ internal sealed class PreprocessingHandler : DelegatingContentHandler
             return source;
         }
 
+        // Most elements have nothing to remove or change: they go on as they are, without a copy.
+        bool changes = false;
+        for (int i = 0; i < source.Length && !changes; i++)
+        {
+            string uri = source.GetUri(i);
+            string local = source.GetLocalName(i);
+            changes = HTMLUtils.IsDataAttribute(uri, local)
+                || (IsXhtml && HTMLUtils.IsCustomNamespace(uri))
+                || (IsXhtml && Namespaces.Xhtml == elementNamespace && HTMLUtils.IsCaseInsensitiveAttribute(uri, local));
+        }
+
+        if (!changes)
+        {
+            return source;
+        }
+
         AttributeList attributes = AttributeList.CopyOf(source);
         for (int i = attributes.Length - 1; i >= 0; i--)
         {
