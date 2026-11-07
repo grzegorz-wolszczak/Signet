@@ -145,6 +145,10 @@ public sealed class VocabUtilTests
 
     [Theory]
     [InlineData("  foo bar  ", new MessageId[0])]
+    [InlineData("\tfoo\n\v bar\f\r", new MessageId[0])]
+    [InlineData("", new MessageId[0])]
+    [InlineData(" \t\n ", new MessageId[0])]
+    [InlineData("foo bar", new[] { MessageId.OPF_027 })]
     [InlineData(":world :world :", new[] { MessageId.OPF_026, MessageId.OPF_026, MessageId.OPF_026 })]
     [InlineData("foo num:one num:foo baz foo-bar", new[] { MessageId.OPF_027, MessageId.OPF_027 })]
     [InlineData("foo foo:bar bar:bar num:one", new[] { MessageId.OPF_028, MessageId.OPF_028 })]

@@ -3,7 +3,6 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Signet.EpubCheck.Core.Messages;
 using Signet.EpubCheck.Core.Reporting;
 
@@ -16,7 +15,7 @@ namespace Signet.EpubCheck.Core.Vocab;
 public sealed record VocabContext(IReport Report, string? MimeType = null, CultureInfo? Locale = null);
 
 /// <summary>Parses property values and prefix declarations against vocabularies (upstream's <c>VocabUtil</c>).</summary>
-public static partial class VocabUtil
+public static class VocabUtil
 {
     private const string UndeclaredPrefix = "_";
     private const string OutdatedArgument = "property";
@@ -106,14 +105,14 @@ public static partial class VocabUtil
         }
 
         IReport report = context.Report;
-        string[] properties = WhitespacePattern().Split(value).Where(token => token.Length != 0).ToArray();
-        if (!isList && properties.Length > 1)
+        List<string> properties = SplitOnWhitespace(value);
+        if (!isList && properties.Count > 1)
         {
             report.Message(MessageId.OPF_025, location, value);
             return result;
         }
 
-        LocalizedMessages messages = LocalizedMessages.GetInstance(context.Locale);
+        LocalizedMessages? messages = null;
         foreach (string property in properties)
         {
             // prefix:name; a colon with nothing before or after it is malformed.
@@ -148,6 +147,7 @@ public static partial class VocabUtil
             {
                 // The replacement is the suggestion OPF_086_SUG.<name> (OPF_086b for structural semantics).
                 MessageId id = found.VocabUri == StructureVocab.Uri ? MessageId.OPF_086b : MessageId.OPF_086;
+                messages ??= LocalizedMessages.GetInstance(context.Locale);
                 report.Message(id, location, property, messages.GetSuggestion(id, found.Name));
             }
 
@@ -170,7 +170,32 @@ public static partial class VocabUtil
         return result;
     }
 
-    // Java's \s+: ASCII white space only.
-    [GeneratedRegex(@"[ \t\n\x0B\f\r]+", RegexOptions.CultureInvariant)]
-    private static partial Regex WhitespacePattern();
+    // The tokens between runs of white space (Java's \s+: ASCII white space only), none empty. A value of one token comes back as the very same string.
+    private static List<string> SplitOnWhitespace(string value)
+    {
+        List<string> tokens = [];
+        int start = -1;
+        for (int i = 0; i < value.Length; i++)
+        {
+            if (value[i] is ' ' or '\t' or '\n' or '\v' or '\f' or '\r')
+            {
+                if (start >= 0)
+                {
+                    tokens.Add(value[start..i]);
+                    start = -1;
+                }
+            }
+            else if (start < 0)
+            {
+                start = i;
+            }
+        }
+
+        if (start >= 0)
+        {
+            tokens.Add(value[start..]);
+        }
+
+        return tokens;
+    }
 }
