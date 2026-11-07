@@ -197,6 +197,8 @@ public sealed partial class MainWindowViewModel
         _validationResults.SkipRuleRequested += (_, code) => SkipValidationRule(code);
         _validationResults.RestoreRulesRequested += (_, codes) => RunAsyncAction(() => RestoreValidationRulesAsync(codes));
         _validationResults.SetSkippedRules(_settings.CheckBookSkippedRules);
+        _validationResults.SetUsageHints(_settings.CheckBookIncludeUsage);
+        _validationResults.UsageHintsToggled += (_, show) => RunAsyncAction(() => ChangeUsageHintsAsync(show));
 
         _findUsages = new FindUsagesViewModel(_settings);
         _dockFactory.FindUsages = _findUsages;
@@ -3695,6 +3697,17 @@ public sealed partial class MainWindowViewModel
         _validationResults.LoadResults(_validationResults.Rows.Select(r => r.Result).Where(r => r.Code != code).ToList());
         _validationResults.SetSkippedRules(skipped);
         _statusBar.ShowMessage(Strings.Get("Status_ProblemTypeSkipped"), TimeSpan.FromSeconds(5));
+    }
+
+    // The usage hints switched on or off: remembered in the settings, and the book is checked again when one is open.
+    private async Task ChangeUsageHintsAsync(bool show)
+    {
+        _settings.CheckBookIncludeUsage = show;
+        if (_currentBook is { } book && _validationResults.HasResults)
+        {
+            _tabManager.SaveAllTabs();
+            await RunBookCheckAsync(book).ConfigureAwait(true);
+        }
     }
 
     // "Restore": the rules are checked again (the book is checked again when one is open).

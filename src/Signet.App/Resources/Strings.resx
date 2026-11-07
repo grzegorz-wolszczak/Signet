@@ -1979,6 +1979,9 @@ Czy chcesz zapisać zmiany?</value>
   <data name="ValidationResultsView_Line" xml:space="preserve">
     <value>Wiersz</value>
   </data>
+  <data name="ValidationResultsView_ShowUsageHints" xml:space="preserve">
+    <value>Pokaż także podpowiedzi EPUBCheck (informacje o używanych funkcjach)</value>
+  </data>
   <data name="ValidationResultsView_Message" xml:space="preserve">
     <value>Komunikat</value>
   </data>

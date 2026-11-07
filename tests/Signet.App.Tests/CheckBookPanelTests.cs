@@ -187,6 +187,56 @@ public sealed class CheckBookPanelTests : IDisposable
     }
 
     [Fact]
+    public void Switching_the_usage_hints_tells_the_main_window_but_showing_the_setting_does_not()
+    {
+        // Arrange
+        ValidationResultsViewModel vm = new();
+        List<bool> raised = new();
+        vm.UsageHintsToggled += (_, show) => raised.Add(show);
+
+        // Act
+        vm.SetUsageHints(true);
+
+        // Assert
+        vm.ShowUsageHints.Should().BeTrue();
+        raised.Should().BeEmpty();
+
+        // Act
+        vm.ShowUsageHints = false;
+        vm.ShowUsageHints = false;
+
+        // Assert
+        raised.Should().Equal(false);
+    }
+
+    [Fact]
+    public async Task Switching_the_usage_hints_checks_the_book_again_when_there_are_results()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel vm, _) = Load(temp);
+            int runs = 0;
+            vm.ProgressRunner = (_, work, _) =>
+            {
+                runs++;
+                return work(new Collecting(), CancellationToken.None);
+            };
+            vm.ValidationResults.LoadResults(new[] { new ValidationResult(ValidationSeverity.Error, "a.xhtml", 1, 1, "m", "RSC-005") });
+
+            // Act
+            vm.ValidationResults.ShowUsageHints = true;
+            await vm.WhenIdleAsync();
+
+            // Assert
+            runs.Should().Be(1);
+            vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == "RSC-005" && r.Result.BookPath == "a.xhtml");
+        });
+    }
+
+    [Fact]
     public void Fix_selected_raises_only_the_results_that_have_a_fix()
     {
         // Arrange

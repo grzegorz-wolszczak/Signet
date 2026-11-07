@@ -23,6 +23,7 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
     private bool _anyRowFixable;
     private bool _selectionFixable;
     private bool _isBookOperationBusy;
+    private bool _showUsageHints;
     private IReadOnlyList<ValidationResultRow> _selection = Array.Empty<ValidationResultRow>();
 
     /// <summary>Raised when an entry is activated (double click) — handled by the main window.</summary>
@@ -33,6 +34,9 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
 
     /// <summary>Raised by "Skip this type of problem" with the rule code.</summary>
     public event EventHandler<string>? SkipRuleRequested;
+
+    /// <summary>Raised when the user switches the usage hints of EPUBCheck on or off (the new state is the argument).</summary>
+    public event EventHandler<bool>? UsageHintsToggled;
 
     /// <summary>Raised by "Restore" with the rule codes to check again.</summary>
     public event EventHandler<IReadOnlyList<string>>? RestoreRulesRequested;
@@ -65,6 +69,25 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
         get => _canFixSelection;
         private set => SetProperty(ref _canFixSelection, value);
     }
+
+    /// <summary>
+    /// Whether the check also reports EPUBCheck's usage hints (information about the features the book uses). Changed by the
+    /// user in the panel it raises <see cref="UsageHintsToggled"/>; <see cref="SetUsageHints"/> sets it without that.
+    /// </summary>
+    public bool ShowUsageHints
+    {
+        get => _showUsageHints;
+        set
+        {
+            if (SetProperty(ref _showUsageHints, value))
+            {
+                UsageHintsToggled?.Invoke(this, value);
+            }
+        }
+    }
+
+    /// <summary>Shows the state of the usage hints (as the settings have it) without telling anybody.</summary>
+    public void SetUsageHints(bool value) => SetProperty(ref _showUsageHints, value, nameof(ShowUsageHints));
 
     /// <summary>Whether some rules are skipped (the "Restore" button).</summary>
     public bool HasSkippedRules => SkippedRules.Count > 0;
