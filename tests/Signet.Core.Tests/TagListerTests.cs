@@ -267,6 +267,30 @@ public sealed class TagListerTests
         "<p id=\"a\" class=\"lead\">".Substring(info.VPos, info.VLen).Should().Be("lead");
     }
 
+    // The expected positions were taken from the implementation before it worked on spans, so that the two are known to agree.
+    [Theory]
+    [InlineData("<p id=a class=lead>", "class", 8, 10, 14, 4, "class", "lead")] // not quoted
+    [InlineData("<p id = \"a\"  class =  'x y' >", "class", 13, 14, 23, 3, "class", "x y")] // blanks around the equals sign, single quotes
+    [InlineData("<p id=\"a\" id=\"b\">", "id", 10, 6, 14, 1, "id", "b")] // twice: the last one counts
+    [InlineData("<p id=>", "id", 3, 3, 6, 0, "id", "")] // no value
+    [InlineData("<p id>", "id", -1, -1, -1, -1, "", "")] // no equals sign: not an attribute here
+    [InlineData("<p id=\"unclosed", "id", 3, 13, 7, 8, "id", "unclosed")] // the quote is never closed
+    [InlineData("<p title=\"a>b\" id=\"z\">", "id", 15, 6, 19, 1, "id", "z")] // a '>' inside a value
+    [InlineData("<a  href = x  id = y >", "id", 14, 6, 19, 1, "id", "y")]
+    [InlineData("<p ID=\"a\" id=\"b\">", "id", 10, 6, 14, 1, "id", "b")] // names are case sensitive
+    [InlineData("<p id=\"a\"class=\"b\">", "class", 9, 9, 16, 1, "class", "b")] // no blank between two attributes
+    [InlineData("<p class= id=\"a\">", "class", 3, 13, 10, 6, "class", "id=\"a\"")] // an unquoted value runs to the next blank
+    [InlineData("<p id=\"a\" id>", "id", 3, 6, 7, 1, "id", "a")]
+    [InlineData("<p id='' class=''>", "class", 9, 8, 16, 0, "class", "")]
+    public void ParseAttribute_MatchesWhatItGaveBeforeItWorkedOnSpans(string tag, string name, int pos, int len, int valuePos, int valueLen, string aName, string value)
+    {
+        // Act
+        TagLister.AttInfo info = TagLister.ParseAttribute(tag, name);
+
+        // Assert
+        info.Should().Be(new TagLister.AttInfo(pos, len, valuePos, valueLen, aName, value));
+    }
+
     [Fact]
     public void ParseAttribute_MissingAttribute_ReturnsNone()
     {

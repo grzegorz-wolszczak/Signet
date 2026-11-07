@@ -61,10 +61,11 @@ public static class IdValidator
 
         foreach (string id in order)
         {
-            (int position, _) = ids[id];
-            int line = LineOf(text, position);
             if (!MarkupEdits.IsValidId(id))
             {
+                // The line is counted only for an id that is reported: counting it for each of thousands of ids walks the text from its start every time.
+                (int position, _) = ids[id];
+                int line = LineOf(text, position);
                 results.Add(new ValidationResult(
                     ValidationSeverity.Error, html.BookPath, line, -1,
                     CoreStrings.Format("Validation_InvalidId", id), "Validation_InvalidId", new InvalidIdFix(html.BookPath, id)));

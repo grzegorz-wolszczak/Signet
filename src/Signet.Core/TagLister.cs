@@ -473,11 +473,12 @@ public sealed class TagLister
             p = SkipAnyBlanks(tagString, p);
             int s = p;
             p = StopWhenContains(tagString, "=", p);
-            string aname = Slice(tagString, s, p).Trim();
-            bool wanted = string.Equals(aname, attributeName, StringComparison.Ordinal);
+            // The name is compared as it stands in the tag; a string is made only for the attribute that is wanted.
+            ReadOnlySpan<char> name = SliceSpan(tagString, s, p).Trim();
+            bool wanted = name.SequenceEqual(attributeName);
             if (wanted)
             {
-                ainfo = ainfo with { Pos = s, AName = aname };
+                ainfo = ainfo with { Pos = s, AName = name.ToString() };
             }
 
             p++;
@@ -487,7 +488,7 @@ public sealed class TagLister
                 char quote = tagString[p];
                 p++;
                 int b = p;
-                p = StopWhenContains(tagString, quote.ToString(), p);
+                p = StopWhenChar(tagString, quote, p);
                 if (wanted)
                 {
                     ainfo = ainfo with { AValue = Slice(tagString, b, p), Len = p - s + 1, VPos = b, VLen = p - b };
@@ -875,24 +876,57 @@ public sealed class TagLister
         return end <= start ? string.Empty : s[start..end];
     }
 
-    private static int SkipAnyBlanks(string s, int p)
+    private static ReadOnlySpan<char> SliceSpan(string s, int start, int end)
     {
-        while (p < s.Length && WhitespaceChars.Contains(s[p], StringComparison.Ordinal))
+        if (start < 0)
         {
-            p++;
+            start = 0;
         }
 
-        return p;
+        if (start > s.Length)
+        {
+            start = s.Length;
+        }
+
+        if (end > s.Length)
+        {
+            end = s.Length;
+        }
+
+        return end <= start ? default : s.AsSpan(start, end - start);
+    }
+
+    private static int SkipAnyBlanks(string s, int p)
+    {
+        if (p >= s.Length)
+        {
+            return p;
+        }
+
+        int stop = s.AsSpan(p).IndexOfAnyExcept(WhitespaceChars);
+        return stop < 0 ? s.Length : p + stop;
     }
 
     private static int StopWhenContains(string s, string stopChars, int p)
     {
-        while (p < s.Length && !stopChars.Contains(s[p], StringComparison.Ordinal))
+        if (p >= s.Length)
         {
-            p++;
+            return p;
         }
 
-        return p;
+        int stop = s.AsSpan(p).IndexOfAny(stopChars);
+        return stop < 0 ? s.Length : p + stop;
+    }
+
+    private static int StopWhenChar(string s, char stop, int p)
+    {
+        if (p >= s.Length)
+        {
+            return p;
+        }
+
+        int at = s.AsSpan(p).IndexOf(stop);
+        return at < 0 ? s.Length : p + at;
     }
 
     private sealed record Cached(string Source, TagLister Lister);
