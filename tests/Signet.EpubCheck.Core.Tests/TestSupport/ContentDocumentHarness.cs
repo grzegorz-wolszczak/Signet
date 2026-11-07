@@ -28,10 +28,15 @@ internal sealed class ContentDocumentHarness
     private readonly Dictionary<string, Action<OPFItemBuilder>> _items = new(StringComparer.Ordinal);
 
     public ContentDocumentHarness(string name, string content, string mimeType = Xhtml)
+        : this(name, Encoding.UTF8.GetBytes(content), mimeType)
+    {
+    }
+
+    public ContentDocumentHarness(string name, byte[] content, string mimeType)
     {
         Name = name;
         MimeType = mimeType;
-        _files.Add((name, mimeType, Encoding.UTF8.GetBytes(content)));
+        _files.Add((name, mimeType, content));
     }
 
     /// <summary>The name of the document under test.</summary>
