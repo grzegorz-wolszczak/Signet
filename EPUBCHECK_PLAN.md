@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; epic 4: **4.1 (console output) and 4.2 (XML / XMP / JSON reports) are done**; **next: task 4.3 standalone executable**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; epic 4 is done (**4.1 console output, 4.2 reports, 4.3 standalone executable**); **next: epic 5, task 5.1 the `Book` to `IEpubSource` adapter**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **4.3 Standalone executable**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **5.1 `Book` to `IEpubSource` adapter**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -87,10 +87,11 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 4.3 Standalone executable
+### Next task: 5.1 `Book` to `IEpubSource` adapter
 
-Publish profiles for `win-x64` and `linux-x64` (self-contained, single-file, no trimming), a script in `scripts/`, an archive per RID, a README;
-**no** `PackAsTool`. Smoke test: run the published binary on a corpus book (`tests/corpus/epubcheck/reporting/files/minimal.epub`).
+Epic 5 moves Signet's own validation onto `Signet.EpubCheck.Core`. 5.1: an `IEpubSource` over Signet's in-memory `Book` so that the
+state being edited (unsaved changes included) is validated; read `Signet.Core`'s `Book`, `Resource`, `FolderKeeper` and how the
+current validation gets its files before designing it. See "Epic 5" below, and ask the owner about anything the tasks leave open.
 
 ### Current state of the conformance run
 
@@ -493,9 +494,13 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   The harness got the report steps (`ReportSteps`, `JsonPathLite`), the "checking" step writes through the real writers, and the
   `--maxOfEachMessage` steps look at the tool's report. `reporting/json-report.feature` and `xml-report.feature` are enabled and all of
   `cli.feature` passes but the three French scenarios; `localization.feature` is French and is not run (see `UPSTREAM.md`).
-- **4.3 Standalone executable (S).** Publish profiles for `win-x64` and `linux-x64` (self-contained, single-file, no
-  trimming), a script in `scripts/`, an archive per RID, README. **No** `PackAsTool`. Smoke test: run the published
-  binary on a corpus book.
+- **4.3 Standalone executable (S). DONE.** `Signet.EpubCheck.Cli.csproj` makes a self-contained, single-file, untrimmed (compressed)
+  executable whenever a RID is given. `scripts/epubcheck/publish.sh [--rid win-x64|linux-x64] [--smoke] [--output <folder>]` publishes
+  both platforms with one version (`-p:SignetBuildTimestamp`, which `Versioning.targets` now honours), puts the licenses and
+  `src/Signet.EpubCheck.Cli/README.md` beside the executable and packs `artifacts/epubcheck/epubcheck.net-<version>-<rid>.zip|.tar.gz`
+  (`artifacts/` is ignored by git). `--smoke` runs the host's executable on `minimal.epub` and requires "No errors or warnings detected".
+  `InvariantGlobalization` stays off (the Polish texts need culture data, so Linux needs ICU). R2R is not used (it needs the
+  runtime packs' crossgen). The linux-x64 build was published on Windows but not run there.
 
 ### Epic 5 — Signet integration
 
