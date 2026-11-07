@@ -17,6 +17,30 @@ internal sealed class XsltPattern
         Collect(expr);
     }
 
+    /// <summary>
+    /// The (namespace, local name) of every element this pattern can match, or <c>null</c> when it can match elements of any name (or
+    /// something that is not an element path). A node whose name is not among them is not matched: no need to try.
+    /// </summary>
+    public IReadOnlyList<(string Namespace, string LocalName)>? ElementNames
+    {
+        get
+        {
+            List<(string, string)> names = [];
+            foreach (Alternative alternative in _alternatives)
+            {
+                if (!alternative.AllAxisSteps
+                    || alternative.Steps[^1] is not AxisStep { Axis: Axis.Child, Test: NameTest { NamespaceUri: { } ns, LocalName: { } local } })
+                {
+                    return null;
+                }
+
+                names.Add((ns, local));
+            }
+
+            return names;
+        }
+    }
+
     public bool Matches(XdmNode node, XPathContext context)
     {
         for (int i = 0; i < _alternatives.Count; i++)

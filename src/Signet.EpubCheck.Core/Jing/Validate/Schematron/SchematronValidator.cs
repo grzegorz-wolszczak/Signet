@@ -61,9 +61,9 @@ internal sealed class SchematronValidator : IValidator, IDtdHandler
     private void Visit(XdmNode node, IXPathVariables globals)
     {
         XPathContext context = new() { Item = node, Current = node, Variables = globals, BaseUri = _schema.BaseUri };
-        foreach (CompiledPattern pattern in _schema.Patterns)
+        foreach (CompiledRule[] rules in _schema.CandidateRules(node))
         {
-            foreach (CompiledRule rule in pattern.Rules)
+            foreach (CompiledRule rule in rules)
             {
                 if (rule.Context!.Matches(node, context))
                 {

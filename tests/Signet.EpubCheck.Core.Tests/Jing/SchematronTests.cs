@@ -40,6 +40,55 @@ public sealed class SchematronTests
         errors[0].SystemId.Should().Be("file:///doc.xml");
     }
 
+    // The rules a node is tried against are picked by the name of its element; the order of the rules in a pattern still decides.
+    [Fact]
+    public void Validate_RulesNamedAndUnnamed_KeepTheirOrderWhateverTheElement()
+    {
+        // Arrange
+        ISchema schema = Load(Schema(
+            "<pattern>"
+            + "<rule context=\"a\"><report test=\"true()\">first a</report></rule>"
+            + "<rule context=\"*\"><report test=\"true()\">any</report></rule>"
+            + "<rule context=\"a\"><report test=\"true()\">second a</report></rule>"
+            + "</pattern>"
+            + "<pattern>"
+            + "<rule context=\"a | b\"><report test=\"true()\">a or b</report></rule>"
+            + "<rule context=\"doc//c\"><report test=\"true()\">c below doc</report></rule>"
+            + "<rule context=\"/\"><report test=\"true()\">root</report></rule>"
+            + "</pattern>"));
+
+        // Act
+        List<SaxParseException> errors = Validate(schema, "<doc><a/><b/><c/><d><c/></d></doc>");
+
+        // Assert: the document node first, then the elements in document order, the patterns in order for each
+        errors.ConvertAll(e => e.Message[(e.Message.IndexOf(s_nl, StringComparison.Ordinal) + s_nl.Length)..].Trim()).Should().Equal(
+            "root",
+            "any",
+            "first a",
+            "a or b",
+            "any",
+            "a or b",
+            "any",
+            "c below doc",
+            "any",
+            "any",
+            "c below doc");
+    }
+
+    [Fact]
+    public void Validate_ElementOfAnotherNamespace_IsNotMatchedByARuleOfTheSameLocalName()
+    {
+        // Arrange
+        ISchema schema = Load(Schema("<ns prefix=\"x\" uri=\"urn:x\"/><pattern><rule context=\"x:a\"><report test=\"true()\">x:a</report></rule>"
+            + "<rule context=\"a\"><report test=\"true()\">a</report></rule></pattern>"));
+
+        // Act
+        List<SaxParseException> errors = Validate(schema, "<doc xmlns:x=\"urn:x\"><x:a/><a/></doc>");
+
+        // Assert
+        errors.ConvertAll(e => e.Message[(e.Message.IndexOf(s_nl, StringComparison.Ordinal) + s_nl.Length)..].Trim()).Should().Equal("x:a", "a");
+    }
+
     [Fact]
     public void Validate_AssertWithoutText_HasNoStatement()
     {

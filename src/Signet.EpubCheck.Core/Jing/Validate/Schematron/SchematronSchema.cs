@@ -38,6 +38,7 @@ internal sealed class SchematronSchema : ISchema
 
     private SchematronSchema(string? baseUri, bool statementsOnly)
     {
+        _candidates = new Lazy<CandidateIndex>(BuildCandidateIndex);
         BaseUri = baseUri;
         StatementsOnly = statementsOnly;
     }
@@ -82,6 +83,54 @@ internal sealed class SchematronSchema : ISchema
         string text = reader.ReadToEnd();
         return new RelaxNgSchemaReader { Syntax = RelaxNgSyntax.Compact }.CreateSchema(InputSource.FromString("resource:/jing/" + name, text));
     }
+
+    /// <summary>
+    /// For each pattern, in order, the rules that can match an element of this name, in their order: those whose context names the element
+    /// and those whose context names no particular element. Other nodes (the document) get every rule. Worked out when first asked for
+    /// (the schema does not change after it is compiled) and shared by all validators.
+    /// </summary>
+    internal CompiledRule[][] CandidateRules(XdmNode node)
+    {
+        CandidateIndex index = _candidates.Value;
+        if (node.Kind != XdmNodeKind.Element)
+        {
+            return index.All;
+        }
+
+        return index.ByName.TryGetValue((node.NamespaceUri, node.LocalName), out CompiledRule[][]? known) ? known : index.Unnamed;
+    }
+
+    private sealed record CandidateIndex(CompiledRule[][] All, Dictionary<(string, string), CompiledRule[][]> ByName, CompiledRule[][] Unnamed);
+
+    private CandidateIndex BuildCandidateIndex()
+    {
+        CompiledRule[][] all = [.. Patterns.Select(p => p.Rules.ToArray())];
+        HashSet<(string, string)> names = [];
+        foreach (CompiledPattern pattern in Patterns)
+        {
+            foreach (CompiledRule rule in pattern.Rules)
+            {
+                IReadOnlyList<(string Namespace, string LocalName)>? named = rule.Context!.ElementNames;
+                if (named is not null)
+                {
+                    names.UnionWith(named.Select(n => (n.Namespace, n.LocalName)));
+                }
+            }
+        }
+
+        CompiledRule[][] For(Func<IReadOnlyList<(string Namespace, string LocalName)>?, bool> keep) =>
+            [.. Patterns.Select(p => p.Rules.Where(r => keep(r.Context!.ElementNames)).ToArray())];
+
+        Dictionary<(string, string), CompiledRule[][]> byName = [];
+        foreach ((string ns, string local) in names)
+        {
+            byName[(ns, local)] = For(named => named is null || named.Any(n => n.Namespace == ns && n.LocalName == local));
+        }
+
+        return new CandidateIndex(all, byName, For(named => named is null));
+    }
+
+    private readonly Lazy<CandidateIndex> _candidates;
 
     /// <summary>A pattern: its rules in order, the first that matches a node fires.</summary>
     internal sealed record CompiledPattern(List<CompiledRule> Rules);
