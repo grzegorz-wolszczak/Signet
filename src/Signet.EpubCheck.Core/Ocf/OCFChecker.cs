@@ -71,10 +71,11 @@ public static class OCFChecker
 
         using (source)
         {
-            Check(source, version, report, location, profile);
+            // The extension is judged by the version the publication turned out to have, not by the one asked for.
+            EpubVersion checkedVersion = CheckSource(source, version, report, location, profile);
             if (packaged)
             {
-                CheckFileExtension(path, version, report, location);
+                CheckFileExtension(path, checkedVersion, report, location);
             }
         }
     }
@@ -83,7 +84,11 @@ public static class OCFChecker
     /// Checks an open source, reporting the problems of the publication as a whole at <paramref name="location"/>. The
     /// ZIP header and the file extension are not checked here (they need the file: <see cref="Check(string, EpubVersion, IReport, EpubProfile)"/>).
     /// </summary>
-    public static void Check(IEpubSource source, EpubVersion version, IReport report, EpubLocation location, EpubProfile profile = EpubProfile.Default)
+    public static void Check(IEpubSource source, EpubVersion version, IReport report, EpubLocation location, EpubProfile profile = EpubProfile.Default) =>
+        CheckSource(source, version, report, location, profile);
+
+    // Returns the version the publication was checked against: the detected one, or the given one when the checks stopped before.
+    private static EpubVersion CheckSource(IEpubSource source, EpubVersion version, IReport report, EpubLocation location, EpubProfile profile)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(report);
@@ -104,7 +109,7 @@ public static class OCFChecker
         CheckMimeTypeFile(source, report, location);
         if (!CheckContainerFile(state, report, location) || !CheckDeclaredPackageDocuments(state, report))
         {
-            return;
+            return version;
         }
 
         EpubVersion validationVersion = CheckPublicationVersion(state, version, report);
@@ -114,6 +119,7 @@ public static class OCFChecker
         CheckEncryptionFile(state, report);
         CheckOtherMetaFiles(state, report);
         CheckPackageDocuments(state, validationVersion, report, location);
+        return validationVersion;
     }
 
     // Each package document is checked by the checker of the version (upstream's CheckerFactory), then the consistency of
