@@ -39,6 +39,34 @@ public sealed class RoundTripTests
         reports.Where(r => r.Stage == BookSaveStage.Archiving).Select(r => r.Total).Distinct().Should().ContainSingle().Which.Should().BeGreaterThan(0);
     }
 
+    [Fact]
+    public void WriteBook_WritesTheMimetypeFirstAndStored_AndLeavesTheLockAndStateFilesOut()
+    {
+        // Arrange
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
+        using Book book = new ImportEpub(epub).GetBook();
+        string output = temp.Combine("out.epub");
+
+        // Act
+        new ExportEpub(book).WriteBook(output);
+
+        // Assert
+        using System.IO.Compression.ZipArchive zip = System.IO.Compression.ZipFile.OpenRead(output);
+        string[] names = zip.Entries.Select(e => e.FullName).ToArray();
+        names[0].Should().Be("mimetype");
+        zip.Entries[0].CompressedLength.Should().Be(zip.Entries[0].Length, "the mimetype is stored");
+        using (StreamReader mimetype = new(zip.Entries[0].Open()))
+        {
+            mimetype.ReadToEnd().Should().Be("application/epub+zip");
+        }
+
+        names.Skip(1).Should().BeInAscendingOrder(StringComparer.Ordinal);
+        names.Should().OnlyHaveUniqueItems().And.NotContain(TempFolder.LockFileName);
+        names.Should().NotContain(n => BookStateFile.IsStateFile(n.Split('/')[0]));
+        names.Should().Contain(["META-INF/container.xml"]);
+    }
+
     private sealed class SyncProgress : IProgress<BookSaveProgress>
     {
         private readonly Action<BookSaveProgress> _report;

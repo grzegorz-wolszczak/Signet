@@ -78,6 +78,18 @@ public sealed class ExportEpub
 
         _book.SaveAllResourcesToDisk();
 
+        if (!hasObfuscatedFonts)
+        {
+            // Nothing in the files has to change but the mimetype: the archive is written from the working folder itself, and the copy of the
+            // whole folder (the larger part of the time of a save) is not made. The copying stage is told, from none to all, at once, for the progress window.
+            string workingFolder = _book.GetFolderKeeper().MainFolderPath;
+            List<ArchiveEntry> entries = EnumerateWorkingFolder(workingFolder);
+            progress?.Report(new BookSaveProgress(BookSaveStage.Copying, 0, entries.Count));
+            progress?.Report(new BookSaveProgress(BookSaveStage.Copying, entries.Count, entries.Count));
+            WriteEpubArchive(entries, epubPath, progress);
+            return;
+        }
+
         using TempFolder staging = new();
         string stageRoot = staging.Path;
 
@@ -154,7 +166,36 @@ public sealed class ExportEpub
         }
     }
 
-    private static void WriteEpubArchive(string stageRoot, string epubPath, IProgress<BookSaveProgress>? progress)
+    // One entry of the archive: a file, or content made here (Content, when the file is not to be read).
+    private sealed record ArchiveEntry(string Name, string? Path, byte[]? Content);
+
+    // The entries of an archive written from the working folder: a fresh mimetype first, then the files in the order of their names, without the
+    // lock file and the checkpoint state file (the same set and order as the copy of the folder gave).
+    private static List<ArchiveEntry> EnumerateWorkingFolder(string root)
+    {
+        string fullRoot = SysPath.GetFullPath(root);
+        List<ArchiveEntry> entries =
+        [
+            new(MimetypeEntry, null, Utf8NoBom.GetBytes(OcfReader.OcfMimetype)),
+            .. Directory
+                .EnumerateFiles(fullRoot, "*", SearchOption.AllDirectories)
+                .Select(abs => (Name: SysPath.GetRelativePath(fullRoot, abs).Replace(SysPath.DirectorySeparatorChar, '/'), Path: abs))
+                .Where(f => f.Name != MimetypeEntry
+                    && !string.Equals(f.Name.Split('/')[0], TempFolder.LockFileName, StringComparison.Ordinal)
+                    && !BookStateFile.IsStateFile(f.Name.Split('/')[0]))
+                .OrderBy(f => f.Name, StringComparer.Ordinal)
+                .Select(f => new ArchiveEntry(f.Name, f.Path, null)),
+        ];
+        return entries;
+    }
+
+    private static void WriteEpubArchive(string stageRoot, string epubPath, IProgress<BookSaveProgress>? progress) =>
+        WriteEpubArchive(
+            EnumerateOrdered(stageRoot).Select(e => new ArchiveEntry(e.EntryName, e.AbsolutePath, null)).ToList(),
+            epubPath,
+            progress);
+
+    private static void WriteEpubArchive(List<ArchiveEntry> entries, string epubPath, IProgress<BookSaveProgress>? progress)
     {
         string? outDir = SysPath.GetDirectoryName(SysPath.GetFullPath(epubPath));
         if (!string.IsNullOrEmpty(outDir))
@@ -169,19 +210,25 @@ public sealed class ExportEpub
             using (FileStream fs = File.Create(tempFile))
             using (ZipArchive zip = new(fs, ZipArchiveMode.Create))
             {
-                List<(string EntryName, string AbsolutePath)> entries = EnumerateOrdered(stageRoot);
                 int done = 0;
-                foreach ((string entryName, string absolutePath) in entries)
+                foreach (ArchiveEntry archiveEntry in entries)
                 {
                     progress?.Report(new BookSaveProgress(BookSaveStage.Archiving, done++, entries.Count));
-                    CompressionLevel level = entryName == MimetypeEntry
+                    CompressionLevel level = archiveEntry.Name == MimetypeEntry
                         ? CompressionLevel.NoCompression
                         : CompressionLevel.Optimal;
 
-                    ZipArchiveEntry entry = zip.CreateEntry(entryName, level);
+                    ZipArchiveEntry entry = zip.CreateEntry(archiveEntry.Name, level);
                     using Stream target = entry.Open();
-                    using FileStream source = File.OpenRead(absolutePath);
-                    source.CopyTo(target);
+                    if (archiveEntry.Content is { } content)
+                    {
+                        target.Write(content);
+                    }
+                    else
+                    {
+                        using FileStream source = File.OpenRead(archiveEntry.Path!);
+                        source.CopyTo(target);
+                    }
                 }
             }
 
