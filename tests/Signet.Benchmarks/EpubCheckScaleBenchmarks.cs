@@ -62,7 +62,7 @@ public sealed class EpubCheckScaleBenchmarks
         long packagedFiles = 0;
         long cold = Once(() => packagedFiles = Packaged(epub));
         long packaged = Best(() => { Packaged(epub); });
-        (long allocated, int gen0, int gen2) = Allocations(() => { Packaged(epub); });
+        (long allocated, int gen0, int gen2, int thrown) = Allocations(() => { Packaged(epub); });
         string byType = "";
         if (Environment.GetEnvironmentVariable("SIGNET_ALLOC_PROFILE") is not null)
         {
@@ -95,6 +95,7 @@ public sealed class EpubCheckScaleBenchmarks
             | EPUBCheck on the book in memory, `EpubCheckValidator` (best of {Runs}) | {inMemory} |
             | allocated by one run on the packaged EPUB, KiB per file | {allocated / 1024 / Math.Max(1, files)} |
             | collections of one such run, gen0 / gen2 | {gen0} / {gen2} |
+            | exceptions thrown by one such run | {thrown} |
             | (for comparison) importing the EPUB into a book | {import} |
 
             """);
@@ -124,14 +125,25 @@ public sealed class EpubCheckScaleBenchmarks
 
     // What one run allocates (all threads, precise) and how many collections it causes: unlike a sampled profile this is exact and does
     // not depend on the machine, so a change meant to save allocations can be judged by it.
-    private static (long Bytes, int Gen0, int Gen2) Allocations(Action work)
+    private static (long Bytes, int Gen0, int Gen2, int Thrown) Allocations(Action work)
     {
         GC.Collect();
         long before = GC.GetTotalAllocatedBytes(precise: true);
         int gen0 = GC.CollectionCount(0);
         int gen2 = GC.CollectionCount(2);
-        work();
-        return (GC.GetTotalAllocatedBytes(precise: true) - before, GC.CollectionCount(0) - gen0, GC.CollectionCount(2) - gen2);
+        int thrown = 0;
+        void Count(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e) => System.Threading.Interlocked.Increment(ref thrown);
+        AppDomain.CurrentDomain.FirstChanceException += Count;
+        try
+        {
+            work();
+        }
+        finally
+        {
+            AppDomain.CurrentDomain.FirstChanceException -= Count;
+        }
+
+        return (GC.GetTotalAllocatedBytes(precise: true) - before, GC.CollectionCount(0) - gen0, GC.CollectionCount(2) - gen2, thrown);
     }
 
     private static long Once(Action work)
