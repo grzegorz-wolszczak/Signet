@@ -31,6 +31,7 @@ public sealed partial class URLChecker
     private Url _baseUrlTestA;
     private Url _baseUrlTestB;
     private bool _isRemoteBase;
+    private readonly FirstProblemHandler _firstProblem = new();
 
     /// <summary>A checker of the URLs of the resource of <paramref name="context"/>, resolved against <paramref name="baseUrl"/>
     /// (its URL when <c>null</c>).</summary>
@@ -78,14 +79,13 @@ public sealed partial class URLChecker
                 value = WhiteSpace().Replace(value, string.Empty);
             }
 
-            Url url = Url.Parse(_baseUrl, value);
-            try
+            // One parse tells both the URL (lenient) and what a strict parser would have stopped at: the handler notes the first problem the
+            // parser recovers from and lets it carry on (a strict parse only runs after a lenient one has succeeded, so it can differ in nothing else).
+            _firstProblem.Reset();
+            Url url = Url.Parse(_baseUrl, value, _firstProblem);
+            if (_firstProblem.Message is { } problem)
             {
-                Url.Parse(_baseUrl, value, StrictErrorHandler.Instance);
-            }
-            catch (GalimatiasParseException e)
-            {
-                report.Message(MessageId.RSC_020, location, value, e.Message);
+                report.Message(MessageId.RSC_020, location, value, problem);
             }
 
             Url testA = _baseUrlTestA.Resolve(value);
@@ -127,6 +127,20 @@ public sealed partial class URLChecker
         {
             report.Message(MessageId.RSC_020, location, value, e.Message);
             return null;
+        }
+    }
+
+    // Remembers the message of the first problem the parser recovers from, without stopping it.
+    private sealed class FirstProblemHandler : IGalimatiasErrorHandler
+    {
+        public string? Message { get; private set; }
+
+        public void Reset() => Message = null;
+
+        public void OnError(GalimatiasParseException exception) => Message ??= exception.Message;
+
+        public void OnFatalError(GalimatiasParseException exception)
+        {
         }
     }
 

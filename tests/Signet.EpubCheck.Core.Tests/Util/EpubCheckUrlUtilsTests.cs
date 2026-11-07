@@ -94,6 +94,26 @@ public sealed class EpubCheckUrlUtilsTests
     }
 
     [Theory]
+    [InlineData("http://example.org/a/b.xhtml?q=1#f", "http://example.org/a/b.xhtml?q=1#f")] // nothing to normalize: the same URL
+    [InlineData("http://example.org/a/../b/./c.xhtml", "http://example.org/b/c.xhtml")]
+    [InlineData("http://example.org/a%20b/%7Ec%2Fd", "http://example.org/a%20b/~c/d")] // the whole path is decoded, so %2F becomes a slash
+    [InlineData("http://example.org/%C3%A4", "http://example.org/%C3%A4")]
+    [InlineData("http://example.org/", "http://example.org/")]
+    [InlineData("mailto:someone@example.org", "mailto:someone@example.org")]
+    public void Normalize_KeepsWhatIsNormalAndFixesWhatIsNot(string value, string expected)
+    {
+        // Arrange
+        Url url = Url.Parse(value);
+
+        // Act
+        string normalized = EpubCheckUrlUtils.Normalize(url)!.ToString();
+
+        // Assert
+        normalized.Should().Be(expected);
+        EpubCheckUrlUtils.Normalize(Url.Parse(normalized))!.ToString().Should().Be(expected, "normalizing twice changes nothing");
+    }
+
+    [Theory]
     [InlineData("data:image/png;base64,AAAA", "image/png")]
     [InlineData("data:text/plain,hello", "text/plain")]
     [InlineData("http://example.org/", null)]

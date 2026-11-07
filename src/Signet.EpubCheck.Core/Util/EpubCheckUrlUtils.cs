@@ -129,7 +129,12 @@ public static class EpubCheckUrlUtils
         Url normalized = url;
         if (url.IsHierarchical && url.Path is not null)
         {
-            normalized = url.WithPath(EncodePath(UnicodeUtils.Normalize(Decode(url.Path)))!);
+            // A path that is the same after the round trip is what the parser made of it: parsing it again would change nothing.
+            string path = EncodePath(UnicodeUtils.Normalize(Decode(url.Path)))!;
+            if (path != url.Path)
+            {
+                normalized = url.WithPath(path);
+            }
         }
 
         return DecodeUnreserved(normalized);
@@ -153,9 +158,12 @@ public static class EpubCheckUrlUtils
         Url output = input;
         if (output.IsHierarchical)
         {
-            output = output.WithUsername(DecodeUnreserved(output.Username))
-                .WithPassword(DecodeUnreserved(output.Password))
-                .WithPath(DecodeUnreserved(output.Path)!);
+            output = output.WithUsername(DecodeUnreserved(output.Username)).WithPassword(DecodeUnreserved(output.Password));
+            string path = DecodeUnreserved(output.Path)!;
+            if (path != output.Path)
+            {
+                output = output.WithPath(path);
+            }
         }
 
         return output.WithQuery(DecodeUnreserved(output.Query)).WithFragment(DecodeUnreserved(output.Fragment));
