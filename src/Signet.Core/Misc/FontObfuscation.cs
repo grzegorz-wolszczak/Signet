@@ -51,6 +51,35 @@ public static class FontObfuscation
             throw new FontObfuscationException($"{filePath}: {algorithm}: {identifier}");
         }
 
+        byte[] contents = File.ReadAllBytes(filePath);
+        if (ObfuscateBytes(contents, algorithm, identifier, filePath))
+        {
+            File.WriteAllBytes(filePath, contents);
+        }
+    }
+
+    /// <summary>
+    /// (De)obfuscates the bytes of a font in place, choosing the algorithm by <paramref name="algorithm"/>.
+    /// </summary>
+    /// <param name="contents">The font file's bytes; the leading bytes are changed.</param>
+    /// <param name="algorithm">Algorithm identifier (IDPF or Adobe).</param>
+    /// <param name="identifier">Publication identifier used to derive the key.</param>
+    /// <param name="name">What the font is called in the exception text.</param>
+    /// <returns><c>false</c> when the key is empty (the identifier is not a UUID, for Adobe) and the bytes stay as they were.</returns>
+    /// <exception cref="FontObfuscationException">
+    /// <paramref name="algorithm"/> or <paramref name="identifier"/> is empty, or the algorithm is unknown.
+    /// </exception>
+    public static bool ObfuscateBytes(byte[] contents, string algorithm, string identifier, string name = "")
+    {
+        ArgumentNullException.ThrowIfNull(contents);
+        ArgumentNullException.ThrowIfNull(algorithm);
+        ArgumentNullException.ThrowIfNull(identifier);
+
+        if (algorithm.Length == 0 || identifier.Length == 0)
+        {
+            throw new FontObfuscationException($"{name}: {algorithm}: {identifier}");
+        }
+
         byte[] key;
         int span;
         switch (algorithm)
@@ -64,23 +93,22 @@ public static class FontObfuscation
                 span = IdpfMethodNumBytes;
                 break;
             default:
-                throw new FontObfuscationException($"{filePath}: {algorithm}: {identifier}");
+                throw new FontObfuscationException($"{name}: {algorithm}: {identifier}");
         }
 
         if (key.Length == 0)
         {
-            // An empty key (e.g. the identifier is not a UUID) silently leaves the file unchanged.
-            return;
+            // An empty key (e.g. the identifier is not a UUID) silently leaves the bytes unchanged.
+            return false;
         }
 
-        byte[] contents = File.ReadAllBytes(filePath);
         int limit = Math.Min(span, contents.Length);
         for (int i = 0; i < limit; i++)
         {
             contents[i] ^= key[i % key.Length];
         }
 
-        File.WriteAllBytes(filePath, contents);
+        return true;
     }
 
     /// <summary>IDPF key: SHA-1 of the identifier without whitespace (Latin-1 bytes).</summary>

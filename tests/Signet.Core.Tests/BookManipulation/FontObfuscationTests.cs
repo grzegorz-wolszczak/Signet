@@ -150,6 +150,53 @@ public sealed class FontObfuscationTests
         act.Should().Throw<FontObfuscationException>();
     }
 
+    [Theory]
+    [InlineData(Idpf, FontObfuscation.IdpfMethodNumBytes)]
+    [InlineData(Adobe, FontObfuscation.AdobeMethodNumBytes)]
+    public void ObfuscateBytes_ChangesOnlyTheLeadingBytes_AndUndoesItself(string algorithm, int span)
+    {
+        // Arrange
+        byte[] original = DeterministicBytes(span + 500, 1);
+        byte[] bytes = (byte[])original.Clone();
+
+        // Act
+        bool changed = FontObfuscation.ObfuscateBytes(bytes, algorithm, Identifier);
+
+        // Assert
+        changed.Should().BeTrue();
+        bytes.AsSpan(span).ToArray().Should().Equal(original.AsSpan(span).ToArray());
+        bytes.AsSpan(0, span).ToArray().Should().NotEqual(original.AsSpan(0, span).ToArray());
+
+        // Act
+        FontObfuscation.ObfuscateBytes(bytes, algorithm, Identifier);
+
+        // Assert
+        bytes.Should().Equal(original);
+    }
+
+    [Fact]
+    public void ObfuscateBytes_WithAnIdentifierThatIsNoUuid_LeavesTheAdobeBytesAlone()
+    {
+        // Arrange
+        byte[] original = DeterministicBytes(100, 2);
+        byte[] bytes = (byte[])original.Clone();
+
+        // Act
+        bool changed = FontObfuscation.ObfuscateBytes(bytes, Adobe, "not-a-uuid");
+
+        // Assert
+        changed.Should().BeFalse();
+        bytes.Should().Equal(original);
+    }
+
+    [Fact]
+    public void ObfuscateBytes_WithAnUnknownAlgorithm_Throws()
+    {
+        // Act & Assert
+        Action act = () => FontObfuscation.ObfuscateBytes(new byte[10], "http://example.com/made-up", Identifier);
+        act.Should().Throw<FontObfuscationException>();
+    }
+
     private static byte[] DeterministicBytes(int count, int seed)
     {
         byte[] data = new byte[count];
