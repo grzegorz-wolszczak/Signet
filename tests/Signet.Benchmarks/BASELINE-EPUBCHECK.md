@@ -96,6 +96,8 @@ SIGNET_BENCHMARKS=1 dotnet test tests/Signet.Benchmarks -c Release --filter Epub
 | 200 files | 363 | 308 |
 | 800 files | 2119 | 1356 |
 | 1600 files | 7183 | 3209 |
+| 300 files x 6 notes (spread) | - | 1612 |
+| 600 files x 6 notes (spread) | - | 3169 |
 | 1200 files x 6 notes (spread) | 8834 | 6507 |
 | 200 files x 40 notes in one file (8000 notes) | **37392** | **1651** |
 
@@ -105,3 +107,15 @@ indexes a predicate `[A = B]` over a list it sees twice (`XPathExpressions.cs`).
 
 Against the Java tool (EPUBCheck 5.4.0 on JDK 21, whole process including start-up, on the same two generated books written
 to disk): 1600 files 6.8 s Java, 5.4 s here; 8000 notes in 200 files 10.0 s Java, 5.0 s here.
+
+### Phase 2 start (task 6.4): is anything still super-linear?
+
+The three "spread" books (300, 600, 1200 files, 6 notes each) cost 5.3 ms per file at every size, so the run is linear in the
+number of files: the algorithmic part of the review is finished. A file with notes costs ~2.5 times a file without
+(2.0 ms): that is a constant per element, to be attacked with the "tricks" of phase 2.
+
+How to read a profile here (found at the start of phase 2): `dotnet-trace --profile dotnet-sampled-thread-time` counts every
+thread of the process, so most of "UNMANAGED_CODE_TIME" is idle threads and the xUnit runner waiting. Its top managed frames
+(`RuntimeHelpers.GetHashCode`, `Thread.PollGC`) are safepoint bias, not cost. Decide by experiment: a 256 MB gen0 budget
+(`DOTNET_GCgen0size=0x10000000`) changed nothing except the spread-notes book (-25%), so GC is not the main cost; `DOTNET_TieredPGO=0`
+makes everything 20-35% slower (dynamic PGO is worth keeping on).

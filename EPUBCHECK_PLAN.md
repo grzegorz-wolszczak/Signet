@@ -95,6 +95,9 @@ read the evented JSON), find what grows faster than the book. Found and fixed: t
 the port is faster than the Java tool on the generated books (`BASELINE-EPUBCHECK.md`). What is left is a constant per element:
 RELAX NG derivatives (~33%), Schematron (~19%), the XML event reader and the checkers.
 
+Phase 1 is closed (checked again at the start of phase 2, `BASELINE-EPUBCHECK.md`): the "spread" books cost 5.3 ms per file at 300, 600 and
+1200 files, linear. Beware: the sampled-thread-time profile is biased (see the baseline file); confirm every candidate by an experiment.
+
 Phase 2, by profile and never by guess: allocations (`dotnet-counters`/`dotnet-trace` GC events) in the XPath engine (`Atomize`,
 `InDocumentOrder` with `Distinct().OrderBy`, `normalize-space` with `Split`, recursive `Descendants` iterators), `Url` parsing and
 `Relativize` per reference, `Span<char>`/`ReadOnlySpan<char>` where strings are cut, `ArrayPool<T>` for the buffers the SHA-256 and the
