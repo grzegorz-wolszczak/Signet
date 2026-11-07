@@ -40,7 +40,7 @@ public static partial class EpubCheckValidator
 
         run.Cancellation.ThrowIfCancellationRequested();
         using BookEpubSource source = BookEpubSource.Create(book);
-        BookValidationReport report = new(culture ?? CultureInfo.CurrentUICulture, Suppressed(skippedCodes), includeUsage, source.Entries.Count, run);
+        BookValidationReport report = new(book, culture ?? CultureInfo.CurrentUICulture, Suppressed(skippedCodes), includeUsage, source.Entries.Count, run);
         report.Initialize();
         OCFChecker.Check(source, EpubVersion.Unknown, report, new EpubLocation(PublicationName));
         run.Cancellation.ThrowIfCancellationRequested();
@@ -68,9 +68,11 @@ public static partial class EpubCheckValidator
         private readonly HashSet<string> _seenResources = new(StringComparer.Ordinal);
         private readonly int _total;
         private readonly ValidationRun _run;
+        private readonly EpubCheckFixes _fixes;
 
-        public BookValidationReport(CultureInfo culture, Dictionary<MessageId, Severity> suppressed, bool includeUsage, int total, ValidationRun run)
+        public BookValidationReport(Book book, CultureInfo culture, Dictionary<MessageId, Severity> suppressed, bool includeUsage, int total, ValidationRun run)
         {
+            _fixes = new EpubCheckFixes(book);
             _total = total;
             _run = run;
             SetLocale(culture);
@@ -104,7 +106,8 @@ public static partial class EpubCheckValidator
                 location.Line,
                 location.Column,
                 text,
-                message.Id.ToText()));
+                message.Id.ToText(),
+                _fixes.Create(message.Id, location, args)));
         }
 
         private static ValidationSeverity ToSeverity(Severity severity) => severity switch

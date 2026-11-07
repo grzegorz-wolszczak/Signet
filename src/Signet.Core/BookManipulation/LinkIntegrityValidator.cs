@@ -235,6 +235,48 @@ public static class LinkIntegrityValidator
         }
     }
 
+    /// <summary>
+    /// The references of <paramref name="owner"/> (the <c>href</c>/<c>src</c> attributes of an (X)HTML file, the <c>url()</c>s of a
+    /// stylesheet) that point at <paramref name="targetBookPath"/>, as they are written, with the corrected form of each.
+    /// </summary>
+    internal static IReadOnlyList<(string Raw, string Corrected)> ReferencesTo(Resource owner, string targetBookPath, string actualBookPath)
+    {
+        List<string> raws = [];
+        if (owner is HtmlResource html)
+        {
+            foreach (IElement element in html.GetDocument().All)
+            {
+                if (!LinkAttributeTags.Contains(element.LocalName, StringComparer.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                raws.AddRange(new[] { element.GetAttribute("href"), element.GetAttribute("src") }.OfType<string>());
+            }
+        }
+        else if (owner is CssResource css)
+        {
+            raws.AddRange(CssUrlPattern.Matches(css.GetText()).Select(m => m.Groups["ref"].Value.Trim()));
+        }
+
+        List<(string Raw, string Corrected)> found = [];
+        foreach (string raw in raws.Distinct(StringComparer.Ordinal))
+        {
+            if (raw.Length == 0 || IsExternalReference(raw))
+            {
+                continue;
+            }
+
+            SplitReference(raw, out string pathPart, out _);
+            if (pathPart.Length > 0 && string.Equals(Core.BookPath.BuildBookPath(pathPart, owner.Folder), targetBookPath, StringComparison.Ordinal))
+            {
+                found.Add((raw, CorrectedReference(owner, raw, pathPart, actualBookPath)));
+            }
+        }
+
+        return found;
+    }
+
     // The reference with its path replaced by the relative path of the real file (query and fragment kept).
     private static string CorrectedReference(Resource owner, string rawReference, string pathPart, string actualBookPath) =>
         Core.Utility.UrlEncodePath(Core.BookPath.Relative(owner.BookPath, actualBookPath)) + rawReference[pathPart.Length..];
