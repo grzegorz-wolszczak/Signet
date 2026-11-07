@@ -1,5 +1,9 @@
 using System;
+using Signet.EpubCheck.Core.Css;
+using Signet.EpubCheck.Core.Dtbook;
 using Signet.EpubCheck.Core.Messages;
+using Signet.EpubCheck.Core.Ops;
+using Signet.EpubCheck.Core.Util.Mime;
 
 namespace Signet.EpubCheck.Core.Opf;
 
@@ -81,13 +85,21 @@ public static class CheckerFactory
     {
         ArgumentNullException.ThrowIfNull(context);
         string mimeType = (context.MimeType ?? string.Empty).ToLowerInvariant();
-        if (mimeType == Util.Mime.MediaTypes.PackageDocument)
+        switch (mimeType)
         {
-            return context.Version == EpubVersion.Version2 ? new OPFChecker(context) : new OPFChecker30(context);
+            case MediaTypes.Css:
+                return new CSSChecker(context);
+            case MediaTypes.DtBook:
+                return new DTBookChecker(context);
+            case MediaTypes.Html or MediaTypes.Oebps when context.Version == EpubVersion.Version2:
+                return new OPSChecker(context);
+            case MediaTypes.PackageDocument:
+                return context.Version == EpubVersion.Version2 ? new OPFChecker(context) : new OPFChecker30(context);
+            case MediaTypes.Svg or MediaTypes.Xhtml:
+                return new OPSChecker(context);
         }
 
-        // The checkers of content documents, style sheets, images, media overlays, DTBook and search key maps join with
-        // the tasks that port them.
+        // The checkers of images, media overlays and search key maps join with the tasks that port them.
         return new PublicationResourceChecker(context);
     }
 }
