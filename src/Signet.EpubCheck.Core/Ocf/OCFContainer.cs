@@ -91,7 +91,7 @@ public sealed class OCFContainer : IResourceProvider
         return _source.OpenRead(entry);
     }
 
-    /// <summary>Whether the file at <paramref name="url"/> can be read: not encrypted, or obfuscated as a font.</summary>
+    /// <summary>Whether the file at <paramref name="url"/> can be read: it is not encrypted in any way.</summary>
     public bool CanDecrypt(Url url)
     {
         ArgumentNullException.ThrowIfNull(url);
@@ -100,7 +100,9 @@ public sealed class OCFContainer : IResourceProvider
             throw new ArgumentException("Resource not found: " + url, nameof(url));
         }
 
-        return !_encryption.TryGetValue(url, out EncryptionKind kind) || kind != EncryptionKind.Unsupported;
+        // Upstream: the filters of the obfuscated fonts answer false as well (their de-obfuscation is a TODO there), so any
+        // encrypted resource is reported as one whose content is not checked (RSC-004).
+        return !_encryption.ContainsKey(url);
     }
 
     /// <summary><paramref name="url"/> relative to the root of the container.</summary>

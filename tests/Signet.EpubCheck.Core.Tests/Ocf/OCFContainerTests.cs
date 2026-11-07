@@ -51,10 +51,10 @@ public sealed class OCFContainerTests
     }
 
     [Theory]
-    [InlineData(EncryptionKind.IdpfFontObfuscation, true)]
-    [InlineData(EncryptionKind.AdobeFontObfuscation, true)]
+    [InlineData(EncryptionKind.IdpfFontObfuscation, false)]
+    [InlineData(EncryptionKind.AdobeFontObfuscation, false)]
     [InlineData(EncryptionKind.Unsupported, false)]
-    public void CanDecrypt_DependsOnTheEncryption(EncryptionKind kind, bool expected)
+    public void CanDecrypt_IsFalseForEveryEncryption_AsUpstreamIs(EncryptionKind kind, bool expected)
     {
         // Arrange
         using MemoryEpubSource source = Source("font.otf");
