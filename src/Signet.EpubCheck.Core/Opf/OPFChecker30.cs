@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Signet.EpubCheck.Core.Messages;
 using Signet.EpubCheck.Core.References;
+using Signet.EpubCheck.Core.Reporting;
 using Signet.EpubCheck.Core.Util;
 using Signet.EpubCheck.Core.Vocab;
 using Signet.EpubCheck.Core.Xml;
@@ -15,10 +16,11 @@ namespace Signet.EpubCheck.Core.Opf;
 /// collections (dictionaries, indexes, previews: <c>OPF-071</c>, <c>OPF-075</c>, <c>OPF-076</c>, <c>OPF-081</c>–<c>OPF-084</c>).
 /// </summary>
 /// <remarks>
-/// Not ported yet, because they need what other tasks bring: the checks that use the features the content documents report
-/// (pagination, semantics, navigation, dictionaries: <c>NAV-003</c>–<c>NAV-008</c>, <c>OPF-066</c>, <c>OPF-078</c>, <c>OPF-079</c>,
-/// <c>HTM-051</c>), the total duration of media overlays (<c>MED-016</c>), and the checks after the resources were validated
-/// (<c>RSC-006</c>, <c>OPF-096</c>, <c>OPF-097</c>, <c>MED-010</c>–<c>MED-013</c>).
+/// After the items were checked, the features the content documents reported are checked: pagination (<c>NAV-003</c>,
+/// <c>OPF-066</c>), semantics (<c>HTM-051</c>), navigation (<c>NAV-004</c>–<c>NAV-008</c>) and dictionaries (<c>OPF-078</c>,
+/// <c>OPF-079</c>). Not ported yet, because they need what other tasks bring: the total duration of media overlays
+/// (<c>MED-016</c>), and the checks after the resources were validated (<c>RSC-006</c>, <c>OPF-096</c>, <c>OPF-097</c>,
+/// <c>MED-010</c>–<c>MED-013</c>).
 /// </remarks>
 public class OPFChecker30(ValidationContext context) : OPFChecker(context)
 {
@@ -55,6 +57,18 @@ public class OPFChecker30(ValidationContext context) : OPFChecker(context)
         {
             yield return XmlValidators.OpfPreviewSch;
         }
+    }
+
+    /// <inheritdoc />
+    protected override bool CheckPackage()
+    {
+        base.CheckPackage();
+        CheckCollectionsContent();
+        CheckPagination();
+        CheckSemantics();
+        CheckNav();
+        CheckSpecifics();
+        return false;
     }
 
     /// <inheritdoc />
@@ -245,6 +259,132 @@ public class OPFChecker30(ValidationContext context) : OPFChecker(context)
                     Report.Message(MessageId.OPF_076, Context.Location());
                 }
             }
+        }
+    }
+
+    private bool IsEdupub => Context.Profile == EpubProfile.Edupub || Context.PublicationTypes.Contains(PublicationType.Edupub);
+
+    // The package document may not have been read (it is missing from the container): upstream's handler is then empty.
+    private MetadataSet PackageMetadata => (OpfHandler as OPFHandler30)?.Metadata ?? MetadataSet.CreateBuilder().Build();
+
+    // A dictionary collection needs a content document that was reported as dictionary content.
+    private void CheckCollectionsContent()
+    {
+        if (OpfHandler is not OPFHandler30 handler)
+        {
+            return;
+        }
+
+        foreach (CollectionNode collection in handler.Collections.AsList)
+        {
+            if (collection.HasRole(CollectionRole.Dictionary))
+            {
+                CheckDictionaryCollectionContent(collection, handler);
+            }
+        }
+    }
+
+    private void CheckDictionaryCollectionContent(CollectionNode collection, OPFHandler handler)
+    {
+        bool dictionaryFound = false;
+        foreach (LinkedResource resource in collection.Resources.AsList)
+        {
+            OPFItem? item = handler.GetItemByUrl(resource.DocumentUrl);
+            if (!dictionaryFound && item is { MimeType: XhtmlType })
+            {
+                // Search if this resource was reported as dictionary content.
+                dictionaryFound = Context.FeatureReport.GetFeature(FeatureKind.Dictionary).Any(dictionary => item.Path == dictionary.Location.Path);
+            }
+        }
+
+        if (!dictionaryFound)
+        {
+            Report.Message(MessageId.OPF_078, Context.Location());
+        }
+    }
+
+    // An EDUPUB publication with page breaks needs a page list and a source of the pagination.
+    private void CheckPagination()
+    {
+        if (!IsEdupub || !Context.FeatureReport.HasFeature(FeatureKind.PageBreak))
+        {
+            return;
+        }
+
+        // there is a page list
+        if (!Context.FeatureReport.HasFeature(FeatureKind.PageList))
+        {
+            Report.Message(MessageId.NAV_003, Context.Location());
+        }
+
+        // a "dc:source" metadata expression, refined by a "source-of: pagination" expression
+        IReadOnlyList<MetadataSet.Metadata> sources = PackageMetadata.GetPrimary(DCMESVocab.Vocab.Get(DCMESVocab.Property.Source));
+        if (sources.Count == 0
+            || MetadataSet.TryFindInRefines(sources, PackageVocabs.MetaVocab.Get(PackageVocabs.MetaProperty.SourceOf), "pagination") is null)
+        {
+            Report.Message(MessageId.OPF_066, Context.Location());
+        }
+    }
+
+    // An EDUPUB publication with microdata needs RDFa as well.
+    private void CheckSemantics()
+    {
+        if (IsEdupub && Context.FeatureReport.HasFeature(FeatureKind.HasMicrodata) && !Context.FeatureReport.HasFeature(FeatureKind.HasRdfa))
+        {
+            Report.Message(MessageId.HTM_051, Context.FeatureReport.GetFeature(FeatureKind.HasMicrodata)[0].Location);
+        }
+    }
+
+    // An EDUPUB publication needs a navigation to its sections, and lists of the audio, figures, tables and videos it has.
+    private void CheckNav()
+    {
+        if (!IsEdupub)
+        {
+            return;
+        }
+
+        FeatureReport features = Context.FeatureReport;
+        IReadOnlyList<Feature> sections = features.GetFeature(FeatureKind.Sections);
+        IReadOnlyList<Feature> tocLinks = features.GetFeature(FeatureKind.TocLinks);
+        EpubLocation location = tocLinks.Count == 0 ? Context.Location() : tocLinks[0].Location;
+        if (sections.Count != tocLinks.Count)
+        {
+            Report.Message(MessageId.NAV_004, location);
+        }
+
+        if (features.HasFeature(FeatureKind.Audio) && !features.HasFeature(FeatureKind.Loa))
+        {
+            Report.Message(MessageId.NAV_005, location);
+        }
+
+        if (features.HasFeature(FeatureKind.Figure) && !features.HasFeature(FeatureKind.Loi))
+        {
+            Report.Message(MessageId.NAV_006, location);
+        }
+
+        if (features.HasFeature(FeatureKind.Table) && !features.HasFeature(FeatureKind.Lot))
+        {
+            Report.Message(MessageId.NAV_007, location);
+        }
+
+        if (features.HasFeature(FeatureKind.Video) && !features.HasFeature(FeatureKind.Lov))
+        {
+            Report.Message(MessageId.NAV_008, location);
+        }
+    }
+
+    // Dictionary content belongs in a dictionary, and a dictionary needs dictionary content.
+    private void CheckSpecifics()
+    {
+        if (Context.FeatureReport.HasFeature(FeatureKind.Dictionary) && !Context.PublicationTypes.Contains(PublicationType.Dictionary))
+        {
+            Report.Message(MessageId.OPF_079, Context.FeatureReport.GetFeature(FeatureKind.Dictionary)[0].Location);
+        }
+
+        if ((Context.Profile == EpubProfile.Dict || Context.PublicationTypes.Contains(PublicationType.Dictionary))
+            && !Context.FeatureReport.HasFeature(FeatureKind.Dictionary))
+        {
+            Report.Message(MessageId.OPF_078, Context.Location());
         }
     }
 }
