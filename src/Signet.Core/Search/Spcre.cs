@@ -115,18 +115,17 @@ public sealed class Spcre
         }
 
         int ovectorCount = Math.Min(CaptureSubpatternCount, MaxCaptureGroups);
-        int position = 0;
 
-        while (position <= text.Length)
+        // One enumeration over the text, not a Match(text, position) for each match: every such call has PCRE2 check the whole text for valid UTF
+        // again, so a file with thousands of matches cost the square of its length (a 300 KB file: 960 ms against 5 ms).
+        foreach (PcreMatch match in _regex.Matches(text, 0, MatchOptions, null, new PcreMatchSettings()))
         {
-            PcreMatch match = _regex.Match(text, position, MatchOptions);
-            if (!match.Success || match.Index >= match.EndIndex)
+            if (match.Index >= match.EndIndex)
             {
                 break;
             }
 
             info.Add(GenerateMatchInfo(match, ovectorCount));
-            position = match.EndIndex;
         }
 
         return info;

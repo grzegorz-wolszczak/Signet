@@ -55,6 +55,55 @@ public sealed class SearchOperationsTests
         text.Should().Be("<i>x</i> <i>yy</i>");
     }
 
+    [Theory]
+    [InlineData("a", "bb", "aaaa", "bbbbbbbb", 4)] // matches that touch each other
+    [InlineData("a", "-", "a.a", "-.-", 2)] // at the start and at the end
+    [InlineData("é", "e", "é😀é😀é", "e😀e😀e", 3)] // text outside the BMP between the matches: offsets are UTF-16 units
+    [InlineData("x", "", "axbxc", "abc", 2)] // replaced by nothing
+    public void PerformGlobalReplace_MatchesNextToEachOtherOrAtTheEnds_AreAllReplaced(string find, string replacement, string input, string expected, int expectedCount)
+    {
+        // Act
+        (string text, int count) = SearchOperations.PerformGlobalReplace(input, Normal(find), replacement);
+
+        // Assert
+        text.Should().Be(expected);
+        count.Should().Be(expectedCount);
+    }
+
+    [Fact]
+    public void PerformGlobalReplace_ThousandsOfMatches_IsTheSameAsReplacingFromTheEnd()
+    {
+        // Arrange
+        string input = string.Concat(Enumerable.Range(0, 5000).Select(i => $"<p>Lorem {i} ipsum dolor {i % 7} sit</p>\n"));
+        string pattern = @"(\d+) ipsum dolor (\d)";
+        IReadOnlyList<(int Start, int End)> found = SearchOperations.FindInText(pattern, input);
+        string expected = input;
+        for (int i = found.Count - 1; i >= 0; i--)
+        {
+            string segment = expected[found[i].Start..found[i].End];
+            string[] parts = segment.Split(' ');
+            expected = expected[..found[i].Start] + parts[3] + "/" + parts[0] + expected[found[i].End..];
+        }
+
+        // Act
+        (string text, int count) = SearchOperations.PerformGlobalReplace(input, pattern, @"\2/\1");
+
+        // Assert
+        found.Count.Should().Be(5000);
+        count.Should().Be(5000);
+        text.Should().Be(expected);
+    }
+
+    [Fact]
+    public void CountInText_ALargeTextWithManyMatches_FindsThemAll()
+    {
+        // Arrange
+        string input = string.Concat(Enumerable.Repeat("Lorem ipsum dolor sit amet, ipsum.\n", 20000));
+
+        // Act & Assert
+        SearchOperations.CountInText(Normal("ipsum"), input).Should().Be(40000);
+    }
+
     [Fact]
     public void PerformGlobalReplace_NoMatch_ReturnsInputUnchanged()
     {

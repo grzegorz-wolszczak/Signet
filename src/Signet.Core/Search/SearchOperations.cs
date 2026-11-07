@@ -71,24 +71,33 @@ public static class SearchOperations
             return (text, 0);
         }
 
-        string newText = text;
-        int count = 0;
         IReadOnlyList<Spcre.MatchInfo> matches = spcre.GetEveryMatchInfo(text);
-
-        for (int i = matches.Count - 1; i >= 0; i--)
+        if (matches.Count == 0)
         {
-            Spcre.MatchInfo match = matches[i];
-            string matchSegment = newText.Substring(match.Offset.Start, match.Offset.End - match.Offset.Start);
+            return (text, 0);
+        }
 
+        // One pass from the start into a builder: the text between two matches is copied once. (Replacing from the end and joining the whole text
+        // again for every match made a file with thousands of matches cost the square of its length.) The matches do not overlap and come in
+        // order, so what is left of the text before a match is the original text, as it was when the replacements were made from the end.
+        System.Text.StringBuilder result = new(text.Length + (text.Length / 8));
+        int copied = 0;
+        int count = 0;
+        foreach (Spcre.MatchInfo match in matches)
+        {
+            int start = match.Offset.Start;
+            int end = match.Offset.End;
+            string matchSegment = text.Substring(start, end - start);
             if (spcre.ReplaceText(matchSegment, match.CaptureGroupsOffsets, replacement, out string replaced))
             {
-                newText = string.Concat(
-                    newText.AsSpan(0, match.Offset.Start), replaced, newText.AsSpan(match.Offset.End));
+                result.Append(text, copied, start - copied).Append(replaced);
+                copied = end;
                 count++;
             }
         }
 
-        return (newText, count);
+        result.Append(text, copied, text.Length - copied);
+        return (result.ToString(), count);
     }
 
     /// <summary>
