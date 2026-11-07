@@ -48,6 +48,7 @@ internal static class ConformanceCorpus
         "epub3/04-ocf/ocf.feature",
         "epub3/05-package-document/package-document.feature",
         "epub3/06-layouts/layouts.feature",
+        "epub3/07-content-documents/content-documents-css.feature",
         "epub3/07-content-documents/content-documents-fixed-layout.feature",
         "epub3/07-content-documents/content-documents-svg.feature",
         "epub3/07-content-documents/content-documents-xhtml.feature",
@@ -101,23 +102,14 @@ internal static class ConformanceCorpus
             220, 269, 276, 283, 290, 297, 317, 322, 327, 332, 337, 342, 347);
         Add("Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).",
             366, 371, 376);
-        AddOcf(pending, "Needs the CSS checker (the urls of a style sheet, CSS-008: task 3.7).", 255, 261);
-        AddFeature(pending, "epub3/05-package-document/package-document.feature",
-            "Needs the CSS checker (the remote fonts and resources of CSS: task 3.7).", 428, 576, 582, 594);
         AddFeature(pending, "epub3/05-package-document/package-document.feature",
             "Needs the media overlay checker (the remote resources of a media overlay: task 3.9).", 612);
-        AddFeature(pending, "epub3/07-content-documents/content-documents-xhtml.feature",
-            "Needs the CSS checker (CSS-008: task 3.7).", 627, 644);
-        AddFeature(pending, "epub3/E-obsolete-features/outdated-features.feature",
-            "Needs the CSS checker (the outdated prefixed properties OBS-001: task 3.7).", 391);
         AddFeature(pending, "epub-dictionaries/dictionaries-publication.feature",
             "Needs the search key map checker and the dictionary profile (OPF-080, RSC-005, RSC-007, RSC-021: task 3.11).", 30, 40, 49, 54);
         AddFeature(pending, "epub-multiple-renditions/multiple-rendition-publication.feature",
             "Needs the mapping document of multiple renditions (RSC-005: task 3.11).", 89, 95, 101);
         AddFeature(pending, "epub3/03-resources/resources.feature",
             "Needs the image and audio checks (MED-004, OPF-029, PKG-022: task 3.8).", 105, 111, 116);
-        AddFeature(pending, "epub3/03-resources/resources.feature",
-            "Needs the CSS checker (the urls, imports and fonts of CSS: task 3.7).", 186, 512, 517, 585, 591, 678, 684, 690);
         return pending;
     }
 
@@ -126,14 +118,6 @@ internal static class ConformanceCorpus
         foreach (int line in lines)
         {
             pending.Add($"{feature}:{line}", reason);
-        }
-    }
-
-    private static void AddOcf(Dictionary<string, string> pending, string reason, params int[] lines)
-    {
-        foreach (int line in lines)
-        {
-            pending.Add($"epub3/04-ocf/ocf.feature:{line}", reason);
         }
     }
 

@@ -171,6 +171,9 @@ XML Schema datatypes (`Jing/Datatype/Xsd/`, a port of Jing's `xsd-datatype` and 
 
 NVDL (`Jing/Validate/`, a port of Jing's `validate.auto` and `validate.nvdl`):
 
+- A compiled schema is shared by every check of the process and Jing's `Mode` fills caches of the actions of a namespace while it
+  validates; they are `ConcurrentDictionary`s here (Jing's were `Hashtable`s), or checks on several threads corrupted them.
+
 - `AutoSchemaReader` reads a schema up to its root element to learn its language, then lets the reader of that language
   read it from the start; Jing hands the events of the same parse to the reader it picks (rewinding the input for RELAX
   NG). The result is the same; a schema document is opened twice.
@@ -288,9 +291,6 @@ The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
 Content documents (`Ops/`, `Nav/`, `Dtbook/`, `Css/`, upstream's `OPSChecker`, `OPSHandler`, `OPSHandler30`, `NavChecker`, `NavHandler`,
 `DTBookChecker`, `DTBookHandler`, `ValidatorMap`, `SourceSet`, `URISchemes`):
 
-- `CSSChecker` is only the seam: the content documents hand it their `style` elements and attributes as upstream does, and it checks
-  nothing until the CSS parser is ported (task 3.7). `CheckerFactory` gives it to `text/css` resources, so those get the checks of
-  `PublicationResourceChecker` (`RSC-001`, `RSC-004`) only.
 - `url()` and `url(')` as an SVG `fill`, `stroke` or `clip-path` are read without failing; upstream looks at the first character of
   what is between the parentheses and fails with `StringIndexOutOfBoundsException`.
 - A URL of a resource (`src` of an image, audio, video, track, input, iframe, embed, script, `data` of an object, `poster`) that does
@@ -309,5 +309,22 @@ Content documents (`Ops/`, `Nav/`, `Dtbook/`, `Css/`, upstream's `OPSChecker`, `
   nothing; so does the port).
 - Not done yet: the checks of the references (`ResourceReferencesChecker`, task 3.6), so `RSC-006`–`RSC-015`, `RSC-032`, `OBS-001` for
   an outdated content fallback, `NAV-009` and `NAV-011` wait for it.
+
+CSS (`Css/`, upstream's `org.idpf.epubcheck.util.css` and `com.adobe.epubcheck.css`):
+
+- The scanner, the grammar and the parser are ported state by state; the tests are upstream's `CssScannerTest` converted
+  mechanically (129 of its 131 cases; the two that quote the CSS 2.1 suite in comments are not) and a hand-written selection of the
+  cases of `CssParserTest`, plus the style sheets of upstream's tests (`Css/TestData`).
+- The messages of the scanner and grammar are in `CssMessages.resx` (English, and Polish drafts), formatted by replacing `{n}`;
+  Java's `MessageFormat` quoting of apostrophes is not needed by these texts.
+- `CssSource` reads the whole stream. The `@charset` rule is looked for in the first 256 bytes as upstream does, but a file that
+  ends inside it stops the search; upstream loops forever on a file that is exactly `@charset`. An empty charset (`@charset '' ;`) is
+  no charset, as upstream's `Strings.isNullOrEmpty` makes it. A charset .NET does not know decodes as UTF-8 (upstream: the
+  platform's default). The byte order marks are upstream's, including its `UTF-32LE` that is `FE FF 00 00`.
+- `CssPseudoSelector.Name` is `null` for a pseudo selector that is neither a name nor a function (`a::` followed by something else);
+  upstream fails there with a null pointer.
+- `CSSHandler` is kept as upstream has it where it looks odd: the check that lets the percentages of `@keyframes` through tests the
+  message with apostrophes where the text has quotation marks; `CSS-028` is reported for every declaration of a `@font-face`.
+- Any exception while reading a style sheet is `PKG-008`, as upstream catches `Exception`.
 
 Each further deviation from upstream is listed here, with the reason.

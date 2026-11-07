@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) and 3.6 (references and the resource graph) are done**; **next: task 3.7 CSS**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) are done**; **next: task 3.8 media and fonts**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.7 CSS**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.8 Media and fonts**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -72,7 +72,7 @@ questions into one message, as `AGENTS.md` demands).
 |---|---|
 | Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Ops/` (content documents), `Nav/`, `Dtbook/`, `Css/` (the seam of the CSS checker), `Ncx/`, `References/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Jing/` (the RELAX NG engine, a port of Jing, BSD-3), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
 | Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-file modes still say "checker not implemented") |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (2689 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1114 passed, 173 skipped) |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (2884 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1148 passed, 139 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -87,26 +87,22 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 3.7 CSS
+### Next task: 3.8 Media and fonts
 
-Upstream's own CSS parser (`org.idpf.epubcheck.util.css`, ~5.8k lines, port it for fidelity) with `CSSChecker` / `CSSHandler`
-(`CSS-*`). `Css/CSSChecker` is only the seam since 3.5: its constructors already take what the content documents hand it (a style
-sheet resource, or the text of a `style` element or attribute with its line), and `CheckerFactory` returns it for `text/css`. Fill
-it in. The references the CSS makes (`@import`, `url()`, `@font-face`) go to the reference registry as `Stylesheet`/`Font`/`Image`
-references (`RSC-006`, `RSC-007`, `RSC-008`, `RSC-030`, `RSC-031` then come from the references checker); the remote fonts and
-resources of a style sheet also decide `OPF-014` (`remote-resources`). Scenarios that wait for it are pending with "task 3.7":
-`epub3/07-content-documents/content-documents-css.feature` (not enabled yet), parts of `resources.feature`, `ocf.feature`,
-`package-document.feature`, `content-documents-xhtml.feature`, `outdated-features.feature`.
+Upstream's `BitmapChecker` (`com.adobe.epubcheck.bitmap`: the headers of JPEG, GIF, PNG; `MED-004`, `MED-005`-ish, `OPF-029`, `PKG-021`/`PKG-022`
+and the like, read upstream) and what `OPFChecker`/`OPFChecker30` check about fonts, images, audio (`MED-004` unsupported codec) and
+their media types; WebP/SVG headers without a native dependency. `CheckerFactory` returns the base checker for images today; give it
+`BitmapChecker` for `image/gif`, `image/jpeg`, `image/png` as upstream's factory does. Pending scenarios that wait for it:
+`epub3/03-resources/resources.feature` lines 105, 111, 116 (`MED-004`, `OPF-029`, `PKG-022`).
 
 ### Current state of the conformance run
 
-44 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
+45 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
 the package documents of EPUB 2 and 3, the NCX, the content documents (XHTML, SVG, fixed layout, the navigation document, EDUPUB,
-indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1114 scenarios pass; the
-others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (the references
-checker 3.6, CSS 3.7, media overlays 3.9, the search key map and mapping document of profiles 3.11, report writers 4.2, `--save`
+indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1148 scenarios pass; the
+others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (images 3.8, media overlays 3.9, the search key map and mapping document of profiles 3.11, report writers 4.2, `--save`
 3.12, French messages that are never meant to pass). Not enabled yet:
-`07-content-documents/content-documents-css` (3.7), `09-media-overlays` (3.9), `05-package-document/vocabularies-association` (a
+`09-media-overlays` (3.9), `05-package-document/vocabularies-association` (a
 media overlay document), `localization` and `reporting` (4.2). Single documents the harness checks: package documents, XHTML, SVG
 and navigation documents (`OcfEpubChecker`); `mo` waits for 3.9. The test run uses English texts (`TestIsolationSetup` sets
 `DefaultThreadCurrentUICulture`), so a Polish machine passes too.
@@ -452,8 +448,15 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   references, `OPF-097`, `OPF-096`/`OPF-096b`). The media overlay attribute checks of that method (`MED-010`, `MED-012`, `MED-013`)
   need the overlay text checker and come with 3.9. `epub3/03-resources/resources.feature` is enabled; 1114 conformance scenarios
   pass, the pending ones wait for CSS (3.7), images and audio (3.8), media overlays (3.9) and the profiles (3.11).
-- **3.7 CSS (L).** Port of upstream's parser and `CSSChecker` / `CSSHandler` (`CSS-*`) — a separate parser for
-  fidelity; Signet's own CSS parsers serve another purpose.
+- **3.7 CSS (L). DONE.** A port of upstream's own CSS parser (`Css/`: `CssScanner`, `CssReader`, `CssEscape`, `CssToken`, `CssTokenList`,
+  `CssGrammar` with its constructs and the selector and value factories, `CssParser`, `CssSource`, the error codes and messages in
+  `CssMessages.resx`) and of `CSSChecker` / `CSSHandler`: the errors of the parser (`CSS-008`), the references of `@import`, `url()`
+  and fonts registered for the references checker, the fonts a style sheet declares (`CSS-007`, `CSS-019`, `CSS-028`, the font
+  facts), the outdated `-epub-` properties (`OBS-001`), `CSS-001`, `CSS-002`, `CSS-006`, `CSS-029`, the item properties a style
+  needs (`OPF-014`, `OPF-018`), and a style sheet that is not UTF-8 (`CSS-003`, `CSS-004`). It checks style sheets, `style` elements
+  and `style` attributes. `epub3/07-content-documents/content-documents-css.feature` is enabled and every CSS scenario of the other
+  features passes: 1148 conformance scenarios pass. The tests are upstream's scanner tests converted (129), a selection of the parser
+  tests, the input stream tests and tests of the checker.
 - **3.8 Media and fonts (M).** `MED-*`, image headers (JPEG, PNG, GIF, WebP, SVG) without a native dependency.
 - **3.9 Media Overlays (M).**
 - **3.10 Scripting and accessibility (M).** `SCP-*`, `ACC-*`.
