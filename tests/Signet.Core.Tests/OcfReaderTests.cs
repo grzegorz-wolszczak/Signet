@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text;
 using AwesomeAssertions;
+using Signet.Core.Importers;
 using Signet.Core.Localization;
 using Signet.Core.Tests.TestSupport;
 using Xunit;
@@ -146,6 +149,65 @@ public sealed class OcfReaderTests
 
         // Assert
         container.Warnings.Should().Contain(CoreStrings.Get("LoadWarning_MimetypeCompressed"));
+    }
+
+    // A book of many files is unpacked by several threads; the result must be the one of unpacking them one by one.
+    [Fact]
+    public void A_book_of_many_files_is_unpacked_completely_and_in_progress_order()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string epub = SysPath.Combine(dir.Path, "many.epub");
+        WriteZip(epub, zip =>
+        {
+            WriteText(zip.CreateEntry("mimetype", CompressionLevel.NoCompression), OcfReader.OcfMimetype);
+            WriteText(zip.CreateEntry("META-INF/container.xml"), MinimalContainer("OEBPS/content.opf"));
+            WriteText(zip.CreateEntry("OEBPS/content.opf"), "<package/>");
+            for (int i = 0; i < 500; i++)
+            {
+                WriteText(zip.CreateEntry($"OEBPS/text/part{i / 50}/chapter{i:D4}.xhtml"), $"<html>{i}</html>");
+            }
+        });
+        List<BookLoadProgress> progress = [];
+
+        // Act
+        new OcfReader(epub).Extract(dir.Combine("out"), new SynchronousProgress(progress.Add));
+
+        // Assert
+        for (int i = 0; i < 500; i++)
+        {
+            File.ReadAllText(dir.Combine($"out/OEBPS/text/part{i / 50}/chapter{i:D4}.xhtml")).Should().Be($"<html>{i}</html>");
+        }
+
+        progress.Select(p => p.Done).Should().Equal(Enumerable.Range(0, 503), "every entry is told once, in order");
+    }
+
+    [Fact]
+    public void A_bad_entry_among_many_is_reported_like_one_by_one()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string epub = SysPath.Combine(dir.Path, "many-bad.epub");
+        WriteZip(epub, zip =>
+        {
+            WriteText(zip.CreateEntry("mimetype", CompressionLevel.NoCompression), OcfReader.OcfMimetype);
+            for (int i = 0; i < 300; i++)
+            {
+                WriteText(zip.CreateEntry($"OEBPS/chapter{i:D4}.xhtml"), "<html/>");
+            }
+
+            WriteText(zip.CreateEntry("OEBPS/../../escape.txt"), "pwned");
+        });
+
+        // Act & Assert
+        FluentActions.Invoking(() => new OcfReader(epub).Extract(dir.Combine("out")))
+            .Should().Throw<EpubLoadException>()
+            .WithMessage("*" + LocalizedText.Fragment("LoadError_SuspiciousEntryName") + "*");
+    }
+
+    private sealed class SynchronousProgress(Action<BookLoadProgress> report) : IProgress<BookLoadProgress>
+    {
+        public void Report(BookLoadProgress value) => report(value);
     }
 
     [Fact]

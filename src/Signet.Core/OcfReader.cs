@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
@@ -211,12 +213,73 @@ public sealed class OcfReader
         {
             ValidateMimetype(archive, warnings);
 
+            int count = archive.Entries.Count;
+            if (count >= ParallelExtractionThreshold && Environment.ProcessorCount > 1 && EntryNamesAreDistinct(archive))
+            {
+                ExtractInParallel(root, count, progress);
+                return;
+            }
+
             int done = 0;
             foreach (ZipArchiveEntry entry in archive.Entries)
             {
-                progress?.Report(new BookLoadProgress(BookLoadStage.Extracting, done++, archive.Entries.Count));
+                progress?.Report(new BookLoadProgress(BookLoadStage.Extracting, done++, count));
                 ExtractEntry(entry, root);
             }
+        }
+    }
+
+    // A book of many files is unpacked by several threads, each with an archive of its own on the same file (an archive is read by one thread at a
+    // time): creating the files is most of the cost. It is done only when no two entries name the same file once the names are made alike, as
+    // the order decides which one is left in that case.
+    private const int ParallelExtractionThreshold = 64;
+    private const int MaxExtractionThreads = 8;
+
+    private static bool EntryNamesAreDistinct(ZipArchive archive)
+    {
+        HashSet<string> names = new(archive.Entries.Count, StringComparer.OrdinalIgnoreCase);
+        return archive.Entries.All(e => names.Add(e.FullName.Normalize(NormalizationForm.FormC)));
+    }
+
+    private void ExtractInParallel(string root, int count, IProgress<BookLoadProgress>? progress)
+    {
+        int workers = Math.Min(Environment.ProcessorCount, MaxExtractionThreads);
+        Exception?[] errors = new Exception?[count];
+        object progressLock = new();
+        int done = 0;
+        bool failed = false;
+
+        Parallel.For(0, workers, new ParallelOptions { MaxDegreeOfParallelism = workers }, worker =>
+        {
+            using ZipArchive mine = ZipFile.OpenRead(_epubPath);
+            for (int i = worker; i < count && !Volatile.Read(ref failed); i += workers)
+            {
+                try
+                {
+                    ExtractEntry(mine.Entries[i], root);
+                }
+                catch (Exception e)
+                {
+                    errors[i] = e;
+                    Volatile.Write(ref failed, true);
+                    return;
+                }
+
+                if (progress is not null)
+                {
+                    lock (progressLock)
+                    {
+                        progress.Report(new BookLoadProgress(BookLoadStage.Extracting, done++, count));
+                    }
+                }
+            }
+        });
+
+        // The error the one-by-one unpacking would have stopped at: the first entry that failed.
+        Exception? first = errors.FirstOrDefault(e => e is not null);
+        if (first is not null)
+        {
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(first).Throw();
         }
     }
 
