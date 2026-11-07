@@ -100,3 +100,16 @@ the path when it is asked for. The result is the same for every tag of 2724 docu
 
 Left, and a decision that changes behaviour: the check runs on every keystroke, so a file of a megabyte or two costs ~35 ms of it per key. Running it a moment
 after the last change (for large files) would remove that, and move the red mark of an error to that moment.
+
+## The Preview
+
+The page itself loads fast (the first page 170 ms after the first idle moment of the start). What the application does around it, 1200 files:
+
+| | before | after |
+|---|---:|---:|
+| the first mirroring of the book into the Preview's folder (`PreviewMirror.Sync`) | 408 ms | 305 ms |
+| a later sync of a book that did not change (every refresh of the live Preview does it) | ~20 ms | ~5 ms |
+| a click on a link in the Preview: `FootnoteScanner.Scan(book)` | 70-150 ms | not changed |
+
+`PreviewMirror.Sync` works out what is to be written one resource after the other, then writes the files (or finds them unchanged) on up to eight threads, with
+the record of what was written in a `ConcurrentDictionary`. Left, and not changed: the scan of the whole book for footnotes at every click on a link.

@@ -26,6 +26,49 @@ public sealed class PreviewMirrorTests
         return data;
     }
 
+    // A book of many files is mirrored by several threads; what is written, kept and removed must be what one thread would do.
+    [Fact]
+    public void Sync_ManyFiles_WritesAllOfThemAndRewritesOnlyWhatChanged()
+    {
+        // Arrange
+        using TempDir temp = new();
+        string epub = SyntheticBook.BuildEpub(temp, 150, 1, SyntheticNotes.Signet, paragraphs: 2);
+        using Book book = new ImportEpub(epub).GetBook();
+        using PreviewMirror mirror = new();
+
+        // Act
+        mirror.Sync(book);
+
+        // Assert
+        List<Resource> resources = book.GetAllResources().ToList();
+        resources.Count.Should().BeGreaterThan(150);
+        foreach (Resource resource in resources)
+        {
+            string path = Path.Combine(mirror.RootPath, resource.BookPath.Replace('/', Path.DirectorySeparatorChar));
+            File.Exists(path).Should().BeTrue(resource.BookPath);
+            if (resource is TextResource text)
+            {
+                File.ReadAllText(path).Should().Be(text.GetText(), resource.BookPath);
+            }
+        }
+
+        // Act: one file changes, one is left out of the book
+        HtmlResource changed = book.GetHtmlResources()[7];
+        HtmlResource removed = book.GetHtmlResources()[9];
+        string untouchedPath = Path.Combine(mirror.RootPath, book.GetHtmlResources()[8].BookPath.Replace('/', Path.DirectorySeparatorChar));
+        DateTime untouchedBefore = File.GetLastWriteTimeUtc(untouchedPath);
+        System.Threading.Thread.Sleep(30);
+        changed.SetText(changed.GetText() + "<!-- changed -->");
+        string removedPath = Path.Combine(mirror.RootPath, removed.BookPath.Replace('/', Path.DirectorySeparatorChar));
+        removed.Delete();
+        mirror.Sync(book);
+
+        // Assert
+        File.ReadAllText(Path.Combine(mirror.RootPath, changed.BookPath.Replace('/', Path.DirectorySeparatorChar))).Should().EndWith("<!-- changed -->");
+        File.Exists(removedPath).Should().BeFalse("a resource that is gone leaves the mirror");
+        File.GetLastWriteTimeUtc(untouchedPath).Should().Be(untouchedBefore, "a file that did not change is not written again");
+    }
+
     [Theory]
     [MemberData(nameof(ValidCorpus))]
     public void Sync_ValidCorpus_WritesEveryResourceUnderRoot(string corpusDir)

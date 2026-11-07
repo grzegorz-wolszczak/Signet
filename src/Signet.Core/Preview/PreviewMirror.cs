@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.Text;
 using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
@@ -39,7 +41,7 @@ public sealed class PreviewMirror : IDisposable
     private readonly TempFolder _folder;
     private readonly bool _ownsFolder;
     // The last written state of each mirror file (relative path → fingerprint), used to skip unchanged ones.
-    private readonly Dictionary<string, object> _written = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, object> _written = new(StringComparer.OrdinalIgnoreCase);
     private bool _disposed;
 
     /// <summary>Creates a mirror over a new temporary folder (deleted on <see cref="Dispose"/>).</summary>
@@ -107,9 +109,12 @@ public sealed class PreviewMirror : IDisposable
         ArgumentNullException.ThrowIfNull(book);
         ThrowIfDisposed();
 
-        HashSet<string> current = new(StringComparer.OrdinalIgnoreCase);
         PreviewInstrumentation? instrumentation = null;
 
+        // What is to be written is worked out first, one resource after the other (the text of a resource is loaded under its own lock, and the
+        // instrumented one is made once); the files are written, or found unchanged, by several threads then: a book of a thousand files is
+        // mirrored the first time in a fraction of the time. The state of what was written is kept in a dictionary that threads may share.
+        List<(Resource Resource, string Relative, string Destination, string? Text)> work = new();
         foreach (Resource resource in book.GetAllResources())
         {
             string relative = NormalizeRelative(resource.BookPath);
@@ -118,11 +123,10 @@ public sealed class PreviewMirror : IDisposable
                 continue;
             }
 
-            string destination = SysPath.Combine(RootPath, relative);
-
+            string? content = null;
             if (resource is TextResource text)
             {
-                string content = textOverrides is not null
+                content = textOverrides is not null
                     && textOverrides.TryGetValue(resource.BookPath, out string? working)
                     ? working
                     : LoadedText(text);
@@ -134,21 +138,42 @@ public sealed class PreviewMirror : IDisposable
                     instrumentation = PreviewInstrumentation.Create(content);
                     content = instrumentation.Html;
                 }
-
-                WriteIfChanged(relative, destination, content, () => File.WriteAllText(destination, content, Utf8NoBom));
-            }
-            else if (File.Exists(resource.FullPath))
-            {
-                FileInfo source = new(resource.FullPath);
-                BinaryFingerprint fingerprint = new(source.FullName, source.Length, source.LastWriteTimeUtc);
-                WriteIfChanged(relative, destination, fingerprint, () => File.Copy(source.FullName, destination, overwrite: true));
-            }
-            else
-            {
-                continue;
             }
 
-            current.Add(relative);
+            work.Add((resource, relative, SysPath.Combine(RootPath, relative), content));
+        }
+
+        bool[] present = new bool[work.Count];
+        if (work.Count >= ParallelSyncThreshold && Environment.ProcessorCount > 1)
+        {
+            try
+            {
+                Parallel.For(
+                    0,
+                    work.Count,
+                    new ParallelOptions { MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, MaxSyncThreads) },
+                    i => present[i] = Mirror(work[i].Resource, work[i].Relative, work[i].Destination, work[i].Text));
+            }
+            catch (AggregateException e) when (e.InnerExceptions.Count > 0)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerExceptions[0]).Throw();
+            }
+        }
+        else
+        {
+            for (int i = 0; i < work.Count; i++)
+            {
+                present[i] = Mirror(work[i].Resource, work[i].Relative, work[i].Destination, work[i].Text);
+            }
+        }
+
+        HashSet<string> current = new(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < work.Count; i++)
+        {
+            if (present[i])
+            {
+                current.Add(work[i].Relative);
+            }
         }
 
         PruneRemoved(current);
@@ -249,6 +274,29 @@ public sealed class PreviewMirror : IDisposable
         return text.GetText();
     }
 
+    private const int ParallelSyncThreshold = 64;
+    private const int MaxSyncThreads = 8;
+
+    // Brings one resource into the mirror; false when there is nothing to write (a file the resource has lost on disk).
+    private bool Mirror(Resource resource, string relative, string destination, string? text)
+    {
+        if (resource is TextResource)
+        {
+            WriteIfChanged(relative, destination, text!, () => File.WriteAllText(destination, text!, Utf8NoBom));
+            return true;
+        }
+
+        if (!File.Exists(resource.FullPath))
+        {
+            return false;
+        }
+
+        FileInfo source = new(resource.FullPath);
+        BinaryFingerprint fingerprint = new(source.FullName, source.Length, source.LastWriteTimeUtc);
+        WriteIfChanged(relative, destination, fingerprint, () => File.Copy(source.FullName, destination, overwrite: true));
+        return true;
+    }
+
     // Writes the file if its fingerprint (the text or BinaryFingerprint) differs from the last written one
     // or the file is not on disk. The fingerprint is remembered only after a successful write.
     private void WriteIfChanged(string relative, string destination, object fingerprint, Action write)
@@ -260,7 +308,7 @@ public sealed class PreviewMirror : IDisposable
             return;
         }
 
-        _written.Remove(relative);
+        _written.TryRemove(relative, out _);
         Directory.CreateDirectory(SysPath.GetDirectoryName(destination)!);
         write();
         _written[relative] = fingerprint;
@@ -279,7 +327,7 @@ public sealed class PreviewMirror : IDisposable
 
         foreach (string relative in stale)
         {
-            _written.Remove(relative);
+            _written.TryRemove(relative, out _);
 
             string path = SysPath.Combine(RootPath, relative);
             try

@@ -63,6 +63,20 @@ public sealed class SignetScaleBenchmarks
             history.MarkEdited(b.GetHtmlResources()[0].BookPath);
             history.AddCheckpoint(b, "bench");
         }),
+        new("Preview: mirror the book (1 sync)", false, (b, _) =>
+        {
+            using Signet.Core.Preview.PreviewMirror mirror = new();
+            mirror.Sync(b);
+        }),
+        new("Preview: mirror the book, then 4 syncs of the unchanged book", false, (b, _) =>
+        {
+            using Signet.Core.Preview.PreviewMirror mirror = new();
+            for (int i = 0; i < 5; i++)
+            {
+                mirror.Sync(b);
+            }
+        }),
+        new("Footnotes: scan the book (a click on a link in Preview)", false, (b, _) => Signet.Core.Footnotes.FootnoteScanner.Scan(b)),
         new("Find: count a word in all files", false, (b, _) => SearchOperations.CountInFiles("ipsum", Texts(b))),
         new("Find: count a regex in all files", false, (b, _) => SearchOperations.CountInFiles(@"\b(?:dolor|amet)\s+\w+", Texts(b))),
         new("Replace in all files", true, (b, _) => SearchOperations.ReplaceInAllFiles("ipsum", "IPSUM", Texts(b))),
