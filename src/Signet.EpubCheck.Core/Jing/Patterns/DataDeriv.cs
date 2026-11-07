@@ -9,16 +9,21 @@ internal sealed class DataDerivFailure : IEquatable<DataDerivFailure>
 {
     private const int UnknownIndex = -1;
 
-    // Not a valid instance of the datatype.
-    public DataDerivFailure(DataPattern p, DatatypeException e)
-        : this(p.Datatype, p.DatatypeName, p.Parameters, e.Detail, e.Index)
+    // Not a valid instance of the datatype. The reason is worked out when it is asked for (see Resolve): most failures belong to an
+    // alternative of a choice that another alternative made good, and throwing an exception for each of them was a large part of a check.
+    public DataDerivFailure(DataPattern p, string str, IValidationContext vc)
+        : this(p.Datatype, p.DatatypeName, p.Parameters, null, UnknownIndex)
     {
+        _pendingString = str;
+        _pendingContext = vc;
     }
 
     // Not a valid instance of the datatype of a value pattern.
-    public DataDerivFailure(IDatatype dt, Name dtName, DatatypeException e)
-        : this(dt, dtName, null, e.Detail, e.Index)
+    public DataDerivFailure(IDatatype dt, Name dtName, string str, IValidationContext vc)
+        : this(dt, dtName, null, null, UnknownIndex)
     {
+        _pendingString = str;
+        _pendingContext = vc;
     }
 
     // Matched the except of a data pattern.
@@ -46,8 +51,37 @@ internal sealed class DataDerivFailure : IEquatable<DataDerivFailure>
         Datatype = datatype;
         DatatypeName = datatypeName;
         DatatypeParams = datatypeParams;
-        Message = message;
-        Index = index == DatatypeException.Unknown ? UnknownIndex : index;
+        _message = message;
+        _index = index == DatatypeException.Unknown ? UnknownIndex : index;
+    }
+
+    // What is needed to find out why the string is not valid, until someone asks. A failure is read in the call of the matcher that made it
+    // (the matcher clears its list before every match), so the context has not moved on by then.
+    private string? _pendingString;
+    private IValidationContext? _pendingContext;
+    private string? _message;
+    private int _index;
+
+    private void Resolve()
+    {
+        if (_pendingContext is null)
+        {
+            return;
+        }
+
+        IValidationContext vc = _pendingContext;
+        string str = _pendingString!;
+        _pendingContext = null;
+        _pendingString = null;
+        try
+        {
+            Datatype.CheckValid(str, vc);
+        }
+        catch (DatatypeException e)
+        {
+            _message = e.Detail;
+            _index = e.Index == DatatypeException.Unknown ? UnknownIndex : e.Index;
+        }
     }
 
     public IDatatype Datatype { get; }
@@ -56,7 +90,14 @@ internal sealed class DataDerivFailure : IEquatable<DataDerivFailure>
 
     public IReadOnlyList<string>? DatatypeParams { get; }
 
-    public string? Message { get; }
+    public string? Message
+    {
+        get
+        {
+            Resolve();
+            return _message;
+        }
+    }
 
     public string? StringValue { get; }
 
@@ -64,7 +105,16 @@ internal sealed class DataDerivFailure : IEquatable<DataDerivFailure>
 
     public Pattern? Except { get; }
 
-    public int Index { get; private set; }
+    public int Index
+    {
+        get
+        {
+            Resolve();
+            return _index;
+        }
+
+        private set => _index = value;
+    }
 
     public int TokenIndex { get; private set; } = UnknownIndex;
 
@@ -192,13 +242,9 @@ internal sealed class DataDerivFunction(string str, IValidationContext vc, Valid
         {
             if (value is null)
             {
-                try
+                if (!dt.IsValid(str, vc))
                 {
-                    dt.CheckValid(str, vc);
-                }
-                catch (DatatypeException e)
-                {
-                    fail.Add(new DataDerivFailure(dt, p.DatatypeName, e));
+                    fail.Add(new DataDerivFailure(dt, p.DatatypeName, str, vc));
                 }
             }
             else
@@ -217,21 +263,13 @@ internal sealed class DataDerivFunction(string str, IValidationContext vc, Valid
             return builder.MakeEmpty();
         }
 
-        if (fail is not null)
+        if (p.Datatype.IsValid(str, vc))
         {
-            try
-            {
-                p.Datatype.CheckValid(str, vc);
-                return builder.MakeEmpty();
-            }
-            catch (DatatypeException e)
-            {
-                fail.Add(new DataDerivFailure(p, e));
-                return builder.MakeNotAllowed();
-            }
+            return builder.MakeEmpty();
         }
 
-        return p.Datatype.IsValid(str, vc) ? builder.MakeEmpty() : builder.MakeNotAllowed();
+        fail?.Add(new DataDerivFailure(p, str, vc));
+        return builder.MakeNotAllowed();
     }
 
     public override Pattern CaseDataExcept(DataExceptPattern p)
@@ -408,26 +446,8 @@ internal sealed class DataDataDerivType(DataPattern dp) : DataDerivType
     public override PatternMemo DataDeriv(ValidatorPatternBuilder builder, Pattern p, string str, IValidationContext vc,
         List<DataDerivFailure>? fail)
     {
-        bool isValid;
-        IDatatype dt = _dp.Datatype;
-        DataDerivFailure? ddf = null;
-        if (fail is not null)
-        {
-            try
-            {
-                dt.CheckValid(str, vc);
-                isValid = true;
-            }
-            catch (DatatypeException e)
-            {
-                isValid = false;
-                ddf = new DataDerivFailure(_dp, e);
-            }
-        }
-        else
-        {
-            isValid = dt.IsValid(str, vc);
-        }
+        bool isValid = _dp.Datatype.IsValid(str, vc);
+        DataDerivFailure? ddf = !isValid && fail is not null ? new DataDerivFailure(_dp, str, vc) : null;
 
         if (isValid)
         {
@@ -489,16 +509,9 @@ internal sealed class ValueDataDerivType(IDatatype dt, Name dtName) : DataDerivT
             {
                 _noValue = base.DataDeriv(builder, p, str, vc, fail);
             }
-            else if (fail is not null && _noValue.IsNotAllowed)
+            else if (fail is not null && _noValue.IsNotAllowed && !Datatype.IsValid(str, vc))
             {
-                try
-                {
-                    Datatype.CheckValid(str, vc);
-                }
-                catch (DatatypeException e)
-                {
-                    fail.Add(new DataDerivFailure(Datatype, dtName, e));
-                }
+                fail.Add(new DataDerivFailure(Datatype, dtName, str, vc));
             }
 
             return _noValue;
