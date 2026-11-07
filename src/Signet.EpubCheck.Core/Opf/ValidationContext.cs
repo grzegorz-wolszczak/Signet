@@ -85,6 +85,18 @@ public sealed record ValidationContext
         return Container is not null ? Container.IsRemote(url) : EpubCheckUrlUtils.IsRemote(url, Url);
     }
 
+    /// <summary>The media type of the resource at <paramref name="url"/>: the one a <c>data:</c> URL names, the one the resource registry
+    /// knows, else <c>null</c> (also for a <c>null</c> URL).</summary>
+    public string? GetMimeType(Url? url)
+    {
+        if (url is null)
+        {
+            return null;
+        }
+
+        return url.Scheme == "data" ? EpubCheckUrlUtils.GetDataUrlType(url) : ResourceRegistry?.GetMimeType(url);
+    }
+
     /// <summary><paramref name="url"/> relative to the container root, or to the checked resource.</summary>
     public string Relativize(Url url)
     {
