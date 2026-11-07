@@ -108,8 +108,6 @@ internal static class ConformanceCorpus
             "Needs the search key map checker and the dictionary profile (OPF-080, RSC-005, RSC-007, RSC-021: task 3.11).", 30, 40, 49, 54);
         AddFeature(pending, "epub-multiple-renditions/multiple-rendition-publication.feature",
             "Needs the mapping document of multiple renditions (RSC-005: task 3.11).", 89, 95, 101);
-        AddFeature(pending, "epub3/03-resources/resources.feature",
-            "Needs the image and audio checks (MED-004, OPF-029, PKG-022: task 3.8).", 105, 111, 116);
         return pending;
     }
 
