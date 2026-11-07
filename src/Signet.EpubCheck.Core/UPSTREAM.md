@@ -338,5 +338,14 @@ Media overlays and images (`Overlay/`, `Media/`, upstream's `OverlayChecker`, `O
 - `--mode exp` packs the folder into `<folder>.epub` as upstream's `Archive` does, but when that file already exists and `--save` is not
   given, the archive goes to a temporary file: upstream would overwrite the file and delete it afterwards.
 - `tests/corpus/epubcheck/cli/files/wrong_extension.zip` is kept in the corpus although `.gitignore` ignores `*.zip` (an exception was added).
+- The XML and XMP reports are built with `System.Xml.Linq` instead of a DOM and Java's `Transformer`: the content and the element and attribute
+  order are upstream's, the white space is .NET's (four spaces, the declaration on its own line).
+- The JSON report is written by `JacksonStyleJsonWriter`, a small writer that reproduces Jackson's pretty printer (`"name" : value`, arrays on one
+  line, `\uXXXX` in upper case) and the field order of upstream's classes (`customMessageFileName` first, as Jackson puts the fields of the base
+  class before those of the subclass). `checker.path` is the full path normalized by `Path.GetFullPath`; upstream joins the working directory and the
+  given path as strings (`././book.epub`).
+- `JsonPathLite` and the XPath steps of the conformance harness replace Jayway JsonPath and Saxon's XPath 2: the XPath 1.0 of .NET cannot name
+  elements of a default namespace without a prefix, so the harness takes the namespace off the elements of the XML report before it evaluates.
+- `localization/localization.feature` and the three French scenarios of `cli.feature` (366, 371, 376) are not run: the port has English and Polish only.
 
 Each further deviation from upstream is listed here, with the reason.
