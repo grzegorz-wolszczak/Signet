@@ -14,6 +14,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The checking core of the EPUBCheck port: Signet's validation runs on it (BookEpubSource gives it the book). -->
+    <ProjectReference Include="..\Signet.EpubCheck.Core\Signet.EpubCheck.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- MarkupTokenizer and other implementation details are tested directly. -->
     <InternalsVisibleTo Include="Signet.Core.Tests" />
   </ItemGroup>
