@@ -327,4 +327,13 @@ CSS (`Css/`, upstream's `org.idpf.epubcheck.util.css` and `com.adobe.epubcheck.c
   message with apostrophes where the text has quotation marks; `CSS-028` is reported for every declaration of a `@font-face`.
 - Any exception while reading a style sheet is `PKG-008`, as upstream catches `Exception`.
 
+Media overlays and images (`Overlay/`, `Media/`, upstream's `OverlayChecker`, `OverlayHandler`, `OverlayTextChecker`, `SmilClock`, `BitmapChecker`):
+
+- `SmilClock` keeps the three syntaxes, the truncation of seconds and hours to whole milliseconds, and the fraction of `ms` and `min`;
+  numbers beyond the range of `decimal` are not clock values here (Java's `BigDecimal` has no limit). Only the full format of
+  `toString` is ported (upstream's other formats are not used). `OverlayHandler` does not fail on an audio `src` that did not parse
+  (upstream asks for the fragment of the missing URL).
+- `BitmapChecker` reads the size from the headers (PNG, GIF's first image, JPEG, BMP) where upstream uses ImageIO, and works on the
+  bytes in memory instead of a temporary file. A file of a format ImageIO reads but the port does not tell (WBMP) is `PKG-021`.
+
 Each further deviation from upstream is listed here, with the reason.

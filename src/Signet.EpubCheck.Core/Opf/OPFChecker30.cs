@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Signet.EpubCheck.Core.Messages;
+using Signet.EpubCheck.Core.Overlay;
 using Signet.EpubCheck.Core.References;
 using Signet.EpubCheck.Core.Reporting;
 using Signet.EpubCheck.Core.Util;
@@ -18,9 +20,9 @@ namespace Signet.EpubCheck.Core.Opf;
 /// <remarks>
 /// After the items were checked, the features the content documents reported are checked: pagination (<c>NAV-003</c>,
 /// <c>OPF-066</c>), semantics (<c>HTM-051</c>), navigation (<c>NAV-004</c>–<c>NAV-008</c>) and dictionaries (<c>OPF-078</c>,
-/// <c>OPF-079</c>). Not ported yet, because they need what other tasks bring: the total duration of media overlays
-/// (<c>MED-016</c>), and the checks after the resources were validated (<c>RSC-006</c>, <c>OPF-096</c>, <c>OPF-097</c>,
-/// <c>MED-010</c>–<c>MED-013</c>).
+/// <c>OPF-079</c>). After the resources were checked: remote items (<c>RSC-006</c>), unreferenced ones (<c>OPF-097</c>), non-linear
+/// ones nothing links to (<c>OPF-096</c>) and the media overlay attributes (<c>MED-010</c>, <c>MED-012</c>, <c>MED-013</c>); the total
+/// duration of the media overlays is <c>MED-016</c>.
 /// </remarks>
 public class OPFChecker30(ValidationContext context) : OPFChecker(context)
 {
@@ -29,6 +31,7 @@ public class OPFChecker30(ValidationContext context) : OPFChecker(context)
     private const string SvgType = "image/svg+xml";
     private const string EpubCfiScheme = "epubcfi";
     private const string MetaInfPrefix = "META-INF/";
+    private const long MediaOverlaysDurationTolerance = 1000;
 
     /// <inheritdoc />
     protected override OPFHandler CreateHandler() => new OPFHandler30(Context);
@@ -89,7 +92,29 @@ public class OPFChecker30(ValidationContext context) : OPFChecker(context)
             Report.Message(MessageId.OPF_097, item.Location, item.Path);
         }
 
-        // The media overlay attribute of the item is checked with the media overlays (task 3.9).
+        // the media overlay attribute: a content document an overlay refers to names that overlay, and no other names one
+        if (OpfMediaTypes.IsBlessedItemType(mimeType, Version) && Context.OverlayTextChecker is { } overlayTextChecker)
+        {
+            string? overlay = item.MediaOverlay;
+            if (overlayTextChecker.IsReferencedByOverlay(item.Url))
+            {
+                if (string.IsNullOrEmpty(overlay))
+                {
+                    // missing media-overlay attribute
+                    Report.Message(MessageId.MED_010, item.Location.WithContext(item.Path));
+                }
+                else if (!overlayTextChecker.IsCorrectOverlay(item.Url, overlay))
+                {
+                    // the media-overlay attribute names the wrong overlay
+                    Report.Message(MessageId.MED_012, item.Location.WithContext(item.Path));
+                }
+            }
+            else if (!string.IsNullOrEmpty(overlay))
+            {
+                // the overlay named does not refer to this content document
+                Report.Message(MessageId.MED_013, item.Location.WithContext(item.Path));
+            }
+        }
 
         // the non-linear content documents are reachable
         if (item.IsInSpine && !item.IsLinear && Context.ReferenceRegistry is { } hyperlinks
@@ -119,6 +144,7 @@ public class OPFChecker30(ValidationContext context) : OPFChecker(context)
         OPFHandler30 handler = (OPFHandler30)OpfHandler!;
         CheckLinkedResources(handler);
         CheckCollections(handler);
+        CheckMediaOverlaysDuration(handler);
         return true;
     }
 
@@ -197,6 +223,38 @@ public class OPFChecker30(ValidationContext context) : OPFChecker(context)
         if (item.Properties.Contains(PackageVocabs.ItemVocab.Get(PackageVocabs.ItemProperty.DataNav)))
         {
             Report.Message(MessageId.OPF_077, item.Location);
+        }
+    }
+
+    // The total duration of the media overlays equals the sum of the durations of each one (within a second).
+    private void CheckMediaOverlaysDuration(OPFHandler30 handler)
+    {
+        MetadataSet metadata = handler.Metadata;
+        VocabProperty duration = MediaOverlaysVocab.Vocab.Get(MediaOverlaysVocab.Property.Duration);
+        IReadOnlyList<MetadataSet.Metadata> totals = metadata.GetPrimary(duration);
+        if (totals.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            // the total is the first primary duration found; the individual durations are the refining ones
+            SmilClock total = new(totals[0].Value);
+            SmilClock sum = new();
+            foreach (MetadataSet.Metadata expression in metadata.GetAny(duration).Where(expression => !expression.IsPrimary))
+            {
+                sum = sum.AddTime(new SmilClock(expression.Value));
+            }
+
+            if (!total.EqWithinTolerance(sum, MediaOverlaysDurationTolerance))
+            {
+                Report.Message(MessageId.MED_016, Context.Location());
+            }
+        }
+        catch (FormatException)
+        {
+            // Invalid values are reported by the schema.
         }
     }
 
