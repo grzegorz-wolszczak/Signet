@@ -196,6 +196,12 @@ public sealed partial class MainWindowViewModel
         _validationResults.FixRequested += (_, results) => RunAsyncAction(() => FixValidationResultsAsync(results));
         _validationResults.SkipRuleRequested += (_, code) => SkipValidationRule(code);
         _validationResults.RestoreRulesRequested += (_, codes) => RunAsyncAction(() => RestoreValidationRulesAsync(codes));
+        if (SkippedRuleMigration.NeedsMigration(_settings.CheckBookSkippedRules))
+        {
+            // Rules of Signet that EPUBCheck took over keep being skipped under the id of the EPUBCheck message.
+            _settings.CheckBookSkippedRules = SkippedRuleMigration.Migrate(_settings.CheckBookSkippedRules).ToList();
+        }
+
         _validationResults.SetSkippedRules(_settings.CheckBookSkippedRules);
         _validationResults.SetUsageHints(_settings.CheckBookIncludeUsage);
         _validationResults.UsageHintsToggled += (_, show) => RunAsyncAction(() => ChangeUsageHintsAsync(show));
