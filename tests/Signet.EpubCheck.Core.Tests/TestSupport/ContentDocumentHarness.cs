@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -22,6 +23,9 @@ internal sealed class ContentDocumentHarness
 
     private readonly List<(string Name, string MimeType, byte[] Content)> _files = [];
     private readonly List<VocabProperty> _properties = [];
+    private readonly HashSet<string> _undeclared = new(StringComparer.Ordinal);
+    private ValidationContext? _context;
+    private readonly Dictionary<string, Action<OPFItemBuilder>> _items = new(StringComparer.Ordinal);
 
     public ContentDocumentHarness(string name, string content, string mimeType = Xhtml)
     {
@@ -54,13 +58,31 @@ internal sealed class ContentDocumentHarness
     /// <summary>The report; every severity is kept, and the accessibility hints (suppressed by default) are reported as usage.</summary>
     public CollectingReport Report { get; } = new(new UsageForSuppressed()) { ReportingLevel = Severity.Usage };
 
-    /// <summary>The context of the check, once <see cref="Build"/> was called.</summary>
-    public ValidationContext Context { get; private set; } = null!;
+    /// <summary>The context of the check; made when first asked for (or by <see cref="Build"/>), so the files must be added before.</summary>
+    public ValidationContext Context => _context ?? Build();
+
+    /// <summary>The URL of the file <paramref name="name"/> (it may be followed by a fragment) in the container.</summary>
+    public Core.Galimatias.Url Local(string name) => Context.Container!.RootUrl.Resolve(name);
+
+    /// <summary>Adds a file to the container that the manifest does not declare.</summary>
+    public ContentDocumentHarness UndeclaredFile(string name)
+    {
+        _files.Add((name, string.Empty, []));
+        _undeclared.Add(name);
+        return this;
+    }
 
     /// <summary>Adds a file the document refers to.</summary>
     public ContentDocumentHarness With(string name, string mimeType, string content = "")
     {
         _files.Add((name, mimeType, Encoding.UTF8.GetBytes(content)));
+        return this;
+    }
+
+    /// <summary>Declares the file <paramref name="name"/> (added with <see cref="With"/>) as a manifest item, set up by <paramref name="setup"/>.</summary>
+    public ContentDocumentHarness WithItem(string name, Action<OPFItemBuilder> setup)
+    {
+        _items[name] = setup;
         return this;
     }
 
@@ -107,13 +129,30 @@ internal sealed class ContentDocumentHarness
         item.AddProperties(_properties);
         OPFItem built = item.Build();
         context.ResourceRegistry!.RegisterResource(built);
-        foreach ((string name, string mimeType, _) in _files.Skip(1))
+        foreach ((string name, string mimeType, _) in _files.Skip(1).Where(file => !_undeclared.Contains(file.Name)))
         {
-            context.ResourceRegistry.RegisterResource(container.RootUrl.Resolve(name), mimeType);
+            Core.Galimatias.Url fileUrl = container.RootUrl.Resolve(name);
+            if (_items.TryGetValue(name, out Action<OPFItemBuilder>? setup))
+            {
+                OPFItemBuilder other = new()
+                {
+                    Id = name,
+                    Url = fileUrl,
+                    Location = new EpubLocation("package.opf"),
+                    Container = container,
+                    MimeType = mimeType,
+                };
+                setup(other);
+                context.ResourceRegistry.RegisterResource(other.Build());
+            }
+            else
+            {
+                context.ResourceRegistry.RegisterResource(fileUrl, mimeType);
+            }
         }
 
-        Context = context with { Properties = new HashSet<VocabProperty>(built.Properties) };
-        return Context;
+        _context = context with { Properties = new HashSet<VocabProperty>(built.Properties) };
+        return _context;
     }
 
     /// <summary>The ids of the messages reported so far.</summary>
