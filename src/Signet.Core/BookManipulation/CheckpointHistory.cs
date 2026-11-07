@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using SysPath = System.IO.Path;
 using Signet.Core.Diff;
 using Signet.Core.Localization;
@@ -443,18 +444,24 @@ public sealed class CheckpointHistory : IDisposable
             Directory.CreateDirectory(SysPath.Combine(destinationRoot, SysPath.GetRelativePath(sourceRoot, directory)));
         }
 
-        foreach (string file in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories))
+        // The files are independent of each other, and creating a file is most of what a copy costs: several at a time are copied (a book of a
+        // thousand files). Parallel.ForEach wraps what a copy throws, so the first exception is thrown as it was, for the callers that catch it.
+        List<string> files = Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories)
+            .Where(f => !string.Equals(SysPath.GetRelativePath(sourceRoot, f), TempFolder.LockFileName, StringComparison.Ordinal))
+            .ToList();
+        ParallelOptions options = new() { CancellationToken = cancel, MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 1, MaxCopyThreads) };
+        try
         {
-            cancel.ThrowIfCancellationRequested();
-            string relative = SysPath.GetRelativePath(sourceRoot, file);
-            if (string.Equals(relative, TempFolder.LockFileName, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            File.Copy(file, SysPath.Combine(destinationRoot, relative), overwrite: true);
+            Parallel.ForEach(files, options, file => File.Copy(file, SysPath.Combine(destinationRoot, SysPath.GetRelativePath(sourceRoot, file)), overwrite: true));
+        }
+        catch (AggregateException e) when (e.InnerExceptions.Count > 0)
+        {
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerExceptions[0]).Throw();
+            throw;
         }
     }
+
+    private const int MaxCopyThreads = 8;
 
     private void OnChanged()
     {
