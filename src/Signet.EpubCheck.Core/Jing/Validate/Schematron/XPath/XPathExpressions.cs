@@ -619,11 +619,27 @@ internal sealed class AxisStep(Axis axis, NodeTest test, IReadOnlyList<XPathExpr
     public override IReadOnlyList<object> Evaluate(XPathContext context)
     {
         // The nodes in the order of the axis (reverse document order for a reverse axis), for the positions.
-        List<object> selected = [];
+        List<object> selected;
         XdmNode origin = context.ContextNode;
         if (Axis is Axis.Child or Axis.Attribute)
         {
+            // Counted first, so that the list has the size of the answer: an element may have thousands of children and ask for a few.
             IReadOnlyList<XdmNode> nodes = Axis == Axis.Child ? origin.Children : origin.Attributes;
+            int matching = 0;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                if (Test.Matches(nodes[i], Axis))
+                {
+                    matching++;
+                }
+            }
+
+            if (matching == 0)
+            {
+                return NoItems;
+            }
+
+            selected = new List<object>(matching);
             for (int i = 0; i < nodes.Count; i++)
             {
                 if (Test.Matches(nodes[i], Axis))
@@ -634,6 +650,7 @@ internal sealed class AxisStep(Axis axis, NodeTest test, IReadOnlyList<XPathExpr
         }
         else
         {
+            selected = [];
             foreach (XdmNode n in AxisNodes(origin))
             {
                 if (Test.Matches(n, Axis))
@@ -651,6 +668,9 @@ internal sealed class AxisStep(Axis axis, NodeTest test, IReadOnlyList<XPathExpr
 
         return IsReverse(Axis) ? [.. items.Reverse()] : items;
     }
+
+    // The answer of a step that selects nothing: one list for all of them (no result is ever changed by whoever receives it).
+    private static readonly IReadOnlyList<object> NoItems = Array.Empty<object>();
 
     public IEnumerable<XdmNode> AxisNodes(XdmNode node)
     {
