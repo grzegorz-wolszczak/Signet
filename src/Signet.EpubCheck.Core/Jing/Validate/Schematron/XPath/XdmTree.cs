@@ -68,6 +68,12 @@ internal sealed class XdmDocument(int order) : XdmNode(XdmNodeKind.Document, nul
     public override IReadOnlyList<XdmNode> Children => ChildList;
 
     public override string StringValue => XdmElement.Concatenate(ChildList);
+
+    /// <summary>
+    /// What expressions work out once for the document and reuse (the nodes a step selects in the whole document, the indexes of
+    /// predicates), keyed by the expression. A document is evaluated by one thread.
+    /// </summary>
+    public Dictionary<object, object> Cache { get; } = new(ReferenceEqualityComparer.Instance);
 }
 
 internal sealed class XdmElement(XdmNode parent, int order, string namespaceUri, string localName, string qName, int line, int column, string? systemId)

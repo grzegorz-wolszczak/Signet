@@ -198,6 +198,66 @@ public sealed class SchematronTests
         value.Should().Be(expected, expression);
     }
 
+    // A document with many elements, so that the lists the predicates run over are long enough to be indexed (and applied twice).
+    private static string ManyItems(int count, Func<int, string> element)
+    {
+        System.Text.StringBuilder doc = new("<doc>");
+        for (int i = 0; i < count; i++)
+        {
+            doc.Append(element(i));
+        }
+
+        return doc.Append("</doc>").ToString();
+    }
+
+    [Fact]
+    public void Validate_AnEqualityPredicateOnAKeptList_FindsTheSameNodesAsLookingAtEveryOne()
+    {
+        // Arrange: ids 0..39, the ids 7 and 21 twice; the variable's list is applied to once for every element.
+        ISchema schema = Load(Schema("<let name=\"all\" value=\"//*[@id]\"/><pattern><rule context=\"*[@id]\">"
+            + "<assert test=\"count($all[@id = current()/@id]) = 1\">Duplicate ID \"<value-of select=\"@id\"/>\"</assert></rule></pattern>"));
+        string document = ManyItems(40, i => "<a id=\"" + (i == 21 ? 7 : i).ToString(CultureInfo.InvariantCulture) + "\"/>");
+
+        // Act
+        List<SaxParseException> errors = Validate(schema, document);
+
+        // Assert
+        errors.ConvertAll(e => e.Message.Replace(s_nl, " ")).Should().Equal(
+            "assertion failed:   Duplicate ID \"7\"", "assertion failed:   Duplicate ID \"7\"");
+    }
+
+    [Fact]
+    public void Validate_APredicateOnAllTheNodesOfTheDocument_IsAppliedToThePathFromTheRoot()
+    {
+        // Arrange: //@id[normalize-space(.) = normalize-space(current()/@id)] counts the ids equal to this one, white space aside.
+        ISchema schema = Load(Schema("<pattern><rule context=\"*[@id]\">"
+            + "<assert test=\"count(//@id[normalize-space(.) = normalize-space(current()/@id)]) = 1\">Duplicate ID \"<value-of select=\"@id\"/>\"</assert></rule></pattern>"));
+        string document = ManyItems(30, i => "<a id=\"" + (i == 3 ? " 11 " : i.ToString(CultureInfo.InvariantCulture)) + "\"/>");
+
+        // Act
+        List<SaxParseException> errors = Validate(schema, document);
+
+        // Assert
+        errors.ConvertAll(e => e.Message.Replace(s_nl, " ")).Should().Equal(
+            "assertion failed:   Duplicate ID \" 11 \"", "assertion failed:   Duplicate ID \"11\"");
+    }
+
+    [Fact]
+    public void Validate_APredicateThatComparesTheItemWithTheCurrentNode_IsNotConfusedByTheIndexOfAnotherNode()
+    {
+        // Arrange: each element must be followed by an element whose id is its own id plus one, through a left side that uses
+        // current() as well as the item: a table made for the first current node would be wrong for the others.
+        ISchema schema = Load(Schema("<let name=\"all\" value=\"//*[@n]\"/><pattern><rule context=\"*[@n]\">"
+            + "<assert test=\"count($all[number(@n) - number(current()/@n) = 1]) = 1 or @n = '39'\">no successor of <value-of select=\"@n\"/></assert></rule></pattern>"));
+        string document = ManyItems(40, i => "<a n=\"" + i.ToString(CultureInfo.InvariantCulture) + "\"/>");
+
+        // Act
+        List<SaxParseException> errors = Validate(schema, document);
+
+        // Assert
+        errors.Should().BeEmpty();
+    }
+
     private static string Schema(string content) => "<schema xmlns=\"" + Sch + "\">" + content + "</schema>";
 
     private static ISchema Load(string schema) =>
