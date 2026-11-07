@@ -23,6 +23,8 @@ public sealed class XmlEventReader
     private const string XmlnsPrefix = "xmlns";
     private const string DefaultXmlVersion = "1.0";
     private const string VersionAttribute = "version";
+    private static readonly byte[] Utf8Bom = [0xEF, 0xBB, 0xBF];
+    private static readonly byte[] XmlDeclarationStart = "<?xml"u8.ToArray();
 
     /// <summary>The handler the next events go to.</summary>
     public IContentHandler? ContentHandler { get; set; }
@@ -51,7 +53,7 @@ public sealed class XmlEventReader
         };
         try
         {
-            using Stream stream = input.Open();
+            using Stream stream = AsXml10(input.Open(), locator);
             using XmlReader reader = XmlReader.Create(stream, settings, input.SystemId ?? string.Empty);
             locator.Reader = reader as IXmlLineInfo;
             Handler.SetDocumentLocator(locator);
@@ -62,10 +64,62 @@ public sealed class XmlEventReader
         }
         catch (XmlException e)
         {
-            SaxParseException exception = new(e.Message, input.SystemId, e.LineNumber, e.LinePosition, e);
+            SaxParseException exception = new(XercesMessages.Translate(e, input) ?? e.Message, input.SystemId, e.LineNumber, e.LinePosition, e);
             ErrorHandler?.OnFatalError(exception);
             throw exception;
         }
+    }
+
+    // XmlReader refuses an XML 1.1 declaration, where Xerces reads the document as XML 1.1 (and EPUBCheck reports the version,
+    // HTM-001). The declaration is read here: a document that says "1.1" is read as XML 1.0, which differs in the characters it
+    // allows and its line ends only, and the locator tells the version it declared. Only the declaration of an ASCII-compatible
+    // encoding (UTF-8 and the like) is recognised.
+    private static MemoryStream AsXml10(Stream source, Locator locator)
+    {
+        using (source)
+        {
+            MemoryStream buffer = new();
+            source.CopyTo(buffer);
+            byte[] bytes = buffer.GetBuffer();
+            int length = (int)buffer.Length;
+            int index = length >= Utf8Bom.Length && bytes.AsSpan(0, Utf8Bom.Length).SequenceEqual(Utf8Bom) ? Utf8Bom.Length : 0;
+            ReadOnlySpan<byte> declaration = bytes.AsSpan(index, length - index);
+            if (declaration.StartsWith("<?xml"u8) && declaration.Length > XmlDeclarationStart.Length && IsXmlWhitespace(declaration[XmlDeclarationStart.Length]))
+            {
+                int end = declaration.IndexOf("?>"u8);
+                ReadOnlySpan<byte> text = end < 0 ? declaration : declaration[..end];
+                int version = text.IndexOf("version"u8);
+                if (version >= 0)
+                {
+                    int cursor = version + "version"u8.Length;
+                    cursor = SkipWhitespace(text, cursor);
+                    if (cursor < text.Length && text[cursor] == (byte)'=')
+                    {
+                        cursor = SkipWhitespace(text, cursor + 1);
+                        if (cursor + 4 < text.Length && text[cursor] is (byte)'"' or (byte)'\'' && text.Slice(cursor + 1, 3).SequenceEqual("1.1"u8) && text[cursor + 4] == text[cursor])
+                        {
+                            bytes[index + cursor + 3] = (byte)'0';
+                            locator.DeclaredVersion = "1.1";
+                        }
+                    }
+                }
+            }
+
+            buffer.Position = 0;
+            return buffer;
+        }
+    }
+
+    private static bool IsXmlWhitespace(byte b) => b is 0x20 or 0x09 or 0x0D or 0x0A;
+
+    private static int SkipWhitespace(ReadOnlySpan<byte> text, int index)
+    {
+        while (index < text.Length && IsXmlWhitespace(text[index]))
+        {
+            index++;
+        }
+
+        return index;
     }
 
     private IContentHandler Handler => ContentHandler ?? throw new InvalidOperationException("No content handler");
@@ -79,7 +133,7 @@ public sealed class XmlEventReader
             switch (reader.NodeType)
             {
                 case XmlNodeType.XmlDeclaration:
-                    locator.XmlVersion = reader.GetAttribute(VersionAttribute) ?? DefaultXmlVersion;
+                    locator.XmlVersion = locator.DeclaredVersion ?? reader.GetAttribute(VersionAttribute) ?? DefaultXmlVersion;
                     break;
                 case XmlNodeType.Element:
                     List<string> prefixes = StartElement(reader, attributes);
@@ -195,6 +249,9 @@ public sealed class XmlEventReader
     private sealed class Locator(string? systemId) : ILocator2
     {
         public string XmlVersion { get; set; } = DefaultXmlVersion;
+
+        /// <summary>The version the declaration gave when the reader was made to read it as 1.0.</summary>
+        public string? DeclaredVersion { get; set; }
 
         public IXmlLineInfo? Reader { get; set; }
 
