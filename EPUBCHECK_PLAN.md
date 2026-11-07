@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) and 3.11 (profiles and extensions) are done**; **next: task 3.12 single-file and expanded modes**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; **next: epic 4 (task 4.2 XML / XMP / JSON reports)**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.12 Single-file and expanded modes**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **4.2 XML / XMP / JSON reports**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -71,8 +71,8 @@ questions into one message, as `AGENTS.md` demands).
 | What | Where |
 |---|---|
 | Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Ops/` (content documents), `Nav/`, `Dtbook/`, `Css/` (the seam of the CSS checker), `Ncx/`, `References/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Jing/` (the RELAX NG engine, a port of Jing, BSD-3), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
-| Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-file modes still say "checker not implemented") |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (2972 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1222 passed, 65 skipped) |
+| Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-document modes go to `SingleDocumentChecker`, `--mode exp` to `ExpandedEpubArchive`) |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (2998 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (46), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1239 passed, 47 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -87,19 +87,18 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 3.12 Single-file and expanded modes
+### Next task: 4.2 XML / XMP / JSON reports
 
-`ToolRun.ProcessFile` and the single-document modes of the command line (`--mode xhtml|svg|opf|nav|mo|exp`, `--save`) still answer
-"not implemented". Wire `OCFChecker` / `CheckerFactory` into them; the pending scenarios of `cli.feature` (155, 166, 172, 187, 205, 230, 234,
-241, 248, 259, 395) wait for it, and 205 needs the EPUB archive built from an expanded EPUB.
+`ToolRun` still answers "not implemented" for `--out`, `--json` and `--xmp`. Port the report writers (publication metadata, items,
+messages, locations; `System.Text.Json`, field order as upstream; `maxOfEachMessage`); the scenarios of `cli.feature` (220, 269-347),
+`reporting` and `localization` wait for it.
 
 ### Current state of the conformance run
 
 47 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
 the package documents of EPUB 2 and 3, the NCX, the content documents (XHTML, SVG, fixed layout, the navigation document, EDUPUB,
-indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1229 scenarios pass; the
-others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (report writers 4.2, `--save`
-3.12, French messages that are never meant to pass). Not enabled yet:
+indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1239 scenarios pass; the
+others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (report writers 4.2, French messages that are never meant to pass). Not enabled yet:
 `localization` and `reporting` (4.2). Single documents the harness checks: package documents, XHTML, SVG
 and navigation documents (`OcfEpubChecker`); `mo` (media overlays) too. The test run uses English texts (`TestIsolationSetup` sets
 `DefaultThreadCurrentUICulture`), so a Polish machine passes too.
@@ -479,7 +478,12 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   mapping document of multiple renditions, validated with `rendition-mapping.rnc` and `.sch` when the context has the
   `epubcheck:rendition-mapping` property), which `OCFChecker.CheckRenditions` runs. `epub-dictionaries` and `epub-multiple-renditions`
   are fully enabled. 1229 conformance scenarios pass.
-- **3.12 Single-file and expanded modes (M).** `--mode opf|xhtml|svg|nav|mo|exp`, `--save`.
+- **3.12 Single-file and expanded modes (M). DONE.** `SingleDocumentChecker` (Core; `SingleDocumentKind`, the mode names, the EPUB 3-only
+  modes) is what the tool and the conformance harness both call for `--mode opf|xhtml|svg|nav|mo`; `ExpandedEpubArchive` packs a folder for
+  `--mode exp` (`mimetype` first and stored; `<folder>.epub` stays with `--save`). A whole EPUB is now checked with the version
+  detected (upstream passes none), and the `PKG-024`/`PKG-017` extension check uses the detected version (`OCFChecker.CheckSource`).
+  The lost `wrong_extension.zip` fixture was restored (`.gitignore` exception). The `cli.feature` scenarios 155-395 that waited
+  for this pass: 1239 conformance scenarios pass.
 
 ### Epic 4 — Reports and the executable
 
