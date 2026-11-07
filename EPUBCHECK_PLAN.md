@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; epic 4 is done (**4.1 console output, 4.2 reports, 4.3 standalone executable**); **next: epic 5, task 5.1 the `Book` to `IEpubSource` adapter**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; epic 4 is done (**4.1 console output, 4.2 reports, 4.3 standalone executable**); epic 5 is done (**Signet's Check Book runs on the port: 5.1 the `Book` adapter, 5.2 results in the panel, 5.3 fixes, 5.4 settings, 5.5 the old checks retired**); **next: epic 6 (task 6.1 conformance report)**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **5.1 `Book` to `IEpubSource` adapter**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **6.1 Conformance report**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -87,11 +87,10 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 5.1 `Book` to `IEpubSource` adapter
+### Next task: 6.1 Conformance report
 
-Epic 5 moves Signet's own validation onto `Signet.EpubCheck.Core`. 5.1: an `IEpubSource` over Signet's in-memory `Book` so that the
-state being edited (unsaved changes included) is validated; read `Signet.Core`'s `Book`, `Resource`, `FolderKeeper` and how the
-current validation gets its files before designing it. See "Epic 5" below, and ask the owner about anything the tasks leave open.
+A table of the scenarios of the conformance run: green / skipped (with the reason) / red, generated from the run (the harness already knows
+the reason of each pending scenario). Then 6.2 (optional, a differential test against the Java tool) and 6.3 (scale, `Signet.Benchmarks`).
 
 ### Current state of the conformance run
 
@@ -504,15 +503,33 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
 
 ### Epic 5 — Signet integration
 
-- **5.1 `Book` → `IEpubSource` adapter (M).** Validate the in-memory state, unsaved changes included.
-- **5.2 Results in the UI (M).** `MessageId` as `ValidationResult.Code`, Polish texts per the app language, progress and
-  cancellation.
-- **5.3 Signet-only rules and fixes (M).** Keep as a separate rule set with codes that cannot collide with EPUBCheck
-  ids; `ValidationFix` bound to message ids.
-- **5.4 Preferences (S).** "Skipped rule codes" become severity overrides (`SUPPRESSED`) — the same mechanism as
-  `--customMessages`.
-- **5.5 Retire the old validators (M).** Remove the replaced classes and tests, update `README.md` and `AGENTS.md` —
-  only when the new library covers everything the old code detected.
+- **5.1 `Book` → `IEpubSource` adapter (M). DONE.** `Signet.Core` references `Signet.EpubCheck.Core` (not the other way round).
+  `BookEpubSource` (Signet.Core) follows `ExportEpub` without writing anything: the files of the working folder (not the lock and
+  state files), the text resources as they would be saved (so unsaved edits are checked), a fresh stored `mimetype` first, and for
+  books with obfuscated fonts `META-INF/encryption.xml` and the fonts obfuscated in memory (the owner's decision: the validation sees
+  what the export writes). It does not stamp the OPF or add a missing UUID. `FontObfuscation.ObfuscateBytes` was split from
+  `ObfuscateFile` for it.
+- **5.2 Results in the UI (M). DONE.** `EpubCheckValidator` runs the checker on the source and returns `ValidationResult`s: the code is the
+  message id, the path the book path (empty for the publication), line and column the checker's, the text in the app language;
+  skipped ids become `SUPPRESSED` overrides (`SeverityOverrideMessageDictionary`); progress is the files seen, cancellation stops at the
+  checker's next report. `ValidationSeverity` got `Usage` and `Fatal` (the owner's decision); the panel has a Severity column. Usage
+  messages are off by default (setting `CheckBookIncludeUsage`, a lightbulb toggle in the panel's toolbar that checks again).
+- **5.3 Signet-only rules and fixes (M). DONE.** `EpubCheckFixes` binds the panel's fixes to message ids and their arguments:
+  RSC-008/OPF-003 → `AddToManifestFix`, RSC-007/RSC-007w → the new `ReferenceCaseFix` (the file exists under another letter case),
+  OPF-030 and the schema errors about `dc:identifier`/`unique-identifier` → `UniqueIdentifierFix`, the schema error "Duplicate ID" →
+  `DuplicateIdFix`. Signet's own rules keep their `Validation_…` resource-key codes, which cannot collide with EPUBCheck's ids.
+- **5.4 Preferences (S). DONE.** The skipped rule codes of the panel (kept in `CheckBookSkippedRules`) are suppressed in the checker as
+  severity overrides, the same mechanism as `--customMessages`; `SkippedRuleMigration` turns codes saved for retired rules into the id of
+  the EPUBCheck message that reports the same problem (or drops the ones whose replacement, RSC-005, would hide far more). There is no
+  Preferences page for them: the panel's own menu skips and restores rules.
+- **5.5 Retire the old validators (M). DONE.** Each retired rule has a test in `EpubCheckCoverageTests` showing EPUBCheck reporting the same
+  situation (found by probing, not assumed): not well-formed → RSC-016; the checks of the OPF (metadata, manifest, spine, ids, hrefs,
+  itemrefs, cover images, unique identifier, nav, NCX) → RSC-005/OPF-030/OPF-048/OPF-049/OPF-074; dead links, case mismatches → RSC-007;
+  fragments → RSC-012; files missing from the manifest → RSC-008; ids not unique in a file → RSC-005 "Duplicate ID". Kept, because EPUBCheck
+  does not report them: the missing DOCTYPE, the media type against the extension (`ManifestMediaTypeValidator`, was
+  `OpfStructureValidator`), an id that is not an NCName (`IdValidator`), and the validators of fonts, cross-file structure, file names,
+  media types against content, images, CSS declarations and footnotes. `LinkIntegrityValidator` is no longer called by Check Book but stays:
+  the footnote operations and their tests use it as a quick link check. `AGENTS.md` describes the arrangement.
 
 ### Epic 6 — Quality
 

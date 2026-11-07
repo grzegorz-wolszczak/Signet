@@ -4,8 +4,8 @@
 
 **Signet** is a desktop editor for EPUB 2 and EPUB 3 ebooks, written in **C# + Avalonia**.
 Main areas: code editing (Code Editor), live Preview, Find & Replace, Table of Contents
-generation/editing, Metadata Editor, Reports, Spellcheck, Reformat/Clean, well-formedness
-validation, checkpoints (snapshot + diff).
+generation/editing, Metadata Editor, Reports, Spellcheck, Reformat/Clean, validation (Check Book: the
+EPUBCheck port plus Signet's own checks), checkpoints (snapshot + diff).
 
 ## Key facts
 
@@ -19,9 +19,17 @@ validation, checkpoints (snapshot + diff).
 - **Naming:** solution `Signet.slnx`; projects `Signet.Core` (domain model, no UI dependencies),
   `Signet.App` (Avalonia app), `Signet.Cli` (headless CLI), `Signet.Controls.TreeDataGrid` (the
   TreeDataGrid fork), `Signet.NativeWebView.Platform.Linux` (the NativeWebView Linux backend fork, assembly and namespace
-  keep the upstream `NativeWebView.Platform.Linux`); tests `Signet.Core.Tests`, `Signet.App.Tests`, `Signet.App.UiTests`,
-  `Signet.App.MainWindowUiTests`, `Signet.App.PreferencesUiTests`, `Signet.Controls.TreeDataGrid.Tests`,
-  `Signet.NativeWebView.Platform.Linux.Tests`; namespaces `Signet.*`.
+  keep the upstream `NativeWebView.Platform.Linux`), `Signet.EpubCheck.Core` (the C# port of the W3C's EPUBCheck: the checking
+  library, no dependency on `Signet.Core`) and `Signet.EpubCheck.Cli` (its standalone tool `epubcheck.net`); tests `Signet.Core.Tests`,
+  `Signet.App.Tests`, `Signet.App.UiTests`, `Signet.App.MainWindowUiTests`, `Signet.App.PreferencesUiTests`,
+  `Signet.Controls.TreeDataGrid.Tests`, `Signet.NativeWebView.Platform.Linux.Tests`, `Signet.EpubCheck.Core.Tests`,
+  `Signet.EpubCheck.Cli.Tests`, `Signet.EpubCheck.Conformance.Tests` (upstream's own scenarios); namespaces `Signet.*`.
+- **EPUBCheck port:** the plan, the decisions and the state are in `EPUBCHECK_PLAN.md`; what comes from upstream and every deliberate
+  deviation are in `src/Signet.EpubCheck.Core/UPSTREAM.md`. Check Book (`BookValidator.ValidateCurrentBook`) first runs EPUBCheck on the
+  book as it is in memory (`BookEpubSource`, `EpubCheckValidator`; results carry the message id, e.g. `OPF-003`, as their code) and then
+  Signet's own validators, whose codes are resource keys (`Validation_…`) and cannot collide with the ids. A check of Signet's was
+  retired only when a test in `EpubCheckCoverageTests` showed EPUBCheck reporting the same situation; keep that rule when changing the
+  set. The fixes of the panel are bound to message ids in `EpubCheckFixes`.
 - **License:** GNU GPL v3 or later (see `LICENSE`). Source files carry **no** license header.
 - **UI localization:** `.resx` resources — `Strings.resx` / `CoreStrings.resx` hold Polish (default),
   `*.en.resx` hold English. Every user-visible string goes through resources, in both languages.
