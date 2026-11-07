@@ -328,6 +328,10 @@ public sealed class OCFMetaFileTests
     private static string Rootfile(string path) => "<rootfile full-path=\"" + path + "\" media-type=\"application/oebps-package+xml\"/>";
 
     // A package document the checks of its version accept (EPUB 3: a navigation document item; EPUB 2: an NCX item).
+    // The navigation document of the publication: the content documents are checked now, so it must be a valid one.
+    private const string ValidNav = "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\"><head><title>T</title></head>"
+        + "<body><nav epub:type=\"toc\"><h1>T</h1><ol><li><a href=\"nav.xhtml\">T</a></li></ol></nav></body></html>";
+
     private static string Package(string version) => version == "3.0"
         ? "<package xmlns=\"" + Opf + "\" version=\"3.0\" unique-identifier=\"uid\" xml:lang=\"en\">"
             + "<metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:identifier id=\"uid\">urn:uuid:12345678-1234-1234-1234-123456789abc</dc:identifier>"
@@ -348,7 +352,7 @@ public sealed class OCFMetaFileTests
         if (package is not null)
         {
             entries.Add(new("package.opf", Encoding.UTF8.GetBytes(package)));
-            entries.Add(new("nav.xhtml", Encoding.UTF8.GetBytes("<a/>")));
+            entries.Add(new("nav.xhtml", Encoding.UTF8.GetBytes(ValidNav)));
         }
 
         for (int i = 0; i < files.Length; i += 2)

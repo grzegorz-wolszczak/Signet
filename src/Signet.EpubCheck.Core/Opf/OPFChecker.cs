@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Signet.EpubCheck.Core.Messages;
+using Signet.EpubCheck.Core.Nav;
 using Signet.EpubCheck.Core.Ncx;
 using Signet.EpubCheck.Core.Ocf;
 using Signet.EpubCheck.Core.Reporting;
@@ -103,7 +104,7 @@ public class OPFChecker(ValidationContext context) : IChecker
     }
 
     /// <summary>
-    /// Checks the resource an item declares with the checker of its kind: the NCX, the navigation document (task 3.5) or the one
+    /// Checks the resource an item declares with the checker of its kind: the NCX, the navigation document or the one
     /// <see cref="CheckerFactory"/> picks. A checker that cannot be made for the item (its media type is not the one the kind
     /// needs) is <c>CHK-008</c>.
     /// </summary>
@@ -122,7 +123,7 @@ public class OPFChecker(ValidationContext context) : IChecker
         };
         try
         {
-            IChecker checker = item.IsNcx ? new NCXChecker(itemContext) : CheckerFactory.NewChecker(itemContext);
+            IChecker checker = item.IsNcx ? new NCXChecker(itemContext) : item.IsNav ? new NavChecker(itemContext) : CheckerFactory.NewChecker(itemContext);
             checker.Check();
         }
         catch (InvalidOperationException)
