@@ -64,6 +64,7 @@ internal static class ConformanceCorpus
         "epub3/E-obsolete-features/deprecated-features.feature",
         "epub3/E-obsolete-features/outdated-features.feature",
         "epub3/G-media-type-registrations/media-types-registrations.feature",
+        "localization/localization.feature",
         "reporting/json-report.feature",
         "reporting/xml-report.feature",
         "unit-tests/url-fragment.feature",
@@ -90,17 +91,22 @@ internal static class ConformanceCorpus
     private static Dictionary<string, string> BuildPending()
     {
         Dictionary<string, string> pending = new(StringComparer.Ordinal);
-        void Add(string reason, params int[] lines)
+        void Add(string reason, string feature, params int[] lines)
         {
             foreach (int line in lines)
             {
-                pending.Add($"cli/cli.feature:{line}", reason);
+                pending.Add($"{feature}:{line}", reason);
             }
         }
 
-        // cli/cli.feature: the command line is done (task 0.6); these scenarios check a publication or write a report.
-        Add("Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).",
-            366, 371, 376);
+        const string French = "Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).";
+
+        // cli/cli.feature: the command line is done; what is pending here is not meant to pass.
+        Add(French, "cli/cli.feature", 366, 371, 376);
+
+        // localization/localization.feature: the scenarios that ask for French (the others - English, Polish by default, the locale
+        // reset, case conversion - pass).
+        Add(French, "localization/localization.feature", 16, 31, 37);
         return pending;
     }
 

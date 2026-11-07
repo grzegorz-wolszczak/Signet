@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; epic 4 is done (**4.1 console output, 4.2 reports, 4.3 standalone executable**); epic 5 is done (**Signet's Check Book runs on the port: 5.1 the `Book` adapter, 5.2 results in the panel, 5.3 fixes, 5.4 settings, 5.5 the old checks retired**); **next: epic 6 (task 6.1 conformance report)**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; epic 4 is done (**4.1 console output, 4.2 reports, 4.3 standalone executable**); epic 5 is done (**Signet's Check Book runs on the port: 5.1 the `Book` adapter, 5.2 results in the panel, 5.3 fixes, 5.4 settings, 5.5 the old checks retired**); epic 6: **6.1 (conformance report) is done**; **next: task 6.2 (optional, differential test against Java) and 6.3 (scale)**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **6.1 Conformance report**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **6.3 Scale** - 6.2 needs a JDK and is optional, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -72,7 +72,7 @@ questions into one message, as `AGENTS.md` demands).
 |---|---|
 | Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Ops/` (content documents), `Nav/`, `Dtbook/`, `Css/` (the seam of the CSS checker), `Ncx/`, `References/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Jing/` (the RELAX NG engine, a port of Jing, BSD-3), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
 | Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-document modes go to `SingleDocumentChecker`, `--mode exp` to `ExpandedEpubArchive`) |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (3009 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (53), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1277 passed, 10 skipped) |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (3009 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (53), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1284 passed, 6 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -87,17 +87,18 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 6.1 Conformance report
+### Next task: 6.3 Scale (6.2 is optional)
 
-A table of the scenarios of the conformance run: green / skipped (with the reason) / red, generated from the run (the harness already knows
-the reason of each pending scenario). Then 6.2 (optional, a differential test against the Java tool) and 6.3 (scale, `Signet.Benchmarks`).
+Large generated books (`SyntheticBook`), measured in `Signet.Benchmarks` (on demand only, timings never asserted, numbers in `BASELINE.md`): the
+cost of the EPUBCheck run (`EpubCheckValidator` on a `Book`, the CLI on an EPUB) as the book grows. 6.2 (a differential test against the Java tool,
+local only) needs a JDK; ask the owner before starting it.
 
 ### Current state of the conformance run
 
-49 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
+50 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
 the package documents of EPUB 2 and 3, the NCX, the content documents (XHTML, SVG, fixed layout, the navigation document, EDUPUB,
-indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1277 scenarios pass; the
-others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (French messages that are never meant to pass). Not enabled: `localization` (French). Single documents the harness checks: package documents, XHTML, SVG
+indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1245 scenarios pass; the
+others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (French messages that are never meant to pass). All the features are enabled; the numbers are in `CONFORMANCE.md`. Single documents the harness checks: package documents, XHTML, SVG
 and navigation documents (`OcfEpubChecker`); `mo` (media overlays) too. The test run uses English texts (`TestIsolationSetup` sets
 `DefaultThreadCurrentUICulture`), so a Polish machine passes too.
 
@@ -533,7 +534,11 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
 
 ### Epic 6 — Quality
 
-- **6.1 Conformance report (S).** Table of scenarios: green / skipped (with reason) / red.
+- **6.1 Conformance report (S). DONE.** `tests/Signet.EpubCheck.Conformance.Tests/CONFORMANCE.md`, written at the end of a run when
+  `SIGNET_CONFORMANCE_REPORT` names the file (`ConformanceReportWriter`, an assembly fixture; `ConformanceReport.Render`; `ScenarioOutcomes`
+  collects what each scenario did): totals, a row per feature (passed / skipped / failed), the failed scenarios with the first line of what
+  failed and the skipped ones grouped by reason. `localization/localization.feature` is enabled now; 1245 of 1251 scenarios pass and the other
+  6 ask for French messages (pending for good). Regenerate the file after a change that moves the numbers.
 - **6.2 Differential test against Java (S, optional).** Local only, needs a JDK; compares sets of message ids on
   `tests/corpus/real` and `tests/corpus/broken`.
 - **6.3 Scale (S).** Large generated books (`SyntheticBook`), measured in `Signet.Benchmarks` (timings never asserted).

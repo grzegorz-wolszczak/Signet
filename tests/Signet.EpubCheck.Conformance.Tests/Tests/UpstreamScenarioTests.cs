@@ -14,7 +14,7 @@ namespace Signet.EpubCheck.Conformance.Tests.Tests;
 /// </summary>
 public sealed class UpstreamScenarioTests
 {
-    private const string NotEnabled =
+    internal const string NotEnabled =
         "The port does not pass this feature yet (ConformanceCorpus.EnabledFeatures; SIGNET_CONFORMANCE_ALL=1 runs it anyway).";
 
     private static readonly Lazy<IReadOnlyList<ScenarioDefinition>> s_scenarios = new(() => FeatureLoader.LoadAll(ConformanceCorpus.Root));
@@ -41,10 +41,17 @@ public sealed class UpstreamScenarioTests
         try
         {
             ScenarioRunner.Run(scenario, s_steps.Value, world);
+            ScenarioOutcomes.Record(scenario, ScenarioOutcome.Passed);
         }
         catch (ScenarioNotImplementedException ex) when (!ConformanceCorpus.MustPass(scenario))
         {
+            ScenarioOutcomes.Record(scenario, ScenarioOutcome.Skipped, ex.Message);
             Assert.Skip(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ScenarioOutcomes.Record(scenario, ScenarioOutcome.Failed, ex.Message);
+            throw;
         }
     }
 }

@@ -1,8 +1,10 @@
 using System.Runtime.CompilerServices;
 using Signet.Core.Tests.TestSupport;
+using Signet.EpubCheck.Conformance.Tests.Harness;
 using Xunit;
 
 [assembly: AssemblyFixture(typeof(TempCleanupGuard))]
+[assembly: AssemblyFixture(typeof(ConformanceReportWriter))]
 
 namespace Signet.EpubCheck.Conformance.Tests;
 
