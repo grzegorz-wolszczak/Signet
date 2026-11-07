@@ -7,13 +7,14 @@ using Signet.Core.Resources;
 namespace Signet.Core.BookManipulation;
 
 /// <summary>
-/// Checks the <c>id</c> attributes of every (X)HTML file: an id must be a valid XML name without a colon (NCName — the
-/// rule epubcheck applies) and must be unique within its file. Both problems have an automatic fix
-/// (<see cref="InvalidIdFix"/>, <see cref="DuplicateIdFix"/>). Called from <see cref="BookValidator.ValidateCurrentBook"/>.
+/// Checks the <c>id</c> attributes of every (X)HTML file: an id must be a valid XML name without a colon (NCName), which
+/// EPUBCheck does not require (it only rejects ids with white space) but the XML tools and some readers do. The problem has an
+/// automatic fix (<see cref="InvalidIdFix"/>). Called from <see cref="BookValidator.ValidateCurrentBook"/>.
 /// </summary>
 /// <remarks>
-/// An id shared by several files is legal; that case is reported (as a warning, without a fix) by
-/// <see cref="CrossFileStructureValidator"/>.
+/// An id that is not unique within its file is reported by EPUBCheck, which also brings the fix (<see cref="DuplicateIdFix"/>,
+/// see <see cref="EpubCheckFixes"/>). An id shared by several files is legal; that case is reported (as a warning, without
+/// a fix) by <see cref="CrossFileStructureValidator"/>.
 /// </remarks>
 public static class IdValidator
 {
@@ -60,21 +61,13 @@ public static class IdValidator
 
         foreach (string id in order)
         {
-            (int position, int count) = ids[id];
+            (int position, _) = ids[id];
             int line = LineOf(text, position);
             if (!MarkupEdits.IsValidId(id))
             {
                 results.Add(new ValidationResult(
                     ValidationSeverity.Error, html.BookPath, line, -1,
                     CoreStrings.Format("Validation_InvalidId", id), "Validation_InvalidId", new InvalidIdFix(html.BookPath, id)));
-            }
-
-            if (count > 1)
-            {
-                results.Add(new ValidationResult(
-                    ValidationSeverity.Error, html.BookPath, line, -1,
-                    CoreStrings.Format("Validation_DuplicateIdInFile", id, count), "Validation_DuplicateIdInFile",
-                    new DuplicateIdFix(html.BookPath, id)));
             }
         }
     }

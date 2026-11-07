@@ -9,8 +9,8 @@ namespace Signet.Core.BookManipulation;
 
 /// <summary>
 /// Checks resource file names for portability between file systems. Called from
-/// <see cref="BookValidator.ValidateCurrentBook"/>, like <see cref="OpfStructureValidator"/>,
-/// <see cref="LinkIntegrityValidator"/>, <see cref="FontIntegrityValidator"/> and
+/// <see cref="BookValidator.ValidateCurrentBook"/>, like <see cref="ManifestMediaTypeValidator"/>,
+/// <see cref="FontIntegrityValidator"/> and
 /// <see cref="CrossFileStructureValidator"/>.
 /// </summary>
 /// <remarks>

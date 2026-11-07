@@ -13,7 +13,7 @@ namespace Signet.Core.BookManipulation;
 /// <summary>
 /// Font checks: embeddability and name aliasing. Called from
 /// <see cref="BookValidator.ValidateCurrentBook"/>, like
-/// <see cref="OpfStructureValidator"/> and <see cref="LinkIntegrityValidator"/>.
+/// <see cref="ManifestMediaTypeValidator"/> and <see cref="LinkIntegrityValidator"/>.
 /// </summary>
 /// <remarks>
 /// Checks two things: whether an embedded font has the embedding-restricting flag set in its

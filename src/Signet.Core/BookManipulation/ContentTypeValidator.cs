@@ -9,12 +9,12 @@ namespace Signet.Core.BookManipulation;
 /// <summary>
 /// Checks that the declared media type matches the file's actual content (byte
 /// signatures). Called from <see cref="BookValidator.ValidateCurrentBook"/>, like
-/// <see cref="OpfStructureValidator"/>, <see cref="LinkIntegrityValidator"/>,
+/// <see cref="ManifestMediaTypeValidator"/>, <see cref="LinkIntegrityValidator"/>,
 /// <see cref="FontIntegrityValidator"/>, <see cref="CrossFileStructureValidator"/> and
 /// <see cref="FileNamePortabilityValidator"/>.
 /// </summary>
 /// <remarks>
-/// Complements <see cref="OpfStructureValidator"/> — that check compares the media type with the file name's
+/// Complements <see cref="ManifestMediaTypeValidator"/> — that check compares the media type with the file name's
 /// EXTENSION (a cheap, purely textual heuristic); this check reads the first
 /// bytes of the file and compares the media type with the signature of the ACTUAL content, so it detects e.g. a file
 /// renamed from <c>.png</c> to <c>.jpg</c> with a correct (extension-consistent) but false

@@ -11,7 +11,7 @@ namespace Signet.Core.BookManipulation;
 
 /// <summary>
 /// Parsing/structure checks at the whole-book level. Called from
-/// <see cref="BookValidator.ValidateCurrentBook"/>, like <see cref="OpfStructureValidator"/>,
+/// <see cref="BookValidator.ValidateCurrentBook"/>, like <see cref="ManifestMediaTypeValidator"/>,
 /// <see cref="LinkIntegrityValidator"/> and <see cref="FontIntegrityValidator"/>.
 /// </summary>
 /// <remarks>

@@ -212,41 +212,8 @@
   <data name="Validation_FontFamilyMismatch" xml:space="preserve">
     <value>Zadeklarowana rodzina fontu „{0}” (@font-face) różni się od rzeczywistej nazwy „{1}” zapisanej w pliku „{2}”.</value>
   </data>
-  <data name="Validation_OpfMetadataEmpty" xml:space="preserve">
-    <value>Sekcja &lt;metadata&gt; jest pusta lub nie istnieje.</value>
-  </data>
-  <data name="Validation_OpfManifestEmpty" xml:space="preserve">
-    <value>Sekcja &lt;manifest&gt; jest pusta lub nie istnieje.</value>
-  </data>
-  <data name="Validation_OpfSpineEmpty" xml:space="preserve">
-    <value>Sekcja &lt;spine&gt; jest pusta lub nie istnieje.</value>
-  </data>
-  <data name="Validation_OpfUniqueIdentifierEmpty" xml:space="preserve">
-    <value>Atrybut unique-identifier elementu &lt;package&gt; jest pusty.</value>
-  </data>
-  <data name="Validation_OpfNoUniqueIdentifier" xml:space="preserve">
-    <value>Brak elementu dc:identifier z id=„{0}” wskazywanym przez unique-identifier — książka nie ma unikalnego identyfikatora.</value>
-  </data>
-  <data name="Validation_OpfManifestItemNoId" xml:space="preserve">
-    <value>Wpis manifestu dla „{0}” nie ma atrybutu id.</value>
-  </data>
-  <data name="Validation_OpfDuplicateId" xml:space="preserve">
-    <value>Zduplikowany identyfikator „{0}” w manifeście (wystąpień: {1}).</value>
-  </data>
-  <data name="Validation_OpfDuplicateHref" xml:space="preserve">
-    <value>Plik „{0}” jest wpisany w manifeście wielokrotnie (razy: {1}).</value>
-  </data>
   <data name="Validation_OpfMediaTypeMismatch" xml:space="preserve">
     <value>Plik „{0}” ma media-type=„{1}”, ale rozszerzenie sugeruje „{2}”.</value>
-  </data>
-  <data name="Validation_OpfItemrefNoIdref" xml:space="preserve">
-    <value>Wpis &lt;itemref&gt; w spine nie ma atrybutu idref.</value>
-  </data>
-  <data name="Validation_OpfItemrefUnknownIdref" xml:space="preserve">
-    <value>Wpis spine wskazuje idref=„{0}”, którego nie ma w manifeście.</value>
-  </data>
-  <data name="Validation_OpfMultipleCovers" xml:space="preserve">
-    <value>Liczba zasobów oznaczonych jako okładka: {0} — powinien być tylko jeden.</value>
   </data>
   <data name="Validation_BadFragmentSameFile" xml:space="preserve">
     <value>Zły fragment „#{0}” — nie znaleziono elementu o takim id/name w tym samym pliku.</value>
@@ -275,20 +242,8 @@
   <data name="WellFormed_NotWellFormed" xml:space="preserve">
     <value>Plik nie jest poprawnym dokumentem XML (well-formed).</value>
   </data>
-  <data name="Validation_DuplicateIdInFile" xml:space="preserve">
-    <value>Identyfikator „{0}” występuje w tym pliku {1} razy — id musi być unikalne w pliku.</value>
-  </data>
   <data name="Validation_InvalidId" xml:space="preserve">
     <value>Identyfikator „{0}” nie jest poprawną nazwą XML (np. zaczyna się od cyfry albo zawiera spację lub dwukropek).</value>
-  </data>
-  <data name="Validation_NoNav" xml:space="preserve">
-    <value>Książka EPUB 3 nie ma dokumentu nawigacji (NAV).</value>
-  </data>
-  <data name="Validation_NoNcx" xml:space="preserve">
-    <value>Książka EPUB 2 nie ma spisu treści NCX.</value>
-  </data>
-  <data name="Validation_OpfUniqueIdentifierValueEmpty" xml:space="preserve">
-    <value>Unikalny identyfikator książki (dc:identifier z id=„{0}”) jest pusty.</value>
   </data>
   <data name="Validation_ImageCorrupt" xml:space="preserve">
     <value>Obraz „{0}” jest uszkodzony albo niekompletny (nie da się odczytać nagłówka albo brakuje końca pliku).</value>
@@ -316,9 +271,6 @@
   </data>
   <data name="Validation_FootnoteManyRefs" xml:space="preserve">
     <value>Do przypisu „#{0}” prowadzi {1} odnośników, ale notatka nie ma linku powrotnego do niektórych z nich.</value>
-  </data>
-  <data name="Validation_NearColumn" xml:space="preserve">
-    <value>{0}.  W pobliżu kolumny {1}</value>
   </data>
   <data name="WellFormed_DoctypeMissing" xml:space="preserve">
     <value>Brak deklaracji DOCTYPE. To tylko ostrzeżenie — plik jest poprawny składniowo, a czytniki go akceptują</value>
