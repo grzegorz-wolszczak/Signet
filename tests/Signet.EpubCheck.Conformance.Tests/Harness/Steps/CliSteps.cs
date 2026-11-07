@@ -33,10 +33,8 @@ internal static partial class CliSteps
             w.Deletes.Add(file);
         }, "file {string} was created");
         steps.Add((w, a) => Run(w, a.Get<string>(0)), "running `{}`");
-        steps.Add(
-            (_, _) => throw new ScenarioNotImplementedException("The step needs the report of the command-line run (task 0.6)."),
-            "the report uses {int} maximum number of unique messages",
-            "the report uses an unlimited number of unique messages");
+        steps.Add((w, a) => w.Tool!.Report!.MaxOfEachMessage.Should().Be(a.Get<int>(0)), "the report uses {int} maximum number of unique messages");
+        steps.Add((w, _) => w.Tool!.Report!.MaxOfEachMessage.Should().BeNegative(), "the report uses an unlimited number of unique messages");
     }
 
     // Upstream: the output "is" compared after a trailing CRLF became LF, with {{VERSION}} filled in.
@@ -58,7 +56,8 @@ internal static partial class CliSteps
         try
         {
             CultureInfo.CurrentUICulture = world.DefaultCulture;
-            world.ExitCode = EpubCheckTool.Run(args, world.StdOut, world.ErrorRedirectedToOutput ? world.StdOut : world.StdErr);
+            world.Tool = new ToolRun(new ToolOutput(world.StdOut, world.ErrorRedirectedToOutput ? world.StdOut : world.StdErr), world.DefaultCulture);
+            world.ExitCode = world.Tool.Run(args);
         }
         finally
         {

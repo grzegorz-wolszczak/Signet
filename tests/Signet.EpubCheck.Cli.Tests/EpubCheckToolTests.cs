@@ -227,14 +227,14 @@ public sealed class EpubCheckToolTests
     }
 
     [Fact]
-    public void Run_WithAReportFormatTheWritersDoNotExistFor_SaysSo()
+    public void Run_WithAJsonReportOfAMissingFile_NamesTheFile()
     {
         // Act
         ToolRunner.Result result = ToolRunner.Run("book.epub", "-j", "-");
 
         // Assert
         result.ExitCode.Should().Be(1);
-        result.StdErr.Should().Be("The JSON report is not implemented yet.\n");
+        result.StdErr.Should().Be("File not found: \"book.epub\"\n");
     }
 
     [Fact]
