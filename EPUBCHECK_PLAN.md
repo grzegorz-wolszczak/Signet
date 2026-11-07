@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; **next: epic 4 (task 4.2 XML / XMP / JSON reports)**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; epic 4: **4.1 (console output) and 4.2 (XML / XMP / JSON reports) are done**; **next: task 4.3 standalone executable**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **4.2 XML / XMP / JSON reports**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **4.3 Standalone executable**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -72,7 +72,7 @@ questions into one message, as `AGENTS.md` demands).
 |---|---|
 | Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Ops/` (content documents), `Nav/`, `Dtbook/`, `Css/` (the seam of the CSS checker), `Ncx/`, `References/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Jing/` (the RELAX NG engine, a port of Jing, BSD-3), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
 | Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-document modes go to `SingleDocumentChecker`, `--mode exp` to `ExpandedEpubArchive`) |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (2998 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (46), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1239 passed, 47 skipped) |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (3009 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (53), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1277 passed, 10 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -87,19 +87,17 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 4.2 XML / XMP / JSON reports
+### Next task: 4.3 Standalone executable
 
-`ToolRun` still answers "not implemented" for `--out`, `--json` and `--xmp`. Port the report writers (publication metadata, items,
-messages, locations; `System.Text.Json`, field order as upstream; `maxOfEachMessage`); the scenarios of `cli.feature` (220, 269-347),
-`reporting` and `localization` wait for it.
+Publish profiles for `win-x64` and `linux-x64` (self-contained, single-file, no trimming), a script in `scripts/`, an archive per RID, a README;
+**no** `PackAsTool`. Smoke test: run the published binary on a corpus book (`tests/corpus/epubcheck/reporting/files/minimal.epub`).
 
 ### Current state of the conformance run
 
-47 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
+49 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
 the package documents of EPUB 2 and 3, the NCX, the content documents (XHTML, SVG, fixed layout, the navigation document, EDUPUB,
-indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1239 scenarios pass; the
-others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (report writers 4.2, French messages that are never meant to pass). Not enabled yet:
-`localization` and `reporting` (4.2). Single documents the harness checks: package documents, XHTML, SVG
+indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1277 scenarios pass; the
+others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (French messages that are never meant to pass). Not enabled: `localization` (French). Single documents the harness checks: package documents, XHTML, SVG
 and navigation documents (`OcfEpubChecker`); `mo` (media overlays) too. The test run uses English texts (`TestIsolationSetup` sets
 `DefaultThreadCurrentUICulture`), so a Polish machine passes too.
 
@@ -488,8 +486,13 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
 ### Epic 4 — Reports and the executable
 
 - **4.1 Console output (S).** Upstream format, counters, `-q`. Done with 0.6 (`ConsoleReport`, the closing counters).
-- **4.2 XML / XMP / JSON reports (M).** Publication metadata, items, messages, locations; `System.Text.Json`, field
-  order as upstream; `maxOfEachMessage`.
+- **4.2 XML / XMP / JSON reports (M). DONE.** In Core: `CheckMessage` (the messages of the three reports: grouped by id and text, at most
+  `MaxOfEachMessage` locations, the rest counted), `XmlReportBase` / `XmlReport` (JHOVE) / `XmpReport`, `CheckingReport` (JSON) with
+  `CheckerMetadata`, `PublicationMetadata`, `ItemMetadata` and `JacksonStyleJsonWriter`. `ToolRun` makes the report of `-o`/`-j`/`-x` (a file
+  named by the option, `-` for the console, or `<path>check.xml|json|xmp`); a report on the console is not followed by "No errors or warnings".
+  The harness got the report steps (`ReportSteps`, `JsonPathLite`), the "checking" step writes through the real writers, and the
+  `--maxOfEachMessage` steps look at the tool's report. `reporting/json-report.feature` and `xml-report.feature` are enabled and all of
+  `cli.feature` passes but the three French scenarios; `localization.feature` is French and is not run (see `UPSTREAM.md`).
 - **4.3 Standalone executable (S).** Publish profiles for `win-x64` and `linux-x64` (self-contained, single-file, no
   trimming), a script in `scripts/`, an archive per RID, README. **No** `PackAsTool`. Smoke test: run the published
   binary on a corpus book.
