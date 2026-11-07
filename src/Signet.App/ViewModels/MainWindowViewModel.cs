@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
+using System.Globalization;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -3606,9 +3607,12 @@ public sealed partial class MainWindowViewModel
     private async Task<IReadOnlyList<ValidationResult>?> RunBookCheckAsync(Book book)
     {
         IReadOnlyList<string> skipped = _settings.CheckBookSkippedRules;
+        bool includeUsage = _settings.CheckBookIncludeUsage;
+        CultureInfo language = CultureInfo.CurrentUICulture;
         BookOperationOutcome<IReadOnlyList<ValidationResult>> run = await RunBookOperationAsync(
             ActionLabel(AppActionIds.WellFormedCheckEpub), checkpointName: null, editsBook: false,
-            (progress, cancel) => BookValidator.ValidateCurrentBook(book, skipped, new ValidationRun(new ValidationProgressMap(progress), cancel)))
+            (progress, cancel) => BookValidator.ValidateCurrentBook(
+                book, skipped, new ValidationRun(new ValidationProgressMap(progress), cancel), language, includeUsage))
             .ConfigureAwait(true);
         if (!run.Completed)
         {
