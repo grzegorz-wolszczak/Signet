@@ -429,13 +429,24 @@ public static class OCFChecker
             report.Message(MessageId.PKG_013, OCFMetaFile.Container.AsLocation(state.Container));
         }
 
-        // EPUB 3 Multiple Renditions recommends a metadata file; the mapping document is checked with the profiles (task 3.11).
+        // EPUB 3 Multiple Renditions recommends a metadata file, and has a mapping document to check
         if (version == EpubVersion.Version3 && count > 1)
         {
             state.AddProperty(EpubCheckVocab.Property.MultipleRendition);
             if (!OCFMetaFile.Metadata.IsPresent(state.Container))
             {
                 report.Message(MessageId.RSC_019, location);
+            }
+
+            if (state.MappingDocument is { } mappingDocument)
+            {
+                new MappingDocumentChecker(
+                    state.Context().WithProperty(EpubCheckVocab.Vocab.Get(EpubCheckVocab.Property.RenditionMapping))
+                    with
+                    {
+                        Url = mappingDocument,
+                        MimeType = MediaTypes.Xhtml,
+                    }).Check();
             }
         }
     }

@@ -1,5 +1,6 @@
 using System;
 using Signet.EpubCheck.Core.Css;
+using Signet.EpubCheck.Core.Dict;
 using Signet.EpubCheck.Core.Dtbook;
 using Signet.EpubCheck.Core.Media;
 using Signet.EpubCheck.Core.Messages;
@@ -97,6 +98,8 @@ public static class CheckerFactory
                 return new OPSChecker(context);
             case MediaTypes.ImageGif or MediaTypes.ImageJpeg or MediaTypes.ImagePng:
                 return new BitmapChecker(context);
+            case MediaTypes.SearchKeyMap when context.Version == EpubVersion.Version3:
+                return new SearchKeyMapChecker(context);
             case MediaTypes.Smil when context.Version == EpubVersion.Version3:
                 return new OverlayChecker(context);
             case MediaTypes.PackageDocument:
@@ -105,7 +108,6 @@ public static class CheckerFactory
                 return new OPSChecker(context);
         }
 
-        // The checker of search key maps joins with the task that ports it.
-        return new PublicationResourceChecker(context);
+                return new PublicationResourceChecker(context);
     }
 }

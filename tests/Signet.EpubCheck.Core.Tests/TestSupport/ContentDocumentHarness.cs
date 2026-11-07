@@ -66,6 +66,9 @@ internal sealed class ContentDocumentHarness
     /// <summary>The context of the check; made when first asked for (or by <see cref="Build"/>), so the files must be added before.</summary>
     public ValidationContext Context => _context ?? Build();
 
+    /// <summary>Replaces the context of the check (made by <see cref="Build"/>) by one changed by the test.</summary>
+    public void WithContext(ValidationContext context) => _context = context;
+
     /// <summary>The URL of the file <paramref name="name"/> (it may be followed by a fragment) in the container.</summary>
     public Core.Galimatias.Url Local(string name) => Context.Container!.RootUrl.Resolve(name);
 

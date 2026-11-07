@@ -104,19 +104,7 @@ internal static class ConformanceCorpus
             220, 269, 276, 283, 290, 297, 317, 322, 327, 332, 337, 342, 347);
         Add("Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).",
             366, 371, 376);
-        AddFeature(pending, "epub-dictionaries/dictionaries-publication.feature",
-            "Needs the search key map checker and the dictionary profile (OPF-080, RSC-005, RSC-007, RSC-021: task 3.11).", 30, 40, 49, 54);
-        AddFeature(pending, "epub-multiple-renditions/multiple-rendition-publication.feature",
-            "Needs the mapping document of multiple renditions (RSC-005: task 3.11).", 89, 95, 101);
         return pending;
-    }
-
-    private static void AddFeature(Dictionary<string, string> pending, string feature, string reason, params int[] lines)
-    {
-        foreach (int line in lines)
-        {
-            pending.Add($"{feature}:{line}", reason);
-        }
     }
 
     private static string FindRoot()
