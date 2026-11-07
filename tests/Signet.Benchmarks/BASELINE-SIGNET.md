@@ -113,3 +113,20 @@ The page itself loads fast (the first page 170 ms after the first idle moment of
 
 `PreviewMirror.Sync` works out what is to be written one resource after the other, then writes the files (or finds them unchanged) on up to eight threads, with
 the record of what was written in a `ConcurrentDictionary`. Left, and not changed: the scan of the whole book for footnotes at every click on a link.
+
+## Mend & prettify all HTML (and why it is not faster)
+
+Per file it is an AngleSharp parse for the links of the file (`XhtmlUsesWhiteSpace` -> `GetPathsToLinkedResources`, cached in the resource), the guard
+(`CheckXhtmlStructure`), `CleanSource.PrettyPrint` (another parse of the text it has prepared) and the serialization; 0.4 ms for a small chapter, 7 ms for one
+of 60 KB. Linear in both shapes. Tried and **not kept**:
+
+- Computing the new texts of the files on several threads and setting them in order (independent files, pure work). Mend of 1200 small files 218 -> 146 ms
+  with two threads, but 100 files of 400 paragraphs 302 -> 456-486 ms, and Mend & prettify not faster at 2, 4 or 8 threads (on a machine of 32 logical
+  processors: 8 threads were slower than one). The profile: 47% of the time in `Monitor.Enter_Slowpath` under `AngleSharp.Text.StringBuilderPool.Obtain/ReturnToPool`,
+  called by `Node.ToHtml` and `XhtmlMarkupFormatter.Attribute` for every element and attribute: the pool of AngleSharp is one static pool behind a lock, so its
+  serialization does not scale with threads (its parsing does, ~4x on 8 threads).
+- Skipping the loop over the `style` attributes of the parsed document when the text cannot hold one: it saves the loop, not the parse, which
+  `GetPathsToLinkedResources` needs anyway.
+
+What would help is leaving AngleSharp for the links (reading `<link rel=stylesheet>` from the text), which differs from the document in entities, repeated
+attributes and the case of names; it was not done for lack of a guarantee that the answer stays the same.
