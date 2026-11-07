@@ -80,3 +80,28 @@ Measured on WSL2 (Linux 6.18, x64), .NET 10, Release, at task 2.6 of `EPUBCHECK_
 | schema/30/idx/idx-xhtml-index.sch | 0 | 0 |
 | **all 50** | **661** | **338** |
 
+
+## A whole run, by the size of the book
+
+`EpubCheckScaleBenchmarks` (generated books, best of 2 after a warm-up run; the packaged EPUB is what `epubcheck.net` checks, the
+book in memory is what Check Book checks). Measured on Windows 10, .NET 10, Release, at task 6.3 of `EPUBCHECK_PLAN.md`.
+
+```bash
+SIGNET_BENCHMARKS=1 dotnet test tests/Signet.Benchmarks -c Release --filter EpubCheckScaleBenchmarks
+```
+
+| book | before the XPath fix, ms | after, ms |
+|---|---:|---:|
+| 50 files | 78 | 72 |
+| 200 files | 363 | 308 |
+| 800 files | 2119 | 1356 |
+| 1600 files | 7183 | 3209 |
+| 1200 files x 6 notes (spread) | 8834 | 6507 |
+| 200 files x 40 notes in one file (8000 notes) | **37392** | **1651** |
+
+The fix was algorithmic: Schematron's `count($id-set[@id = current()/@id]) = 1` (and its twin on `//@id`) compared every id with
+every id. The XPath engine now knows what an expression depends on, keeps the nodes a `//name` selects in the document, and
+indexes a predicate `[A = B]` over a list it sees twice (`XPathExpressions.cs`).
+
+Against the Java tool (EPUBCheck 5.4.0 on JDK 21, whole process including start-up, on the same two generated books written
+to disk): 1600 files 6.8 s Java, 5.4 s here; 8000 notes in 200 files 10.0 s Java, 5.0 s here.
