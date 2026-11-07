@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Signet.Core.BookManipulation;
+using Signet.App.Resources;
 using Signet.Core.Localization;
+using Signet.EpubCheck.Core.Messages;
 
 namespace Signet.App.ViewModels;
 
@@ -170,6 +173,13 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
     public static string RuleName(string code)
     {
         ArgumentNullException.ThrowIfNull(code);
+        if (MessageIds.TryParse(code, out MessageId id))
+        {
+            // An EPUBCheck message: its text in the language of the application, "…" in place of the details.
+            string text = new LocalizedMessageDictionary(CultureInfo.CurrentUICulture).GetMessage(id).Text;
+            return code + ": " + JavaPlaceholder().Replace(text, "…");
+        }
+
         string? message = code.Length > 0 ? CoreStrings.TryGet(code) : null;
         return string.IsNullOrEmpty(message) ? code : Placeholder().Replace(message, "…");
     }
@@ -185,6 +195,10 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
 
     [GeneratedRegex(@"\{\d+(:[^}]*)?\}")]
     private static partial Regex Placeholder();
+
+    // The placeholders of EPUBCheck's texts (Java's format): %s, %d, %1$s.
+    [GeneratedRegex(@"%(\d+\$)?[sd]")]
+    private static partial Regex JavaPlaceholder();
 }
 
 /// <summary>A skipped rule of Check Book.</summary>
@@ -205,6 +219,9 @@ public sealed class ValidationResultRow
 
     /// <summary>The source result (the navigation target).</summary>
     public ValidationResult Result { get; }
+
+    /// <summary>The severity as the "Severity" column shows it.</summary>
+    public string SeverityText => Strings.Get("ValidationSeverity_" + Result.Severity);
 
     /// <summary>File name (without the path) to show in the "File" column.</summary>
     public string FileName { get; }

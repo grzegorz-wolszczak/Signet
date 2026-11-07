@@ -254,4 +254,29 @@ public sealed class CheckBookPanelTests : IDisposable
         // Act & Assert
         ValidationResultsViewModel.RuleName("Unknown_Code").Should().Be("Unknown_Code");
     }
+
+    [Fact]
+    public void An_EPUBCheck_rule_is_named_with_its_id_and_its_text_without_the_details()
+    {
+        // Act
+        string name = ValidationResultsViewModel.RuleName("OPF-003");
+
+        // Assert
+        name.Should().StartWith("OPF-003: ").And.NotContain("%").And.Contain("…");
+    }
+
+    [Theory]
+    [InlineData(ValidationSeverity.Usage)]
+    [InlineData(ValidationSeverity.Info)]
+    [InlineData(ValidationSeverity.Warning)]
+    [InlineData(ValidationSeverity.Error)]
+    [InlineData(ValidationSeverity.Fatal)]
+    public void A_row_shows_every_severity_in_words(ValidationSeverity severity)
+    {
+        // Arrange
+        ValidationResultRow row = new(new ValidationResult(severity, "a/b.xhtml", 1, 1, "m", "OPF-003"));
+
+        // Act & Assert
+        row.SeverityText.Should().NotBeNullOrWhiteSpace().And.NotStartWith("ValidationSeverity_");
+    }
 }

@@ -6029,6 +6029,27 @@ Konwertować mimo to?</value>
   <data name="ValidationProgress_Files" xml:space="preserve">
     <value>Sprawdzanie plików HTML: {0} z {1}</value>
   </data>
+  <data name="ValidationProgress_EpubCheck" xml:space="preserve">
+    <value>Sprawdzanie EPUBCheck: plik {0} z {1}</value>
+  </data>
+  <data name="ValidationResultsView_Severity" xml:space="preserve">
+    <value>Ważność</value>
+  </data>
+  <data name="ValidationSeverity_Usage" xml:space="preserve">
+    <value>Podpowiedź</value>
+  </data>
+  <data name="ValidationSeverity_Info" xml:space="preserve">
+    <value>Informacja</value>
+  </data>
+  <data name="ValidationSeverity_Warning" xml:space="preserve">
+    <value>Ostrzeżenie</value>
+  </data>
+  <data name="ValidationSeverity_Error" xml:space="preserve">
+    <value>Błąd</value>
+  </data>
+  <data name="ValidationSeverity_Fatal" xml:space="preserve">
+    <value>Błąd krytyczny</value>
+  </data>
   <data name="ValidationProgress_Stage" xml:space="preserve">
     <value>Sprawdzanie: {0}</value>
   </data>

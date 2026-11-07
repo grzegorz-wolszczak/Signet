@@ -40,7 +40,7 @@ public sealed class ValidationResultsViewTests
         // Arrange
         ValidationResultsViewModel vm = new();
         vm.LoadResults(new[] { Result("OEBPS/Text/a.xhtml", 3, "first"), Result("OEBPS/Text/b.xhtml", 0, "second") });
-        Window window = new() { Width = 700, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
+        Window window = new() { Width = 900, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
 
         // Act
         window.Show();
@@ -52,7 +52,7 @@ public sealed class ValidationResultsViewTests
         grid.IsEffectivelyVisible.Should().BeTrue();
         grid.Classes.Should().Contain("gridLines");
         grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
-            Strings.Get("ReportsWindow_File"), Strings.Get("ValidationResultsView_Line"),
+            Strings.Get("ReportsWindow_File"), Strings.Get("ValidationResultsView_Severity"), Strings.Get("ValidationResultsView_Line"),
             Strings.Get("DryRunReplaceWindow_OffsetColumn"), Strings.Get("ValidationResultsView_Fixable"),
             Strings.Get("ValidationResultsView_Message"));
         grid.GetVisualDescendants().OfType<TreeDataGridRow>().Should().HaveCount(2);
@@ -125,13 +125,13 @@ public sealed class ValidationResultsViewTests
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
         string[] Messages() => Enumerable.Range(0, grid.Rows!.Count).Select(i => ((ValidationResultRow)grid.Rows[i].Model!).Message).ToArray();
 
-        grid.Source!.SortBy(grid.Columns![1], ListSortDirection.Ascending);
+        grid.Source!.SortBy(grid.Columns![2], ListSortDirection.Ascending);
 
         // Assert
         Messages().Should().Equal("two", "ten", "unknown");
 
         // Act
-        grid.Source.SortBy(grid.Columns[2], ListSortDirection.Ascending);
+        grid.Source.SortBy(grid.Columns[3], ListSortDirection.Ascending);
 
         // Assert
         Messages().Should().Equal("ten", "two", "unknown");

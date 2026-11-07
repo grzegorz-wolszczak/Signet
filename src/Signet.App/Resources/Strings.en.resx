@@ -6029,6 +6029,27 @@ Convert anyway?</value>
   <data name="ValidationProgress_Files" xml:space="preserve">
     <value>Checking HTML files: {0} of {1}</value>
   </data>
+  <data name="ValidationProgress_EpubCheck" xml:space="preserve">
+    <value>Checking with EPUBCheck: file {0} of {1}</value>
+  </data>
+  <data name="ValidationResultsView_Severity" xml:space="preserve">
+    <value>Severity</value>
+  </data>
+  <data name="ValidationSeverity_Usage" xml:space="preserve">
+    <value>Hint</value>
+  </data>
+  <data name="ValidationSeverity_Info" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="ValidationSeverity_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="ValidationSeverity_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="ValidationSeverity_Fatal" xml:space="preserve">
+    <value>Fatal error</value>
+  </data>
   <data name="ValidationProgress_Stage" xml:space="preserve">
     <value>Checking: {0}</value>
   </data>
