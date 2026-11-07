@@ -1022,6 +1022,13 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>Check Book: whether the Validation Results panel also lists EPUBCheck's usage hints (off by default).</summary>
+    public bool CheckBookIncludeUsage
+    {
+        get => ReadBool("check_book_include_usage", false);
+        set => Write("check_book_include_usage", value);
+    }
+
     /// <summary>Preferences → Footnotes: the CSS of Signet's footnote classes (the declarations of each rule).</summary>
     public FootnoteStyles FootnoteStyles
     {
