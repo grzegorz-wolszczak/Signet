@@ -187,8 +187,8 @@ public sealed class OPFCheckerTests
         List<ReportedMessage> messages = CheckInContainer(package);
 
         // Assert
-        // the references of the guide are also checked as references: the missing id and the missing resource are reported by them
-        messages.Select(m => m.Message.Id).Should().Equal(MessageId.OPF_032, MessageId.OPF_031, MessageId.RSC_012, MessageId.RSC_007);
+        // the references of the guide are also checked as references: the missing id and the missing resource are reported by them (and the empty image by its checker)
+        messages.Select(m => m.Message.Id).Should().Equal(MessageId.OPF_032, MessageId.OPF_031, MessageId.MED_004, MessageId.PKG_021, MessageId.RSC_012, MessageId.RSC_007);
     }
 
     [Fact]

@@ -33,7 +33,8 @@ public sealed class CheckerFactoryTests
     [InlineData("text/x-oeb1-document", EpubVersion.Version3, typeof(PublicationResourceChecker))]
     [InlineData("application/oebps-package+xml", EpubVersion.Version2, typeof(OPFChecker))]
     [InlineData("application/oebps-package+xml", EpubVersion.Version3, typeof(OPFChecker30))]
-    [InlineData("image/png", EpubVersion.Version3, typeof(PublicationResourceChecker))]
+    [InlineData("image/png", EpubVersion.Version3, typeof(Core.Media.BitmapChecker))]
+    [InlineData("image/webp", EpubVersion.Version3, typeof(PublicationResourceChecker))]
     [InlineData("", EpubVersion.Version3, typeof(PublicationResourceChecker))]
     public void NewChecker_PicksTheCheckerOfTheMediaType(string mimeType, EpubVersion version, Type expected)
     {
