@@ -43,6 +43,7 @@ internal static class ConformanceCorpus
         "epub2/opf-publication.feature",
         "epub3/00-minimal/minimal.feature",
         "epub3/02-epub-publication-conformance/epub-publication-conformance.feature",
+        "epub3/03-resources/resources.feature",
         "epub3/04-ocf/filename-checker.feature",
         "epub3/04-ocf/ocf.feature",
         "epub3/05-package-document/package-document.feature",
@@ -100,40 +101,23 @@ internal static class ConformanceCorpus
             220, 269, 276, 283, 290, 297, 317, 322, 327, 332, 337, 342, 347);
         Add("Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).",
             366, 371, 376);
-        AddOcf(pending, "Needs the resource references checker (RSC-007: task 3.6).",
-            169, 175, 181, 187, 193, 199, 207, 213, 218, 223, 229, 235, 240, 245, 255, 270);
-        AddOcf(pending, "Needs the CSS checker (CSS-008: task 3.7).", 261);
-        AddFeature(pending, "epub2/opf-publication.feature", "Needs the resource references checker (RSC-006, RSC-007, RSC-032: task 3.6).", 60, 86, 96, 145);
-        AddFeature(pending, "epub2/ncx-publication.feature", "Needs the resource references checker (RSC-007, RSC-010: task 3.6).", 40, 45);
-        AddFeature(pending, "epub2/ops-publication.feature", "Needs the resource references checker (RSC-007, RSC-012: task 3.6).", 26, 31);
+        AddOcf(pending, "Needs the CSS checker (the urls of a style sheet, CSS-008: task 3.7).", 255, 261);
         AddFeature(pending, "epub3/05-package-document/package-document.feature",
-            "Needs the resource references checker (RSC-006, RSC-008, RSC-011, OPF-096: task 3.6).",
-            410, 416, 422, 428, 723, 729, 773, 780);
-        AddFeature(pending, "epub3/05-package-document/package-document.feature",
-            "Needs the CSS checker (the remote fonts and resources of CSS: task 3.7).", 576, 582, 594);
+            "Needs the CSS checker (the remote fonts and resources of CSS: task 3.7).", 428, 576, 582, 594);
         AddFeature(pending, "epub3/05-package-document/package-document.feature",
             "Needs the media overlay checker (the remote resources of a media overlay: task 3.9).", 612);
-        AddFeature(pending, "epub3/07-content-documents/content-documents-svg.feature",
-            "Needs the resource references checker (RSC-014, RSC-015: task 3.6).", 199, 206, 213, 220);
-        AddFeature(pending, "epub3/07-content-documents/content-documents-xhtml.feature",
-            "Needs the resource references checker (RSC-006, RSC-008, RSC-009, RSC-012, RSC-013, RSC-014: task 3.6).",
-            225, 230, 278, 283, 288, 308, 314, 356, 362);
         AddFeature(pending, "epub3/07-content-documents/content-documents-xhtml.feature",
             "Needs the CSS checker (CSS-008: task 3.7).", 627, 644);
-        AddFeature(pending, "epub3/08-navigation-document/navigation-document.feature",
-            "Needs the resource references checker (RSC-010, RSC-011, NAV-011: task 3.6).", 117, 129, 154, 160);
-        AddFeature(pending, "epub3/E-obsolete-features/outdated-features.feature",
-            "Needs the resource references checker (the outdated content fallback OBS-001, RSC-012: task 3.6).", 18, 26, 35, 43, 165);
         AddFeature(pending, "epub3/E-obsolete-features/outdated-features.feature",
             "Needs the CSS checker (the outdated prefixed properties OBS-001: task 3.7).", 391);
         AddFeature(pending, "epub-dictionaries/dictionaries-publication.feature",
-            "Needs the search key map checker and the dictionary profile (OPF-080, RSC-005: task 3.11).", 30, 40);
-        AddFeature(pending, "epub-dictionaries/dictionaries-publication.feature",
-            "Needs the resource references checker (RSC-007, RSC-021: task 3.6).", 49, 54);
+            "Needs the search key map checker and the dictionary profile (OPF-080, RSC-005, RSC-007, RSC-021: task 3.11).", 30, 40, 49, 54);
         AddFeature(pending, "epub-multiple-renditions/multiple-rendition-publication.feature",
             "Needs the mapping document of multiple renditions (RSC-005: task 3.11).", 89, 95, 101);
-        AddFeature(pending, "epub-region-nav/region-nav-publication.feature",
-            "Needs the resource references checker (NAV-009: task 3.6).", 70);
+        AddFeature(pending, "epub3/03-resources/resources.feature",
+            "Needs the image and audio checks (MED-004, OPF-029, PKG-022: task 3.8).", 105, 111, 116);
+        AddFeature(pending, "epub3/03-resources/resources.feature",
+            "Needs the CSS checker (the urls, imports and fonts of CSS: task 3.7).", 186, 512, 517, 585, 591, 678, 684, 690);
         return pending;
     }
 
