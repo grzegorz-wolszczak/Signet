@@ -346,6 +346,7 @@ Media overlays and images (`Overlay/`, `Media/`, upstream's `OverlayChecker`, `O
   given path as strings (`././book.epub`).
 - `JsonPathLite` and the XPath steps of the conformance harness replace Jayway JsonPath and Saxon's XPath 2: the XPath 1.0 of .NET cannot name
   elements of a default namespace without a prefix, so the harness takes the namespace off the elements of the XML report before it evaluates.
-- `localization/localization.feature` and the three French scenarios of `cli.feature` (366, 371, 376) are not run: the port has English and Polish only.
+- The scenarios of upstream that ask for French messages (`cli.feature` 366, 371, 376 and `localization.feature` 16, 31, 37) are pending for good: the port has
+  English and Polish only. The other scenarios of `localization.feature` pass.
 
 Each further deviation from upstream is listed here, with the reason.
