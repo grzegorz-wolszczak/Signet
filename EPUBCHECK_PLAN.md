@@ -98,6 +98,11 @@ RELAX NG derivatives (~33%), Schematron (~19%), the XML event reader and the che
 Phase 1 is closed (checked again at the start of phase 2, `BASELINE-EPUBCHECK.md`): the "spread" books cost 5.3 ms per file at 300, 600 and
 1200 files, linear. Beware: the sampled-thread-time profile is biased (see the baseline file); confirm every candidate by an experiment.
 
+Phase 2 so far (6.4): the first measurement tool is in (`AllocationProfile`, KiB per file and collections in `EpubCheckScaleBenchmarks`) and
+found the biggest single cost: the RELAX NG derivative memo was rebuilt for every document. Kept per schema and thread now: 2-4 times
+faster, a quarter fewer allocations (numbers in `BASELINE-EPUBCHECK.md`). Next, by the allocation table: the XPath engine (`ListWhereIterator`,
+`XPathContext`, `Func`/`Predicate` closures), `VocabUtil.ParseProperties`, `AttributeList.CopyOf`, `Url.PathToSegments`.
+
 Phase 2, by profile and never by guess: allocations (`dotnet-counters`/`dotnet-trace` GC events) in the XPath engine (`Atomize`,
 `InDocumentOrder` with `Distinct().OrderBy`, `normalize-space` with `Split`, recursive `Descendants` iterators), `Url` parsing and
 `Relativize` per reference, `Span<char>`/`ReadOnlySpan<char>` where strings are cut, `ArrayPool<T>` for the buffers the SHA-256 and the

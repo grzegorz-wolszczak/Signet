@@ -233,6 +233,9 @@ internal sealed class ValidatorPatternBuilder : PatternBuilder
 
     public PossibleNamesFunction PossibleAttributeNamesFunction { get; } = new PossibleAttributeNamesFunction();
 
+    /// <summary>How many patterns have a memo: the size of what the builder remembers.</summary>
+    public int MemoCount => _patternMemoMap.Count;
+
     public PatternMemo GetPatternMemo(Pattern p)
     {
         if (!_patternMemoMap.TryGetValue(p, out PatternMemo? memo))

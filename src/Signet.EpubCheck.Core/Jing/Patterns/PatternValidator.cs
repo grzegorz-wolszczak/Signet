@@ -70,10 +70,23 @@ internal sealed class PatternValidator : ValidatorContext, IContentHandler
     private bool _bufferingCharacters;
     private ILocator? _locator;
 
+    private readonly RelaxNgSchema? _schema;
+    private readonly Pattern _start;
+    private readonly JingLocalizer _localizer;
+
     public PatternValidator(Pattern pattern, ValidatorPatternBuilder builder, ISaxErrorHandler eh, JingLocalizer localizer)
     {
+        _start = pattern;
+        _localizer = localizer;
         _matcher = new PatternMatcher(pattern, builder, localizer);
         _eh = eh;
+    }
+
+    /// <summary>A validator that takes the schema's builder of the current thread (and again after each <see cref="Reset"/>).</summary>
+    public PatternValidator(Pattern pattern, RelaxNgSchema schema, ISaxErrorHandler eh, JingLocalizer localizer)
+        : this(pattern, schema.BuilderForThread(), eh, localizer)
+    {
+        _schema = schema;
     }
 
     public void StartElement(string namespaceUri, string localName, string qName, IAttributes attributes)
@@ -152,7 +165,7 @@ internal sealed class PatternValidator : ValidatorContext, IContentHandler
         base.Reset();
         _bufferingCharacters = false;
         _locator = null;
-        _matcher = _matcher.Start();
+        _matcher = _schema is null ? _matcher.Start() : new PatternMatcher(_start, _schema.BuilderForThread(), _localizer);
     }
 
     private void FlushTextBeforeStartTag()

@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Signet.EpubCheck.Core.Jing.Datatype;
 using Signet.EpubCheck.Core.Jing.Datatype.Xsd;
 using Signet.EpubCheck.Core.Jing.Parse;
@@ -126,8 +127,32 @@ public sealed class RelaxNgSchema : ISchema
     public RelaxNgValidator CreateValidator(ISaxErrorHandler errorHandler, CultureInfo? culture = null)
     {
         ArgumentNullException.ThrowIfNull(errorHandler);
-        return new RelaxNgValidator(new PatternValidator(_start, new ValidatorPatternBuilder(_spb), errorHandler,
-            JingLocalizer.ForPattern(culture)), errorHandler);
+        return new RelaxNgValidator(new PatternValidator(_start, this, errorHandler, JingLocalizer.ForPattern(culture)), errorHandler);
+    }
+
+    // The derivatives a validator computes are a function of the schema and the names it meets, never of the document, so the builder that
+    // memoizes them is kept between documents (upstream builds a new one per validator and throws the memo away after every document: on
+    // a book of a thousand files that was a quarter of everything allocated). A builder is not thread-safe, so each thread has its own;
+    // validators that run one inside another on a thread (the sections of an NVDL schema) may share it, as a memo only ever adds
+    // results that stay true. The builder of a thread is taken when a validator is made and when it is reset for a new document.
+    private const int MaxPooledMemos = 200_000;
+
+    // Per thread, and weak in the schema, so a schema nobody holds any more takes its builders with it.
+    [ThreadStatic]
+    private static ConditionalWeakTable<RelaxNgSchema, ValidatorPatternBuilder>? t_builders;
+
+    internal ValidatorPatternBuilder BuilderForThread()
+    {
+        ConditionalWeakTable<RelaxNgSchema, ValidatorPatternBuilder> builders = t_builders ??= [];
+
+        // A builder that has memoized very many patterns is let go, so a long session cannot grow it without bound.
+        if (!builders.TryGetValue(this, out ValidatorPatternBuilder? builder) || builder.MemoCount > MaxPooledMemos)
+        {
+            builder = new ValidatorPatternBuilder(_spb);
+            builders.AddOrUpdate(this, builder);
+        }
+
+        return builder;
     }
 }
 

@@ -65,6 +65,9 @@ internal sealed class PatternMatcher
     /// <summary>Whether no error was found so far.</summary>
     public bool IsValidSoFar => !_hadError;
 
+    /// <summary>The builder whose memo this matcher uses.</summary>
+    public ValidatorPatternBuilder Builder => _shared.Builder;
+
     private JingLocalizer Localizer => _shared.Localizer;
 
     /// <summary>A matcher at the start of a new document.</summary>
