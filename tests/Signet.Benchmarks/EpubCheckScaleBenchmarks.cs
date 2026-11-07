@@ -39,6 +39,8 @@ public sealed class EpubCheckScaleBenchmarks
         { "200 files", 200, 0, SyntheticNotes.None },
         { "800 files", 800, 0, SyntheticNotes.None },
         { "1600 files", 1600, 0, SyntheticNotes.None },
+        { "spread 300, Signet notes", 300, 6, SyntheticNotes.Signet },
+        { "spread 600, Signet notes", 600, 6, SyntheticNotes.Signet },
         { "spread, Signet notes", 1200, 6, SyntheticNotes.Signet },
         { "concentrated, Signet notes", 200, 40, SyntheticNotes.SignetInOneFile },
     };
