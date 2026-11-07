@@ -65,7 +65,7 @@ public sealed class ValidationRunTests
         using CancellationTokenSource source = new();
         Recorder recorder = new(report =>
         {
-            if (report.Stage == ValidationStage.Links)
+            if (report.Stage == ValidationStage.ManifestMediaTypes)
             {
                 source.Cancel();
             }

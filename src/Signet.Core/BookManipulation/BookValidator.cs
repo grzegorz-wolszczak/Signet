@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using Signet.Core.Resources;
-using Signet.Core.Localization;
 
 namespace Signet.Core.BookManipulation;
 
@@ -68,11 +67,8 @@ public enum ValidationStage
     /// <summary>The well-formedness of each (X)HTML file (<see cref="ValidationProgress.Done"/> of <see cref="ValidationProgress.Total"/>).</summary>
     WellFormed,
 
-    /// <summary>The OPF structure.</summary>
-    Opf,
-
-    /// <summary>The links and references.</summary>
-    Links,
+    /// <summary>The media types of the manifest against the file extensions.</summary>
+    ManifestMediaTypes,
 
     /// <summary>The fonts.</summary>
     Fonts,
@@ -114,17 +110,14 @@ public sealed record ValidationProgress(ValidationStage Stage, int Done = 0, int
 public readonly record struct ValidationRun(IProgress<ValidationProgress>? Progress = null, CancellationToken Cancellation = default);
 
 /// <summary>
-/// Whole-book validation — "Well-Formed Check EPUB" (F7) plus the additional checks listed in
-/// <see cref="ValidateCurrentBook"/>, built on <see cref="WellFormedChecker.CheckXhtmlStructure"/>.
+/// Whole-book validation — "Well-Formed Check EPUB" (F7): EPUBCheck plus the checks of Signet's own listed in
+/// <see cref="ValidateCurrentBook"/>.
 /// </summary>
 public static class BookValidator
 {
-    /// <summary>The rule code of a file that is not well-formed.</summary>
-    public const string NotWellFormedCode = "WellFormed_NotWellFormed";
-
     /// <summary>
-    /// Checks the structural correctness (well-formedness) of every XHTML resource of the book (including
-    /// the nav). Results are ordered like <see cref="Book.GetHtmlResources"/> (spine order).
+    /// Checks the book: what EPUBCheck reports (<see cref="EpubCheckValidator"/>), then Signet's own checks that EPUBCheck does
+    /// not make (a missing DOCTYPE and the validators listed in the code).
     /// </summary>
     /// <param name="book">The book.</param>
     /// <param name="skippedCodes">The rule codes (<see cref="ValidationResult.Code"/>) whose results are left out.</param>
@@ -143,6 +136,7 @@ public static class BookValidator
         List<ValidationResult> results = new();
         run.Progress?.Report(new ValidationProgress(ValidationStage.EpubCheck));
         results.AddRange(EpubCheckValidator.Validate(book, skippedCodes, culture, includeUsage, run));
+        // EPUBCheck reports files that are not well-formed (RSC-016); a missing DOCTYPE is not an error for it, but Signet warns.
         List<HtmlResource> files = book.GetHtmlResources().ToList();
         for (int i = 0; i < files.Count; i++)
         {
@@ -151,32 +145,18 @@ public static class BookValidator
             HtmlResource html = files[i];
             string text = html.GetText();
             WellFormedResult check = WellFormedChecker.CheckXhtmlStructure(text, html.EpubVersion);
-            if (check.IsWellFormed)
+            if (check.IsWellFormed && check.Warning is { } warning)
             {
-                // A missing DOCTYPE does not make the file invalid — reported as a warning only.
-                if (check.Warning is { } warning)
-                {
-                    results.Add(new ValidationResult(
-                        ValidationSeverity.Warning, html.BookPath, LineOfOffset(text, warning.Offset), -1, warning.Message,
-                        "WellFormed_DoctypeMissing"));
-                }
-
-                continue;
+                results.Add(new ValidationResult(
+                    ValidationSeverity.Warning, html.BookPath, LineOfOffset(text, warning.Offset), -1, warning.Message,
+                    "WellFormed_DoctypeMissing"));
             }
-
-            // The char offset is always -1 for this kind of validation; the column is appended to the
-            // message instead.
-            string message = check.Column > 0
-                ? CoreStrings.Format("Validation_NearColumn", check.Message, check.Column)
-                : check.Message;
-
-            results.Add(new ValidationResult(ValidationSeverity.Error, html.BookPath, check.Line, -1, message, NotWellFormedCode));
         }
 
-        // Additional checks: OPF structure, link/reference integrity, font checks,
-        // cross-file structure, file name portability, mimetype vs. content consistency —
-        // further categories are added here the same way, each as a separate
-        // call returning an IReadOnlyList<ValidationResult>.
+        // Signet's own checks, which EPUBCheck does not make: the media types of the manifest against the extensions, fonts,
+        // cross-file structure, file name portability, media types against the content, ids, images, CSS declarations and
+        // footnotes. Further categories are added here the same way, each as a separate call returning an
+        // IReadOnlyList<ValidationResult>.
         void Check(ValidationStage stage, Func<IReadOnlyList<ValidationResult>> validate)
         {
             run.Cancellation.ThrowIfCancellationRequested();
@@ -184,8 +164,7 @@ public static class BookValidator
             results.AddRange(validate());
         }
 
-        Check(ValidationStage.Opf, () => OpfStructureValidator.Validate(book));
-        Check(ValidationStage.Links, () => LinkIntegrityValidator.Validate(book));
+        Check(ValidationStage.ManifestMediaTypes, () => ManifestMediaTypeValidator.Validate(book));
         Check(ValidationStage.Fonts, () => FontIntegrityValidator.Validate(book));
         Check(ValidationStage.CrossFile, () => CrossFileStructureValidator.Validate(book));
         Check(ValidationStage.FileNames, () => FileNamePortabilityValidator.Validate(book));

@@ -6056,11 +6056,8 @@ Konwertować mimo to?</value>
   <data name="ValidationProgress_Stage" xml:space="preserve">
     <value>Sprawdzanie: {0}</value>
   </data>
-  <data name="ValidationProgress_Stage_Opf" xml:space="preserve">
-    <value>struktura OPF</value>
-  </data>
-  <data name="ValidationProgress_Stage_Links" xml:space="preserve">
-    <value>linki i odnośniki</value>
+  <data name="ValidationProgress_Stage_ManifestMediaTypes" xml:space="preserve">
+    <value>typy mediów w manifeście</value>
   </data>
   <data name="ValidationProgress_Stage_Fonts" xml:space="preserve">
     <value>czcionki</value>

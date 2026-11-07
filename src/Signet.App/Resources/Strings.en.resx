@@ -6056,11 +6056,8 @@ Convert anyway?</value>
   <data name="ValidationProgress_Stage" xml:space="preserve">
     <value>Checking: {0}</value>
   </data>
-  <data name="ValidationProgress_Stage_Opf" xml:space="preserve">
-    <value>the OPF structure</value>
-  </data>
-  <data name="ValidationProgress_Stage_Links" xml:space="preserve">
-    <value>links and references</value>
+  <data name="ValidationProgress_Stage_ManifestMediaTypes" xml:space="preserve">
+    <value>the media types in the manifest</value>
   </data>
   <data name="ValidationProgress_Stage_Fonts" xml:space="preserve">
     <value>fonts</value>

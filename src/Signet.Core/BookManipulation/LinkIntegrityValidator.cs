@@ -9,8 +9,9 @@ using Signet.Core.Localization;
 namespace Signet.Core.BookManipulation;
 
 /// <summary>
-/// Link/reference checks. Called from <see cref="BookValidator.ValidateCurrentBook"/>,
-/// like <see cref="OpfStructureValidator"/>.
+/// Link/reference checks. Check Book no longer calls it (EPUBCheck reports dead links, fragments and files missing from the
+/// manifest, and <see cref="EpubCheckFixes"/> brings the fixes); it stays as the quick, in-process check of the links of a
+/// book that the footnote operations use to see that they broke nothing.
 /// </summary>
 /// <remarks>
 /// Checks four things for every href/src reference in (X)HTML and every <c>url()</c> in CSS:

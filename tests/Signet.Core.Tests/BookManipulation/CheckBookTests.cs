@@ -51,18 +51,18 @@ public sealed class CheckBookTests
     }
 
     [Fact]
-    public void Every_result_carries_the_resource_key_of_its_message_as_its_code()
+    public void Every_result_of_a_rule_of_signet_carries_the_resource_key_of_its_message_as_its_code()
     {
         // Arrange
-        (Book book, _) = NewBook("<p><a href=\"missing.xhtml\">x</a></p>");
+        (Book book, _) = NewBook("<p id=\"1st\">a</p>");
         using (book)
         {
             // Act
-            ValidationResult result = Single(book, "Validation_DeadLink");
+            ValidationResult result = Single(book, "Validation_InvalidId");
 
             // Assert
-            result.Message.Should().Contain("missing.xhtml");
-            result.Fix.Should().BeNull();
+            result.Message.Should().Contain("1st");
+            result.Fix.Should().BeOfType<InvalidIdFix>();
         }
     }
 
@@ -108,28 +108,6 @@ public sealed class CheckBookTests
     }
 
     [Fact]
-    public void Duplicate_ids_in_a_file_get_new_ids_after_the_first()
-    {
-        // Arrange
-        (Book book, HtmlResource html) = NewBook("<p id=\"a\">1</p>\n<p id=\"a\">2</p>\n<p id=\"a_2\">3</p>");
-        using (book)
-        {
-            // Act
-            ValidationResult result = Single(book, "Validation_DuplicateIdInFile");
-
-            // Assert
-            result.Line.Should().Be(8);
-
-            // Act
-            result.Fix!.Apply(book).Should().BeTrue();
-
-            // Assert
-            html.GetText().Should().Contain("<p id=\"a\">1</p>").And.Contain("<p id=\"a_3\">2</p>");
-            Check(book).Should().NotContain(r => r.Code == "Validation_DuplicateIdInFile");
-        }
-    }
-
-    [Fact]
     public void Bare_text_in_the_body_is_wrapped_in_paragraphs()
     {
         // Arrange
@@ -143,46 +121,6 @@ public sealed class CheckBookTests
             html.GetText().Should().Contain("<body>\n<p>Loose text</p>\n<p>kept <b>as</b> is</p>\n <p>tail</p> \n</body>");
             Check(book).Should().NotContain(r => r.Code == "Validation_BareBodyText");
         }
-    }
-
-    [Fact]
-    public void A_link_with_the_wrong_letter_case_is_corrected()
-    {
-        // Arrange
-        using TempDir temp = new();
-        (Book book, HtmlResource html) = NewBook(string.Empty);
-        using (book)
-        {
-            Resource image = AddFile(book, temp, "Pic.png", Png1x1);
-            string correct = Core.BookPath.Relative(html.BookPath, image.BookPath);
-            string wrong = correct.Replace("Pic.png", "pic.png", StringComparison.Ordinal);
-            html.SetText(Xhtml($"<p><img src=\"{wrong}\" alt=\"\"/></p>"));
-
-            // Act
-            Single(book, "Validation_LinkCaseMismatch").Fix!.Apply(book).Should().BeTrue();
-
-            // Assert
-            html.GetText().Should().Contain($"src=\"{correct}\"");
-            Check(book).Should().NotContain(r => r.Code == "Validation_LinkCaseMismatch");
-        }
-    }
-
-    [Fact]
-    public void A_css_url_with_the_wrong_letter_case_is_corrected()
-    {
-        // Arrange
-        using TempDir temp = new();
-        using Book book = BookCreator.CreateNewBook("3.0");
-        Resource image = AddFile(book, temp, "Pic.png", Png1x1);
-        CssResource css = book.CreateEmptyCssFile();
-        string correct = Core.BookPath.Relative(css.BookPath, image.BookPath);
-        css.SetText($"body {{ background: url('{correct.ToLowerInvariant()}'); }}");
-
-        // Act
-        Single(book, "Validation_CssUrlCaseMismatch").Fix!.Apply(book).Should().BeTrue();
-
-        // Assert
-        css.GetText().Should().Be($"body {{ background: url('{correct}'); }}");
     }
 
     [Fact]
@@ -201,56 +139,6 @@ public sealed class CheckBookTests
         // Assert
         book.GetOpf().GetOpfDocument().Manifest.Single(m => m.Href.EndsWith(css.Filename, StringComparison.Ordinal))
             .MediaType.Should().Be("text/css");
-    }
-
-    [Fact]
-    public void An_empty_unique_identifier_gets_a_uuid()
-    {
-        // Arrange
-        using Book book = BookCreator.CreateNewBook("3.0");
-        OpfDocument document = book.GetOpf().GetOpfDocument();
-        document.Metadata.Single(m => m.Attributes.Value("id") == document.UniqueIdentifierId).Content = string.Empty;
-        book.GetOpf().SetOpfDocument(document);
-
-        // Act
-        Single(book, "Validation_OpfUniqueIdentifierValueEmpty").Fix!.Apply(book).Should().BeTrue();
-
-        // Assert
-        book.GetOpf().GetMainIdentifierValue().Should().StartWith("urn:uuid:");
-        Check(book).Should().NotContain(r => r.Code.StartsWith("Validation_OpfUniqueIdentifier", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void A_missing_unique_identifier_is_created()
-    {
-        // Arrange
-        using Book book = BookCreator.CreateNewBook("3.0");
-        OpfDocument document = book.GetOpf().GetOpfDocument();
-        document.Metadata.RemoveAll(m => m.Name == "dc:identifier");
-        book.GetOpf().SetOpfDocument(document);
-
-        // Act
-        Single(book, "Validation_OpfNoUniqueIdentifier").Fix!.Apply(book).Should().BeTrue();
-
-        // Assert
-        book.GetOpf().GetMainIdentifierValue().Should().StartWith("urn:uuid:");
-    }
-
-    [Fact]
-    public void An_epub3_book_without_a_nav_is_reported()
-    {
-        // Arrange
-        using Book book = BookCreator.CreateNewBook("3.0");
-        OpfDocument document = book.GetOpf().GetOpfDocument();
-        foreach (ManifestEntry entry in document.Manifest)
-        {
-            entry.Attributes.Remove("properties");
-        }
-
-        book.GetOpf().SetOpfDocument(document);
-
-        // Act & Assert
-        Single(book, "Validation_NoNav").Severity.Should().Be(ValidationSeverity.Error);
     }
 
     [Fact]

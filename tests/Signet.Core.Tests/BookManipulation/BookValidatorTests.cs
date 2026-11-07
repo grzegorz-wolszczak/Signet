@@ -3,7 +3,6 @@ using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Tests.TestSupport;
-using Signet.EpubCheck.Core.Messages;
 using Xunit;
 
 namespace Signet.Core.Tests.BookManipulation;
@@ -25,11 +24,12 @@ public sealed class BookValidatorTests
         using Book book = new ImportEpub(epub).GetBook();
 
         // Act
-        var results = BookValidator.ValidateCurrentBook(book).Where(r => !MessageIds.TryParse(r.Code, out _)).ToList();
+        var results = BookValidator.ValidateCurrentBook(book, culture: System.Globalization.CultureInfo.GetCultureInfo("en"))
+            .Where(r => r.Code == "RSC-016").ToList();
 
         // Assert
-        results.Should().NotBeEmpty();
-        results.Should().OnlyContain(r => r.Severity == ValidationSeverity.Error);
+        results.Should().NotBeEmpty("EPUBCheck reports a file that is not well-formed");
+        results.Should().OnlyContain(r => r.Severity == ValidationSeverity.Fatal);
         results.Should().OnlyContain(r => r.Line > 0);
         results.Should().Contain(r => r.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
     }
