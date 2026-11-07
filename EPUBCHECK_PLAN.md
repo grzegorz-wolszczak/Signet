@@ -99,12 +99,12 @@ Phase 1 is closed (checked again at the start of phase 2, `BASELINE-EPUBCHECK.md
 1200 files, linear. Beware: the sampled-thread-time profile is biased (see the baseline file); confirm every candidate by an experiment.
 
 Phase 2 so far (6.4): the measuring tools are in (`AllocationProfile`, KiB per file and collections in `EpubCheckScaleBenchmarks`; a sampled CPU
-profile is biased here, see `BASELINE-EPUBCHECK.md`). Done by the allocation table: the RELAX NG derivative memo is kept per schema and thread
-(the biggest single cost), the Schematron XPath engine (regexes made once, no closure per call, `EvaluateBoolean`, shared boolean lists, no
-`Atomize` in comparisons, reused contexts), `VocabUtil.ParseProperties`, the XSLT pattern matching. A run of 1600 files went from 3261 to 783 ms and from
-3588 to 624 KiB per file; 1200 files with notes from 6671 to 1023 ms. Left, thin: `AttributeList.CopyOf`, `Url.PathToSegments`, the string values of
-elements (`XdmElement.Concatenate`), `List<object>` growth in the interpreter, the XML event reader. The "tricks" (Span, ArrayPool, structs, a LINQ
-library) have not been tried yet: the table shows no hot spot where one would clearly pay; try them where a benchmark first shows one.
+profile is biased here, see `BASELINE-EPUBCHECK.md`). Done, by the allocation table, inclusive profile shares, a stopwatch and an exception count: the RELAX NG derivative memo kept per schema and
+thread; the Schematron XPath engine; `ParseProperties`; the XSLT pattern matching; the location of a document once; fewer URL parses; list
+sizes and axes by loops; rules tried only for the elements they name; no copy of unchanged attributes; no exception per failed datatype.
+A run of 1600 files went from 3261 to 673 ms, 1200 files with notes from 6671 to 738 ms. Left: the XPath interpreter (`List<object>`, strings),
+the RELAX NG derivatives, the XML reader, the quadratic `itemref` assertion of the schema (same as upstream). The "tricks" (Span, ArrayPool, structs, a
+LINQ library) are not tried: the profile does not point at a hot spot where one would pay (the URL parser, the obvious Span candidate, is 7%).
 
 Phase 2, by profile and never by guess: allocations (`dotnet-counters`/`dotnet-trace` GC events) in the XPath engine (`Atomize`,
 `InDocumentOrder` with `Distinct().OrderBy`, `normalize-space` with `Split`, recursive `Descendants` iterators), `Url` parsing and

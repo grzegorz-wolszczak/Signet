@@ -207,3 +207,26 @@ the axis walks through LINQ iterators; `Relativize` twice per reference. Best of
 
 Over the whole of 6.4 (1600 files): 3261 ms -> 724 ms, 3588 -> 423 KiB per file; 1200 files with notes 6671 -> 867 ms. Time no longer follows
 allocation (a plain file costs ~0.45 ms and ~0.4 MB): what is left is the work itself (RELAX NG derivatives, the XML reader, the URL parser).
+
+### Time, not allocations (6.4, fifth step)
+
+Allocations had stopped telling where the time goes. Two things did: the **inclusive** shares of a sampled profile (self time is biased towards
+safepoints, inclusive time is not: Schematron `Visit` was 49% of a check, XPath `PathExpr` 36%, the URL parser 7%, so a rewrite of the parser on
+`Span` would have won a few percent at most and was left alone), and a stopwatch around a suspect (a temporary `Prof` in `SchematronValidator`
+that summed the time of every assertion and of every rule match, removed again). The stopwatch found: 54.7 million rule matches, 3.4 s; and, as a
+side finding, `Itemref refers to the same manifest entry as a previous itemref` (`package-30.sch`): `preceding-sibling::opf:itemref/...` for every
+itemref is **quadratic in the spine by the schema's own design** (the Java tool has the same cost); at the 1600 files of the benchmark it is 57
+microseconds per itemref and was left alone. A count of first-chance exceptions found 277 000 `DatatypeException`s in one run, now 1
+(`BASELINE` prints "exceptions thrown by one such run"). Best of 2, ms:
+
+| book | before this step | now |
+|---|---:|---:|
+| 50 files | 6 | 7 |
+| 200 files | 33 | 30 |
+| 800 files | 300 | 275 |
+| 1600 files | 724 | 673 |
+| 600 files x 6 notes | 350 | 287 |
+| 1200 files x 6 notes (spread) | 867 | 738 |
+| 200 files x 40 notes in one file | 659 | 556 |
+
+Whole of 6.4 (1600 files): 3261 -> 673 ms; 1200 files with notes: 6671 -> 738 ms.
