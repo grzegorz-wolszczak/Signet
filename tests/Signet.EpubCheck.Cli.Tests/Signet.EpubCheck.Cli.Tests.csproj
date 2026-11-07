@@ -18,4 +18,9 @@
     <ProjectReference Include="..\..\src\Signet.EpubCheck.Cli\Signet.EpubCheck.Cli.csproj" />
   </ItemGroup>
 
+  <!-- Path to tests/corpus, read by CorpusFiles. -->
+  <ItemGroup>
+    <AssemblyMetadata Include="CorpusRoot" Value="$(MSBuildThisFileDirectory)..\corpus" />
+  </ItemGroup>
+
 </Project>

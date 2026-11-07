@@ -14,8 +14,8 @@ namespace Signet.EpubCheck.Cli;
 /// spellings, the texts and the exit codes are upstream's.
 /// </summary>
 /// <remarks>
-/// A whole EPUB, an expanded one and the single documents of the modes go to their checkers; the XML, XMP and JSON reports are
-/// not there yet (<c>EPUBCHECK_PLAN.md</c>, task 4.2).
+/// A whole EPUB, an expanded one and the single documents of the modes go to their checkers; the report is written to the
+/// console, or as XML, XMP or JSON to a file or the console.
 /// </remarks>
 internal sealed class ToolRun
 {
@@ -41,7 +41,8 @@ internal sealed class ToolRun
     private bool _displayVersion;
     private bool _useCustomMessageFile;
     private Severity _reportingLevel = Severity.Info;
-    private ConsoleReport? _report;
+    private string? _reportFile;
+    private ReportBase? _report;
 
     public ToolRun(ToolOutput output, CultureInfo defaultCulture)
     {
@@ -50,6 +51,9 @@ internal sealed class ToolRun
         _locale = defaultCulture;
         _messages = ToolMessages.GetInstance(defaultCulture);
     }
+
+    /// <summary>The report of the last run (null until a run got as far as making it).</summary>
+    public ReportBase? Report => _report;
 
     /// <summary>Whether warnings make the exit code 1 as errors do (<c>--failonwarnings</c>).</summary>
     public bool FailOnWarnings { get; private set; }
@@ -73,32 +77,24 @@ internal sealed class ToolRun
                     return 0;
                 }
 
-                if (_jsonOutput || _xmlOutput || _xmpOutput)
+                _report = CreateReport();
+                _report.Initialize();
+                if (_listChecks)
                 {
-                    string format = _xmlOutput ? "XML" : _xmpOutput ? "XMP" : "JSON";
-                    _output.PrintError(_messages.GetPort("report_format_not_implemented", format));
+                    DumpMessageDictionary(_report);
+                    return 0;
                 }
-                else
+
+                if (_useCustomMessageFile)
                 {
-                    _report = CreateReport();
-                    _report.Initialize();
-                    if (_listChecks)
-                    {
-                        DumpMessageDictionary(_report);
-                        return 0;
-                    }
+                    _report.CustomMessageFile = Path.GetFullPath(_customMessageFile!);
+                }
 
-                    if (_useCustomMessageFile)
-                    {
-                        _report.CustomMessageFile = Path.GetFullPath(_customMessageFile!);
-                    }
-
-                    returnValue = ProcessFile(_report);
-                    int generated = _report.Generate();
-                    if (returnValue == 0)
-                    {
-                        returnValue = generated;
-                    }
+                returnValue = ProcessFile(_report);
+                int generated = _report.Generate();
+                if (returnValue == 0)
+                {
+                    returnValue = generated;
                 }
             }
         }
@@ -126,7 +122,7 @@ internal sealed class ToolRun
         return returnValue;
     }
 
-    private int ProcessFile(ConsoleReport report)
+    private int ProcessFile(ReportBase report)
     {
         report.Info(null, FeatureKind.ToolName, "epubcheck");
         report.Info(null, FeatureKind.ToolVersion, EpubCheckVersion.Text);
@@ -154,7 +150,7 @@ internal sealed class ToolRun
         return ValidateFile(_path!, report);
     }
 
-    private int ValidateFile(string path, ConsoleReport report)
+    private int ValidateFile(string path, ReportBase report)
     {
         if (path.StartsWith("http://", StringComparison.Ordinal) || path.StartsWith("https://", StringComparison.Ordinal))
         {
@@ -185,13 +181,18 @@ internal sealed class ToolRun
     }
 
     // Upstream's result of a check: the closing sentence and the exit code (warnings fail only with --failonwarnings).
-    private int Result(ConsoleReport report)
+    private int Result(ReportBase report)
     {
         if (report.ErrorCount == 0 && report.FatalErrorCount == 0)
         {
             if (report.WarningCount == 0)
             {
-                _output.Println(_messages.Get("no_errors__or_warnings"));
+                // A report that goes to the console must not be followed by a sentence in the middle of it.
+                if (!ReportGoesToConsole)
+                {
+                    _output.Println(_messages.Get("no_errors__or_warnings"));
+                }
+
                 return 0;
             }
 
@@ -218,7 +219,7 @@ internal sealed class ToolRun
         _ => "unknown",
     };
 
-    private void PrintCompleted(ConsoleReport report)
+    private void PrintCompleted(ReportBase report)
     {
         StringBuilder counts = new();
         if (_reportingLevel <= Severity.Fatal)
@@ -258,7 +259,7 @@ internal sealed class ToolRun
     private string Counter(string kind, int count) =>
         _messages.Get($"counter_{kind}_{(count == 0 ? "zero" : count == 1 ? "one" : "many")}", count);
 
-    private void DumpMessageDictionary(ConsoleReport report)
+    private void DumpMessageDictionary(ReportBase report)
     {
         StreamWriter? file = null;
         try
@@ -285,13 +286,28 @@ internal sealed class ToolRun
         }
     }
 
-    private ConsoleReport CreateReport()
+    private bool ReportGoesToConsole => (_jsonOutput || _xmlOutput || _xmpOutput) && _reportFile is null;
+
+    private ReportBase CreateReport()
     {
-        ConsoleReport report = new(_listChecks ? "none" : _path ?? "none", _output, _messages)
+        string name = _listChecks ? "none" : _path ?? "none";
+        ReportBase report;
+        if (!_listChecks && (_jsonOutput || _xmlOutput || _xmpOutput))
         {
-            MaxOfEachMessage = MaxOfEachMessage,
-            ReportingLevel = _reportingLevel,
-        };
+            // To the console the report is written and left open; a file is created and closed with the report.
+            bool toFile = _reportFile is not null;
+            TextWriter writer = toFile ? new StreamWriter(_reportFile!, append: false, new UTF8Encoding(false)) : _output.Out;
+            report = _xmlOutput ? new XmlReport(writer, name, EpubCheckVersion.Text, toFile)
+                : _xmpOutput ? new XmpReport(writer, name, EpubCheckVersion.Text, toFile)
+                : new CheckingReport(writer, name, toFile);
+        }
+        else
+        {
+            report = new ConsoleReport(name, _output, _messages);
+        }
+
+        report.MaxOfEachMessage = MaxOfEachMessage;
+        report.ReportingLevel = _reportingLevel;
         report.SetLocale(_locale);
         if (_useCustomMessageFile)
         {
@@ -374,15 +390,15 @@ internal sealed class ToolRun
                     break;
                 case "o" or "out":
                     _xmlOutput = true;
-                    ReadReportFile(args, ref i);
+                    ReadReportFile(args, ref i, "xml");
                     break;
                 case "j" or "json":
                     _jsonOutput = true;
-                    ReadReportFile(args, ref i);
+                    ReadReportFile(args, ref i, "json");
                     break;
                 case "x" or "xmp":
                     _xmpOutput = true;
-                    ReadReportFile(args, ref i);
+                    ReadReportFile(args, ref i, "xmp");
                     break;
                 case "i" or "info":
                     _reportingLevel = Severity.Info;
@@ -557,19 +573,30 @@ internal sealed class ToolRun
     }
 
     // -o, -j, -x: a file name, or "-" for the console, or nothing (a name made from the file to check, which needs the file to be named before).
-    private void ReadReportFile(string[] args, ref int i)
+    private void ReadReportFile(string[] args, ref int i, string extension)
     {
         if (args.Length > i + 1 && !args[i + 1].StartsWith('-'))
         {
-            i++;
+            _reportFile = args[++i];
         }
         else if (args.Length > i + 1 && string.Equals(args[i + 1], "-", StringComparison.OrdinalIgnoreCase))
         {
+            _reportFile = null;
             i++;
         }
         else if (_path is null)
         {
             throw new ToolArgumentException(_messages.GetPort("path_needed_for_report"));
+        }
+        else if (Directory.Exists(_path))
+        {
+            // Next to the folder, as upstream does.
+            string folder = Path.GetFullPath(_path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            _reportFile = folder + "check." + extension;
+        }
+        else
+        {
+            _reportFile = _path + "check." + extension;
         }
     }
 

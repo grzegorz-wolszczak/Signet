@@ -50,7 +50,7 @@ internal sealed class StepRegistry
         UrlFragmentSteps.Register(registry);
         AssertionSteps.Register(registry);
         CliSteps.Register(registry);
-        UnavailableSteps.Register(registry);
+        ReportSteps.Register(registry);
         return registry;
     }
 

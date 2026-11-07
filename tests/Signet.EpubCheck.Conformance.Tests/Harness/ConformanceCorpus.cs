@@ -64,6 +64,8 @@ internal static class ConformanceCorpus
         "epub3/E-obsolete-features/deprecated-features.feature",
         "epub3/E-obsolete-features/outdated-features.feature",
         "epub3/G-media-type-registrations/media-types-registrations.feature",
+        "reporting/json-report.feature",
+        "reporting/xml-report.feature",
         "unit-tests/url-fragment.feature",
     };
 
@@ -97,8 +99,6 @@ internal static class ConformanceCorpus
         }
 
         // cli/cli.feature: the command line is done (task 0.6); these scenarios check a publication or write a report.
-        Add("Needs the XML, XMP and JSON report writers (task 4.2).",
-            220, 269, 276, 283, 290, 297, 317, 322, 327, 332, 337, 342, 347);
         Add("Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).",
             366, 371, 376);
         return pending;

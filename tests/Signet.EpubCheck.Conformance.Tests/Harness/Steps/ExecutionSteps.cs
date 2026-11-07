@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.IO;
+using Signet.EpubCheck.Core;
+using Signet.EpubCheck.Core.Reporting;
 
 namespace Signet.EpubCheck.Conformance.Tests.Harness;
 
@@ -25,7 +27,8 @@ internal static class ExecutionSteps
 
             if (world.Report.Format != "default")
             {
-                throw new ScenarioNotImplementedException($"The {world.Report.Format} report is not implemented yet (task 4.2).");
+                CheckWithReportWriter(world, full);
+                return;
             }
 
             ScenarioReport report = world.Report;
@@ -38,6 +41,24 @@ internal static class ExecutionSteps
         {
             CultureInfo.CurrentUICulture = oldCulture;
         }
+    }
+
+    // The checker reports to the writer of the format (XML, XMP or JSON); the steps look at what it wrote.
+    private static void CheckWithReportWriter(ScenarioWorld world, string full)
+    {
+        StringWriter text = new();
+        ReportBase writer = world.Report.Format.ToUpperInvariant() switch
+        {
+            "XML" => new XmlReport(text, full, EpubCheckVersion.Text, closeWriter: false),
+            "XMP" => new XmpReport(text, full, EpubCheckVersion.Text, closeWriter: false),
+            "JSON" => new CheckingReport(text, full, closeWriter: false),
+            _ => throw new ScenarioNotImplementedException($"The {world.Report.Format} report format does not exist."),
+        };
+        writer.MaxOfEachMessage = world.Report.MaxOfEachMessage;
+        writer.Initialize();
+        world.Checker.Check(new CheckRequest(full, world.Mode!.Value, world.Version, world.Profile, writer));
+        writer.Generate();
+        world.ReportText = text.ToString();
     }
 
     // Upstream's CheckerMode.fromExtension: the kind of document from the extension of the path.

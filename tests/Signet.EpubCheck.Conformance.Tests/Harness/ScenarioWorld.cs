@@ -37,6 +37,14 @@ internal sealed class ScenarioWorld
 
     public ScenarioReport Report { get; } = new();
 
+    // ReportSteps: what the report writer wrote, and the namespace the XML report's elements are in
+    public string? ReportText { get; set; }
+
+    public string? XmlNamespace { get; set; }
+
+    // CLISteps: the tool of the last "running" step
+    public Signet.EpubCheck.Cli.ToolRun? Tool { get; set; }
+
     // AssertionSteps
     public MessageInfo? LastAssertedMessage { get; set; }
 
