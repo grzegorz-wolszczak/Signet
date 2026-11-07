@@ -166,3 +166,22 @@ Best of 2, ms, and KiB per file:
 | 600 files x 6 notes | 625 | 458 | 2577 | 1499 |
 | 1200 files x 6 notes (spread) | 1651 | 1052 | 3232 | 1644 |
 | 200 files x 40 notes in one file | 914 | 821 | 9437 | 6938 |
+
+### epub:type values and XSLT patterns (6.4, third step)
+
+`VocabUtil.ParseProperties` (a `Regex.Split` and LINQ for every `epub:type`) and `XsltPattern` (closures that captured the node, allocated on
+entry to every match) were the next two. Best of 2, ms, and KiB per file:
+
+| book | after XPath, ms | now, ms | after XPath, KiB/file | now, KiB/file |
+|---|---:|---:|---:|---:|
+| 50 files | 9 | 8 | 362 | 273 |
+| 200 files | 44 | 40 | 386 | 299 |
+| 800 files | 336 | 308 | 523 | 437 |
+| 1600 files | 800 | 783 | 710 | 624 |
+| 600 files x 6 notes | 458 | 446 | 1499 | 1191 |
+| 1200 files x 6 notes (spread) | 1052 | 1023 | 1644 | 1335 |
+| 200 files x 40 notes in one file | 821 | 777 | 6938 | 5425 |
+
+Summed over the three steps of 6.4 (1600 files): 3261 ms -> 783 ms, 3588 -> 624 KiB per file; 1200 files with notes: 6671 -> 1023 ms. What is left in
+the allocation table is spread thin: strings (23%), `object[]` and `List<object>` (the lists of the interpreter), `char[]` and `StringBuilder`
+(string values of elements, text of the XML reader).
