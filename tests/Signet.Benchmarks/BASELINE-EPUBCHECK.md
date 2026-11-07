@@ -144,3 +144,25 @@ one. Fix: one builder per schema and thread (see `UPSTREAM.md`). Best of 2 (warm
 
 A first run in a fresh process (the first book in the table, 300 files x 6 notes, includes reading the schemas and the JIT): 3696 ms
 before, 2138 ms after. Later books of the same process start with the memo the earlier ones built, so their "cold" column says less.
+
+### The XPath engine of Schematron (6.4, second step)
+
+The allocation table after the memo fix was led by the XPath engine: iterators and closures of `AxisStep`, an `XPathContext` per item, a list
+and a boxed value for every boolean, `Atomize` in every comparison, a `new Regex` for every `matches()`, and a closure class that the compiler
+allocated at the start of every `XPathFunctions.Call` (a lambda in `concat` and `distinct-values` made it). What changed: a regex per
+(pattern, flags) is made once; the lambdas left `Call`; `EvaluateBoolean` answers tests (`and`, `or`, `not`, comparisons, assertions,
+predicates) without a list; the two boolean lists are shared; `GeneralCompare` reads a node's string value directly; a step down the tree
+fills a list with a loop; one context is reused for the items of a loop (`Rebind`); `MemoStore` is no longer allocated by every
+`XPathContext.With` (a property initializer ran before the one that was set); `normalize-space` returns a clean string as it is.
+Best of 2, ms, and KiB per file:
+
+| book | after the memo, ms | after XPath, ms | after the memo, KiB/file | after XPath, KiB/file |
+|---|---:|---:|---:|---:|
+| 50 files | 11 | 9 | 551 | 362 |
+| 200 files | 59 | 44 | 698 | 386 |
+| 800 files | 456 | 336 | 1345 | 523 |
+| 1600 files | 1464 | 800 | 2213 | 710 |
+| 300 files x 6 notes | 1152 | 1124 | 2278 | 1441 |
+| 600 files x 6 notes | 625 | 458 | 2577 | 1499 |
+| 1200 files x 6 notes (spread) | 1651 | 1052 | 3232 | 1644 |
+| 200 files x 40 notes in one file | 914 | 821 | 9437 | 6938 |

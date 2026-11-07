@@ -183,6 +183,23 @@ public sealed class SchematronTests
     [InlineData("distinct-values(('a', 'a', 'b')) = 'b'", true)]
     [InlineData("count(distinct-values(('a', 'a', 'b')))", true)]
     [InlineData("resolve-uri('#x') = 'file:///schemas/test.sch#x'", true)]
+    [InlineData("normalize-space('  a   b  ') = 'a b'", true)]
+    [InlineData("normalize-space('a\tb\n c') = 'a b c'", true)]
+    [InlineData("normalize-space('   ') = ''", true)]
+    [InlineData("normalize-space('') = ''", true)]
+    [InlineData("normalize-space(' a') = 'a'", true)]
+    [InlineData("normalize-space('a ') = 'a'", true)]
+    [InlineData("//p/@n = (3, 5)", true)]
+    [InlineData("//p/@n = ('1', 'x')", true)]
+    [InlineData("//p/@n = (7, 8)", false)]
+    [InlineData("//p/@n > 2", true)]
+    [InlineData("//p/@n != 1", true)]
+    [InlineData("//p[2] = ' '", true)]
+    [InlineData("//p[1] = 'a' and not(//p[1] = 'b')", true)]
+    [InlineData("//p[@n = 2] and //p[@n != 2]", true)]
+    [InlineData("not(//p/@n = 9) or false()", true)]
+    [InlineData("boolean(//q) and exists(//q) and not(empty(//q))", true)]
+    [InlineData("matches('abc', 'b') and matches('abc', 'b') and not(matches('abc', 'B')) and matches('abc', 'B', 'i')", true)]
     public void XPath_Expression_HasTheValueOfXPath2InCompatibilityMode(string expression, bool expected)
     {
         // Arrange
@@ -192,10 +209,13 @@ public sealed class SchematronTests
         XPathContext context = new() { Item = doc, Current = doc, Variables = new NoVariables(), BaseUri = SchemaUri };
 
         // Act
-        bool value = XPathValues.EffectiveBoolean(XPathParser.Parse(expression, new Dictionary<string, string>()).Evaluate(context));
+        XPathExpr parsed = XPathParser.Parse(expression, new Dictionary<string, string>());
+        bool value = XPathValues.EffectiveBoolean(parsed.Evaluate(context));
+        bool direct = parsed.EvaluateBoolean(context);
 
         // Assert
         value.Should().Be(expected, expression);
+        direct.Should().Be(expected, "the value without the list is the same: " + expression);
     }
 
     // A document with many elements, so that the lists the predicates run over are long enough to be indexed (and applied twice).
