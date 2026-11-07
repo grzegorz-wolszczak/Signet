@@ -221,7 +221,10 @@ The schemas of EPUBCheck (`Xml/`, upstream's `XMLValidator`, `XMLValidators`, `R
 The XML parser and the OCF flow (`Xml/`, `Ocf/`, `References/`, upstream's `XMLParser`, `OCFChecker`, `URLChecker`):
 
 - XML is read with `XmlReader` instead of Xerces. A document that is not well-formed gives `RSC-016` with the message of
-  .NET's reader, not Xerces' text, and the position is where the reader stopped. The encoding is sniffed as upstream
+  .NET's reader, not Xerces' text (except the two errors that scenarios check: an entity that is not declared and an
+  entity reference without `;`, which `XercesMessages` words as Xerces does), and the position is where the reader stopped.
+  A document that declares `version="1.1"` (which `XmlReader` refuses) is read as XML 1.0, the locator telling the version
+  it declared (so `HTM-001` is reported); the two versions differ in the characters they allow and in the line ends only. The encoding is sniffed as upstream
   does, but a document that declares another encoding (`RSC-028`) is then decoded by .NET.
 - An `OCFContainer` has no `ImmutableMap`s: the files are keyed by their normalized URL; the root URL is
   `https://<guid>.epubcheck.w3c.org`, as upstream's, so the URLs in messages that print the container-relative path match.
@@ -281,5 +284,30 @@ The command line (`Signet.EpubCheck.Cli`, upstream's `EpubChecker`):
   meant to pass).
 - Files given by an `http://` or `https://` address are not fetched, and never will be (owner's decision, November 2026): the tool prints an error and exits 1, as the one upstream scenario (`cli.feature:197`) expects.
 - The texts that only the port has (`The EPUB checker is not implemented yet.`, ...) are in `CliPortMessages.resx`.
+
+Content documents (`Ops/`, `Nav/`, `Dtbook/`, `Css/`, upstream's `OPSChecker`, `OPSHandler`, `OPSHandler30`, `NavChecker`, `NavHandler`,
+`DTBookChecker`, `DTBookHandler`, `ValidatorMap`, `SourceSet`, `URISchemes`):
+
+- `CSSChecker` is only the seam: the content documents hand it their `style` elements and attributes as upstream does, and it checks
+  nothing until the CSS parser is ported (task 3.7). `CheckerFactory` gives it to `text/css` resources, so those get the checks of
+  `PublicationResourceChecker` (`RSC-001`, `RSC-004`) only.
+- `url()` and `url(')` as an SVG `fill`, `stroke` or `clip-path` are read without failing; upstream looks at the first character of
+  what is between the parentheses and fails with `StringIndexOutOfBoundsException`.
+- A URL of a resource (`src` of an image, audio, video, track, input, iframe, embed, script, `data` of an object, `poster`) that does
+  not parse is dropped after `RSC-020`; upstream asks `isRemote` of the missing URL and fails with `IllegalArgumentException`.
+- An `audio`/`video` `source` or an `embed` whose `type` is not a media type (`type="not a type"`) reports `OPF-013` and goes on;
+  upstream uses the type it failed to parse and fails with a null pointer.
+- The media sources of an `audio`/`video` are kept in the order they were found, replacing an earlier source of the same URL
+  (upstream's `HashMap` has no order); the references to them are registered in that order.
+- The pseudo-attributes of an `xml-stylesheet` instruction are read by `ProcInstParser`, a small reimplementation of Saxon's
+  (the value between the quotes, with the predefined entities and character references replaced); a declaration it cannot read is
+  ignored, as upstream ignores the `XPathException`.
+- The required and allowed item properties are kept in sorted sets in the order of the enum, as upstream's `EnumSet`s are
+  iterated, so `OPF-014` and `OPF-015` come in the same order.
+- `OPFChecker30.CheckPackage` runs the checks that use the features of the content documents (`NAV-003`–`NAV-008`, `OPF-066`,
+  `OPF-078`, `OPF-079`, `HTM-051`) also when the package document is not in the container (upstream's handler is then empty and finds
+  nothing; so does the port).
+- Not done yet: the checks of the references (`ResourceReferencesChecker`, task 3.6), so `RSC-006`–`RSC-015`, `RSC-032`, `OBS-001` for
+  an outdated content fallback, `NAV-009` and `NAV-011` wait for it.
 
 Each further deviation from upstream is listed here, with the reason.
