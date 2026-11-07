@@ -1,6 +1,7 @@
 using System;
 using Signet.EpubCheck.Core.Css;
 using Signet.EpubCheck.Core.Dtbook;
+using Signet.EpubCheck.Core.Media;
 using Signet.EpubCheck.Core.Messages;
 using Signet.EpubCheck.Core.Ops;
 using Signet.EpubCheck.Core.Util.Mime;
@@ -93,13 +94,15 @@ public static class CheckerFactory
                 return new DTBookChecker(context);
             case MediaTypes.Html or MediaTypes.Oebps when context.Version == EpubVersion.Version2:
                 return new OPSChecker(context);
+            case MediaTypes.ImageGif or MediaTypes.ImageJpeg or MediaTypes.ImagePng:
+                return new BitmapChecker(context);
             case MediaTypes.PackageDocument:
                 return context.Version == EpubVersion.Version2 ? new OPFChecker(context) : new OPFChecker30(context);
             case MediaTypes.Svg or MediaTypes.Xhtml:
                 return new OPSChecker(context);
         }
 
-        // The checkers of images, media overlays and search key maps join with the tasks that port them.
+        // The checkers of media overlays and search key maps join with the tasks that port them.
         return new PublicationResourceChecker(context);
     }
 }
