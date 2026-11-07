@@ -10,6 +10,21 @@
     <AssemblyName>epubcheck.net</AssemblyName>
   </PropertyGroup>
 
+  <!-- `dotnet publish -r win-x64|linux-x64` (scripts/epubcheck/publish.sh) makes the standalone executable: self-contained, one file,
+       not trimmed (the schemas and the message texts are resources loaded by name at run time, which a trimmer cannot follow).
+       InvariantGlobalization stays off: the tool's Polish texts need the culture data (ICU on Linux). -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <SatelliteResourceLanguages>en;pl</SatelliteResourceLanguages>
+    <DebugType>none</DebugType>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+    <PublishDocumentationFiles>false</PublishDocumentationFiles>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Signet.EpubCheck.Core\Signet.EpubCheck.Core.csproj" />
   </ItemGroup>
