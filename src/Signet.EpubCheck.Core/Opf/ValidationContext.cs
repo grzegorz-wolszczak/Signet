@@ -66,6 +66,9 @@ public sealed record ValidationContext
     /// <summary>The references between the resources, or <c>null</c> without a container.</summary>
     public ReferenceRegistry? ReferenceRegistry { get; init; }
 
+    /// <summary>Which media overlay refers to each content document, or <c>null</c> without a container.</summary>
+    public Overlay.OverlayTextChecker? OverlayTextChecker { get; init; }
+
     /// <summary>The manifest item of the checked resource, if the package document declares it.</summary>
     public OPFItem? OpfItem => ResourceRegistry?.GetOpfItem(Url);
 
@@ -121,7 +124,7 @@ public sealed record ValidationContext
     public ValidationContext WithContainer(OCFContainer container)
     {
         ResourceRegistry resources = new();
-        return this with { Container = container, ResourceRegistry = resources, ReferenceRegistry = new ReferenceRegistry(container, resources) };
+        return this with { Container = container, ResourceRegistry = resources, ReferenceRegistry = new ReferenceRegistry(container, resources), OverlayTextChecker = new Overlay.OverlayTextChecker() };
     }
 
     private string ComputePath()
