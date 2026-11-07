@@ -14,9 +14,8 @@ namespace Signet.EpubCheck.Cli;
 /// spellings, the texts and the exit codes are upstream's.
 /// </summary>
 /// <remarks>
-/// The checks themselves are not there yet (<c>EPUBCHECK_PLAN.md</c>): a run that has a file to check says so and fails.
-/// Everything around them works - the help, the version, <c>--listChecks</c>, <c>--customMessages</c>, <c>--locale</c>, the
-/// reporting levels, the argument errors and the closing counters.
+/// A whole EPUB, an expanded one and the single documents of the modes go to their checkers; the XML, XMP and JSON reports are
+/// not there yet (<c>EPUBCHECK_PLAN.md</c>, task 4.2).
 /// </remarks>
 internal sealed class ToolRun
 {
@@ -135,14 +134,16 @@ internal sealed class ToolRun
 
         if (_expanded)
         {
-            if (!File.Exists(_path) && !Directory.Exists(_path))
+            if (!Directory.Exists(_path))
             {
                 _output.PrintError(_messages.Get("directory_not_found", _path));
                 return 1;
             }
 
-            _output.PrintError(_messages.GetPort("expanded_not_implemented"));
-            return 1;
+            // Upstream packs the folder into an EPUB file and checks that; the file stays only with --save.
+            using ExpandedEpubArchive archive = ExpandedEpubArchive.Create(_path!, Keep);
+            OCFChecker.Check(archive.EpubPath, EpubVersion.Unknown, report, _profile ?? EpubProfile.Default);
+            return Result(report);
         }
 
         if (_mode is not null)
@@ -173,13 +174,13 @@ internal sealed class ToolRun
             throw new ToolArgumentException(_messages.Get("mode_version_not_supported", _mode, VersionText(_version)));
         }
 
-        if (_mode is not null)
+        if (_mode is not null && SingleDocumentChecker.TryParseMode(_mode, out SingleDocumentKind kind))
         {
-            _output.PrintError(_messages.GetPort("checker_not_implemented"));
-            return 1;
+            SingleDocumentChecker.Check(path, kind, _version, _profile ?? EpubProfile.Default, report);
+            return Result(report);
         }
 
-        OCFChecker.Check(path, _version, report);
+        OCFChecker.Check(path, EpubVersion.Unknown, report, _profile ?? EpubProfile.Default);
         return Result(report);
     }
 
@@ -206,9 +207,8 @@ internal sealed class ToolRun
     private static bool IsSupportedMode(string? mode, EpubVersion version) => mode switch
     {
         null => true,
-        "opf" or "xhtml" or "svg" => true,
-        "mo" or "nav" => version == EpubVersion.Version3,
-        _ => false,
+        "exp" => true,
+        _ => SingleDocumentChecker.TryParseMode(mode, out SingleDocumentKind kind) && SingleDocumentChecker.IsSupported(kind, version),
     };
 
     private static string VersionText(EpubVersion version) => version switch

@@ -527,6 +527,7 @@ ASALocalRun/
 *.nar
 *.ear
 *.zip
+!tests/corpus/epubcheck/**/*.zip
 *.tar.gz
 *.rar
 

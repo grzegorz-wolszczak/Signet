@@ -335,5 +335,8 @@ Media overlays and images (`Overlay/`, `Media/`, upstream's `OverlayChecker`, `O
   (upstream asks for the fragment of the missing URL).
 - `BitmapChecker` reads the size from the headers (PNG, GIF's first image, JPEG, BMP) where upstream uses ImageIO, and works on the
   bytes in memory instead of a temporary file. A file of a format ImageIO reads but the port does not tell (WBMP) is `PKG-021`.
+- `--mode exp` packs the folder into `<folder>.epub` as upstream's `Archive` does, but when that file already exists and `--save` is not
+  given, the archive goes to a temporary file: upstream would overwrite the file and delete it afterwards.
+- `tests/corpus/epubcheck/cli/files/wrong_extension.zip` is kept in the corpus although `.gitignore` ignores `*.zip` (an exception was added).
 
 Each further deviation from upstream is listed here, with the reason.

@@ -309,7 +309,7 @@ public sealed class EpubCheckToolTests
     }
 
     [Fact]
-    public void Run_OfAFileThatCanBeChecked_SaysTheCheckerIsNotThereYet()
+    public void Run_OfAFileInASingleDocumentMode_ChecksIt()
     {
         // Arrange
         using TempDir dir = new();
@@ -321,7 +321,41 @@ public sealed class EpubCheckToolTests
 
         // Assert
         result.ExitCode.Should().Be(1);
-        result.StdErr.Should().Be("The EPUB checker is not implemented yet.\n");
+        result.StdErr.Should().Contain("FATAL(RSC-016)");
+    }
+
+    [Fact]
+    public void Run_OfAnExpandedFolder_ChecksItAndLeavesNoEpubBehind()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string folder = dir.Combine("book");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "mimetype"), "application/epub+zip");
+
+        // Act
+        ToolRunner.Result result = ToolRunner.Run("-mode", "exp", folder);
+
+        // Assert
+        result.ExitCode.Should().Be(1);
+        result.StdErr.Should().Contain("RSC-002");
+        File.Exists(folder + ".epub").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Run_OfAnExpandedFolderWithSave_KeepsTheEpub()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string folder = dir.Combine("book");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "mimetype"), "application/epub+zip");
+
+        // Act
+        ToolRunner.Run("-mode", "exp", folder, "--save");
+
+        // Assert
+        File.Exists(folder + ".epub").Should().BeTrue();
     }
 
     [Fact]
