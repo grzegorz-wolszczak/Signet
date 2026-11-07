@@ -119,3 +119,28 @@ thread of the process, so most of "UNMANAGED_CODE_TIME" is idle threads and the 
 (`RuntimeHelpers.GetHashCode`, `Thread.PollGC`) are safepoint bias, not cost. Decide by experiment: a 256 MB gen0 budget
 (`DOTNET_GCgen0size=0x10000000`) changed nothing except the spread-notes book (-25%), so GC is not the main cost; `DOTNET_TieredPGO=0`
 makes everything 20-35% slower (dynamic PGO is worth keeping on).
+
+### Measuring allocations (6.4)
+
+`EpubCheckScaleBenchmarks` now also prints the KiB one run allocates per file and the number of collections (`GC.GetTotalAllocatedBytes`,
+exact), and with `SIGNET_ALLOC_PROFILE=1` the types that allocate most (`AllocationProfile`, the runtime's `GCAllocationTick` event read
+in the process: it names the type, not the caller, but it has none of the bias of a sampled CPU profile). Allocation per file grew with
+the size of the book (2.0 MB at 50 files, 3.6 MB at 1600) and gen2 ran every ~25 files; the table by type showed a quarter of everything
+in the memo of RELAX NG derivatives (`Dictionary<Name,PatternMemo>`, `PatternMemo`, `Pattern[]` in the LOH).
+
+Cause: `RelaxNgSchema.CreateValidator` built a new `ValidatorPatternBuilder` for every document, so the memo was thrown away after each
+one. Fix: one builder per schema and thread (see `UPSTREAM.md`). Best of 2 (warm), ms, and KiB allocated per file:
+
+| book | before, ms | after, ms | before, KiB/file | after, KiB/file |
+|---|---:|---:|---:|---:|
+| 50 files | 77 | 11 | 1960 | 551 |
+| 200 files | 319 | 59 | 2081 | 698 |
+| 800 files | 1347 | 456 | 2721 | 1345 |
+| 1600 files | 3261 | 1464 | 3588 | 2213 |
+| 300 files x 6 notes | 1621 | 1152 | 4853 | 2278 |
+| 600 files x 6 notes | 3235 | 625 | 5177 | 2577 |
+| 1200 files x 6 notes (spread) | 6671 | 1651 | 5830 | 3232 |
+| 200 files x 40 notes in one file | 1697 | 914 | 11810 | 9437 |
+
+A first run in a fresh process (the first book in the table, 300 files x 6 notes, includes reading the schemas and the JIT): 3696 ms
+before, 2138 ms after. Later books of the same process start with the memo the earlier ones built, so their "cold" column says less.
