@@ -16,6 +16,20 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
     </Style>
+    <Style Selector="ToggleButton.panelTool">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="5" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="ToggleButton.panelTool:checked /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
+    </Style>
+    <Style Selector="ToggleButton.panelTool Path">
+      <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+      <Setter Property="Stretch" Value="Uniform" />
+    </Style>
     <Style Selector="Button.panelTool Path">
       <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
       <Setter Property="Stretch" Value="Uniform" />
@@ -48,6 +62,11 @@
             <MenuFlyout Placement="RightEdgeAlignedTop" Opening="OnSkippedRulesOpening" />
           </Button.Flyout>
         </Button>
+        <ToggleButton x:Name="UsageHintsButton" Classes="panelTool" IsChecked="{Binding ShowUsageHints, Mode=TwoWay}"
+                      ToolTip.Tip="{loc:Loc ValidationResultsView_ShowUsageHints}">
+          <!-- Material Design "lightbulb" icon (Apache License 2.0): the hints about the features the book uses. -->
+          <Path Data="M12,2A7,7 0 0,0 5,9C5,11.38 6.19,13.47 8,14.74V17A1,1 0 0,0 9,18H15A1,1 0 0,0 16,17V14.74C17.81,13.47 19,11.38 19,9A7,7 0 0,0 12,2M9,21A1,1 0 0,0 10,22H14A1,1 0 0,0 15,21V20H9V21Z" />
+        </ToggleButton>
       </StackPanel>
     </Border>
 
@@ -57,7 +76,7 @@
                  FontSize="16" Opacity="0.6"
                  HorizontalAlignment="Center" VerticalAlignment="Center" />
 
-      <!-- Source and columns (File, Line, Offset, Fix, Message) are built in the code-behind. -->
+      <!-- Source and columns (File, Severity, Line, Offset, Fix, Message) are built in the code-behind. -->
       <TreeDataGrid x:Name="Grid"
                     Classes="gridLines"
                     IsVisible="{Binding HasResults}"
