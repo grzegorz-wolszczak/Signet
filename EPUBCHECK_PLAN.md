@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts) are done**; **next: task 3.9 media overlays**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays) and 3.10 (scripting and accessibility) are done**; **next: task 3.11 profiles and extensions**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.9 Media Overlays**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.11 Profiles and extensions**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -72,7 +72,7 @@ questions into one message, as `AGENTS.md` demands).
 |---|---|
 | Library | `src/Signet.EpubCheck.Core` (`Messages/`, `Reporting/`, `Ocf/`, `Opf/`, `Ops/` (content documents), `Nav/`, `Dtbook/`, `Css/` (the seam of the CSS checker), `Ncx/`, `References/`, `Vocab/`, `Galimatias/` (the URL parser, MIT), `Jing/` (the RELAX NG engine, a port of Jing, BSD-3), `Util/` (incl. `Util/Mime/`), `EpubVersion.cs`, `EpubProfile.cs`, `EpubCheckVersion.cs`) |
 | Tool | `src/Signet.EpubCheck.Cli` (assembly `epubcheck.net`; `ToolRun` = upstream's `EpubChecker`; a whole EPUB goes through `OCFChecker`, the single-file modes still say "checker not implemented") |
-| Tests | `tests/Signet.EpubCheck.Core.Tests` (2912 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1151 passed, 136 skipped) |
+| Tests | `tests/Signet.EpubCheck.Core.Tests` (2972 passed, 7 skipped — the NVDL cases with MNS or W3C XML Schema and the Schematron cases with `id()` or `document()`, incl. ports of upstream's JUnit tests, galimatias' URL data and Jing's test suites in `Jing/TestData`: `spectest.xml`, `compacttest.xml`, `regextest.xml`, `hardtest.xml`, `xsdtest.xml`, `nvdltest.xml`, `schematrontest.xml`), `tests/Signet.EpubCheck.Cli.Tests` (44), `tests/Signet.EpubCheck.Conformance.Tests` (harness + upstream scenarios: 1222 passed, 65 skipped) |
 | Upstream fixtures + `.feature` files | `tests/corpus/epubcheck` (byte for byte, own `.gitattributes`) |
 | Gating of upstream scenarios | `tests/Signet.EpubCheck.Conformance.Tests/Harness/ConformanceCorpus.cs`: `EnabledFeatures` (must pass) and `PendingScenarios` (`path:line` → reason). The checker plugs in through `IEpubChecker` (today `UnavailableEpubChecker` → "not implemented" = skip). `SIGNET_CONFORMANCE_ALL=1` runs everything. |
 | Upstream source for reading | Not in the repo. Clone it into the scratchpad: `git clone --depth 1 --branch v5.4.0 https://github.com/w3c/epubcheck <scratchpad>/epubcheck-v540` (network is only for this research, never at run time). Sources: `src/main/java/com/adobe/epubcheck/**`, schemas/resources: `src/main/resources/**`. |
@@ -87,27 +87,27 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 3.9 Media Overlays
+### Next task: 3.11 Profiles and extensions
 
-Upstream's `com.adobe.epubcheck.overlay`: `OverlayChecker` (`application/smil+xml`, `mo30.rnc`/`.sch`), `OverlayHandler` (the `text`/`audio`
-elements, `MED-005`, `MED-008`, `MED-009`, `MED-011`, `MED-014`…, references of `OverlayTextLink` and audio), `OverlayTextChecker`
-(which content documents the overlays reference: `MED-010`, `MED-012`, `MED-013` in `OPFChecker30.CheckItemAfterResourceValidation`, which
-now has a note where they go) and `SmilClock` (the clock values and the total duration, `MED-016` in `OPFChecker30.CheckContent`;
-`OPFHandler30`/`MetadataSet` already hold the `media:duration` metadata). `CheckerFactory` returns the base checker for
-`application/smil+xml` today. The harness (`OcfEpubChecker`) needs the `mo` single-document mode (`CheckerMode.MediaOverlaysDocument`).
-Pending scenarios that wait for it: `epub3/09-media-overlays` (not enabled yet), `05-package-document/package-document.feature:612`,
-`vocabularies-association.feature` (the `.smil` examples).
+The pieces of upstream that serve the profiles and the EPUB extensions, which are mostly schemas already loaded (`dict`, `edupub`, `idx`,
+`preview` are chosen in `OPFChecker30.Validators`, `OPSChecker`, `NavChecker`). What is left in Java: `com.adobe.epubcheck.dict`
+(`SearchKeyMapChecker` / `SearchKeyMapHandler`: `OPF-080`, the references of search keys, `RSC-021`), `MappingDocumentChecker`
+(`org.w3c.epubcheck`/`com.adobe.epubcheck.ocf`: the mapping document of multiple renditions, `OCFChecker` calls it; the `container.xml` of
+multiple renditions), the data navigation documents and region-based navigation (`NAV-009` is done), distributable objects and
+scriptable components (collections; mostly schemas), and the `epubcheck:` properties the package handlers add (`in-index-collection`). Pending
+scenarios that wait for it: `epub-dictionaries/dictionaries-publication.feature` (30, 40, 49, 54) and
+`epub-multiple-renditions/multiple-rendition-publication.feature` (89, 95, 101). `CheckerFactory` returns the base checker for
+`application/vnd.epub.search-key-map+xml` today.
 
 ### Current state of the conformance run
 
-45 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
+47 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
 the package documents of EPUB 2 and 3, the NCX, the content documents (XHTML, SVG, fixed layout, the navigation document, EDUPUB,
-indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1151 scenarios pass; the
-others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (media overlays 3.9, the search key map and mapping document of profiles 3.11, report writers 4.2, `--save`
+indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1222 scenarios pass; the
+others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (the search key map and mapping document of profiles 3.11, report writers 4.2, `--save`
 3.12, French messages that are never meant to pass). Not enabled yet:
-`09-media-overlays` (3.9), `05-package-document/vocabularies-association` (a
-media overlay document), `localization` and `reporting` (4.2). Single documents the harness checks: package documents, XHTML, SVG
-and navigation documents (`OcfEpubChecker`); `mo` waits for 3.9. The test run uses English texts (`TestIsolationSetup` sets
+`localization` and `reporting` (4.2). Single documents the harness checks: package documents, XHTML, SVG
+and navigation documents (`OcfEpubChecker`); `mo` (media overlays) too. The test run uses English texts (`TestIsolationSetup` sets
 `DefaultThreadCurrentUICulture`), so a Polish machine passes too.
 
 ### Review of November 2026 (what to keep doing)
@@ -466,8 +466,18 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   bytes and reads the size from the PNG, GIF, JPEG and BMP headers (no native dependency), with the extension lists of ImageIO's
   readers. The checks of fonts and of the media types of the manifest were done with the package document (3.2, 3.3) and CSS (3.7).
   The three pending scenarios of `resources.feature` pass: 1151 conformance scenarios.
-- **3.9 Media Overlays (M).**
-- **3.10 Scripting and accessibility (M).** `SCP-*`, `ACC-*`.
+- **3.9 Media Overlays (M). DONE.** `Overlay/`: `SmilClock` (the three syntaxes of SMIL clock values, tolerance, sums; with `ClipTime`),
+  `OverlayTextChecker` (which overlay refers to each content document, in `ValidationContext`), `OverlayChecker` (`mo30.rnc` and `.sch`)
+  and `OverlayHandler` (`text`/`seq`/`body` links registered as `OverlayTextLink`, audio registered with an intrinsic fallback,
+  `MED-005`, `MED-008`, `MED-009`, `MED-011`, `MED-014`, `OPF-088`, `OPF-014` for remote audio). `OPFChecker30` now checks the media
+  overlay attributes of the items (`MED-010`, `MED-012`, `MED-013`) and the total duration (`MED-016`, within a second). The harness has
+  the `mo` single-document mode. `09-media-overlays` and `vocabularies-association` are enabled (their `.smil` examples included); the
+  fixture `content_001.mo` that `.gitignore`'s `*.mo` had kept out of the repository is added back (`!tests/corpus/epubcheck/**/*.mo`).
+  1222 conformance scenarios pass.
+- **3.10 Scripting and accessibility (M). DONE with nothing new to port.** The `SCP-*` messages and most `ACC-*` come from upstream's
+  Schematron schemas, which run since epic 2 (`epub-xhtml-30.sch` and the rest); the `ACC-004`–`ACC-012` hints that Java reports are in
+  `OPSHandler` / `OPSHandler30` (3.5) and the scripted/properties checks in 3.5 and 3.7. `epub-accessibility` and
+  `epub-scriptable-components` pass, and so do the script scenarios of the content documents.
 - **3.11 Profiles and extensions (L).** `dict`, `edupub`, `idx`, `preview`, multiple renditions, data navigation,
   distributable objects, scriptable components, region-based navigation.
 - **3.12 Single-file and expanded modes (M).** `--mode opf|xhtml|svg|nav|mo|exp`, `--save`.
