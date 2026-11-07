@@ -23,11 +23,35 @@ internal sealed class XPathContext
 
     public string? BaseUri { get; init; }
 
+    /// <summary>
+    /// The values of the subexpressions that depend on nothing but the current node, worked out once for it (shared by the
+    /// contexts made from this one: they have the same current node).
+    /// </summary>
+    public MemoStore Memo { get; init; } = new();
+
     public XPathContext With(object item, int position, int size) =>
-        new() { Item = item, Position = position, Size = size, Current = Current, Variables = Variables, BaseUri = BaseUri };
+        new() { Item = item, Position = position, Size = size, Current = Current, Variables = Variables, BaseUri = BaseUri, Memo = Memo };
 
     public XPathContext WithVariable(string name, IReadOnlyList<object> value) =>
-        new() { Item = Item, Position = Position, Size = Size, Current = Current, Variables = new BoundVariable(name, value, Variables), BaseUri = BaseUri };
+        new() { Item = Item, Position = Position, Size = Size, Current = Current, Variables = new BoundVariable(name, value, Variables), BaseUri = BaseUri, Memo = Memo };
+
+    /// <summary>The memo of a context: made when the first value is stored.</summary>
+    public sealed class MemoStore
+    {
+        private Dictionary<XPathExpr, IReadOnlyList<object>>? _values;
+
+        public IReadOnlyList<object> GetOrAdd(XPathExpr expr, XPathContext context)
+        {
+            _values ??= new Dictionary<XPathExpr, IReadOnlyList<object>>(ReferenceEqualityComparer.Instance);
+            if (!_values.TryGetValue(expr, out IReadOnlyList<object>? value))
+            {
+                value = expr.Evaluate(context);
+                _values[expr] = value;
+            }
+
+            return value;
+        }
+    }
 
     public XdmNode ContextNode => Item as XdmNode ?? throw new XPathException("the context item is not a node");
 
@@ -71,6 +95,35 @@ internal abstract class XPathExpr
     public abstract IReadOnlyList<object> Evaluate(XPathContext context);
 
     public virtual bool UsesPosition => false;
+
+    /// <summary>
+    /// What the value depends on besides the document and the current node: the context item (and position and size), and the
+    /// variables. An expression that depends on neither has the same value wherever it is evaluated for one current node.
+    /// Unknown kinds of expression depend on both.
+    /// </summary>
+    public Dependencies Depends => _depends ??= ComputeDepends();
+
+    private Dependencies? _depends;
+
+    protected virtual Dependencies ComputeDepends() => Dependencies.Item | Dependencies.Variables;
+
+    /// <summary>Whether the value is a boolean (or an empty sequence) and never a number, so that a predicate of it is never a position.</summary>
+    public virtual bool IsBoolean => false;
+
+    /// <summary>The value, worked out once per current node when it depends on nothing else.</summary>
+    protected static IReadOnlyList<object> EvaluateOnce(XPathExpr expr, XPathContext context) =>
+        (expr.Depends & (Dependencies.Item | Dependencies.Variables)) == 0 && expr is not LiteralExpr ? context.Memo.GetOrAdd(expr, context) : expr.Evaluate(context);
+}
+
+[Flags]
+internal enum Dependencies
+{
+    None = 0,
+    Item = 1,
+    Variables = 2,
+
+    /// <summary>The current node (<c>current()</c>): the same wherever the expression is evaluated for one node, but not for another.</summary>
+    Current = 4,
 }
 
 internal sealed class LiteralExpr(object value) : XPathExpr
@@ -78,11 +131,15 @@ internal sealed class LiteralExpr(object value) : XPathExpr
     public object Value { get; } = value;
 
     public override IReadOnlyList<object> Evaluate(XPathContext context) => [Value];
+
+    protected override Dependencies ComputeDepends() => Dependencies.None;
 }
 
 internal sealed class VariableExpr(string name) : XPathExpr
 {
     public override IReadOnlyList<object> Evaluate(XPathContext context) => context.Variables.Get(name);
+
+    protected override Dependencies ComputeDepends() => Dependencies.Variables;
 }
 
 internal sealed class ContextItemExpr : XPathExpr
@@ -97,6 +154,10 @@ internal sealed class ParenthesizedExpr(XPathExpr inner) : XPathExpr
     public override IReadOnlyList<object> Evaluate(XPathContext context) => Inner.Evaluate(context);
 
     public override bool UsesPosition => Inner.UsesPosition;
+
+    protected override Dependencies ComputeDepends() => Inner.Depends;
+
+    public override bool IsBoolean => Inner.IsBoolean;
 }
 
 internal sealed class SequenceExpr(IReadOnlyList<XPathExpr> items) : XPathExpr
@@ -117,6 +178,8 @@ internal sealed class IfExpr(XPathExpr condition, XPathExpr then, XPathExpr othe
 internal sealed class QuantifiedExpr(bool every, IReadOnlyList<(string Name, XPathExpr Domain)> bindings, XPathExpr satisfies) : XPathExpr
 {
     public override IReadOnlyList<object> Evaluate(XPathContext context) => [Test(context, 0)];
+
+    public override bool IsBoolean => true;
 
     private bool Test(XPathContext context, int index)
     {
@@ -164,6 +227,10 @@ internal sealed class ForExpr(IReadOnlyList<(string Name, XPathExpr Domain)> bin
 
 internal sealed class OrExpr(XPathExpr left, XPathExpr right) : XPathExpr
 {
+    protected override Dependencies ComputeDepends() => left.Depends | right.Depends;
+
+    public override bool IsBoolean => true;
+
     public override IReadOnlyList<object> Evaluate(XPathContext context) =>
         [XPathValues.EffectiveBoolean(left.Evaluate(context)) || XPathValues.EffectiveBoolean(right.Evaluate(context))];
 
@@ -172,6 +239,10 @@ internal sealed class OrExpr(XPathExpr left, XPathExpr right) : XPathExpr
 
 internal sealed class AndExpr(XPathExpr left, XPathExpr right) : XPathExpr
 {
+    protected override Dependencies ComputeDepends() => left.Depends | right.Depends;
+
+    public override bool IsBoolean => true;
+
     public override IReadOnlyList<object> Evaluate(XPathContext context) =>
         [XPathValues.EffectiveBoolean(left.Evaluate(context)) && XPathValues.EffectiveBoolean(right.Evaluate(context))];
 
@@ -180,10 +251,20 @@ internal sealed class AndExpr(XPathExpr left, XPathExpr right) : XPathExpr
 
 internal sealed class ComparisonExpr(string op, XPathExpr left, XPathExpr right) : XPathExpr
 {
+    public string Op => op;
+
+    public XPathExpr Left => left;
+
+    public XPathExpr Right => right;
+
+    protected override Dependencies ComputeDepends() => left.Depends | right.Depends;
+
+    public override bool IsBoolean => op is "=" or "!=" or "<" or "<=" or ">" or ">=" or "is" or "<<" or ">>" or "eq" or "ne" or "lt" or "le" or "gt" or "ge";
+
     public override IReadOnlyList<object> Evaluate(XPathContext context)
     {
-        IReadOnlyList<object> l = left.Evaluate(context);
-        IReadOnlyList<object> r = right.Evaluate(context);
+        IReadOnlyList<object> l = EvaluateOnce(left, context);
+        IReadOnlyList<object> r = EvaluateOnce(right, context);
         return op switch
         {
             "=" or "!=" or "<" or "<=" or ">" or ">=" => [XPathValues.GeneralCompare(op, l, r)],
@@ -253,6 +334,8 @@ internal sealed class RangeExpr(XPathExpr from, XPathExpr to) : XPathExpr
 
 internal sealed class ArithmeticExpr(string op, XPathExpr left, XPathExpr right) : XPathExpr
 {
+    protected override Dependencies ComputeDepends() => left.Depends | right.Depends;
+
     public override IReadOnlyList<object> Evaluate(XPathContext context)
     {
         double a = XPathValues.NumberOfFirst(left.Evaluate(context));
@@ -273,6 +356,8 @@ internal sealed class ArithmeticExpr(string op, XPathExpr left, XPathExpr right)
 
 internal sealed class NegateExpr(XPathExpr operand) : XPathExpr
 {
+    protected override Dependencies ComputeDepends() => operand.Depends;
+
     public override IReadOnlyList<object> Evaluate(XPathContext context) => [-XPathValues.NumberOfFirst(operand.Evaluate(context))];
 
     public override bool UsesPosition => operand.UsesPosition;
@@ -280,7 +365,7 @@ internal sealed class NegateExpr(XPathExpr operand) : XPathExpr
 
 internal sealed class SetExpr(string op, XPathExpr left, XPathExpr right) : XPathExpr
 {
-    public string Op { get; } = op;
+    public string Op => op;
 
     public XPathExpr Left { get; } = left;
 
@@ -309,6 +394,21 @@ internal sealed class PathExpr(bool absolute, IReadOnlyList<XPathExpr> steps) : 
 
     public IReadOnlyList<XPathExpr> Steps { get; } = steps;
 
+    // What the steps use of the variables; the item only matters for the first step of a relative path (the others are
+    // evaluated on the nodes the steps before them found), and an absolute path starts at the root of the document.
+    protected override Dependencies ComputeDepends()
+    {
+        {
+            Dependencies depends = Absolute ? Dependencies.None : Steps[0].Depends;
+            foreach (XPathExpr step in Steps)
+            {
+                depends |= step.Depends & Dependencies.Variables;
+            }
+
+            return depends;
+        }
+    }
+
     public override IReadOnlyList<object> Evaluate(XPathContext context)
     {
         IReadOnlyList<object> current = Absolute ? [context.ContextNode.Root] : [context.Item];
@@ -317,6 +417,12 @@ internal sealed class PathExpr(bool absolute, IReadOnlyList<XPathExpr> steps) : 
         {
             current = Steps[0].Evaluate(context);
             first = 1;
+        }
+        else if (TryEvaluateEverywhere(context, out IReadOnlyList<object>? found))
+        {
+            // //name[...] : the nodes the second step selects in the whole document, worked out once, then the predicates.
+            current = found;
+            first = 2;
         }
 
         for (int i = first; i < Steps.Count; i++)
@@ -344,10 +450,71 @@ internal sealed class PathExpr(bool absolute, IReadOnlyList<XPathExpr> steps) : 
     }
 
     public override bool UsesPosition => !Absolute && Steps.Count > 0 && Steps[0].UsesPosition;
+
+    // "//name" and "//@name" with predicates that are tests (so a predicate is never a position): the same as asking every node
+    // for its children (attributes) and keeping the ones that pass, in document order. The nodes of the document that match the
+    // step are listed once and kept, which is what makes a predicate on the list worth indexing (ApplyPredicate).
+    private bool TryEvaluateEverywhere(XPathContext context, out IReadOnlyList<object> found)
+    {
+        found = [];
+        if (Steps.Count < 2
+            || Steps[0] is not AxisStep { Axis: Axis.DescendantOrSelf, Test: KindTest { Kind: null or "node" }, Predicates.Count: 0 }
+            || Steps[1] is not AxisStep { Axis: Axis.Child or Axis.Attribute } step
+            || step.Predicates.Any(p => !p.IsBoolean || p.UsesPosition)
+            || context.ContextNode.Root is not XdmDocument document)
+        {
+            return false;
+        }
+
+        if (!document.Cache.TryGetValue(step, out object? cached))
+        {
+            StableList nodes = [];
+            Collect(document, step, nodes);
+            document.Cache[step] = cached = nodes;
+        }
+
+        IReadOnlyList<object> items = (StableList)cached;
+        foreach (XPathExpr predicate in step.Predicates)
+        {
+            items = XPathValues.ApplyPredicate(items, predicate, context);
+        }
+
+        found = items;
+        return true;
+    }
+
+    private static void Collect(XdmNode node, AxisStep step, List<object> into)
+    {
+        if (step.Axis == Axis.Attribute)
+        {
+            foreach (XdmNode attribute in node.Attributes)
+            {
+                if (step.Test.Matches(attribute, Axis.Attribute))
+                {
+                    into.Add(attribute);
+                }
+            }
+        }
+
+        foreach (XdmNode child in node.Children)
+        {
+            if (step.Axis == Axis.Child && step.Test.Matches(child, Axis.Child))
+            {
+                into.Add(child);
+            }
+
+            Collect(child, step, into);
+        }
+    }
 }
+
+/// <summary>A list of nodes that is kept (and so can be told from one made for a single evaluation): predicates over it can be indexed.</summary>
+internal sealed class StableList : List<object>;
 
 internal sealed class FilterExpr(XPathExpr primary, IReadOnlyList<XPathExpr> predicates) : XPathExpr
 {
+    protected override Dependencies ComputeDepends() => primary.Depends | predicates.Aggregate(Dependencies.None, (d, p) => d | (p.Depends & Dependencies.Variables));
+
     public override IReadOnlyList<object> Evaluate(XPathContext context)
     {
         IReadOnlyList<object> items = primary.Evaluate(context);
@@ -382,6 +549,8 @@ internal sealed class NameTest(string? namespaceUri, string? localName) : NodeTe
 /// <summary>A kind test: <c>node()</c> (null), <c>text()</c>, <c>element()</c>, <c>attribute()</c>...</summary>
 internal sealed class KindTest(string? kind) : NodeTest
 {
+    public string? Kind => kind;
+
     public override bool Matches(XdmNode node, Axis axis) => kind switch
     {
         null or "node" => true,
@@ -400,6 +569,9 @@ internal sealed class AxisStep(Axis axis, NodeTest test, IReadOnlyList<XPathExpr
     public NodeTest Test { get; } = test;
 
     public IReadOnlyList<XPathExpr> Predicates { get; } = predicates;
+
+    protected override Dependencies ComputeDepends() =>
+        Dependencies.Item | Predicates.Aggregate(Dependencies.None, (d, p) => d | (p.Depends & Dependencies.Variables));
 
     public static bool IsReverse(Axis axis) => axis is Axis.Parent or Axis.Ancestor or Axis.AncestorOrSelf or Axis.PrecedingSibling or Axis.Preceding;
 
@@ -478,6 +650,29 @@ internal sealed class FunctionCallExpr(string name, IReadOnlyList<XPathExpr> arg
     public override IReadOnlyList<object> Evaluate(XPathContext context) => XPathFunctions.Call(Name, Args, context);
 
     public override bool UsesPosition => Name is "position" or "last" || Args.Any(a => a.UsesPosition);
+
+    // The functions that take the context item when they are given no argument, and the ones about the position, depend on it.
+    protected override Dependencies ComputeDepends()
+    {
+        {
+            string local = Name.StartsWith("fn:", StringComparison.Ordinal) ? Name[3..] : Name;
+            if (local is "position" or "last")
+            {
+                return Dependencies.Item;
+            }
+
+            if (local == "current")
+            {
+                return Dependencies.Current;
+            }
+
+            Dependencies depends = Args.Aggregate(Dependencies.None, (d, a) => d | a.Depends);
+            return Args.Count == 0 && local is not ("true" or "false" or "current") ? depends | Dependencies.Item : depends;
+        }
+    }
+
+    public override bool IsBoolean => Name is "exists" or "empty" or "not" or "boolean" or "true" or "false" or "contains" or "starts-with"
+        or "ends-with" or "matches" or "fn:exists" or "fn:empty" or "fn:not" or "fn:boolean" or "fn:contains" or "fn:starts-with" or "fn:ends-with" or "fn:matches";
 }
 
 /// <summary>The conversions and comparisons of XPath values.</summary>
@@ -639,6 +834,11 @@ internal static class XPathValues
 
     public static IReadOnlyList<object> ApplyPredicate(IReadOnlyList<object> items, XPathExpr predicate, XPathContext context)
     {
+        if (items.Count >= MinIndexedItems && TryApplyEquality(items, predicate, context, out IReadOnlyList<object>? indexed))
+        {
+            return indexed;
+        }
+
         List<object> result = [];
         for (int i = 0; i < items.Count; i++)
         {
@@ -652,4 +852,96 @@ internal static class XPathValues
 
         return result;
     }
+
+    // [A = B] over a list that is kept, where A depends on the item only and B on nothing: A is worked out for every node of the
+    // list once (a table from the value to the nodes), and each later evaluation only looks B up. Without it a test like
+    // "//@id[. = current()/@id]" for every id of a book is quadratic. Only strings are compared this way (a number or a boolean
+    // changes what "=" means), so anything else is left to the slow path.
+    private static bool TryApplyEquality(IReadOnlyList<object> items, XPathExpr predicate, XPathContext context, out IReadOnlyList<object> result)
+    {
+        result = items;
+        if (predicate is not ComparisonExpr { Op: "=" } comparison
+            || comparison.Left.Depends != Dependencies.Item
+            || (comparison.Right.Depends & (Dependencies.Item | Dependencies.Variables)) != 0
+            || comparison.Left.UsesPosition
+            || context.Current.Root is not XdmDocument document)
+        {
+            return false;
+        }
+
+        IReadOnlyList<object> wanted = context.Memo.GetOrAdd(comparison.Right, context);
+        if (wanted.Any(w => w is double or bool))
+        {
+            return false;
+        }
+
+        // The table is kept for the predicate and the list it was last applied to. A list that is applied to again (a variable's
+        // value, the nodes of a step worked out once) gets its table the second time it is seen; one made for a single evaluation
+        // never does, so it costs nothing.
+        if (!document.Cache.TryGetValue(predicate, out object? known) || known is not IndexEntry entry || !ReferenceEquals(entry.List, items))
+        {
+            document.Cache[predicate] = new IndexEntry(items);
+            return false;
+        }
+
+        entry.Index ??= BuildIndex(items, comparison.Left, context);
+        if (entry.Index is not Dictionary<string, List<int>> index)
+        {
+            return false;
+        }
+
+        SortedSet<int> positions = [];
+        foreach (object value in wanted)
+        {
+            if (index.TryGetValue(ToStringValue(value), out List<int>? at))
+            {
+                positions.UnionWith(at);
+            }
+        }
+
+        result = positions.Select(i => items[i]).ToList();
+        return true;
+    }
+
+    // The positions of the list by the strings the left side has for the nodes; NoIndex when a value is not a string (or a node).
+    private static object BuildIndex(IReadOnlyList<object> items, XPathExpr left, XPathContext context)
+    {
+        Dictionary<string, List<int>> index = new(StringComparer.Ordinal);
+        for (int i = 0; i < items.Count; i++)
+        {
+            foreach (object value in left.Evaluate(context.With(items[i], i + 1, items.Count)))
+            {
+                if (value is double or bool)
+                {
+                    return NoIndex;
+                }
+
+                string key = ToStringValue(value);
+                if (!index.TryGetValue(key, out List<int>? at))
+                {
+                    index[key] = at = [];
+                }
+
+                if (at.Count == 0 || at[^1] != i)
+                {
+                    at.Add(i);
+                }
+            }
+        }
+
+        return index;
+    }
+
+    private static readonly object NoIndex = new();
+
+    // Lists shorter than this are searched, not indexed.
+    private const int MinIndexedItems = 16;
+
+    private sealed class IndexEntry(IReadOnlyList<object> list)
+    {
+        public IReadOnlyList<object> List { get; } = list;
+
+        public object? Index { get; set; }
+    }
+
 }
