@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; epic 4 is done (**4.1 console output, 4.2 reports, 4.3 standalone executable**); epic 5 is done (**Signet's Check Book runs on the port: 5.1 the `Book` adapter, 5.2 results in the panel, 5.3 fixes, 5.4 settings, 5.5 the old checks retired**); epic 6: **6.1 (conformance report) is done**; **next: task 6.2 (optional, differential test against Java) and 6.3 (scale)**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) 3.11 (profiles and extensions) and 3.12 (single-file and expanded modes) are done — epic 3 is done**; epic 4 is done (**4.1 console output, 4.2 reports, 4.3 standalone executable**); epic 5 is done (**Signet's Check Book runs on the port: 5.1 the `Book` adapter, 5.2 results in the panel, 5.3 fixes, 5.4 settings, 5.5 the old checks retired**); epic 6: **6.1 (conformance report), 6.2 (differential test against Java), 6.3 (scale) and 6.4 (performance review) are done — every task of the plan is done**; what may still come is listed in "After the plan".
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,8 +23,8 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **performance, phase 2** - 6.2 and 6.3 are done, see
-   "Next task" below). Do **one task**, then stop. Do not start the next one.
+2. There is **no open task**: every task of the plan is DONE (6.4 closed on 2026-11-07). Read "After the plan" below and ask the owner what to do
+   next; do not start anything from it unasked.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
    "Current state".
@@ -87,32 +87,19 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: performance, phase 2 (the owner asked for a review of the whole port)
+### After the plan
 
-Order decided by the owner: **algorithms first, then tricks**. Phase 1 (done in 6.3): profile with `dotnet-trace` (`--format Speedscope`,
-read the evented JSON), find what grows faster than the book. Found and fixed: the Schematron XPath engine was quadratic on
-`count($id-set[@id = current()/@id]) = 1` (37 s became 1.7 s on a book with 8000 notes). Nothing else grows faster than the book now;
-the port is faster than the Java tool on the generated books (`BASELINE-EPUBCHECK.md`). What is left is a constant per element:
-RELAX NG derivatives (~33%), Schematron (~19%), the XML event reader and the checkers.
+The plan is finished. Things that were left out on purpose or noticed on the way; each needs the owner's word before it is started:
 
-Phase 1 is closed (checked again at the start of phase 2, `BASELINE-EPUBCHECK.md`): the "spread" books cost 5.3 ms per file at 300, 600 and
-1200 files, linear. Beware: the sampled-thread-time profile is biased (see the baseline file); confirm every candidate by an experiment.
-
-Phase 2 so far (6.4): the measuring tools are in (`AllocationProfile`, KiB per file and collections in `EpubCheckScaleBenchmarks`; a sampled CPU
-profile is biased here, see `BASELINE-EPUBCHECK.md`). Done, by the allocation table, inclusive profile shares, a stopwatch and an exception count: the RELAX NG derivative memo kept per schema and
-thread; the Schematron XPath engine; `ParseProperties`; the XSLT pattern matching; the location of a document once; fewer URL parses; list
-sizes and axes by loops; rules tried only for the elements they name; no copy of unchanged attributes; no exception per failed datatype.
-A run of 1600 files went from 3261 to 673 ms, 1200 files with notes from 6671 to 738 ms. Left: the XPath interpreter (`List<object>`, strings),
-the RELAX NG derivatives, the XML reader, the quadratic `itemref` assertion of the schema (same as upstream). The "tricks" (Span, ArrayPool, structs, a
-LINQ library) are not tried: the profile does not point at a hot spot where one would pay (the URL parser, the obvious Span candidate, is 7%).
-
-Phase 2, by profile and never by guess: allocations (`dotnet-counters`/`dotnet-trace` GC events) in the XPath engine (`Atomize`,
-`InDocumentOrder` with `Distinct().OrderBy`, `normalize-space` with `Split`, recursive `Descendants` iterators), `Url` parsing and
-`Relativize` per reference, `Span<char>`/`ReadOnlySpan<char>` where strings are cut, `ArrayPool<T>` for the buffers the SHA-256 and the
-ZIP reading use, structs for small data, boxing in `Message` arguments. LINQ libraries to evaluate on the hot spots the profile shows (one
-may suit one place and not another): ZLinq (Cysharp, the owner recommends it as the newest and best), StructLinq, FastLinq,
-NetFabric.Hyperlinq; each only after a benchmark in `Signet.Benchmarks` shows a gain on a real hot spot. 6.2 (differential test) is
-done: 132 books, no difference left.
+- **Performance, if more is wanted** (6.4 stopped where the profile showed no single hot spot; numbers and method in
+  `tests/Signet.Benchmarks/BASELINE-EPUBCHECK.md`): the XPath interpreter (`List<object>` results, strings), the RELAX NG derivatives, the XML event
+  reader. The "tricks" (Span, ArrayPool, structs, LINQ libraries: ZLinq, StructLinq, FastLinq, Hyperlinq) were never needed: the one obvious Span
+  candidate, the URL parser, is 7% of a check. Measure first: a sampled profile's self time is biased here, use inclusive shares, a stopwatch,
+  allocation traces with stacks and an exception count.
+- **The `itemref` duplicate assertion of `package-30.sch` is quadratic in the spine by upstream's design** (the Java tool pays the same). A special
+  case would be a deviation from upstream; at 1600 items it costs ~57 microseconds per itemref.
+- **Upstream moves on** (5.4.1 and later): the port is pinned to 5.4.0; a newer version is a separate task.
+- **The Polish texts** of the tool are a draft for the owner's review.
 
 ### Current state of the conformance run
 
@@ -566,6 +553,13 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   (`SIGNET_DIFFERENTIAL_FIXTURES=n` adds upstream's fixtures), runs the jar and the port, and writes the differences to
   `SIGNET_DIFFERENTIAL_OUT`. First run: 132 books, one difference (`RSC-004` for obfuscated fonts), which turned out to be a port that
   was cleverer than upstream and was fixed; the order of the fields of the JSON report was fixed the same way.
+- **6.4 Performance review (M). DONE.** The owner asked for algorithms first, then tricks. Tools: `EpubCheckScaleBenchmarks` prints time, KiB allocated per
+  file, collections and exceptions thrown per run (`SIGNET_ALLOC_PROFILE=1` adds the allocated types, `AllocationProfile`). Found and fixed, in order of
+  gain: the RELAX NG derivative memo rebuilt for every document (now kept per schema and thread; deviation listed in `UPSTREAM.md`), the allocations
+  of the Schematron XPath engine, the path of a document worked out for every element, URLs parsed several times, rules tried against every node
+  (now only against the elements they name), 277 000 `DatatypeException`s per run (now none), copies of unchanged attributes. 1600 files: 3261 ->
+  673 ms and 3588 -> 420 KiB per file; 1200 files with notes: 6671 -> 738 ms; the port is faster than the Java tool on the generated books. Method,
+  numbers and what was not done (and why) are in `BASELINE-EPUBCHECK.md`.
 - **6.3 Scale (S). DONE.** `EpubCheckScaleBenchmarks` (numbers in `tests/Signet.Benchmarks/BASELINE-EPUBCHECK.md`) found the quadratic
   Schematron/XPath cost, fixed in the engine (see "Next task").
 
