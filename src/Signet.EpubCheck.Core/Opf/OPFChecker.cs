@@ -5,6 +5,7 @@ using Signet.EpubCheck.Core.Messages;
 using Signet.EpubCheck.Core.Nav;
 using Signet.EpubCheck.Core.Ncx;
 using Signet.EpubCheck.Core.Ocf;
+using Signet.EpubCheck.Core.References;
 using Signet.EpubCheck.Core.Reporting;
 using Signet.EpubCheck.Core.Util;
 using Signet.EpubCheck.Core.Vocab;
@@ -100,6 +101,7 @@ public class OPFChecker(ValidationContext context) : IChecker
             CheckItemAfterResourceValidation(item);
         }
 
+        new ResourceReferencesChecker(Context).Check();
         return false;
     }
 

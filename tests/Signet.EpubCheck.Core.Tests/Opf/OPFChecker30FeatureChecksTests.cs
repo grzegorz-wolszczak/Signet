@@ -208,6 +208,72 @@ public sealed class OPFChecker30FeatureChecksTests
         Ids(report).Should().NotContain(MessageId.OPF_078);
     }
 
+    [Fact]
+    public void Check_ItemNothingReferences_ReportsOpf097ButNotForSpineItems()
+    {
+        // Arrange
+        string items = "<item id=\"img\" href=\"a.png\" media-type=\"image/png\"/><item id=\"c\" href=\"c.xhtml\" media-type=\"application/xhtml+xml\"/>";
+
+        // Act
+        CollectingReport report = Run(Package(items: items).Replace("<spine/>", "<spine><itemref idref=\"c\"/></spine>"), new FeatureReport(), EpubProfile.Default);
+
+        // Assert
+        report.Messages.Where(message => message.Message.Id == MessageId.OPF_097).Should().ContainSingle().Which.Arguments.Should().Equal("a.png");
+    }
+
+    [Theory]
+    [InlineData(false, MessageId.OPF_096)]
+    [InlineData(true, MessageId.OPF_096b)]
+    public void Check_NonLinearItemNoHyperlinkReaches_IsReported(bool scripted, MessageId expected)
+    {
+        // Arrange
+        string items = "<item id=\"c\" href=\"c.xhtml\" media-type=\"application/xhtml+xml\"/>";
+        FeatureReport features = new();
+        if (scripted)
+        {
+            features.Report(FeatureKind.HasScripts, s_somewhere);
+        }
+
+        // Act
+        CollectingReport report = Run(Package(items: items).Replace("<spine/>", "<spine><itemref idref=\"c\" linear=\"no\"/></spine>"), features, EpubProfile.Default);
+
+        // Assert
+        Ids(report).Should().Contain(expected);
+    }
+
+    [Theory]
+    [InlineData(false, MessageId.RSC_006)]
+    [InlineData(true, MessageId.RSC_006b)]
+    public void Check_RemoteResourceNothingReferences_IsReported(bool scripted, MessageId expected)
+    {
+        // Arrange
+        string items = "<item id=\"r\" href=\"https://example.org/a.png\" media-type=\"image/png\"/>";
+        FeatureReport features = new();
+        if (scripted)
+        {
+            features.Report(FeatureKind.HasScripts, s_somewhere);
+        }
+
+        // Act
+        CollectingReport report = Run(Package(items: items), features, EpubProfile.Default);
+
+        // Assert
+        Ids(report).Should().Contain(expected);
+    }
+
+    [Fact]
+    public void Check_RemoteFont_IsAllowedWithoutAReference()
+    {
+        // Arrange
+        string items = "<item id=\"f\" href=\"https://example.org/a.woff\" media-type=\"font/woff\"/>";
+
+        // Act
+        CollectingReport report = Run(Package(items: items), new FeatureReport(), EpubProfile.Default);
+
+        // Assert
+        Ids(report).Should().NotContain([MessageId.RSC_006, MessageId.RSC_006b]);
+    }
+
     private static IReadOnlyList<MessageId> Ids(CollectingReport report) => [.. report.Messages.Select(message => message.Message.Id)];
 
     private static string Package(string metadata = "", string items = "", string collections = "") =>

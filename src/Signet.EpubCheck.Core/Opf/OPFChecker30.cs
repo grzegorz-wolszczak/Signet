@@ -60,6 +60,47 @@ public class OPFChecker30(ValidationContext context) : OPFChecker(context)
     }
 
     /// <inheritdoc />
+    protected override void CheckItemAfterResourceValidation(OPFItem item)
+    {
+        // remote resources
+        string mimeType = item.MimeType;
+        if (item.IsRemote && !(OpfMediaTypes.IsAudioType(mimeType) || OpfMediaTypes.IsVideoType(mimeType)
+            || mimeType == "application/x-shockwave-flash" || OpfMediaTypes.IsFontType(mimeType)))
+        {
+            // Spine items cannot be remote resources (except, theoretically, audio, video and fonts).
+            if (item.IsInSpine)
+            {
+                Report.Message(MessageId.RSC_006, item.Location, item.Path);
+            }
+
+            // no direct reference to the resource was found
+            else if (!Context.ReferenceRegistry!.HasReferencesTo(item.Url))
+            {
+                // it may be allowed when the resource is retrieved from a script
+                Report.Message(Context.FeatureReport.HasFeature(FeatureKind.HasScripts) ? MessageId.RSC_006b : MessageId.RSC_006, item.Location, item.Path);
+            }
+        }
+
+        // the resources of the manifest are referenced (usage)
+        if (!(item.IsInSpine || item.IsNav || item.IsNcx)
+            && Context.ReferenceRegistry is { } references
+            && !references.AsList().Any(reference => reference.TargetResource.Equals(item.Url) && reference.Type.IsPublicationResourceReference()))
+        {
+            Report.Message(MessageId.OPF_097, item.Location, item.Path);
+        }
+
+        // The media overlay attribute of the item is checked with the media overlays (task 3.9).
+
+        // the non-linear content documents are reachable
+        if (item.IsInSpine && !item.IsLinear && Context.ReferenceRegistry is { } hyperlinks
+            && !hyperlinks.AsList().Any(reference => reference.Type == ReferenceType.Hyperlink && reference.TargetResource.Equals(item.Url)))
+        {
+            // If the content is scripted, references can be added by scripting, so only a usage is reported.
+            Report.Message(Context.FeatureReport.HasFeature(FeatureKind.HasScripts) ? MessageId.OPF_096b : MessageId.OPF_096, item.Location, item.Path);
+        }
+    }
+
+    /// <inheritdoc />
     protected override bool CheckPackage()
     {
         base.CheckPackage();
