@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -473,8 +474,9 @@ internal sealed class Mode
     private const string AnonymousModeNamePrefix = "#anonymous#";
     private const int NotComputed = -1;
 
-    private readonly Dictionary<string, ActionSet?> _elementMap = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, AttributeActionSet?> _attributeMap = new(StringComparer.Ordinal);
+    // The caches are filled while documents are validated, and a compiled schema is shared by all the checks of a process.
+    private readonly ConcurrentDictionary<string, ActionSet?> _elementMap = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, AttributeActionSet?> _attributeMap = new(StringComparer.Ordinal);
     private readonly Dictionary<NamespaceSpecification, ActionSet> _nssElementMap = [];
     private readonly Dictionary<NamespaceSpecification, AttributeActionSet> _nssAttributeMap = [];
     private readonly List<Mode> _includedModes = [];
