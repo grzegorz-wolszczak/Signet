@@ -55,6 +55,12 @@ The datatype library `http://whattf.org/datatype-draft` is **not** needed: upstr
 - The core reads the publication through an abstraction (`IEpubSource`) that can also be backed by Signet's in-memory
   book, so Signet can check unsaved edits.
 
+- **The RELAX NG derivative memo is kept between documents** (`RelaxNgSchema.BuilderForThread`, `PatternValidator`). Jing builds a
+  `ValidatorPatternBuilder` for every validator, so everything it memoizes (derivatives, `PatternMemo`s, the `after` patterns) is thrown
+  away after each document; on a book of a thousand files that was a quarter of everything the checker allocated, and checking got
+  2-4 times slower. A derivative depends on the schema and the names met, never on the document, so the port keeps one builder per
+  schema and thread (not thread-safe, hence per thread; validators nested on a thread, as the sections of an NVDL schema are, share it)
+  and lets one go past 200 000 memoized patterns. Results are the same (`RelaxNgSharedMemoTests`, the Jing suites, the conformance run).
 - 23 message ids are spelled with an underscore in upstream's text form (`HTM_053`, `MED_006`, …: a typo). The port
   always writes the hyphen (`HTM-053`) and still accepts the underscore when it reads an id (`MessageIds.TryParse`).
 - `ReportBase.ReportingLevel` throws for a level outside `Usage`–`Fatal`; upstream prints a message and keeps the old level.
