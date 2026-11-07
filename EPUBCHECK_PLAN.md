@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **6.3 Scale** - 6.2 needs a JDK and is optional, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **performance, phase 2** - 6.2 and 6.3 are done, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -87,11 +87,21 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 6.3 Scale (6.2 is optional)
+### Next task: performance, phase 2 (the owner asked for a review of the whole port)
 
-Large generated books (`SyntheticBook`), measured in `Signet.Benchmarks` (on demand only, timings never asserted, numbers in `BASELINE.md`): the
-cost of the EPUBCheck run (`EpubCheckValidator` on a `Book`, the CLI on an EPUB) as the book grows. 6.2 (a differential test against the Java tool,
-local only) needs a JDK; ask the owner before starting it.
+Order decided by the owner: **algorithms first, then tricks**. Phase 1 (done in 6.3): profile with `dotnet-trace` (`--format Speedscope`,
+read the evented JSON), find what grows faster than the book. Found and fixed: the Schematron XPath engine was quadratic on
+`count($id-set[@id = current()/@id]) = 1` (37 s became 1.7 s on a book with 8000 notes). Nothing else grows faster than the book now;
+the port is faster than the Java tool on the generated books (`BASELINE-EPUBCHECK.md`). What is left is a constant per element:
+RELAX NG derivatives (~33%), Schematron (~19%), the XML event reader and the checkers.
+
+Phase 2, by profile and never by guess: allocations (`dotnet-counters`/`dotnet-trace` GC events) in the XPath engine (`Atomize`,
+`InDocumentOrder` with `Distinct().OrderBy`, `normalize-space` with `Split`, recursive `Descendants` iterators), `Url` parsing and
+`Relativize` per reference, `Span<char>`/`ReadOnlySpan<char>` where strings are cut, `ArrayPool<T>` for the buffers the SHA-256 and the
+ZIP reading use, structs for small data, boxing in `Message` arguments. LINQ libraries to evaluate on the hot spots the profile shows (one
+may suit one place and not another): ZLinq (Cysharp, the owner recommends it as the newest and best), StructLinq, FastLinq,
+NetFabric.Hyperlinq; each only after a benchmark in `Signet.Benchmarks` shows a gain on a real hot spot. 6.2 (differential test) is
+done: 132 books, no difference left.
 
 ### Current state of the conformance run
 
@@ -539,9 +549,14 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   collects what each scenario did): totals, a row per feature (passed / skipped / failed), the failed scenarios with the first line of what
   failed and the skipped ones grouped by reason. `localization/localization.feature` is enabled now; 1245 of 1251 scenarios pass and the other
   6 ask for French messages (pending for good). Regenerate the file after a change that moves the numbers.
-- **6.2 Differential test against Java (S, optional).** Local only, needs a JDK; compares sets of message ids on
-  `tests/corpus/real` and `tests/corpus/broken`.
-- **6.3 Scale (S).** Large generated books (`SyntheticBook`), measured in `Signet.Benchmarks` (timings never asserted).
+- **6.2 Differential test against Java (S, optional). DONE.** `DifferentialTests` (Conformance project) is skipped unless
+  `SIGNET_JAVA_EPUBCHECK` names the 5.4.0 `epubcheck.jar` (`SIGNET_JAVA` a JDK 11+ java; the machine has JDK 21 under
+  `C:\Program Files\Android\openjdk`, `java` on the path is Java 8). It packs the expanded books of `tests/corpus`
+  (`SIGNET_DIFFERENTIAL_FIXTURES=n` adds upstream's fixtures), runs the jar and the port, and writes the differences to
+  `SIGNET_DIFFERENTIAL_OUT`. First run: 132 books, one difference (`RSC-004` for obfuscated fonts), which turned out to be a port that
+  was cleverer than upstream and was fixed; the order of the fields of the JSON report was fixed the same way.
+- **6.3 Scale (S). DONE.** `EpubCheckScaleBenchmarks` (numbers in `tests/Signet.Benchmarks/BASELINE-EPUBCHECK.md`) found the quadratic
+  Schematron/XPath cost, fixed in the engine (see "Next task").
 
 ## Order and milestones
 
