@@ -66,6 +66,46 @@ public sealed class ReferenceFix : ValidationFix
     }
 }
 
+/// <summary>
+/// Corrects the references of a file that point at another file by a path with the wrong letter case: every reference of the
+/// owner that leads to <c>wrongTarget</c> is rewritten to lead to <c>actualTarget</c>, the file the book really has.
+/// </summary>
+public sealed class ReferenceCaseFix : ValidationFix
+{
+    private readonly string _ownerBookPath;
+    private readonly string _wrongTarget;
+    private readonly string _actualTarget;
+
+    /// <summary>Creates the fix.</summary>
+    /// <param name="ownerBookPath">The file that holds the references.</param>
+    /// <param name="wrongTarget">The book path the references lead to now (it does not exist).</param>
+    /// <param name="actualTarget">The book path of the file with the same name in another letter case.</param>
+    public ReferenceCaseFix(string ownerBookPath, string wrongTarget, string actualTarget)
+    {
+        _ownerBookPath = ownerBookPath;
+        _wrongTarget = wrongTarget;
+        _actualTarget = actualTarget;
+    }
+
+    /// <inheritdoc/>
+    public override bool Apply(Book book)
+    {
+        ArgumentNullException.ThrowIfNull(book);
+        if (book.GetFolderKeeper().GetResourceByBookPathNoThrow(_ownerBookPath) is not { } owner)
+        {
+            return false;
+        }
+
+        bool changed = false;
+        foreach ((string raw, string corrected) in LinkIntegrityValidator.ReferencesTo(owner, _wrongTarget, _actualTarget))
+        {
+            changed |= new ReferenceFix(_ownerBookPath, raw, corrected).Apply(book);
+        }
+
+        return changed;
+    }
+}
+
 /// <summary>Adds a file of the book that is missing from the OPF manifest to the manifest.</summary>
 public sealed class AddToManifestFix : ValidationFix
 {
