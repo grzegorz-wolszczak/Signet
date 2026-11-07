@@ -121,7 +121,7 @@ public sealed class ReportWritersTests
 
         // Assert
         JsonObject root = Json(text).AsObject();
-        root.Select(p => p.Key).Should().Equal("customMessageFileName", "checker", "publication", "items", "messages");
+        root.Select(p => p.Key).Should().Equal("messages", "customMessageFileName", "checker", "publication", "items");
         root["customMessageFileName"]!.GetValue<string>().Should().Be("custom.txt");
         root["checker"]!["nError"]!.GetValue<int>().Should().Be(1);
         root["checker"]!["nWarning"]!.GetValue<int>().Should().Be(1);

@@ -135,6 +135,14 @@ public sealed class CheckingReport : ReportBase
 
         JacksonStyleJsonWriter json = new(_out);
         json.BeginObject();
+        json.Name("messages");
+        json.BeginArray();
+        foreach (CheckMessage message in _messages)
+        {
+            WriteMessage(json, message);
+        }
+
+        json.EndArray();
         json.Name("customMessageFileName");
         json.String(CustomMessageFile);
         json.Name("checker");
@@ -146,14 +154,6 @@ public sealed class CheckingReport : ReportBase
         foreach (ItemMetadata item in items)
         {
             item.Write(json);
-        }
-
-        json.EndArray();
-        json.Name("messages");
-        json.BeginArray();
-        foreach (CheckMessage message in _messages)
-        {
-            WriteMessage(json, message);
         }
 
         json.EndArray();
