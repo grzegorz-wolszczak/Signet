@@ -462,6 +462,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// </summary>
     public void NotifyPageLoaded()
     {
+        Signet.App.Infrastructure.StartupTimeline.Mark("first preview page loaded");
         if (_disposed)
         {
             return;

@@ -36,6 +36,7 @@ public partial class App : Application
     /// <inheritdoc />
     public override void OnFrameworkInitializationCompleted()
     {
+        StartupTimeline.Mark("Avalonia initialized");
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             IServiceProvider services = Services
@@ -52,7 +53,9 @@ public partial class App : Application
             DebugLog.IsEnabled = settings.DebugLogging;
             AltGrKeys.Enabled = settings.EnableAltGr;
             UiEventLogger.Register();
+            StartupTimeline.Mark("language, theme and icons applied");
             MainWindowViewModel viewModel = services.GetRequiredService<MainWindowViewModel>();
+            StartupTimeline.Mark("main view model built");
             viewModel.StartupFilePath = StartupArguments.FileToOpen(desktop.Args, Environment.CurrentDirectory);
             MainWindow window = new()
             {
@@ -62,6 +65,7 @@ public partial class App : Application
             RestoreGeometry(window, settings);
             window.Closing += (_, _) => SaveGeometry(window, settings);
 
+            StartupTimeline.Mark("main window constructed");
             desktop.MainWindow = window;
         }
 

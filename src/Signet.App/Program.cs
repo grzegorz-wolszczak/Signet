@@ -19,6 +19,7 @@ internal static class Program
     public static int Main(string[] args)
     {
         string logDir = AppLogging.ConfigureSerilog();
+        StartupTimeline.Mark("main entered, log ready");
         using ILoggerFactory loggerFactory = AppLogging.CreateLoggerFactory();
         ILogger log = loggerFactory.CreateLogger("Signet.App");
 
@@ -39,6 +40,7 @@ internal static class Program
             using ServiceProvider provider = AppServices.Build(loggerFactory);
             InitializeScratchpad(provider.GetRequiredService<SettingsStore>(), log);
 
+            StartupTimeline.Mark("services built");
             App.Services = provider;
             exitCode = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
             log.LogInformation("Exiting with code {ExitCode}", exitCode);

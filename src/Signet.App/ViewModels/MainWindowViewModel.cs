@@ -1027,6 +1027,7 @@ public sealed partial class MainWindowViewModel
         }
 
         _startupHandled = true;
+        StartupTimeline.Mark("startup book requested");
 
         try
         {
@@ -1055,6 +1056,7 @@ public sealed partial class MainWindowViewModel
             _statusBar.ShowMessage(Strings.Get("Status_StartupBookFailed"), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
         }
 
+        StartupTimeline.Mark("startup book loaded");
         RefreshTitle();
     }
 

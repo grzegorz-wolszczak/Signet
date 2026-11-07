@@ -349,6 +349,8 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+        StartupTimeline.Mark("main window opened");
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => StartupTimeline.Mark("first idle after the window opened"), Avalonia.Threading.DispatcherPriority.ApplicationIdle);
         if (_boundViewModel is { } vm)
         {
             if (Clipboard is { } clipboard)

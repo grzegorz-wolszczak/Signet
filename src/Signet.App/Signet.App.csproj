@@ -17,6 +17,13 @@
     <NoWarn>$(NoWarn);CA1848;CA1873</NoWarn>
   </PropertyGroup>
 
+  <!-- `dotnet publish -r <rid>` compiles the assemblies ahead of time (ReadyToRun): the start of the application is most of the JIT compiling the code of
+       the first seconds. Measured with the start-up log (StartupTimeline), a book given on the command line: the first Preview page after 3.0 s, with
+       ReadyToRun after 1.65 s. A build, and a publish without a runtime identifier, are not affected. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />

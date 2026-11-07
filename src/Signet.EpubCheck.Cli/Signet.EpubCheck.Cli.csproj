@@ -23,6 +23,9 @@
     <DebugType>none</DebugType>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <PublishDocumentationFiles>false</PublishDocumentationFiles>
+    <!-- Compiled ahead of time (ReadyToRun): the tool is a process that starts, checks one book and ends, so the JIT compiling its code
+         every time was most of the time of a small book (1.2 s -> 0.7 s) for 4 MB more in the executable. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>

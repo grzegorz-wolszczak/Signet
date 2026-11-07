@@ -51,3 +51,29 @@ Used: `PcreRegex.Matches` instead of a loop of `Match` (the biggest single gain,
 (unpacking, checking, copying a checkpoint), each with the deterministic parts (order of warnings, of progress, of errors, the choice
 among entries of the same name) kept; not copying what is not changed (the export, `ParseAttribute` names compared as spans). Not used: `ArrayPool`,
 structs, LINQ libraries: no measurement pointed at an allocation-bound hot spot in these operations.
+
+## The start of the application (November 2026)
+
+Measured with the start-up log (`StartupTimeline`: each phase is written once to `<prefs>/logs/signet-*.log` as `Startup: <phase> at +N ms`, the time since
+the process started), on a small book given on the command line (30 files), an own data folder (`SIGNET_PREFS_DIR`), Windows 10, a Release build,
+warm disk cache. The first start after the files are written is slower (cold disk, anti-virus: 4.5-6 s) and says nothing about the product.
+
+| phase | JIT, ms | ReadyToRun, ms |
+|---|---:|---:|
+| main entered | 71 | 59 |
+| services built | 169 | 120 |
+| Avalonia initialized | 689 | 436 |
+| language, theme and icons applied | 805 | 486 |
+| main view model built | 1042 | 596 |
+| main window constructed | 1318 | 694 |
+| main window opened | 1636 | 839 |
+| startup book loaded | 1979 | 1070 |
+| first idle after the window opened | 2807 | 1464 |
+| first Preview page loaded | 2976 | 1649 |
+
+`dotnet publish -r <rid>` of `Signet.App` and of the `epubcheck.net` tool compiles the assemblies ahead of time now (`PublishReadyToRun`, set in the
+projects only when a runtime identifier is given): the first Preview page after 1.65 s instead of 3.0 s; `epubcheck.net` on a small book 0.69 s instead of
+1.2 s (4 MB more in the executable). A plain build is the JIT one, as before.
+
+What is left of the start (ReadyToRun): Avalonia and the application resources 316 ms, the main view model 110 ms, the main window 100 ms, 145 ms to
+show it, then 630 ms of the UI thread busy before the first idle moment. Reading where that goes needs a profile of a real start.
