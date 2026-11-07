@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="css.scanner.token.syntax" xml:space="preserve">
+    <value>Nieprawidłowa składnia "{0}"</value>
+  </data>
+  <data name="css.scanner.token.syntax.char" xml:space="preserve">
+    <value>Znak "{0}" nie jest dozwolony w wyrażeniach "{1}"</value>
+  </data>
+  <data name="css.scanner.token.syntax.firstChar" xml:space="preserve">
+    <value>Znak "{0}" nie jest dozwolony jako pierwszy znak w wyrażeniach "{1}"</value>
+  </data>
+  <data name="css.scanner.token.syntax.escape" xml:space="preserve">
+    <value>Nieprawidłowa sekwencja ucieczki "{0}"</value>
+  </data>
+  <data name="css.scanner.token.syntax.urange" xml:space="preserve">
+    <value>Nieprawidłowe wyrażenie zakresu Unicode "{0}"</value>
+  </data>
+  <data name="css.scanner.prematureEOF" xml:space="preserve">
+    <value>Przedwczesny koniec pliku</value>
+  </data>
+  <data name="css.grammar.prematureEOF" xml:space="preserve">
+    <value>Przedwczesny koniec gramatyki (oczekiwano: {0})</value>
+  </data>
+  <data name="css.grammar.token.unexpected" xml:space="preserve">
+    <value>Token "{0}" nie jest tu dozwolony</value>
+  </data>
+  <data name="css.grammar.token.expecting" xml:space="preserve">
+    <value>Token "{0}" nie jest tu dozwolony, oczekiwano {1}</value>
+  </data>
+  <data name="css.grammar.invalidSelector" xml:space="preserve">
+    <value>Nieprawidłowy selektor: "{0}" </value>
+  </data>
+  <data name="or" xml:space="preserve">
+    <value>lub</value>
+  </data>
+  <data name="a_property_name" xml:space="preserve">
+    <value>nazwy właściwości</value>
+  </data>
+  <data name="a_property_value" xml:space="preserve">
+    <value>wartości właściwości</value>
+  </data>
+  <data name="a_type_or_universal_selector" xml:space="preserve">
+    <value>selektora typu lub uniwersalnego</value>
+  </data>
+  <data name="a_string_or_dentifier" xml:space="preserve">
+    <value>ciągu znaków lub identyfikatora</value>
+  </data>
+  <data name="an_attribute_value_matcher" xml:space="preserve">
+    <value>symbolu dopasowania wartości atrybutu</value>
+  </data>
+  <data name="negation_arguments" xml:space="preserve">
+    <value>argumentów funkcji negacji</value>
+  </data>
+  <data name="a_selectors" xml:space="preserve">
+    <value>selektora</value>
+  </data>
+</root>
