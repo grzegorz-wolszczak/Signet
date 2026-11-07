@@ -19,14 +19,47 @@ internal static class ConformanceCorpus
     public static readonly IReadOnlySet<string> EnabledFeatures = new HashSet<string>(StringComparer.Ordinal)
     {
         "cli/cli.feature",
+        "epub-accessibility/accessibility.feature",
+        "epub-dictionaries/dictionaries-package-document.feature",
+        "epub-dictionaries/dictionaries-publication.feature",
+        "epub-distributable-objects/do-package-document.feature",
+        "epub-edupub/edupub-content-document-xhtml.feature",
+        "epub-edupub/edupub-package-document.feature",
+        "epub-edupub/edupub-publication.feature",
+        "epub-indexes/indexes-content-document-xhtml.feature",
+        "epub-indexes/indexes-package-document.feature",
+        "epub-indexes/indexes-publication.feature",
+        "epub-multiple-renditions/multiple-rendition-publication.feature",
+        "epub-previews/previews-package-document.feature",
+        "epub-previews/previews-publication.feature",
+        "epub-region-nav/region-nav-publication.feature",
+        "epub-scriptable-components/scriptable-components-package-document.feature",
         "epub2/ncx-publication.feature",
         "epub2/ocf-publication.feature",
+        "epub2/ops-content-document-svg.feature",
+        "epub2/ops-content-document-xhtml.feature",
+        "epub2/ops-publication.feature",
         "epub2/opf-package-document.feature",
         "epub2/opf-publication.feature",
+        "epub3/00-minimal/minimal.feature",
+        "epub3/02-epub-publication-conformance/epub-publication-conformance.feature",
         "epub3/04-ocf/filename-checker.feature",
         "epub3/04-ocf/ocf.feature",
         "epub3/05-package-document/package-document.feature",
+        "epub3/06-layouts/layouts.feature",
+        "epub3/07-content-documents/content-documents-fixed-layout.feature",
+        "epub3/07-content-documents/content-documents-svg.feature",
+        "epub3/07-content-documents/content-documents-xhtml.feature",
+        "epub3/08-navigation-document/navigation-document.feature",
+        "epub3/B-external-identifiers/external-identifiers.feature",
         "epub3/C-viewport-meta-tag/viewport-syntax.feature",
+        "epub3/D-vocabularies/media-overlays-vocab.feature",
+        "epub3/D-vocabularies/meta-properties-vocab.feature",
+        "epub3/D-vocabularies/metadata-link-vocab.feature",
+        "epub3/D-vocabularies/package-rendering-vocab.feature",
+        "epub3/E-obsolete-features/deprecated-features.feature",
+        "epub3/E-obsolete-features/outdated-features.feature",
+        "epub3/G-media-type-registrations/media-types-registrations.feature",
         "unit-tests/url-fragment.feature",
     };
 
@@ -67,17 +100,40 @@ internal static class ConformanceCorpus
             220, 269, 276, 283, 290, 297, 317, 322, 327, 332, 337, 342, 347);
         Add("Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).",
             366, 371, 376);
-        AddOcf(pending, "PKG-025 is reported for manifest items in META-INF, which needs the OPF 3 checks (task 3.3).", 18);
-        AddOcf(pending, "Needs the single-document checker and OPF parser (tasks 2.1-2.5).",
-            77, 82, 95, 108);
-        AddOcf(pending, "Needs content-document and resource-reference checks (tasks 3.5 and 3.6).",
-            118, 131, 137, 145, 151, 157, 169, 175, 181, 187, 193, 199, 207, 213, 218, 223, 229, 235, 240, 245, 255, 261, 270);
-        AddOcf(pending, "RSC-004 comes from PublicationResourceChecker, which runs with the package document checks (tasks 3.2 and 3.3).", 319);
-        AddFeature(pending, "epub2/opf-publication.feature", "Needs the resource and reference registries (RSC-007, RSC-008, RSC-032: task 3.6).", 60, 65, 86, 96, 145);
+        AddOcf(pending, "Needs the resource references checker (RSC-007: task 3.6).",
+            169, 175, 181, 187, 193, 199, 207, 213, 218, 223, 229, 235, 240, 245, 255, 270);
+        AddOcf(pending, "Needs the CSS checker (CSS-008: task 3.7).", 261);
+        AddFeature(pending, "epub2/opf-publication.feature", "Needs the resource references checker (RSC-006, RSC-007, RSC-032: task 3.6).", 60, 86, 96, 145);
         AddFeature(pending, "epub2/ncx-publication.feature", "Needs the resource references checker (RSC-007, RSC-010: task 3.6).", 40, 45);
+        AddFeature(pending, "epub2/ops-publication.feature", "Needs the resource references checker (RSC-007, RSC-012: task 3.6).", 26, 31);
         AddFeature(pending, "epub3/05-package-document/package-document.feature",
-            "Needs the content document checks (the properties remote-resources, scripted, svg, switch: task 3.5) and the resource and reference checks (RSC-001, RSC-006, RSC-008, RSC-011, OPF-096: task 3.6).",
-            410, 416, 422, 428, 487, 500, 570, 576, 582, 588, 594, 600, 606, 612, 626, 632, 638, 651, 657, 663, 672, 723, 729, 773, 780);
+            "Needs the resource references checker (RSC-006, RSC-008, RSC-011, OPF-096: task 3.6).",
+            410, 416, 422, 428, 723, 729, 773, 780);
+        AddFeature(pending, "epub3/05-package-document/package-document.feature",
+            "Needs the CSS checker (the remote fonts and resources of CSS: task 3.7).", 576, 582, 594);
+        AddFeature(pending, "epub3/05-package-document/package-document.feature",
+            "Needs the media overlay checker (the remote resources of a media overlay: task 3.9).", 612);
+        AddFeature(pending, "epub3/07-content-documents/content-documents-svg.feature",
+            "Needs the resource references checker (RSC-014, RSC-015: task 3.6).", 199, 206, 213, 220);
+        AddFeature(pending, "epub3/07-content-documents/content-documents-xhtml.feature",
+            "Needs the resource references checker (RSC-006, RSC-008, RSC-009, RSC-012, RSC-013, RSC-014: task 3.6).",
+            225, 230, 278, 283, 288, 308, 314, 356, 362);
+        AddFeature(pending, "epub3/07-content-documents/content-documents-xhtml.feature",
+            "Needs the CSS checker (CSS-008: task 3.7).", 627, 644);
+        AddFeature(pending, "epub3/08-navigation-document/navigation-document.feature",
+            "Needs the resource references checker (RSC-010, RSC-011, NAV-011: task 3.6).", 117, 129, 154, 160);
+        AddFeature(pending, "epub3/E-obsolete-features/outdated-features.feature",
+            "Needs the resource references checker (the outdated content fallback OBS-001, RSC-012: task 3.6).", 18, 26, 35, 43, 165);
+        AddFeature(pending, "epub3/E-obsolete-features/outdated-features.feature",
+            "Needs the CSS checker (the outdated prefixed properties OBS-001: task 3.7).", 391);
+        AddFeature(pending, "epub-dictionaries/dictionaries-publication.feature",
+            "Needs the search key map checker and the dictionary profile (OPF-080, RSC-005: task 3.11).", 30, 40);
+        AddFeature(pending, "epub-dictionaries/dictionaries-publication.feature",
+            "Needs the resource references checker (RSC-007, RSC-021: task 3.6).", 49, 54);
+        AddFeature(pending, "epub-multiple-renditions/multiple-rendition-publication.feature",
+            "Needs the mapping document of multiple renditions (RSC-005: task 3.11).", 89, 95, 101);
+        AddFeature(pending, "epub-region-nav/region-nav-publication.feature",
+            "Needs the resource references checker (NAV-009: task 3.6).", 70);
         return pending;
     }
 

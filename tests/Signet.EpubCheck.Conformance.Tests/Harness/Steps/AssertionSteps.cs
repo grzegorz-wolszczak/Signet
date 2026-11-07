@@ -35,7 +35,7 @@ internal static class AssertionSteps
         steps.Add((w, a) =>
         {
             w.LastAssertedMessage.Should().NotBeNull();
-            w.LastAssertedMessage!.Message.Should().Contain(a.Get<string>(0));
+            ContainsText(w.LastAssertedMessage!.Message, a.Get<string>(0));
         }, "(the )message contains {string}");
 
         steps.Add((w, _) =>
@@ -83,8 +83,17 @@ internal static class AssertionSteps
             actual[i].Id.Should().Be(expected);
             if (rows[i].Count > 1)
             {
-                actual[i].Message.Should().Contain(rows[i][1]);
+                ContainsText(actual[i].Message, rows[i][1]);
             }
+        }
+    }
+
+    // Java's String.contains: the empty string is in every string (AwesomeAssertions refuses to look for it).
+    private static void ContainsText(string actual, string expected)
+    {
+        if (expected.Length != 0)
+        {
+            actual.Should().Contain(expected);
         }
     }
 }
