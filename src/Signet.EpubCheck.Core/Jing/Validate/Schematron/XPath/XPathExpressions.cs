@@ -578,6 +578,10 @@ internal abstract class NodeTest
 /// <summary>A name test: <c>p:name</c>, <c>p:*</c>, <c>*:name</c> or <c>*</c> (a null part matches anything).</summary>
 internal sealed class NameTest(string? namespaceUri, string? localName) : NodeTest
 {
+    public string? NamespaceUri => namespaceUri;
+
+    public string? LocalName => localName;
+
     public override bool Matches(XdmNode node, Axis axis)
     {
         XdmNodeKind principal = axis == Axis.Attribute ? XdmNodeKind.Attribute : XdmNodeKind.Element;
