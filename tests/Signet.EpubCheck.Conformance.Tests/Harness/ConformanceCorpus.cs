@@ -47,12 +47,14 @@ internal static class ConformanceCorpus
         "epub3/04-ocf/filename-checker.feature",
         "epub3/04-ocf/ocf.feature",
         "epub3/05-package-document/package-document.feature",
+        "epub3/05-package-document/vocabularies-association.feature",
         "epub3/06-layouts/layouts.feature",
         "epub3/07-content-documents/content-documents-css.feature",
         "epub3/07-content-documents/content-documents-fixed-layout.feature",
         "epub3/07-content-documents/content-documents-svg.feature",
         "epub3/07-content-documents/content-documents-xhtml.feature",
         "epub3/08-navigation-document/navigation-document.feature",
+        "epub3/09-media-overlays/media-overlays.feature",
         "epub3/B-external-identifiers/external-identifiers.feature",
         "epub3/C-viewport-meta-tag/viewport-syntax.feature",
         "epub3/D-vocabularies/media-overlays-vocab.feature",
@@ -102,8 +104,6 @@ internal static class ConformanceCorpus
             220, 269, 276, 283, 290, 297, 317, 322, 327, 332, 337, 342, 347);
         Add("Not meant to pass: expects French messages, and the port has English and Polish only (a decision of the plan).",
             366, 371, 376);
-        AddFeature(pending, "epub3/05-package-document/package-document.feature",
-            "Needs the media overlay checker (the remote resources of a media overlay: task 3.9).", 612);
         AddFeature(pending, "epub-dictionaries/dictionaries-publication.feature",
             "Needs the search key map checker and the dictionary profile (OPF-080, RSC-005, RSC-007, RSC-021: task 3.11).", 30, 40, 49, 54);
         AddFeature(pending, "epub-multiple-renditions/multiple-rendition-publication.feature",

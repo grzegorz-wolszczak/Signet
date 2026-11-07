@@ -64,6 +64,8 @@ cover/
 
 # Translations
 *.mo
+# ... but a media overlay of EPUBCheck's fixtures has this extension on purpose
+!tests/corpus/epubcheck/**/*.mo
 *.pot
 
 # Django stuff:

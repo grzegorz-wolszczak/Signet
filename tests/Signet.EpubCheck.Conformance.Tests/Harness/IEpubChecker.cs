@@ -3,6 +3,7 @@ using Signet.EpubCheck.Core.Ocf;
 using Signet.EpubCheck.Core.Nav;
 using Signet.EpubCheck.Core.Opf;
 using Signet.EpubCheck.Core.Ops;
+using Signet.EpubCheck.Core.Overlay;
 using Signet.EpubCheck.Core.Reporting;
 using Signet.EpubCheck.Core.Util;
 using Signet.EpubCheck.Core.Util.Mime;
@@ -50,6 +51,15 @@ internal sealed class OcfEpubChecker : IEpubChecker
                 break;
             case CheckerMode.SvgContentDocument:
                 new OPSChecker(Single(request, MediaTypes.Svg)).Check();
+                break;
+            case CheckerMode.MediaOverlaysDocument:
+                // Upstream's tool has the media overlay mode for EPUB 3 only.
+                if (request.Version != EpubVersion.Version3)
+                {
+                    throw new ScenarioNotImplementedException("The media overlay mode needs EPUB 3.");
+                }
+
+                new OverlayChecker(Single(request, MediaTypes.Smil)).Check();
                 break;
             case CheckerMode.NavigationDocument:
                 // Upstream's tool has the navigation document mode for EPUB 3 only.
