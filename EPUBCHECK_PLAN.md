@@ -10,7 +10,7 @@ parser and URL fragments, MIME types, viewport, package-document peeker, vocabul
 re-ported on 2026-11-06 (see "Review of November 2026"); epic 2: **2.1 (RELAX NG, a port of Jing), 2.2 (its compact
 syntax), 2.3 (its XML Schema datatypes and regular expressions), 2.4 (NVDL), 2.5 (Schematron with an XPath 2.0 subset), 2.6
 (upstream's schemas embedded and loaded) and 2.7 (schema errors as EPUBCheck's messages) are done — epic 2 is done**;
-epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays) and 3.10 (scripting and accessibility) are done**; **next: task 3.11 profiles and extensions**.
+epic 3: **3.1 (the files of `META-INF`), 3.2 (OPF 2), 3.3 (OPF 3), 3.4 (NCX and the registries) and 3.5 (content documents with the navigation document) 3.6 (references and the resource graph) and 3.7 (CSS) and 3.8 (media and fonts), 3.9 (media overlays), 3.10 (scripting and accessibility) and 3.11 (profiles and extensions) are done**; **next: task 3.12 single-file and expanded modes**.
 Research done in November 2026 against the upstream
 `main` (5.4.1-SNAPSHOT, after the 5.4.0 release). The port targets the **stable 5.4.0** (tag `v5.4.0`).
 
@@ -23,7 +23,7 @@ questions into one message, as `AGENTS.md` demands).
 ### What to do on "kontynuuj"
 
 1. Read this file, `AGENTS.md`, `src/Signet.EpubCheck.Core/UPSTREAM.md` and the memory index.
-2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.11 Profiles and extensions**, see
+2. Take the **first task in "Tasks" that is not marked DONE** (today: **3.12 Single-file and expanded modes**, see
    "Next task" below). Do **one task**, then stop. Do not start the next one.
 3. Work, following the conventions below. Update this file as you go: mark the task **DONE**, describe what was
    built and what is deliberately not (as the done tasks 0.1–0.6 do), update the "Status" line and the numbers in
@@ -87,24 +87,18 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests                      # enab
 SIGNET_CONFORMANCE_ALL=1 dotnet test tests/Signet.EpubCheck.Conformance.Tests   # all 1251 scenarios, most skipped
 ```
 
-### Next task: 3.11 Profiles and extensions
+### Next task: 3.12 Single-file and expanded modes
 
-The pieces of upstream that serve the profiles and the EPUB extensions, which are mostly schemas already loaded (`dict`, `edupub`, `idx`,
-`preview` are chosen in `OPFChecker30.Validators`, `OPSChecker`, `NavChecker`). What is left in Java: `com.adobe.epubcheck.dict`
-(`SearchKeyMapChecker` / `SearchKeyMapHandler`: `OPF-080`, the references of search keys, `RSC-021`), `MappingDocumentChecker`
-(`org.w3c.epubcheck`/`com.adobe.epubcheck.ocf`: the mapping document of multiple renditions, `OCFChecker` calls it; the `container.xml` of
-multiple renditions), the data navigation documents and region-based navigation (`NAV-009` is done), distributable objects and
-scriptable components (collections; mostly schemas), and the `epubcheck:` properties the package handlers add (`in-index-collection`). Pending
-scenarios that wait for it: `epub-dictionaries/dictionaries-publication.feature` (30, 40, 49, 54) and
-`epub-multiple-renditions/multiple-rendition-publication.feature` (89, 95, 101). `CheckerFactory` returns the base checker for
-`application/vnd.epub.search-key-map+xml` today.
+`ToolRun.ProcessFile` and the single-document modes of the command line (`--mode xhtml|svg|opf|nav|mo|exp`, `--save`) still answer
+"not implemented". Wire `OCFChecker` / `CheckerFactory` into them; the pending scenarios of `cli.feature` (155, 166, 172, 187, 205, 230, 234,
+241, 248, 259, 395) wait for it, and 205 needs the EPUB archive built from an expanded EPUB.
 
 ### Current state of the conformance run
 
 47 features are enabled (`ConformanceCorpus.EnabledFeatures`): the command line, OCF, filename checker, URL fragments, viewport syntax,
 the package documents of EPUB 2 and 3, the NCX, the content documents (XHTML, SVG, fixed layout, the navigation document, EDUPUB,
-indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1222 scenarios pass; the
-others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (the search key map and mapping document of profiles 3.11, report writers 4.2, `--save`
+indexes), the vocabularies, the obsolete features and the profiles' package documents and publications. 1229 scenarios pass; the
+others of these features are pending in `ConformanceCorpus.PendingScenarios`, each with its reason and task id (report writers 4.2, `--save`
 3.12, French messages that are never meant to pass). Not enabled yet:
 `localization` and `reporting` (4.2). Single documents the harness checks: package documents, XHTML, SVG
 and navigation documents (`OcfEpubChecker`); `mo` (media overlays) too. The test run uses English texts (`TestIsolationSetup` sets
@@ -478,8 +472,13 @@ Every task ships with tests in the project's conventions (xUnit.v3 + AwesomeAsse
   Schematron schemas, which run since epic 2 (`epub-xhtml-30.sch` and the rest); the `ACC-004`–`ACC-012` hints that Java reports are in
   `OPSHandler` / `OPSHandler30` (3.5) and the scripted/properties checks in 3.5 and 3.7. `epub-accessibility` and
   `epub-scriptable-components` pass, and so do the script scenarios of the content documents.
-- **3.11 Profiles and extensions (L).** `dict`, `edupub`, `idx`, `preview`, multiple renditions, data navigation,
-  distributable objects, scriptable components, region-based navigation.
+- **3.11 Profiles and extensions (L). DONE.** `dict`, `edupub`, `idx`, `preview`, data navigation, distributable objects and
+  scriptable components were schemas, loaded since epic 2. What was left in Java is ported: `Dict/SearchKeyMapChecker` (`OPF-080` when the
+  file name does not end in `.xml`; `search-key-map.rnc`) and `SearchKeyMapHandler` (the `search-key-group` and `match` hrefs are
+  registered as `ReferenceType.SearchKey`), given by `CheckerFactory` to search key maps in EPUB 3; `Ocf/MappingDocumentChecker` (the
+  mapping document of multiple renditions, validated with `rendition-mapping.rnc` and `.sch` when the context has the
+  `epubcheck:rendition-mapping` property), which `OCFChecker.CheckRenditions` runs. `epub-dictionaries` and `epub-multiple-renditions`
+  are fully enabled. 1229 conformance scenarios pass.
 - **3.12 Single-file and expanded modes (M).** `--mode opf|xhtml|svg|nav|mo|exp`, `--save`.
 
 ### Epic 4 — Reports and the executable
