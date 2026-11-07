@@ -18,7 +18,9 @@
           BeforeTargets="GetAssemblyVersion;GenerateAssemblyInfo"
           Condition="'$(DesignTimeBuild)' != 'true'">
     <PropertyGroup>
-      <SignetBuildTimestamp>$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmm'))</SignetBuildTimestamp>
+      <!-- A timestamp given on the command line (-p:SignetBuildTimestamp=202611071500) wins: the publish script of the
+           standalone EPUBCheck tool builds two platforms with one version. -->
+      <SignetBuildTimestamp Condition="'$(SignetBuildTimestamp)' == ''">$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmm'))</SignetBuildTimestamp>
       <InformationalVersion>$(VersionPrefix)-$(SignetBuildTimestamp)</InformationalVersion>
     </PropertyGroup>
 
