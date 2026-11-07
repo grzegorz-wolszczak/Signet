@@ -651,11 +651,14 @@ internal sealed class AxisStep(Axis axis, NodeTest test, IReadOnlyList<XPathExpr
         else
         {
             selected = [];
-            foreach (XdmNode n in AxisNodes(origin))
+            if (!SelectDirectly(origin, selected))
             {
-                if (Test.Matches(n, Axis))
+                foreach (XdmNode n in AxisNodes(origin))
                 {
-                    selected.Add(n);
+                    if (Test.Matches(n, Axis))
+                    {
+                        selected.Add(n);
+                    }
                 }
             }
         }
@@ -666,7 +669,118 @@ internal sealed class AxisStep(Axis axis, NodeTest test, IReadOnlyList<XPathExpr
             items = XPathValues.ApplyPredicate(items, predicate, context);
         }
 
-        return IsReverse(Axis) ? [.. items.Reverse()] : items;
+        if (!IsReverse(Axis))
+        {
+            return items;
+        }
+
+        // The list is the one made here or by a predicate, nobody else holds it: it is turned round where it is.
+        if (items is List<object> own)
+        {
+            own.Reverse();
+            return own;
+        }
+
+        return [.. items.Reverse()];
+    }
+
+    // The axes that are walked with a loop and no iterator, in the order of the axis; false for the others (AxisNodes lists them).
+    private bool SelectDirectly(XdmNode origin, List<object> into)
+    {
+        switch (Axis)
+        {
+            case Axis.Self:
+                AddIfMatches(origin, into);
+                return true;
+            case Axis.Parent:
+                if (origin.Parent is { } parent)
+                {
+                    AddIfMatches(parent, into);
+                }
+
+                return true;
+            case Axis.Ancestor:
+                for (XdmNode? a = origin.Parent; a is not null; a = a.Parent)
+                {
+                    AddIfMatches(a, into);
+                }
+
+                return true;
+            case Axis.AncestorOrSelf:
+                for (XdmNode? a = origin; a is not null; a = a.Parent)
+                {
+                    AddIfMatches(a, into);
+                }
+
+                return true;
+            case Axis.Descendant:
+                AddDescendants(origin, into);
+                return true;
+            case Axis.DescendantOrSelf:
+                AddIfMatches(origin, into);
+                if (origin.Kind != XdmNodeKind.Attribute)
+                {
+                    AddDescendants(origin, into);
+                }
+
+                return true;
+            case Axis.FollowingSibling:
+            case Axis.PrecedingSibling:
+                if (origin.Kind != XdmNodeKind.Attribute && origin.Parent is { } owner)
+                {
+                    IReadOnlyList<XdmNode> siblings = owner.Children;
+                    int at = IndexOf(siblings, origin);
+                    if (at >= 0 && Axis == Axis.FollowingSibling)
+                    {
+                        for (int i = at + 1; i < siblings.Count; i++)
+                        {
+                            AddIfMatches(siblings[i], into);
+                        }
+                    }
+                    else if (at >= 0)
+                    {
+                        for (int i = at - 1; i >= 0; i--)
+                        {
+                            AddIfMatches(siblings[i], into);
+                        }
+                    }
+                }
+
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void AddIfMatches(XdmNode node, List<object> into)
+    {
+        if (Test.Matches(node, Axis))
+        {
+            into.Add(node);
+        }
+    }
+
+    private void AddDescendants(XdmNode node, List<object> into)
+    {
+        IReadOnlyList<XdmNode> children = node.Children;
+        for (int i = 0; i < children.Count; i++)
+        {
+            AddIfMatches(children[i], into);
+            AddDescendants(children[i], into);
+        }
+    }
+
+    private static int IndexOf(IReadOnlyList<XdmNode> nodes, XdmNode node)
+    {
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            if (ReferenceEquals(nodes[i], node))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     // The answer of a step that selects nothing: one list for all of them (no result is ever changed by whoever receives it).

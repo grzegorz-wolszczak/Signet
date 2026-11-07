@@ -87,9 +87,24 @@ public sealed class ResourceReferencesChecker
         CheckReadingOrder(overlayLinks);
     }
 
+    // The last URL made relative, with the result: a reference is made relative for its feature report and again for its checks.
+    private Url? _lastRelativized;
+    private string? _lastRelative;
+
+    private string Relative(Url url)
+    {
+        if (!ReferenceEquals(url, _lastRelativized))
+        {
+            _lastRelative = _container.Relativize(url);
+            _lastRelativized = url;
+        }
+
+        return _lastRelative!;
+    }
+
     private void CheckReference(Reference reference)
     {
-        _report.Info(reference.Location.Path, FeatureKind.Resource, _container.Relativize(reference.Url));
+        _report.Info(reference.Location.Path, FeatureKind.Resource, Relative(reference.Url));
 
         Resource? targetResource = _resourceRegistry.GetResource(reference.TargetResource);
         if (_container.IsRemote(reference.Url) && !CheckRemoteReference(reference, targetResource))
@@ -177,7 +192,7 @@ public sealed class ResourceReferencesChecker
     private bool CheckReferenceType(Reference reference, Resource targetResource, EpubUrlFragment fragment)
     {
         string targetMimeType = targetResource.MimeType;
-        EpubLocation here = reference.Location.WithContext(_container.Relativize(reference.Url));
+        EpubLocation here = reference.Location.WithContext(Relative(reference.Url));
         switch (reference.Type)
         {
             case ReferenceType.Hyperlink:
@@ -239,7 +254,7 @@ public sealed class ResourceReferencesChecker
             case ReferenceType.SearchKey:
                 if ((!fragment.Exists || fragment.Scheme != EpubCfiScheme) && !targetResource.IsInSpine)
                 {
-                    _report.Message(MessageId.RSC_021, reference.Location, _container.Relativize(reference.TargetResource));
+                    _report.Message(MessageId.RSC_021, reference.Location, Relative(reference.TargetResource));
                     return false;
                 }
 
@@ -272,7 +287,7 @@ public sealed class ResourceReferencesChecker
         // the manifest fallback of a content (outdated)
         if (reference.Type.IsPublicationResourceReference() && targetResource.HasManifestFallback)
         {
-            _report.Message(MessageId.OBS_001, reference.Location, ContentFallbackKind, _container.Relativize(reference.TargetResource));
+            _report.Message(MessageId.OBS_001, reference.Location, ContentFallbackKind, Relative(reference.TargetResource));
         }
 
         // the resource has a core media type fallback
@@ -282,7 +297,7 @@ public sealed class ResourceReferencesChecker
             && !OpfMediaTypes.IsCoreMediaType(targetMimeType)
             && !targetResource.HasCoreMediaTypeFallback)
         {
-            _report.Message(MessageId.RSC_032, reference.Location, _container.Relativize(reference.TargetResource), targetMimeType);
+            _report.Message(MessageId.RSC_032, reference.Location, Relative(reference.TargetResource), targetMimeType);
         }
     }
 
@@ -295,7 +310,7 @@ public sealed class ResourceReferencesChecker
             _report.Message(
                 _version == EpubVersion.Version3 && reference.Type == ReferenceType.Link ? MessageId.RSC_007w : MessageId.RSC_007,
                 reference.Location,
-                _container.Relativize(reference.TargetResource));
+                Relative(reference.TargetResource));
         }
 
         // a publication resource that is not declared (once); links and remote hyperlinks and cites are not publication resources
@@ -304,7 +319,7 @@ public sealed class ResourceReferencesChecker
                 || (_container.IsRemote(reference.TargetResource) && reference.Type is ReferenceType.Hyperlink or ReferenceType.Cite)))
         {
             _undeclared.Add(reference.TargetResource);
-            _report.Message(MessageId.RSC_008, reference.Location, _container.Relativize(reference.TargetResource));
+            _report.Message(MessageId.RSC_008, reference.Location, Relative(reference.TargetResource));
         }
     }
 
@@ -398,7 +413,7 @@ public sealed class ResourceReferencesChecker
         string orderContext = LocalizedMessages.GetInstance(_culture).GetSuggestion(MessageId.NAV_011, kind);
         if (reference.Type == ReferenceType.OverlayTextLink)
         {
-            _report.Message(MessageId.MED_015, reference.Location, _container.Relativize(reference.Url), orderContext);
+            _report.Message(MessageId.MED_015, reference.Location, Relative(reference.Url), orderContext);
         }
         else
         {
@@ -406,7 +421,7 @@ public sealed class ResourceReferencesChecker
                 MessageId.NAV_011,
                 reference.Location,
                 reference.Type == ReferenceType.NavTocLink ? TocText : PageListText,
-                _container.Relativize(reference.Url),
+                Relative(reference.Url),
                 orderContext);
         }
     }
