@@ -117,8 +117,15 @@ public abstract class XmlHandler : IContentHandler
     }
 
     /// <summary>Where the current event is.</summary>
-    protected EpubLocation Location() =>
-        _locator is null ? Context.Location() : Context.Location().At(_locator.LineNumber, _locator.ColumnNumber);
+    protected EpubLocation Location()
+    {
+        // The path of the document does not change while it is read, only the line and column do; working the path out (a relative URL)
+        // for every element was a fifth of what a check allocated.
+        EpubLocation document = _documentLocation ??= Context.Location();
+        return _locator is null ? document : document.At(_locator.LineNumber, _locator.ColumnNumber);
+    }
+
+    private EpubLocation? _documentLocation;
 
     /// <summary>The URL <paramref name="value"/> refers to, resolved against the base; <c>null</c> when it does not parse (reported).</summary>
     protected Url? CheckUrl(string? value) => _urlChecker.CheckUrl(value, Location());
