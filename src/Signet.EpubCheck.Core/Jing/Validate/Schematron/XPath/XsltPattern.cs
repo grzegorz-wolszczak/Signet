@@ -10,7 +10,7 @@ namespace Signet.EpubCheck.Core.Jing.Validate.Schematron.XPath;
 /// </summary>
 internal sealed class XsltPattern
 {
-    private readonly List<XPathExpr> _alternatives = [];
+    private readonly List<Alternative> _alternatives = [];
 
     public XsltPattern(XPathExpr expr)
     {
@@ -39,30 +39,72 @@ internal sealed class XsltPattern
         }
         else
         {
-            _alternatives.Add(expr is ParenthesizedExpr p ? p.Inner : expr);
+            _alternatives.Add(new Alternative(expr is ParenthesizedExpr p ? p.Inner : expr));
         }
     }
 
-    private static bool MatchesAlternative(XPathExpr alternative, XdmNode node, XPathContext context)
+    // What matching needs to know of an alternative, worked out once and not for every node.
+    private sealed class Alternative
     {
-        (bool absolute, IReadOnlyList<XPathExpr> steps) = alternative switch
+        public Alternative(XPathExpr expr)
         {
-            PathExpr path => (path.Absolute, path.Steps),
-            AxisStep step => (false, [step]),
-            _ => (false, (IReadOnlyList<XPathExpr>)[]),
-        };
-        if (steps.Count == 0 && alternative is PathExpr { Absolute: true })
+            Expr = expr;
+            switch (expr)
+            {
+                case PathExpr path:
+                    Absolute = path.Absolute;
+                    Steps = path.Steps;
+                    break;
+                case AxisStep step:
+                    Steps = [step];
+                    break;
+                default:
+                    Steps = [];
+                    break;
+            }
+
+            IsRoot = Steps.Count == 0 && expr is PathExpr { Absolute: true };
+            AllAxisSteps = Steps.Count > 0 && Steps.All(s => s is AxisStep);
+        }
+
+        public XPathExpr Expr { get; }
+
+        public bool Absolute { get; }
+
+        public IReadOnlyList<XPathExpr> Steps { get; }
+
+        /// <summary>The pattern "/": the document node.</summary>
+        public bool IsRoot { get; }
+
+        public bool AllAxisSteps { get; }
+    }
+
+    private static bool MatchesAlternative(Alternative alternative, XdmNode node, XPathContext context)
+    {
+        if (alternative.IsRoot)
         {
             return node.Kind == XdmNodeKind.Document;
         }
 
-        if (steps.Count == 0 || steps.Any(s => s is not AxisStep))
+        // Not a path of steps: the node matches if the expression, evaluated at the root, selects it.
+        return alternative.AllAxisSteps
+            ? MatchFrom(node, alternative.Steps.Count - 1, alternative.Absolute, alternative.Steps, context)
+            : Selected(alternative.Expr, node.Root, node, context);
+    }
+
+    // Kept out of the matching methods: a lambda that captures the node would make the compiler allocate its closure on every call of them.
+    private static bool Selected(XPathExpr expr, XdmNode from, XdmNode node, XPathContext context)
+    {
+        IReadOnlyList<object> items = expr.Evaluate(context.With(from, 1, 1));
+        for (int i = 0; i < items.Count; i++)
         {
-            // Not a path of steps: the node matches if the expression, evaluated at the root, selects it.
-            return alternative.Evaluate(context.With(node.Root, 1, 1)).Any(i => ReferenceEquals(i, node));
+            if (ReferenceEquals(items[i], node))
+            {
+                return true;
+            }
         }
 
-        return MatchFrom(node, steps.Count - 1, absolute, steps, context);
+        return false;
     }
 
     private static bool MatchFrom(XdmNode node, int i, bool absolute, IReadOnlyList<XPathExpr> steps, XPathContext context)
@@ -120,7 +162,7 @@ internal sealed class XsltPattern
         {
             if (predicate.UsesPosition)
             {
-                return step.Evaluate(context.With(parent, 1, 1)).Any(n => ReferenceEquals(n, node));
+                return Selected(step, parent, node, context);
             }
 
             if (predicate.IsBoolean)
@@ -136,7 +178,7 @@ internal sealed class XsltPattern
             IReadOnlyList<object> value = predicate.Evaluate(nodeContext);
             if (value.Count == 1 && value[0] is double)
             {
-                return step.Evaluate(context.With(parent, 1, 1)).Any(n => ReferenceEquals(n, node));
+                return Selected(step, parent, node, context);
             }
 
             if (!XPathValues.EffectiveBoolean(value))
