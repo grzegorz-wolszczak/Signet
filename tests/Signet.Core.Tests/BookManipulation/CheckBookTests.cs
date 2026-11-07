@@ -6,6 +6,7 @@ using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
+using Signet.EpubCheck.Core.Messages;
 using Xunit;
 
 namespace Signet.Core.Tests.BookManipulation;
@@ -35,7 +36,9 @@ public sealed class CheckBookTests
         return (book, html);
     }
 
-    private static List<ValidationResult> Check(Book book) => BookValidator.ValidateCurrentBook(book).ToList();
+    // The rules of Signet's own validators; what EPUBCheck reports about the same book is tested in EpubCheckValidatorTests.
+    private static List<ValidationResult> Check(Book book) =>
+        BookValidator.ValidateCurrentBook(book).Where(r => !MessageIds.TryParse(r.Code, out _)).ToList();
 
     private static ValidationResult Single(Book book, string code) =>
         Check(book).Should().ContainSingle(r => r.Code == code).Subject;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using Signet.Core.Resources;
@@ -7,9 +8,12 @@ using Signet.Core.Localization;
 
 namespace Signet.Core.BookManipulation;
 
-/// <summary>The severity of a validation result.</summary>
+/// <summary>The severity of a validation result, from the least to the most serious (EPUBCheck's levels).</summary>
 public enum ValidationSeverity
 {
+    /// <summary>Information about the features the book uses (EPUBCheck's usage messages); reported only when asked for.</summary>
+    Usage,
+
     /// <summary>Information.</summary>
     Info,
 
@@ -18,6 +22,9 @@ public enum ValidationSeverity
 
     /// <summary>Error.</summary>
     Error,
+
+    /// <summary>A fatal error: the check cannot go on with the file or the book.</summary>
+    Fatal,
 }
 
 /// <summary>
@@ -55,6 +62,9 @@ public abstract class ValidationFix
 /// <summary>The part of the whole-book validation that is running (<see cref="ValidationProgress.Stage"/>).</summary>
 public enum ValidationStage
 {
+    /// <summary>EPUBCheck (<see cref="ValidationProgress.Done"/> of <see cref="ValidationProgress.Total"/> files seen so far).</summary>
+    EpubCheck,
+
     /// <summary>The well-formedness of each (X)HTML file (<see cref="ValidationProgress.Done"/> of <see cref="ValidationProgress.Total"/>).</summary>
     WellFormed,
 
@@ -119,12 +129,20 @@ public static class BookValidator
     /// <param name="book">The book.</param>
     /// <param name="skippedCodes">The rule codes (<see cref="ValidationResult.Code"/>) whose results are left out.</param>
     /// <param name="run">Reports where the validation is and can stop it.</param>
+    /// <param name="culture">The language of the messages of EPUBCheck; the current UI language by default.</param>
+    /// <param name="includeUsage">Whether EPUBCheck's usage messages are reported.</param>
     public static IReadOnlyList<ValidationResult> ValidateCurrentBook(
-        Book book, IReadOnlyCollection<string>? skippedCodes = null, ValidationRun run = default)
+        Book book,
+        IReadOnlyCollection<string>? skippedCodes = null,
+        ValidationRun run = default,
+        CultureInfo? culture = null,
+        bool includeUsage = false)
     {
         ArgumentNullException.ThrowIfNull(book);
 
         List<ValidationResult> results = new();
+        run.Progress?.Report(new ValidationProgress(ValidationStage.EpubCheck));
+        results.AddRange(EpubCheckValidator.Validate(book, skippedCodes, culture, includeUsage, run));
         List<HtmlResource> files = book.GetHtmlResources().ToList();
         for (int i = 0; i < files.Count; i++)
         {

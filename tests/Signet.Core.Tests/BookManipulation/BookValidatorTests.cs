@@ -3,6 +3,7 @@ using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Tests.TestSupport;
+using Signet.EpubCheck.Core.Messages;
 using Xunit;
 
 namespace Signet.Core.Tests.BookManipulation;
@@ -24,7 +25,7 @@ public sealed class BookValidatorTests
         using Book book = new ImportEpub(epub).GetBook();
 
         // Act
-        var results = BookValidator.ValidateCurrentBook(book);
+        var results = BookValidator.ValidateCurrentBook(book).Where(r => !MessageIds.TryParse(r.Code, out _)).ToList();
 
         // Assert
         results.Should().NotBeEmpty();
