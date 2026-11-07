@@ -23,6 +23,8 @@
     <None Include="Galimatias\TestData\*.txt" CopyToOutputDirectory="PreserveNewest" />
     <!-- The RELAX NG test suite of Jing (spectest.xml, James Clark), read from the output folder. -->
     <None Include="Jing\TestData\*.xml" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The style sheets of EPUBCheck's CSS tests (byte for byte: some are UTF-16 or have a byte order mark). -->
+    <None Include="Css\TestData\*.css;Css\TestData\*.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
