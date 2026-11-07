@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,10 +17,13 @@ internal static class XPathFunctions
 {
     private static readonly TimeSpan s_regexTimeout = Regex.InfiniteMatchTimeout;
 
-    public static IReadOnlyList<object> Call(string name, IReadOnlyList<XPathExpr> args, XPathContext context)
-    {
+    public static IReadOnlyList<object> Call(string name, IReadOnlyList<XPathExpr> args, XPathContext context) =>
         // Strip the standard function namespace prefix if it is written.
-        string local = name.StartsWith("fn:", StringComparison.Ordinal) ? name[3..] : name;
+        CallLocal(name.StartsWith("fn:", StringComparison.Ordinal) ? name[3..] : name, name, args, context);
+
+    /// <summary>Calls the function whose name, without the standard prefix, is <paramref name="local"/> (<paramref name="name"/> is as written, for the error).</summary>
+    public static IReadOnlyList<object> CallLocal(string local, string name, IReadOnlyList<XPathExpr> args, XPathContext context)
+    {
         IReadOnlyList<object> Arg(int i) => args[i].Evaluate(context);
         string StringArg(int i) => XPathValues.StringOfFirst(Arg(i));
         string ContextString() => args.Count == 0 ? XPathValues.ToStringValue(context.Item) : StringArg(0);
@@ -28,17 +32,17 @@ internal static class XPathFunctions
         switch (local)
         {
             case "true":
-                return [true];
+                return XPathValues.Bool(true);
             case "false":
-                return [false];
+                return XPathValues.Bool(false);
             case "not":
-                return [!XPathValues.EffectiveBoolean(Arg(0))];
+                return XPathValues.Bool(!args[0].EvaluateBoolean(context));
             case "boolean":
-                return [XPathValues.EffectiveBoolean(Arg(0))];
+                return XPathValues.Bool(args[0].EvaluateBoolean(context));
             case "exists":
-                return [Arg(0).Count > 0];
+                return XPathValues.Bool(Arg(0).Count > 0);
             case "empty":
-                return [Arg(0).Count == 0];
+                return XPathValues.Bool(Arg(0).Count == 0);
             case "count":
                 return [(double)Arg(0).Count];
             case "position":
@@ -52,7 +56,7 @@ internal static class XPathFunctions
             case "number":
                 return [args.Count == 0 ? XPathValues.ToNumber(context.Item) : XPathValues.NumberOfFirst(Arg(0))];
             case "normalize-space":
-                return [string.Join(' ', ContextString().Split([' ', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries))];
+                return [NormalizeSpace(ContextString())];
             case "string-length":
                 string sl = ContextString();
                 return [(double)(sl.Length - sl.Count(char.IsHighSurrogate))];
@@ -61,13 +65,13 @@ internal static class XPathFunctions
             case "upper-case":
                 return [StringArg(0).ToUpperInvariant()];
             case "concat":
-                return [string.Concat(args.Select((_, i) => StringArg(i)))];
+                return [Concat(args, context)];
             case "contains":
-                return [StringArg(0).Contains(StringArg(1), StringComparison.Ordinal)];
+                return XPathValues.Bool(StringArg(0).Contains(StringArg(1), StringComparison.Ordinal));
             case "starts-with":
-                return [StringArg(0).StartsWith(StringArg(1), StringComparison.Ordinal)];
+                return XPathValues.Bool(StringArg(0).StartsWith(StringArg(1), StringComparison.Ordinal));
             case "ends-with":
-                return [StringArg(0).EndsWith(StringArg(1), StringComparison.Ordinal)];
+                return XPathValues.Bool(StringArg(0).EndsWith(StringArg(1), StringComparison.Ordinal));
             case "substring-before":
                 string sb0 = StringArg(0);
                 int ib = sb0.IndexOf(StringArg(1), StringComparison.Ordinal);
@@ -93,7 +97,7 @@ internal static class XPathFunctions
 
                 return [.. MakeRegex(StringArg(1), args.Count > 2 ? StringArg(2) : string.Empty).Split(input)];
             case "matches":
-                return [MakeRegex(StringArg(1), args.Count > 2 ? StringArg(2) : string.Empty).IsMatch(StringArg(0))];
+                return XPathValues.Bool(MakeRegex(StringArg(1), args.Count > 2 ? StringArg(2) : string.Empty).IsMatch(StringArg(0)));
             case "replace":
                 return [MakeRegex(StringArg(1), args.Count > 3 ? StringArg(3) : string.Empty).Replace(StringArg(0), StringArg(2))];
             case "name":
@@ -103,16 +107,7 @@ internal static class XPathFunctions
             case "namespace-uri":
                 return [NodeArg()?.NamespaceUri ?? string.Empty];
             case "distinct-values":
-                List<object> distinct = [];
-                foreach (object item in XPathValues.Atomize(Arg(0)).Select(i => i is UntypedAtomic u ? u.Value : i))
-                {
-                    if (!distinct.Exists(d => XPathValues.Test("=", XPathValues.CompareAtomic(d, item), d, item)))
-                    {
-                        distinct.Add(item);
-                    }
-                }
-
-                return distinct;
+                return DistinctValues(Arg(0));
             case "sum":
                 return [XPathValues.Atomize(Arg(0)).Sum(XPathValues.ToNumber)];
             case "floor":
@@ -136,6 +131,87 @@ internal static class XPathFunctions
             default:
                 throw new XPathException("unknown function \"" + name + "\"");
         }
+    }
+
+    // normalize-space: white space trimmed and every run of it made one space; a string that is so already comes back as it is.
+    private static string NormalizeSpace(string s)
+    {
+        bool clean = s.Length == 0 || (!IsXmlSpace(s[0]) && !IsXmlSpace(s[^1]));
+        for (int i = 0; clean && i < s.Length; i++)
+        {
+            clean = s[i] switch
+            {
+                '\t' or '\n' or '\r' => false,
+                ' ' => i + 1 >= s.Length || s[i + 1] != ' ',
+                _ => true,
+            };
+        }
+
+        if (clean)
+        {
+            return s;
+        }
+
+        StringBuilder sb = new(s.Length);
+        bool pending = false;
+        foreach (char c in s)
+        {
+            if (IsXmlSpace(c))
+            {
+                pending = sb.Length > 0;
+            }
+            else
+            {
+                if (pending)
+                {
+                    sb.Append(' ');
+                    pending = false;
+                }
+
+                sb.Append(c);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static bool IsXmlSpace(char c) => c is ' ' or '\t' or '\n' or '\r';
+
+    private static string Concat(IReadOnlyList<XPathExpr> args, XPathContext context)
+    {
+        string[] parts = new string[args.Count];
+        for (int i = 0; i < parts.Length; i++)
+        {
+            parts[i] = XPathValues.StringOfFirst(args[i].Evaluate(context));
+        }
+
+        return string.Concat(parts);
+    }
+
+    // Kept out of Call: a lambda there would make the compiler allocate its closure on every call of every function.
+    private static List<object> DistinctValues(IReadOnlyList<object> values)
+    {
+        List<object> distinct = [];
+        foreach (object atomic in XPathValues.Atomize(values))
+        {
+            object item = atomic is UntypedAtomic u ? u.Value : atomic;
+            bool seen = false;
+            foreach (object d in distinct)
+            {
+                if (XPathValues.Test("=", XPathValues.CompareAtomic(d, item), d, item))
+                {
+                    seen = true;
+                    break;
+                }
+            }
+
+            if (!seen)
+            {
+                distinct.Add(item);
+            }
+        }
+
+        return distinct;
     }
 
     // XPath's substring: positions round half up, counted from 1.
@@ -175,7 +251,14 @@ internal static class XPathFunctions
         return sb.ToString();
     }
 
-    private static Regex MakeRegex(string pattern, string flags)
+    // new Regex(...) parses and compiles its pattern every time and nothing caches it, while the schemas use a handful of patterns over
+    // and over: the regex of a pattern and flags is made once.
+    private static readonly ConcurrentDictionary<(string Pattern, string Flags), Regex> s_regexes = new();
+
+    private static Regex MakeRegex(string pattern, string flags) =>
+        s_regexes.TryGetValue((pattern, flags), out Regex? known) ? known : s_regexes.GetOrAdd((pattern, flags), CreateRegex(pattern, flags));
+
+    private static Regex CreateRegex(string pattern, string flags)
     {
         RegexOptions options = RegexOptions.CultureInvariant;
         foreach (char f in flags)

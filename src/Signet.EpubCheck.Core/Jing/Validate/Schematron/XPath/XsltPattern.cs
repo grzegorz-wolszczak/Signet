@@ -17,7 +17,18 @@ internal sealed class XsltPattern
         Collect(expr);
     }
 
-    public bool Matches(XdmNode node, XPathContext context) => _alternatives.Exists(a => MatchesAlternative(a, node, context));
+    public bool Matches(XdmNode node, XPathContext context)
+    {
+        for (int i = 0; i < _alternatives.Count; i++)
+        {
+            if (MatchesAlternative(_alternatives[i], node, context))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private void Collect(XPathExpr expr)
     {
@@ -99,12 +110,27 @@ internal sealed class XsltPattern
             return false;
         }
 
+        if (step.Predicates.Count == 0)
+        {
+            return true;
+        }
+
         XPathContext nodeContext = context.With(node, 1, 1);
         foreach (XPathExpr predicate in step.Predicates)
         {
             if (predicate.UsesPosition)
             {
                 return step.Evaluate(context.With(parent, 1, 1)).Any(n => ReferenceEquals(n, node));
+            }
+
+            if (predicate.IsBoolean)
+            {
+                if (!predicate.EvaluateBoolean(nodeContext))
+                {
+                    return false;
+                }
+
+                continue;
             }
 
             IReadOnlyList<object> value = predicate.Evaluate(nodeContext);

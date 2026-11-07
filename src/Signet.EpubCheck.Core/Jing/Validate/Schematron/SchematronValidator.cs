@@ -67,7 +67,7 @@ internal sealed class SchematronValidator : IValidator, IDtdHandler
             {
                 if (rule.Context!.Matches(node, context))
                 {
-                    RunItems(rule.Items, node, context, []);
+                    RunItems(rule.Items, node, context, null);
                     break;
                 }
             }
@@ -82,7 +82,7 @@ internal sealed class SchematronValidator : IValidator, IDtdHandler
         }
     }
 
-    private void RunItems(List<RuleItem> items, XdmNode node, XPathContext context, HashSet<string> extending)
+    private void RunItems(List<RuleItem> items, XdmNode node, XPathContext context, HashSet<string>? extending)
     {
         foreach (RuleItem item in items)
         {
@@ -92,6 +92,7 @@ internal sealed class SchematronValidator : IValidator, IDtdHandler
                     context = context.WithVariable(let.Name, let.Value.Evaluate(context));
                     break;
                 case ExtendsItem extends:
+                    extending ??= [];
                     if (_schema.AbstractRules.TryGetValue(extends.RuleId, out CompiledRule? abstractRule) && extending.Add(extends.RuleId))
                     {
                         RunItems(abstractRule.Items, node, context, extending);
@@ -100,7 +101,7 @@ internal sealed class SchematronValidator : IValidator, IDtdHandler
 
                     break;
                 case AssertionItem assertion:
-                    bool result = XPathValues.EffectiveBoolean(assertion.Test.Evaluate(context));
+                    bool result = assertion.Test.EvaluateBoolean(context);
                     if (result == assertion.IsReport)
                     {
                         Report(assertion, node, context);

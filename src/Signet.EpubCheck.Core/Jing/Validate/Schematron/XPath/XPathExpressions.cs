@@ -11,11 +11,13 @@ internal sealed record UntypedAtomic(string Value);
 /// <summary>Where an expression is evaluated: the context item, position and size, the current node and the variables.</summary>
 internal sealed class XPathContext
 {
-    public required object Item { get; init; }
+    // Item, position and size are settable so that a loop over a list of items can reuse one context instead of making one per item (see
+    // Rebind): a context is never kept by what it is handed to, only read during the call.
+    public required object Item { get; set; }
 
-    public int Position { get; init; } = 1;
+    public int Position { get; set; } = 1;
 
-    public int Size { get; init; } = 1;
+    public int Size { get; set; } = 1;
 
     public required XdmNode Current { get; init; }
 
@@ -27,7 +29,21 @@ internal sealed class XPathContext
     /// The values of the subexpressions that depend on nothing but the current node, worked out once for it (shared by the
     /// contexts made from this one: they have the same current node).
     /// </summary>
-    public MemoStore Memo { get; init; } = new();
+    public MemoStore Memo
+    {
+        get => _memo ??= new();
+        init => _memo = value;
+    }
+
+    private MemoStore? _memo;
+
+    /// <summary>Points this context at another item of a list; only for a context the caller made itself, for its own loop.</summary>
+    public void Rebind(object item, int position, int size)
+    {
+        Item = item;
+        Position = position;
+        Size = size;
+    }
 
     public XPathContext With(object item, int position, int size) =>
         new() { Item = item, Position = position, Size = size, Current = Current, Variables = Variables, BaseUri = BaseUri, Memo = Memo };
@@ -93,6 +109,9 @@ internal enum Axis
 internal abstract class XPathExpr
 {
     public abstract IReadOnlyList<object> Evaluate(XPathContext context);
+
+    /// <summary>The effective boolean value of the result: the same as <c>EffectiveBoolean(Evaluate(context))</c>, without the list for tests that know better.</summary>
+    public virtual bool EvaluateBoolean(XPathContext context) => XPathValues.EffectiveBoolean(Evaluate(context));
 
     public virtual bool UsesPosition => false;
 
@@ -231,8 +250,9 @@ internal sealed class OrExpr(XPathExpr left, XPathExpr right) : XPathExpr
 
     public override bool IsBoolean => true;
 
-    public override IReadOnlyList<object> Evaluate(XPathContext context) =>
-        [XPathValues.EffectiveBoolean(left.Evaluate(context)) || XPathValues.EffectiveBoolean(right.Evaluate(context))];
+    public override IReadOnlyList<object> Evaluate(XPathContext context) => XPathValues.Bool(EvaluateBoolean(context));
+
+    public override bool EvaluateBoolean(XPathContext context) => left.EvaluateBoolean(context) || right.EvaluateBoolean(context);
 
     public override bool UsesPosition => left.UsesPosition || right.UsesPosition;
 }
@@ -243,8 +263,9 @@ internal sealed class AndExpr(XPathExpr left, XPathExpr right) : XPathExpr
 
     public override bool IsBoolean => true;
 
-    public override IReadOnlyList<object> Evaluate(XPathContext context) =>
-        [XPathValues.EffectiveBoolean(left.Evaluate(context)) && XPathValues.EffectiveBoolean(right.Evaluate(context))];
+    public override IReadOnlyList<object> Evaluate(XPathContext context) => XPathValues.Bool(EvaluateBoolean(context));
+
+    public override bool EvaluateBoolean(XPathContext context) => left.EvaluateBoolean(context) && right.EvaluateBoolean(context);
 
     public override bool UsesPosition => left.UsesPosition || right.UsesPosition;
 }
@@ -261,13 +282,18 @@ internal sealed class ComparisonExpr(string op, XPathExpr left, XPathExpr right)
 
     public override bool IsBoolean => op is "=" or "!=" or "<" or "<=" or ">" or ">=" or "is" or "<<" or ">>" or "eq" or "ne" or "lt" or "le" or "gt" or "ge";
 
+    public override bool EvaluateBoolean(XPathContext context) =>
+        op is "=" or "!=" or "<" or "<=" or ">" or ">="
+            ? XPathValues.GeneralCompare(op, EvaluateOnce(left, context), EvaluateOnce(right, context))
+            : base.EvaluateBoolean(context);
+
     public override IReadOnlyList<object> Evaluate(XPathContext context)
     {
         IReadOnlyList<object> l = EvaluateOnce(left, context);
         IReadOnlyList<object> r = EvaluateOnce(right, context);
         return op switch
         {
-            "=" or "!=" or "<" or "<=" or ">" or ">=" => [XPathValues.GeneralCompare(op, l, r)],
+            "=" or "!=" or "<" or "<=" or ">" or ">=" => XPathValues.Bool(XPathValues.GeneralCompare(op, l, r)),
             "is" or "<<" or ">>" => NodeCompare(l, r),
             _ => ValueCompare(l, r),
         };
@@ -411,7 +437,7 @@ internal sealed class PathExpr(bool absolute, IReadOnlyList<XPathExpr> steps) : 
 
     public override IReadOnlyList<object> Evaluate(XPathContext context)
     {
-        IReadOnlyList<object> current = Absolute ? [context.ContextNode.Root] : [context.Item];
+        IReadOnlyList<object> current;
         int first = 0;
         if (!Absolute)
         {
@@ -424,7 +450,12 @@ internal sealed class PathExpr(bool absolute, IReadOnlyList<XPathExpr> steps) : 
             current = found;
             first = 2;
         }
+        else
+        {
+            current = [context.ContextNode.Root];
+        }
 
+        XPathContext? scratch = null;
         for (int i = first; i < Steps.Count; i++)
         {
             List<object> next = [];
@@ -436,14 +467,24 @@ internal sealed class PathExpr(bool absolute, IReadOnlyList<XPathExpr> steps) : 
                     throw new XPathException("a path step applies to a value that is not a node");
                 }
 
-                foreach (object item in Steps[i].Evaluate(context.With(current[j], j + 1, current.Count)))
+                if (scratch is null)
                 {
-                    allNodes &= item is XdmNode;
-                    next.Add(item);
+                    scratch = context.With(current[j], j + 1, current.Count);
+                }
+                else
+                {
+                    scratch.Rebind(current[j], j + 1, current.Count);
+                }
+
+                IReadOnlyList<object> produced = Steps[i].Evaluate(scratch);
+                for (int k = 0; k < produced.Count; k++)
+                {
+                    allNodes &= produced[k] is XdmNode;
+                    next.Add(produced[k]);
                 }
             }
 
-            current = allNodes ? XPathValues.InDocumentOrder(next.Cast<XdmNode>()) : next;
+            current = allNodes ? XPathValues.InDocumentOrder(next) : next;
         }
 
         return current;
@@ -578,7 +619,31 @@ internal sealed class AxisStep(Axis axis, NodeTest test, IReadOnlyList<XPathExpr
     public override IReadOnlyList<object> Evaluate(XPathContext context)
     {
         // The nodes in the order of the axis (reverse document order for a reverse axis), for the positions.
-        IReadOnlyList<object> items = [.. AxisNodes(context.ContextNode).Where(n => Test.Matches(n, Axis))];
+        List<object> selected = [];
+        XdmNode origin = context.ContextNode;
+        if (Axis is Axis.Child or Axis.Attribute)
+        {
+            IReadOnlyList<XdmNode> nodes = Axis == Axis.Child ? origin.Children : origin.Attributes;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                if (Test.Matches(nodes[i], Axis))
+                {
+                    selected.Add(nodes[i]);
+                }
+            }
+        }
+        else
+        {
+            foreach (XdmNode n in AxisNodes(origin))
+            {
+                if (Test.Matches(n, Axis))
+                {
+                    selected.Add(n);
+                }
+            }
+        }
+
+        IReadOnlyList<object> items = selected;
         foreach (XPathExpr predicate in Predicates)
         {
             items = XPathValues.ApplyPredicate(items, predicate, context);
@@ -643,11 +708,23 @@ internal sealed class AxisStep(Axis axis, NodeTest test, IReadOnlyList<XPathExpr
 
 internal sealed class FunctionCallExpr(string name, IReadOnlyList<XPathExpr> args) : XPathExpr
 {
+    // The name without the prefix of the standard function namespace, cut once and not on every call.
+    private readonly string _local = name.StartsWith("fn:", StringComparison.Ordinal) ? name[3..] : name;
+
     public string Name { get; } = name;
 
     public IReadOnlyList<XPathExpr> Args { get; } = args;
 
-    public override IReadOnlyList<object> Evaluate(XPathContext context) => XPathFunctions.Call(Name, Args, context);
+    public override IReadOnlyList<object> Evaluate(XPathContext context) => XPathFunctions.CallLocal(_local, Name, Args, context);
+
+    public override bool EvaluateBoolean(XPathContext context) => _local switch
+    {
+        "not" => !Args[0].EvaluateBoolean(context),
+        "boolean" => Args[0].EvaluateBoolean(context),
+        "exists" => Args[0].Evaluate(context).Count > 0,
+        "empty" => Args[0].Evaluate(context).Count == 0,
+        _ => base.EvaluateBoolean(context),
+    };
 
     public override bool UsesPosition => Name is "position" or "last" || Args.Any(a => a.UsesPosition);
 
@@ -686,6 +763,24 @@ internal static class XPathValues
 
     public static List<object> InDocumentOrder(IEnumerable<XdmNode> nodes) =>
         [.. nodes.Distinct().OrderBy(n => n.Order)];
+
+    /// <summary>The nodes of a list, each once, in document order. A list already in that order (a single step down the tree gives one) is returned as it is.</summary>
+    public static List<object> InDocumentOrder(List<object> nodes)
+    {
+        bool ordered = true;
+        for (int i = 1; i < nodes.Count && ordered; i++)
+        {
+            ordered = ((XdmNode)nodes[i - 1]).Order < ((XdmNode)nodes[i]).Order;
+        }
+
+        return ordered ? nodes : InDocumentOrder(nodes.Cast<XdmNode>());
+    }
+
+    private static readonly IReadOnlyList<object> s_true = new object[] { true };
+    private static readonly IReadOnlyList<object> s_false = new object[] { false };
+
+    /// <summary>The value of a boolean: one of two shared lists (nothing changes a value it was given).</summary>
+    public static IReadOnlyList<object> Bool(bool value) => value ? s_true : s_false;
 
     public static bool EffectiveBoolean(IReadOnlyList<object> items)
     {
@@ -774,27 +869,26 @@ internal static class XPathValues
             return Test(op, a.CompareTo(b), a, b);
         }
 
-        List<object> x = Atomize(l);
-        List<object> y = Atomize(r);
+        // The items atomized: a node is its string value, as an untyped value would be (a number and a string compare as numbers, two
+        // strings as strings), without making an UntypedAtomic for every node.
         bool relational = op is "<" or "<=" or ">" or ">=";
-        foreach (object a in x)
+        if (l.Count == 1 && r.Count == 1)
         {
+            return CompareItems(op, relational, Plain(l[0]), Plain(r[0]));
+        }
+
+        object[] y = new object[r.Count];
+        for (int i = 0; i < y.Length; i++)
+        {
+            y[i] = Plain(r[i]);
+        }
+
+        for (int i = 0; i < l.Count; i++)
+        {
+            object a = Plain(l[i]);
             foreach (object b in y)
             {
-                object p = a;
-                object q = b;
-                if (relational || p is double || q is double)
-                {
-                    p = ToNumber(p);
-                    q = ToNumber(q);
-                }
-                else
-                {
-                    p = p is UntypedAtomic up ? up.Value : p;
-                    q = q is UntypedAtomic uq ? uq.Value : q;
-                }
-
-                if (Test(op, CompareAtomic(p, q), p, q))
+                if (CompareItems(op, relational, a, b))
                 {
                     return true;
                 }
@@ -802,6 +896,24 @@ internal static class XPathValues
         }
 
         return false;
+    }
+
+    private static object Plain(object item) => item switch
+    {
+        XdmNode n => n.StringValue,
+        UntypedAtomic u => u.Value,
+        _ => item,
+    };
+
+    private static bool CompareItems(string op, bool relational, object p, object q)
+    {
+        if (relational || p is double || q is double)
+        {
+            p = ToNumber(p);
+            q = ToNumber(q);
+        }
+
+        return Test(op, CompareAtomic(p, q), p, q);
     }
 
     public static int CompareAtomic(object a, object b) => (a, b) switch
@@ -840,10 +952,29 @@ internal static class XPathValues
         }
 
         List<object> result = [];
+        XPathContext? scratch = null;
         for (int i = 0; i < items.Count; i++)
         {
-            IReadOnlyList<object> value = predicate.Evaluate(context.With(items[i], i + 1, items.Count));
-            bool keep = value.Count == 1 && value[0] is double d ? d == i + 1 : EffectiveBoolean(value);
+            if (scratch is null)
+            {
+                scratch = context.With(items[i], i + 1, items.Count);
+            }
+            else
+            {
+                scratch.Rebind(items[i], i + 1, items.Count);
+            }
+
+            bool keep;
+            if (predicate.IsBoolean)
+            {
+                keep = predicate.EvaluateBoolean(scratch);
+            }
+            else
+            {
+                IReadOnlyList<object> value = predicate.Evaluate(scratch);
+                keep = value.Count == 1 && value[0] is double d ? d == i + 1 : EffectiveBoolean(value);
+            }
+
             if (keep)
             {
                 result.Add(items[i]);
@@ -907,9 +1038,11 @@ internal static class XPathValues
     private static object BuildIndex(IReadOnlyList<object> items, XPathExpr left, XPathContext context)
     {
         Dictionary<string, List<int>> index = new(StringComparer.Ordinal);
+        XPathContext scratch = context.With(items.Count > 0 ? items[0] : context.Item, 1, items.Count);
         for (int i = 0; i < items.Count; i++)
         {
-            foreach (object value in left.Evaluate(context.With(items[i], i + 1, items.Count)))
+            scratch.Rebind(items[i], i + 1, items.Count);
+            foreach (object value in left.Evaluate(scratch))
             {
                 if (value is double or bool)
                 {
