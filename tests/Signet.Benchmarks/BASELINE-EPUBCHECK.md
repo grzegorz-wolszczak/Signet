@@ -185,3 +185,25 @@ entry to every match) were the next two. Best of 2, ms, and KiB per file:
 Summed over the three steps of 6.4 (1600 files): 3261 ms -> 783 ms, 3588 -> 624 KiB per file; 1200 files with notes: 6671 -> 1023 ms. What is left in
 the allocation table is spread thin: strings (23%), `object[]` and `List<object>` (the lists of the interpreter), `char[]` and `StringBuilder`
 (string values of elements, text of the XML reader).
+
+### Who allocates: a trace with stacks (6.4, fourth step)
+
+The in-process listener names the type, not the caller. To find the caller, `dotnet-trace collect --providers Microsoft-Windows-DotNETRuntime:0x1:5`
+records `GCAllocationTick` with stacks, and a small reader built on `Microsoft.Diagnostics.Tracing.TraceEvent` (`TraceLog.CreateFromEventPipeDataFile`,
+`GCAllocationTickTraceData.AllocationAmount64`, `CallStack()`) sums them by the nearest `Signet` frame or by the chain above a method. It is not
+in the repository (it is a few dozen lines; the numbers are what matters). It showed, in order: `Url.Relativize` called for every element by
+`XmlHandler.Location()`; the URL parser (two parses per `href`, two more inside `Normalize`); `AxisStep.Evaluate` growing lists by doubling;
+the axis walks through LINQ iterators; `Relativize` twice per reference. Best of 2, ms, and KiB per file:
+
+| book | before this step, ms | now, ms | before, KiB/file | now, KiB/file |
+|---|---:|---:|---:|---:|
+| 50 files | 8 | 6 | 273 | 179 |
+| 200 files | 40 | 33 | 299 | 196 |
+| 800 files | 308 | 300 | 437 | 292 |
+| 1600 files | 783 | 724 | 624 | 423 |
+| 600 files x 6 notes | 446 | 350 | 1191 | 680 |
+| 1200 files x 6 notes (spread) | 1023 | 867 | 1335 | 778 |
+| 200 files x 40 notes in one file | 777 | 659 | 5425 | 2972 |
+
+Over the whole of 6.4 (1600 files): 3261 ms -> 724 ms, 3588 -> 423 KiB per file; 1200 files with notes 6671 -> 867 ms. Time no longer follows
+allocation (a plain file costs ~0.45 ms and ~0.4 MB): what is left is the work itself (RELAX NG derivatives, the XML reader, the URL parser).
