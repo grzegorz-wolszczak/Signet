@@ -32,12 +32,12 @@ public sealed class ExpandedEpubArchive : IDisposable
     /// file stays; otherwise <see cref="Dispose"/> deletes it. Without <paramref name="keep"/> a file of that name that already
     /// exists is not touched (the archive goes to a temporary file instead), which upstream would overwrite and delete.
     /// </summary>
-    public static ExpandedEpubArchive Create(string folder, bool keep)
+    public static ExpandedEpubArchive Create(string folder, bool keep, string? outputPath = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(folder);
         string root = Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        string target = root + EpubExtension;
-        if (!keep && File.Exists(target))
+        string target = outputPath is null ? root + EpubExtension : Path.GetFullPath(outputPath);
+        if (outputPath is null && !keep && File.Exists(target))
         {
             target = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + EpubExtension);
         }
