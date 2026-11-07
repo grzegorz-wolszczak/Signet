@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using Signet.Core.Importers;
 using Signet.Core.Misc;
@@ -517,25 +518,37 @@ public sealed partial class ImportEpub : IImporter
         List<LoadWarningItem> problems = new();
         List<LoadWarningItem> comments = new();
         IReadOnlyList<HtmlResource> files = folderKeeper.GetResourceTypeList<HtmlResource>();
-        int done = 0;
-        foreach (HtmlResource html in files)
+
+        // Reading a file and checking it need nothing from the others, so many files are read and checked by several threads; the text is set in the
+        // resources, the warnings collected and the progress told afterwards, in the order of the files, as they were one by one.
+        CheckedHtml[] checks = new CheckedHtml[files.Count];
+        if (files.Count >= ParallelCheckThreshold && Environment.ProcessorCount > 1)
         {
+            Parallel.For(
+                0,
+                files.Count,
+                new ParallelOptions { MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, MaxCheckThreads) },
+                i => checks[i] = ReadAndCheck(files[i]));
+        }
+
+        int done = 0;
+        for (int i = 0; i < files.Count; i++)
+        {
+            HtmlResource html = files[i];
             progress?.Report(new BookLoadProgress(BookLoadStage.Checking, done++, files.Count));
-            try
+            CheckedHtml check = files.Count >= ParallelCheckThreshold && Environment.ProcessorCount > 1 ? checks[i] : ReadAndCheck(html);
+            if (check.ReadError is not null)
             {
-                html.SetText(HtmlEncodingResolver.ReadHtmlFile(html.FullPath));
-            }
-            catch (IOException ex)
-            {
-                problems.Add(new LoadWarningItem(html.BookPath, CoreStrings.Format("LoadWarning_HtmlUnreadable", ex.Message)));
+                problems.Add(new LoadWarningItem(html.BookPath, CoreStrings.Format("LoadWarning_HtmlUnreadable", check.ReadError)));
                 continue;
             }
 
-            WellFormedResult result = WellFormedChecker.Check(html.GetText());
+            html.SetText(check.Text!);
+            WellFormedResult result = check.Result;
+            IReadOnlyList<HtmlCommentProblem> badComments = check.BadComments;
 
             // The XML parser stops at the first error and words it in its own way: the comments it does not allow are listed
             // one by one, each with its place. The error of the parser that is one of them is not listed twice.
-            IReadOnlyList<HtmlCommentProblem> badComments = HtmlCommentChecker.Find(html.GetText());
             foreach (HtmlCommentProblem comment in badComments)
             {
                 comments.Add(new LoadWarningItem(
@@ -550,6 +563,27 @@ public sealed partial class ImportEpub : IImporter
 
         AddFileListWarning(book, "HtmlNotWellFormed", problems);
         AddFileListWarning(book, "HtmlBadComments", comments);
+    }
+
+    private const int ParallelCheckThreshold = 16;
+    private const int MaxCheckThreads = 8;
+
+    // What reading and checking one HTML file gives: its text, or why it could not be read, and what the checks found.
+    private readonly record struct CheckedHtml(string? Text, string? ReadError, WellFormedResult Result, IReadOnlyList<HtmlCommentProblem> BadComments);
+
+    private static CheckedHtml ReadAndCheck(HtmlResource html)
+    {
+        string text;
+        try
+        {
+            text = HtmlEncodingResolver.ReadHtmlFile(html.FullPath);
+        }
+        catch (IOException ex)
+        {
+            return new CheckedHtml(null, ex.Message, default!, []);
+        }
+
+        return new CheckedHtml(text, null, WellFormedChecker.Check(text), HtmlCommentChecker.Find(text));
     }
 
     private static void DeobfuscateFonts(

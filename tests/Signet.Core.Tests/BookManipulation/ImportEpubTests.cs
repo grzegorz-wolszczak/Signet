@@ -241,6 +241,32 @@ public sealed class ImportEpubTests
         book.Modified.Should().BeTrue();
     }
 
+    // A book of many files is checked by several threads; the warnings must come out in the order of the files and the texts must all be loaded.
+    [Fact]
+    public void GetBook_ManyFilesSomeNotWellFormed_ListsExactlyThoseInTheOrderOfTheFiles()
+    {
+        // Arrange
+        using TempDir temp = new();
+        string tree = SyntheticBook.BuildTree(temp.Combine("tree"), files: 80, notesPerFile: 1, notes: SyntheticNotes.Signet, paragraphs: 3);
+        int[] broken = [7, 33, 52, 79];
+        foreach (int file in broken)
+        {
+            string path = Path.Combine(tree, "EPUB", "text", $"chapter{file:D5}.xhtml");
+            File.WriteAllText(path, File.ReadAllText(path).Replace("</h1>", string.Empty, StringComparison.Ordinal));
+        }
+
+        string epub = EpubBuilder.BuildInto(tree, temp);
+
+        // Act
+        using Book book = new ImportEpub(epub).GetBook();
+
+        // Assert
+        LoadWarning warning = book.LoadWarningDetails.Should()
+            .ContainSingle(w => w.Title == CoreStrings.Get("LoadWarningGroup_HtmlNotWellFormed")).Which;
+        warning.Items.Select(i => i.BookPath).Should().Equal(broken.Select(f => $"EPUB/text/chapter{f:D5}.xhtml"));
+        book.GetHtmlResources().Should().OnlyContain(h => h.GetText().Length > 0, "every file's text is loaded");
+    }
+
     [Fact]
     public void GetBook_NotWellFormedXhtml_ListsEachFileWithTheReasonAndPosition()
     {
