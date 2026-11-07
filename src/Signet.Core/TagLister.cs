@@ -63,6 +63,11 @@ public sealed class TagLister
     private readonly List<int> _tagPos = new();
     private readonly List<int> _tagLen = new();
     private readonly List<int> _tagChild = new();
+
+    // The path to the tag as a chain of nodes (the last one is the innermost open tag): every tag keeps the end of the chain it was found
+    // in, and the text of its path ("body -1,div 3,p 0") is made only when somebody asks for it. Making it for every tag of a document, for
+    // the sake of the one at the caret, was a fifth of what the tag list cost.
+    private PathNode? _pathTail = new PathNode("root", -1, null);
     private readonly List<TagInfo> _tags = new();
 
     private int _bodyStartPos = -1;
@@ -122,6 +127,7 @@ public sealed class TagLister
         _child = -1;
         _tagPath.Clear();
         _tagPath.Add("root");
+        _pathTail = new PathNode("root", -1, null);
         _tagPos.Clear();
         _tagPos.Add(-1);
         _tagLen.Clear();
@@ -596,13 +602,13 @@ public sealed class TagLister
             ti = GetNext();
         }
 
-        _tags.Add(new TagInfo { Pos = -1, Len = -1, Child = -1, OpenPos = -1, OpenLen = -1, TagName = string.Empty, TagPath = string.Empty });
+        _tags.Add(new TagInfo { Pos = -1, Len = -1, Child = -1, OpenPos = -1, OpenLen = -1, TagName = string.Empty });
     }
 
     private TagInfo GetNext()
     {
-        TagInfo mi = new() { Pos = -1, Len = -1, Child = -1, OpenPos = -1, OpenLen = -1, TagName = string.Empty, TagPath = string.Empty };
-        string? markup = ParseMarkup();
+        TagInfo mi = new() { Pos = -1, Len = -1, Child = -1, OpenPos = -1, OpenLen = -1, TagName = string.Empty };
+        string? markup = ParseNextTag();
         while (markup is not null)
         {
             if (markup.Length > 0 && markup[0] == '<' && markup[^1] == '>')
@@ -619,14 +625,15 @@ public sealed class TagLister
                         _tagChild.Add(mi.Child);
                         _child = -1;
                         _tagPath.Add(mi.TagName);
-                        mi.TagPath = MakePathToTag();
+                        _pathTail = new PathNode(mi.TagName, mi.Child, _pathTail);
+                        mi.PathTail = _pathTail;
                         break;
 
                     case TagKind.SelfClosing:
                         mi.Child = ++_child;
                         _tagChild.Add(mi.Child);
                         _tagPath.Add(mi.TagName);
-                        mi.TagPath = MakePathToTag();
+                        mi.PathTail = new PathNode(mi.TagName, mi.Child, _pathTail);
                         _tagPath.RemoveAt(_tagPath.Count - 1);
                         _tagChild.RemoveAt(_tagChild.Count - 1);
                         break;
@@ -636,6 +643,7 @@ public sealed class TagLister
                         if (pathNode.StartsWith(mi.TagName, StringComparison.Ordinal))
                         {
                             _tagPath.RemoveAt(_tagPath.Count - 1);
+                            _pathTail = _pathTail?.Parent;
                             mi.OpenPos = TakeLast(_tagPos);
                             mi.OpenLen = TakeLast(_tagLen);
                             mi.Child = TakeLast(_tagChild);
@@ -648,53 +656,66 @@ public sealed class TagLister
                             mi.Child = -1;
                         }
 
-                        mi.TagPath = MakePathToTag();
+                        mi.PathTail = _pathTail;
                         break;
                 }
 
                 return mi;
             }
 
-            markup = ParseMarkup();
+            markup = ParseNextTag();
         }
 
         return mi;
     }
 
-    private string MakePathToTag()
+    // The text of the path ending in tail: "name child,name child,..." from the outermost tag, each with the number of the child the next
+    // one is; the bottom node of the chain (the root) is not part of it.
+    private static string BuildPath(PathNode tail)
     {
-        StringBuilder sb = new();
-        for (int i = 1; i < _tagPath.Count; i++)
+        List<PathNode> nodes = [];
+        for (PathNode? n = tail; n?.Parent is not null; n = n.Parent)
         {
-            int childIndex = -1;
-            if (i + 1 < _tagPath.Count)
-            {
-                childIndex = _tagChild[i + 1];
-            }
+            nodes.Add(n);
+        }
 
-            if (sb.Length > 0)
+        nodes.Reverse();
+        StringBuilder sb = new();
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            if (i > 0)
             {
                 sb.Append(',');
             }
 
-            sb.Append(_tagPath[i]).Append(' ').Append(childIndex);
+            sb.Append(nodes[i].Name).Append(' ').Append(i + 1 < nodes.Count ? nodes[i + 1].Child : -1);
         }
 
         return sb.ToString();
     }
 
-    private string? ParseMarkup()
+    // The next piece of markup that is a tag, as a string; the text, comments and the like between the tags are skipped without being copied.
+    private string? ParseNextTag()
     {
-        int p = _next;
-        _pos = p;
-        if (p >= _source.Length)
+        while (true)
         {
-            return null;
-        }
+            int p = _next;
+            _pos = p;
+            if (p >= _source.Length)
+            {
+                return null;
+            }
 
-        _next = MarkupEnd(_source, p);
-        return Slice(_source, _pos, _next);
+            _next = MarkupEnd(_source, p);
+            int end = Math.Min(_next, _source.Length);
+            if (end > p && _source[p] == '<' && _source[end - 1] == '>')
+            {
+                return _source.Substring(p, end - p);
+            }
+        }
     }
+
+    internal sealed record PathNode(string Name, int Child, PathNode? Parent);
 
     /// <summary>
     /// The opening and empty tags (<see cref="TagKind.Begin"/>, <see cref="TagKind.SelfClosing"/>) of
@@ -946,7 +967,15 @@ public sealed class TagLister
         public int Child { get; internal set; } = -1;
 
         /// <summary>The path of tag names with child numbers, e.g. <c>"html 0,body 0,p 1"</c>.</summary>
-        public string TagPath { get; internal set; } = string.Empty;
+        public string TagPath
+        {
+            get => _tagPathText ??= PathTail is null ? string.Empty : BuildPath(PathTail);
+            internal set => _tagPathText = value;
+        }
+
+        private string? _tagPathText;
+
+        internal PathNode? PathTail { get; set; }
 
         /// <summary>The tag name (or <c>?xml</c>, <c>?</c>, <c>!--</c>, <c>!DOCTYPE</c>, <c>![CDATA[</c>).</summary>
         public string TagName { get; internal set; } = string.Empty;

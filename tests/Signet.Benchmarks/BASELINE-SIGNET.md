@@ -77,3 +77,26 @@ projects only when a runtime identifier is given): the first Preview page after 
 
 What is left of the start (ReadyToRun): Avalonia and the application resources 316 ms, the main view model 110 ms, the main window 100 ms, 145 ms to
 show it, then 630 ms of the UI thread busy before the first idle moment. Reading where that goes needs a profile of a real start.
+
+## The Code Editor (November 2026)
+
+`CodeEditorScaleBenchmarks` (in `Signet.App.UiTests`, `SIGNET_BENCHMARKS=1`, Release) puts one XHTML file of 24 KB to 1.9 MB into a headless
+`CodeTabView`. Opening it (first frame) is a constant ~60 ms, whatever the size. One edit with its redraw: 27-30 ms up to 500 KB, 45 ms at 1.9 MB. **About two thirds of
+that is Avalonia's text layout** (`TextView.MeasureOverride`, `FontManager.TryMatchCharacter`), and under a headless platform that is dominated by the fonts of
+the test environment: it says nothing certain about typing in the real window, which can only be measured there.
+
+What is ours is the check of the structure the Code Editor makes at every change (`CodeTabViewModel.RefreshWellFormed` ->
+`WellFormedChecker.CheckXhtmlStructure`: the XML parse of the whole text and the list of its tags), synchronously. Per check, by the size of the file:
+
+| file | before, ms | after, ms |
+|---|---:|---:|
+| 97 KB | 3.2 | 2.9 |
+| 485 KB | 18.1 | 15.5 |
+| 1940 KB | 50.8 | 36.4 |
+
+`TagLister` (the list of tags that many features share through `TagLister.For`) copied every piece of text between the tags into a string that was then thrown
+away, and made the text of the path ("body -1,div 3,p 0") of every tag, though one tag at the caret needs it. It skips what is not a tag without copying and makes
+the path when it is asked for. The result is the same for every tag of 2724 documents (the corpus and tricky strings), compared with the old implementation.
+
+Left, and a decision that changes behaviour: the check runs on every keystroke, so a file of a megabyte or two costs ~35 ms of it per key. Running it a moment
+after the last change (for large files) would remove that, and move the red mark of an error to that moment.

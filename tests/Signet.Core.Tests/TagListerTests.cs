@@ -291,6 +291,38 @@ public sealed class TagListerTests
         info.Should().Be(new TagLister.AttInfo(pos, len, valuePos, valueLen, aName, value));
     }
 
+    // The paths of the tags are made when they are asked for. The expected texts were taken from the implementation that made them for every tag.
+    [Fact]
+    public void TagPath_OfEachTag_IsThePathWithTheChildNumbers()
+    {
+        // Arrange
+        TagLister lister = TagLister.For("<?xml version=\"1.0\"?><!DOCTYPE html><html><head><title>t</title></head><body><p>a<b>c</b></p><br/><img src=\"x\"/></body></html>");
+
+        // Act
+        string[] paths = lister.Tags.Where(t => t.Len != -1).Select(t => $"{t.TagName}:{t.TagPath}").ToArray();
+
+        // Assert
+        paths.Should().Equal(
+            "?xml:", "!DOCTYPE:", "html:html -1", "head:html 0,head -1", "title:html 0,head 0,title -1", "title:html 0,head -1", "head:html -1",
+            "body:html 1,body -1", "p:html 1,body 0,p -1", "b:html 1,body 0,p 0,b -1", "b:html 1,body 0,p -1", "p:html 1,body -1",
+            "br:html 1,body 1,br -1", "img:html 1,body 2,img -1", "body:html -1", "html:");
+    }
+
+    [Fact]
+    public void TagPath_AfterCommentsCDataAndScripts_CountsOnlyTags()
+    {
+        // Arrange
+        TagLister lister = TagLister.For("<html><body><!-- <p> --><![CDATA[ <b> ]]><p>x</p><script>if (a<b) {}</script></body></html>");
+
+        // Act
+        string[] paths = lister.Tags.Where(t => t.Len != -1).Select(t => $"{t.TagName}:{t.TagPath}").ToArray();
+
+        // Assert
+        paths.Should().Equal(
+            "html:html -1", "body:html 0,body -1", "!--:", "![CDATA[:", "p:html 0,body 0,p -1", "p:html 0,body -1", "script:html 0,body 1,script -1",
+            "script:html 0,body -1", "body:html -1", "html:");
+    }
+
     [Fact]
     public void ParseAttribute_MissingAttribute_ReturnsNone()
     {
