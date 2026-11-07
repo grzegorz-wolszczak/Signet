@@ -60,11 +60,14 @@ public static class SyntheticBook
     /// <param name="files">How many content files the book has (at least one).</param>
     /// <param name="notesPerFile">How many footnotes each content file holds.</param>
     /// <param name="notes">Which footnotes to write.</param>
-    public static string BuildTree(string root, int files, int notesPerFile = 0, SyntheticNotes notes = SyntheticNotes.None)
+    /// <param name="paragraphs">How many ordinary paragraphs each content file has besides its notes: with a class, an id, an inline span and a
+    /// link to another chapter, like the text of a real book (0 by default: only the heading and the notes).</param>
+    public static string BuildTree(string root, int files, int notesPerFile = 0, SyntheticNotes notes = SyntheticNotes.None, int paragraphs = 0)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         ArgumentOutOfRangeException.ThrowIfLessThan(files, 1);
         ArgumentOutOfRangeException.ThrowIfNegative(notesPerFile);
+        ArgumentOutOfRangeException.ThrowIfNegative(paragraphs);
 
         bool oneFile = notes is SyntheticNotes.ForeignInOneFile or SyntheticNotes.SignetInOneFile;
         bool signet = notes is SyntheticNotes.Signet or SyntheticNotes.SignetInOneFile;
@@ -95,6 +98,13 @@ public static class SyntheticBook
             StringBuilder body = new();
             StringBuilder here = new();
             body.Append(CultureInfo.InvariantCulture, $"  <h1 id=\"ch{Name(file)}\">Chapter {file + 1}</h1>\n");
+            for (int i = 0; i < paragraphs; i++)
+            {
+                string target = chapters[(file * 7 + i) % chapters.Count];
+                body.Append(CultureInfo.InvariantCulture,
+                    $"  <p class=\"c{i % 5}\" id=\"p{Name(file)}-{Name(i)}\">{Lorem[(file + i) % Lorem.Length]} <span class=\"s{i % 3}\">{Lorem[(file + i + 1) % Lorem.Length]}</span> <a href=\"{target}#ch{target[7..12]}\">see chapter</a>.</p>\n");
+            }
+
             for (int i = 0; i < perFile; i++)
             {
                 string id = Name(file) + "-" + Name(i);
@@ -127,11 +137,11 @@ public static class SyntheticBook
 
     /// <summary>Writes the book into <paramref name="temp"/> and packs it; returns the <c>.epub</c> path.</summary>
     public static string BuildEpub(
-        TempDir temp, int files, int notesPerFile = 0, SyntheticNotes notes = SyntheticNotes.None, string? name = null)
+        TempDir temp, int files, int notesPerFile = 0, SyntheticNotes notes = SyntheticNotes.None, string? name = null, int paragraphs = 0)
     {
         ArgumentNullException.ThrowIfNull(temp);
-        string tree = BuildTree(temp.Combine("tree-" + files + "-" + notesPerFile + "-" + notes), files, notesPerFile, notes);
-        return EpubBuilder.BuildInto(tree, temp, name ?? "synthetic-" + files + "-" + notesPerFile + ".epub");
+        string tree = BuildTree(temp.Combine("tree-" + files + "-" + notesPerFile + "-" + notes + "-" + paragraphs), files, notesPerFile, notes, paragraphs);
+        return EpubBuilder.BuildInto(tree, temp, name ?? "synthetic-" + files + "-" + notesPerFile + "-" + paragraphs + ".epub");
     }
 
     // A fixed-width name, so the files sort the way they are written.
