@@ -1,6 +1,8 @@
 using Signet.EpubCheck.Core;
 using Signet.EpubCheck.Core.Ocf;
+using Signet.EpubCheck.Core.Nav;
 using Signet.EpubCheck.Core.Opf;
+using Signet.EpubCheck.Core.Ops;
 using Signet.EpubCheck.Core.Reporting;
 using Signet.EpubCheck.Core.Util;
 using Signet.EpubCheck.Core.Util.Mime;
@@ -41,19 +43,36 @@ internal sealed class OcfEpubChecker : IEpubChecker
                 OCFChecker.Check(request.Path, EpubVersion.Unknown, request.Report, request.Profile);
                 break;
             case CheckerMode.PackageDocument:
-                ValidationContext context = new()
+                (request.Version == EpubVersion.Version2 ? new OPFChecker(Single(request, MediaTypes.PackageDocument)) : new OPFChecker30(Single(request, MediaTypes.PackageDocument))).Check();
+                break;
+            case CheckerMode.XhtmlContentDocument:
+                new OPSChecker(Single(request, MediaTypes.Xhtml)).Check();
+                break;
+            case CheckerMode.SvgContentDocument:
+                new OPSChecker(Single(request, MediaTypes.Svg)).Check();
+                break;
+            case CheckerMode.NavigationDocument:
+                // Upstream's tool has the navigation document mode for EPUB 3 only.
+                if (request.Version != EpubVersion.Version3)
                 {
-                    Url = EpubCheckUrlUtils.ToUrl(request.Path),
-                    Report = request.Report,
-                    Culture = (request.Report as ReportBase)?.Culture,
-                    Version = request.Version,
-                    Profile = request.Profile,
-                    MimeType = MediaTypes.PackageDocument,
-                };
-                (request.Version == EpubVersion.Version2 ? new OPFChecker(context) : new OPFChecker30(context)).Check();
+                    throw new ScenarioNotImplementedException("The navigation document mode needs EPUB 3.");
+                }
+
+                new NavChecker(Single(request, MediaTypes.Xhtml)).Check();
                 break;
             default:
                 throw new ScenarioNotImplementedException("Checking this kind of single document is not implemented yet.");
         }
     }
+
+    // The context of a document checked alone, as upstream's tool makes it: the file's URL, the media type the mode gives.
+    private static ValidationContext Single(CheckRequest request, string mimeType) => new()
+    {
+        Url = EpubCheckUrlUtils.ToUrl(request.Path),
+        Report = request.Report,
+        Culture = (request.Report as ReportBase)?.Culture,
+        Version = request.Version,
+        Profile = request.Profile,
+        MimeType = mimeType,
+    };
 }
