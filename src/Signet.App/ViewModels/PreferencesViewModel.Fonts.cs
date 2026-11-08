@@ -356,7 +356,7 @@ public sealed partial class PreferencesViewModel
         ClipsFonts = CreateClipsFonts();
         NotificationsFonts = new FontPageViewModel(new[] { NotificationsTimestampFontRow(), NotificationsMessageFontRow() });
         TableOfContentsFonts = TooltipPage(TooltipArea.TableOfContents);
-        FindReplaceFonts = TooltipPage(TooltipArea.FindReplace);
+        FindReplaceFonts = new FontPageViewModel(new[] { FindReplaceFieldsFontRow(), TooltipRow(TooltipArea.FindReplace) });
         CheckpointsFonts = TooltipPage(TooltipArea.Checkpoints);
         ValidationFonts = TooltipPage(TooltipArea.Validation);
         MetadataEditorFonts = TooltipPage(TooltipArea.MetadataEditor);

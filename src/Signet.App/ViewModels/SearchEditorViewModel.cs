@@ -446,12 +446,20 @@ public sealed class SearchEditorViewModel : ViewModelBase
         Message = Strings.Get("SearchEditor_Reloaded");
     }
 
-    private void SaveCurrentSearch()
+    private void SaveCurrentSearch() => AddCurrentSearch(Strings.Get("SearchEditor_UnnamedSearch"));
+
+    /// <summary>
+    /// Adds the current state of the Find &amp; Replace panel to the library under the given name and writes the library to its
+    /// file at once (the panel's "Save search" button, which works with the editor window closed).
+    /// </summary>
+    public void AddCurrentSearch(string name)
     {
-        SearchEntry entry = _findReplace.CurrentAsEntry(Strings.Get("SearchEditor_UnnamedSearch"));
+        ArgumentNullException.ThrowIfNull(name);
+        SearchEntry entry = _findReplace.CurrentAsEntry(name);
         SearchEditorNode node = _model.AddEntry(entry, isGroup: false, parent: null, row: -1);
         RebuildNodes();
         SelectNode(node);
+        Save();
         Message = Strings.Get("SearchEditor_CurrentSaved");
     }
 

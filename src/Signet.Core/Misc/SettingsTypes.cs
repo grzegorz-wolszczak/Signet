@@ -77,6 +77,9 @@ public enum FindActionButtonDisplay
 
     /// <summary>Text only, no icon.</summary>
     TextOnly,
+
+    /// <summary>The icon with the text under it.</summary>
+    TextBelowIcon,
 }
 
 /// <summary>
@@ -856,6 +859,28 @@ public readonly record struct ClipEditorAppearance(
         OtherFontFamily?.Trim() ?? string.Empty, NormalizedFontSize(OtherFontSize), FontWeightScale.Normalize(OtherFontWeight));
 
     private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
+}
+
+/// <summary>The font of the Find and Replace fields of the Find &amp; Replace panel (Preferences › Appearance › Find and Replace › Fonts).</summary>
+/// <param name="FieldFontFamily">Typeface of the fields; empty = the interface font.</param>
+/// <param name="FieldFontSize">Size (px) of the fields; 0 = the interface size.</param>
+/// <param name="FieldFontWeight">Weight of the fields (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct FindReplaceAppearance(string FieldFontFamily, int FieldFontSize, int FieldFontWeight)
+{
+    /// <summary>Lower bound of an explicit font size.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit font size.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default: the interface font.</summary>
+    public static FindReplaceAppearance Default => new(string.Empty, 0, 0);
+
+    /// <summary>A copy with the size clamped (0 stays "not set"), the typeface trimmed and the weight normalized.</summary>
+    public FindReplaceAppearance Normalized() => new(
+        FieldFontFamily?.Trim() ?? string.Empty,
+        FieldFontSize <= 0 ? 0 : Math.Clamp(FieldFontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FieldFontWeight));
 }
 
 /// <summary>Font settings of the "Insert Special Character" window.</summary>

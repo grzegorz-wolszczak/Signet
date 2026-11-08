@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Signet.App.Services;
 using Signet.Core.Misc;
 
@@ -30,6 +32,72 @@ public sealed partial class PreferencesViewModel
 
     partial void OnFindActionButtonDisplayChanged(FindActionButtonDisplay value) => _settings.FindActionButtonDisplay = value;
 
+    /// <summary>Typeface of the Find and Replace fields; empty = the interface font.</summary>
+    [ObservableProperty]
+    private string _findReplaceFieldFontFamily = string.Empty;
+
+    /// <summary>Size (px) of the Find and Replace fields; 0 = the interface size.</summary>
+    [ObservableProperty]
+    private int _findReplaceFieldFontSize;
+
+    /// <summary>Weight of the Find and Replace fields; 0 = not set.</summary>
+    [ObservableProperty]
+    private int _findReplaceFieldFontWeight;
+
+    partial void OnFindReplaceFieldFontFamilyChanged(string value) => PersistFindReplaceFieldFont();
+
+    partial void OnFindReplaceFieldFontSizeChanged(int value) => PersistFindReplaceFieldFont();
+
+    partial void OnFindReplaceFieldFontWeightChanged(int value) => PersistFindReplaceFieldFont();
+
+    // Reads the font from the settings (the constructor; "Restore Appearance Defaults" after it cleared it).
+    private void LoadFindReplaceFieldFont()
+    {
+        FindReplaceAppearance look = _settings.FindReplaceAppearance;
+        FindReplaceFieldFontFamily = look.FieldFontFamily;
+        FindReplaceFieldFontSize = look.FieldFontSize;
+        FindReplaceFieldFontWeight = look.FieldFontWeight;
+    }
+
+    private void PersistFindReplaceFieldFont()
+    {
+        FindReplaceAppearance look = new(FindReplaceFieldFontFamily, FindReplaceFieldFontSize, FindReplaceFieldFontWeight);
+        _settings.FindReplaceAppearance = look;
+        if (_findReplaceSample is not null)
+        {
+            _findReplaceSample.FieldFont = look.Normalized();
+        }
+    }
+
+    private FontSettingViewModel FindReplaceFieldsFontRow() =>
+        InterfaceFontRow(
+            "FindReplaceFields", "PreferencesWindow_FindReplaceFieldsFont", "FontPreview_FindReplaceFields",
+            () => FindReplaceFieldFontFamily, v => FindReplaceFieldFontFamily = v,
+            () => FindReplaceFieldFontSize, v => FindReplaceFieldFontSize = v,
+            () =>
+            {
+                FindReplaceFieldFontFamily = string.Empty;
+                FindReplaceFieldFontSize = 0;
+                FindReplaceFieldFontWeight = 0;
+            },
+            ChooseFindReplaceFieldFontCommand,
+            () => FindReplaceFieldFontWeight, v => FindReplaceFieldFontWeight = v);
+
+    /// <summary>"Choose…" of the font of the Find and Replace fields.</summary>
+    [RelayCommand]
+    private Task ChooseFindReplaceFieldFont() =>
+        PickFontAsync(
+            new FontPickRequest(
+                FindReplaceFieldFontFamily.Length > 0 ? FindReplaceFieldFontFamily : EffectiveUiFontFamily,
+                FindReplaceFieldFontSize > 0 ? FindReplaceFieldFontSize : EffectiveUiFontSize, false, FindReplaceFieldFontWeight),
+            new FontPickResult(FindReplaceFieldFontFamily, FindReplaceFieldFontSize, FindReplaceFieldFontWeight),
+            result =>
+            {
+                FindReplaceFieldFontFamily = result.Family;
+                FindReplaceFieldFontSize = result.Size;
+                FindReplaceFieldFontWeight = result.Weight;
+            });
+
     private FindReplaceViewModel CreateFindReplaceSample()
     {
         _findReplaceSampleSettings = new SettingsStore(Path.Combine(Path.GetTempPath(), "signet-sample-" + Guid.NewGuid().ToString("N") + ".xml"));
@@ -37,6 +105,7 @@ public sealed partial class PreferencesViewModel
         {
             FindText = "lighthouse",
             ReplaceText = "tower",
+            FieldFont = _settings.FindReplaceAppearance,
         };
     }
 }

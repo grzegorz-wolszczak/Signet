@@ -1,6 +1,11 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using Signet.App.ViewModels;
+using Signet.Core.Misc;
 
 namespace Signet.App.Views;
 
@@ -17,10 +22,33 @@ public partial class FindReplaceView : UserControl
         // The handler is attached directly to the AutoCompleteBox: the event source is its internal TextBox
         // (PART_TextBox), not the AutoCompleteBox itself. Enter with the history list open
         // confirms the choice — AutoCompleteBox then marks it as handled, so it does not reach here.
-        FindBox.AddHandler(KeyDownEvent, OnFindBoxKeyDown, Avalonia.Interactivity.RoutingStrategies.Bubble);
-        ReplaceBox.AddHandler(KeyDownEvent, OnReplaceBoxKeyDown, Avalonia.Interactivity.RoutingStrategies.Bubble);
+        // The fields take several lines, so their TextBox would insert a line for Enter: the handler runs first (tunnel).
+        FindBox.AddHandler(KeyDownEvent, OnFindBoxKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        ReplaceBox.AddHandler(KeyDownEvent, OnReplaceBoxKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        DataContextChanged += (_, _) =>
+        {
+            if (DataContext is FindReplaceViewModel vm)
+            {
+                vm.TextPrompt = AskTextAsync;
+                ApplyFieldFont(vm.FieldFont);
+                vm.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(FindReplaceViewModel.FieldFont))
+                    {
+                        ApplyFieldFont(vm.FieldFont);
+                    }
+                };
+            }
+        };
         FindBoxHistoryButton.Click += (_, _) => OpenHistory(FindBox);
         ReplaceBoxHistoryButton.Click += (_, _) => OpenHistory(ReplaceBox);
+    }
+
+    // The font of the Find and Replace fields (Preferences); not set = the interface font.
+    private void ApplyFieldFont(FindReplaceAppearance look)
+    {
+        ClipsLook.SetFont(FindBox, look.FieldFontFamily, look.FieldFontSize, look.FieldFontWeight);
+        ClipsLook.SetFont(ReplaceBox, look.FieldFontFamily, look.FieldFontSize, look.FieldFontWeight);
     }
 
     /// <summary>Gives focus to the Find field (the "Find" action, Ctrl+F).</summary>
@@ -35,21 +63,46 @@ public partial class FindReplaceView : UserControl
         box.IsDropDownOpen = true;
     }
 
+    private Task<string?> AskTextAsync(string title, string prompt, string initial) =>
+        TopLevel.GetTopLevel(this) is Window owner ? TextPromptWindow.AskAsync(owner, title, prompt, initial) : Task.FromResult<string?>(null);
+
     private void OnFindBoxKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && DataContext is FindReplaceViewModel vm)
+        if (HandleEnter(FindBox, e) && DataContext is FindReplaceViewModel vm)
         {
             vm.FindNext();
-            e.Handled = true;
         }
     }
 
     private void OnReplaceBoxKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && DataContext is FindReplaceViewModel vm)
+        if (HandleEnter(ReplaceBox, e) && DataContext is FindReplaceViewModel vm)
         {
             vm.ReplaceFind();
-            e.Handled = true;
         }
+    }
+
+    // Enter alone runs the action (true; unless the history list is open: it confirms the choice); Ctrl+Enter and
+    // Shift+Enter add a line to the field (false).
+    private static bool HandleEnter(AutoCompleteBox box, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || box.IsDropDownOpen)
+        {
+            return false;
+        }
+
+        e.Handled = true;
+        if (e.KeyModifiers is KeyModifiers.Control or KeyModifiers.Shift
+            && box.GetVisualDescendants().OfType<TextBox>().FirstOrDefault() is { } textBox)
+        {
+            string text = textBox.Text ?? string.Empty;
+            int start = Math.Min(textBox.SelectionStart, textBox.SelectionEnd);
+            int length = Math.Abs(textBox.SelectionEnd - textBox.SelectionStart);
+            textBox.Text = text.Remove(start, length).Insert(start, "\n");
+            textBox.CaretIndex = start + 1;
+            return false;
+        }
+
+        return e.KeyModifiers == KeyModifiers.None;
     }
 }

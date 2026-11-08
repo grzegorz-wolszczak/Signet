@@ -32,15 +32,15 @@
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="ContentTemplate">
         <DataTemplate x:DataType="x:String">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <Panel Width="16" Height="16" VerticalAlignment="Center"
+          <StackPanel Orientation="{Binding $parent[Button].((vm:SearchEditorViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.Layout}}" Spacing="6">
+            <Panel Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"
                    IsVisible="{Binding $parent[Button].((vm:SearchEditorViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.ShowIcon}}">
               <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
                      IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
               <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
                         IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
             </Panel>
-            <TextBlock Text="{Binding}" VerticalAlignment="Center"
+            <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center"
                        IsVisible="{Binding $parent[Button].((vm:SearchEditorViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.ShowText}}" />
           </StackPanel>
         </DataTemplate>

@@ -8,6 +8,15 @@
              x:DataType="vm:FindReplaceViewModel">
 
   <UserControl.Styles>
+    <!-- The Find and Replace fields hold several lines: they grow with the text (up to a few lines, then scroll). Enter
+         searches / replaces (FindReplaceView.axaml.cs), Ctrl+Enter or Shift+Enter adds a line. -->
+    <Style Selector="AutoCompleteBox.multiline /template/ TextBox#PART_TextBox">
+      <Setter Property="AcceptsReturn" Value="True" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="NewLine" Value="&#10;" />
+      <Setter Property="MaxHeight" Value="120" />
+      <Setter Property="(ScrollViewer.VerticalScrollBarVisibility)" Value="Auto" />
+    </Style>
     <!-- Action buttons: the icon from the current set (key in Tag) to the left of the text (Content) — or just one
          of the two, by Preferences › Appearance › Find and Replace › ActionButtonDisplay (the view model of the
          button's own panel, reached through the button itself since Content overrides the template's DataContext
@@ -17,15 +26,15 @@
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="ContentTemplate">
         <DataTemplate x:DataType="x:String">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <Panel Width="16" Height="16" VerticalAlignment="Center"
+          <StackPanel Orientation="{Binding $parent[Button].((vm:FindReplaceViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.Layout}}" Spacing="6">
+            <Panel Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"
                    IsVisible="{Binding $parent[Button].((vm:FindReplaceViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.ShowIcon}}">
               <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
                      IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
               <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
                         IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
             </Panel>
-            <TextBlock Text="{Binding}" VerticalAlignment="Center"
+            <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center"
                        IsVisible="{Binding $parent[Button].((vm:FindReplaceViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.ShowText}}" />
           </StackPanel>
         </DataTemplate>
@@ -33,12 +42,20 @@
     </Style>
   </UserControl.Styles>
 
+  <UserControl.Resources>
+    <!-- A history entry on one line: line breaks as "↵". -->
+    <DataTemplate x:Key="HistoryItem" x:DataType="x:String">
+      <TextBlock Text="{Binding Converter={x:Static infra:NewlineGlyphConverter.Instance}}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
   <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
     <Grid Margin="8" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto" RowSpacing="6" ColumnSpacing="8">
 
       <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc FindReplaceView_Find}" VerticalAlignment="Center" />
       <AutoCompleteBox Grid.Row="0" Grid.Column="1"
-                       x:Name="FindBox"
+                       x:Name="FindBox" Classes="multiline"
+                       ItemTemplate="{StaticResource HistoryItem}"
                        Text="{Binding FindText, Mode=TwoWay}"
                        ItemsSource="{Binding FindHistory}"
                        FilterMode="None" MinimumPrefixLength="0"
@@ -79,7 +96,8 @@
 
       <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc FindReplaceView_Replace}" VerticalAlignment="Center" />
       <AutoCompleteBox Grid.Row="1" Grid.Column="1"
-                       x:Name="ReplaceBox"
+                       x:Name="ReplaceBox" Classes="multiline"
+                       ItemTemplate="{StaticResource HistoryItem}"
                        Text="{Binding ReplaceText, Mode=TwoWay}"
                        ItemsSource="{Binding ReplaceHistory}"
                        FilterMode="None" MinimumPrefixLength="0"
@@ -95,6 +113,10 @@
       </AutoCompleteBox>
 
       <WrapPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
+        <Button x:Name="SaveSearchButton" Classes="findAction" Tag="document-save" Margin="0,0,12,0"
+                HorizontalAlignment="Left" VerticalAlignment="Center"
+                Content="{loc:Loc FindReplaceView_SaveSearch}" Command="{Binding SaveSearchCommand}"
+                ToolTip.Tip="{loc:Loc FindReplaceView_SaveSearchTooltip}" />
         <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,0">
           <TextBlock Text="{loc:Loc FindReplaceView_Mode}" VerticalAlignment="Center" />
           <ComboBox SelectedIndex="{Binding ModeIndex, Mode=TwoWay}" MinWidth="130"

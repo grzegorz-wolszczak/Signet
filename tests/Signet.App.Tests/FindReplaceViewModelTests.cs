@@ -457,6 +457,86 @@ public sealed class FindReplaceViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_fields_keep_line_breaks_as_newlines()
+    {
+        // Arrange
+        SettingsStore settings = new(_settingsPath);
+        var panel = new FindReplaceViewModel(settings, new StatusBarService(), () => null, new FakeMultiFileSearchHost());
+
+        // Act
+        panel.FindText = "</p>\r\n\r\n<p class=\"calibre1\">\r<br/>";
+        panel.ReplaceText = "a\r\nb";
+
+        // Assert
+        panel.FindText.Should().Be("</p>\n\n<p class=\"calibre1\">\n<br/>");
+        panel.ReplaceText.Should().Be("a\nb");
+    }
+
+    [Fact]
+    public async Task Save_search_asks_for_a_name_hands_the_search_over_and_says_so()
+    {
+        // Arrange
+        SettingsStore settings = new(_settingsPath);
+        var panel = new FindReplaceViewModel(settings, new StatusBarService(), () => null, new FakeMultiFileSearchHost())
+        {
+            FindText = "</p>\n<p>",
+        };
+        string? suggested = null;
+        string? saved = null;
+        panel.TextPrompt = (_, _, initial) =>
+        {
+            suggested = initial;
+            return Task.FromResult<string?>("  Joined paragraphs ");
+        };
+        panel.SearchSaver = name => saved = name;
+
+        // Act
+        await panel.SaveSearchCommand.ExecuteAsync(null);
+
+        // Assert
+        suggested.Should().Be("</p>", "the suggestion is the first line of the search");
+        saved.Should().Be("Joined paragraphs");
+        panel.Message.Should().Contain("Joined paragraphs");
+    }
+
+    [Fact]
+    public async Task Save_search_does_nothing_when_cancelled_and_refuses_an_empty_search()
+    {
+        // Arrange
+        SettingsStore settings = new(_settingsPath);
+        var panel = new FindReplaceViewModel(settings, new StatusBarService(), () => null, new FakeMultiFileSearchHost());
+        int saves = 0;
+        panel.SearchSaver = _ => saves++;
+        panel.TextPrompt = (_, _, _) => Task.FromResult<string?>(null);
+
+        // Act
+        await panel.SaveSearchCommand.ExecuteAsync(null);
+        panel.FindText = "x";
+        await panel.SaveSearchCommand.ExecuteAsync(null);
+
+        // Assert
+        saves.Should().Be(0);
+    }
+
+    [Fact]
+    public void The_field_font_starts_from_the_settings_and_follows_their_change()
+    {
+        // Arrange
+        SettingsStore settings = new(_settingsPath);
+        settings.FindReplaceAppearance = new FindReplaceAppearance("Consolas", 14, 0);
+        var panel = new FindReplaceViewModel(settings, new StatusBarService(), () => null, new FakeMultiFileSearchHost());
+
+        // Act & Assert
+        panel.FieldFont.FieldFontFamily.Should().Be("Consolas");
+
+        // Act
+        settings.FindReplaceAppearance = new FindReplaceAppearance("Arial", 0, 0);
+
+        // Assert
+        panel.FieldFont.FieldFontFamily.Should().Be("Arial");
+    }
+
+    [Fact]
     public void ActionButtonDisplay_FollowsAnExternalSettingsChange()
     {
         // Arrange — the real panel reacts live to a Preferences Save, which writes straight into this store.

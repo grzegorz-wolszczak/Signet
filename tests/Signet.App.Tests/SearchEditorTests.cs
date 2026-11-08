@@ -65,6 +65,26 @@ public sealed class SearchEditorTests : IDisposable
     }
 
     [Fact]
+    public void AddCurrentSearch_stores_the_panel_state_under_the_name_and_writes_the_file_at_once()
+    {
+        // Arrange
+        SavedSearchStore store = Store();
+        FindReplaceViewModel panelFindReplace = NewFindReplace(new FakeMultiFileSearchHost());
+        panelFindReplace.FindText = "</p>\n<p>";
+        panelFindReplace.ReplaceText = "<br/>";
+        var panel = new SearchEditorViewModel(store, NewSettings(), panelFindReplace, NewFindReplace(new FakeMultiFileSearchHost()));
+
+        // Act
+        panel.AddCurrentSearch("Joined paragraphs");
+
+        // Assert
+        SearchEntry saved = store.Load().Should().ContainSingle().Subject;
+        saved.Name.Should().Be("Joined paragraphs");
+        saved.Find.Should().Be("</p>\n<p>");
+        saved.Replace.Should().Be("<br/>");
+    }
+
+    [Fact]
     public void AddEntriesAndGroups_ThenSave_PersistsAcrossReload()
     {
         // Arrange

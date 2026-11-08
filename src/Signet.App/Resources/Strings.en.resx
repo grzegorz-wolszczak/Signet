@@ -8681,4 +8681,31 @@ Close the tab</value>
   <data name="ValidationProgress_Stage_Accessibility" xml:space="preserve">
     <value>accessibility</value>
   </data>
+  <data name="FindReplaceView_SaveSearchTooltip" xml:space="preserve">
+    <value>Save the current search (Find, Replace and options) to the Saved Searches</value>
+  </data>
+  <data name="FindReplace_SaveSearchTitle" xml:space="preserve">
+    <value>Save search</value>
+  </data>
+  <data name="FindReplace_SaveSearchPrompt" xml:space="preserve">
+    <value>Name of the saved search:</value>
+  </data>
+  <data name="FindReplace_SearchSaved" xml:space="preserve">
+    <value>Saved the search “{0}”.</value>
+  </data>
+  <data name="FindReplace_NothingToSave" xml:space="preserve">
+    <value>Nothing to save: the Find field is empty.</value>
+  </data>
+  <data name="PreferencesWindow_FindReplaceFieldsFont" xml:space="preserve">
+    <value>Find and Replace fields</value>
+  </data>
+  <data name="FontPreview_FindReplaceFields" xml:space="preserve">
+    <value>&lt;p class=&quot;calibre1&quot;&gt;</value>
+  </data>
+  <data name="FindActionButtonDisplay_TextBelowIcon" xml:space="preserve">
+    <value>Text below icon</value>
+  </data>
+  <data name="FindReplaceView_SaveSearch" xml:space="preserve">
+    <value>Save</value>
+  </data>
 </root>

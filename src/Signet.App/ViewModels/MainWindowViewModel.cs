@@ -181,6 +181,7 @@ public sealed partial class MainWindowViewModel
         // same host) but not their Find/Replace fields.
         FindReplaceViewModel searchEditorFindReplace = new(settings, statusBar, () => ActiveCodeTab, this);
         _searchEditor = new SearchEditorViewModel(new SavedSearchStore(savedSearchPath), settings, _findReplace, searchEditorFindReplace);
+        _findReplace.SearchSaver = _searchEditor.AddCurrentSearch;
 
         string clipsPath = System.IO.Path.Combine(
             System.IO.Path.GetDirectoryName(settings.FilePath) ?? AppDirectories.PrefsDirectory,

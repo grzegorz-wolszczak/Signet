@@ -1388,16 +1388,19 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         preview.FindControl<AutoCompleteBox>("FindBox")!.Text.Should().Be(vm.FindReplaceSample.FindText);
         pane.IsEffectivelyVisible.Should().BeTrue();
 
-        FontSettingViewModel tooltipFont = vm.FindReplaceFonts.Fonts.Single();
+        FontSettingViewModel tooltipFont = vm.FindReplaceFonts.Fonts.Single(f => f.Key.StartsWith("Tooltip", System.StringComparison.Ordinal));
+        FontSettingViewModel fieldsFont = vm.FindReplaceFonts.Fonts.Single(f => f.Key == "FindReplaceFields");
 
         // Act
         tooltipFont.InheritFromParent = false;
         tooltipFont.Size = 19;
+        fieldsFont.Size = 21;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
         // Assert
         tip.Text.FontSize.Should().Be(19, "the sample of the tooltip follows the font");
+        preview.FindControl<AutoCompleteBox>("FindBox")!.FontSize.Should().Be(21, "the fields of the preview follow the font of the fields");
         window.Close();
     }
 

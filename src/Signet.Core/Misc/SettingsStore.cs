@@ -1941,6 +1941,28 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>The font of the Find and Replace fields of the panel (<see cref="FindReplaceAppearance"/>). Always read normalized.</summary>
+    public FindReplaceAppearance FindReplaceAppearance
+    {
+        get
+        {
+            FindReplaceAppearance d = FindReplaceAppearance.Default;
+            return new FindReplaceAppearance(
+                ReadString("find_replace_font_fields_family", d.FieldFontFamily),
+                ReadInt("find_replace_font_fields_size", d.FieldFontSize),
+                ReadInt("find_replace_font_fields_weight", d.FieldFontWeight)).Normalized();
+        }
+
+        set
+        {
+            FindReplaceAppearance v = value.Normalized();
+            WriteSilent("find_replace_font_fields_family", v.FieldFontFamily);
+            WriteSilent("find_replace_font_fields_size", v.FieldFontSize);
+            WriteSilent("find_replace_font_fields_weight", v.FieldFontWeight);
+            RaiseChanged("find_replace_appearance");
+        }
+    }
+
     /// <summary>
     /// The fonts of the Saved Searches window (<see cref="SearchEditorAppearance"/>): the "Name" column header and
     /// the rows / Details preview / Name field. Always read normalized.
@@ -2788,6 +2810,9 @@ public sealed class SettingsStore
         yield return "spellcheck_editor_font_cells_family";
         yield return "spellcheck_editor_font_cells_size";
         yield return "spellcheck_editor_font_cells_weight";
+        yield return "find_replace_font_fields_family";
+        yield return "find_replace_font_fields_size";
+        yield return "find_replace_font_fields_weight";
         yield return "clip_editor_font_header_family";
         yield return "clip_editor_font_header_size";
         yield return "clip_editor_font_header_weight";

@@ -139,6 +139,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadSpellcheckEditorFonts();
         LoadSearchEditorFonts();
         LoadClipsSettings();
+        LoadFindReplaceFieldFont();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
         LoadToolHeaderFont();
@@ -960,6 +961,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadSpellcheckEditorFonts();
         LoadSearchEditorFonts();
         LoadClipsSettings();
+        LoadFindReplaceFieldFont();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
         LoadToolHeaderFont();

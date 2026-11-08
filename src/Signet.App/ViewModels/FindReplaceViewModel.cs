@@ -124,11 +124,16 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
         // Preferences edits a draft of the settings (Save/Cancel); on Save the change lands in this store
         // (the real one, for the main window's panel — a Preferences preview uses its own throwaway store and is
         // pushed the new value directly instead, see PreferencesWindow.axaml.cs).
+        _fieldFont = settings.FindReplaceAppearance;
         settings.SettingChanged += (_, e) =>
         {
             if (e.QualifiedKey.EndsWith("/find_action_button_display", StringComparison.Ordinal))
             {
                 ActionButtonDisplay = settings.FindActionButtonDisplay;
+            }
+            else if (e.QualifiedKey.Contains("find_replace_appearance", StringComparison.Ordinal))
+            {
+                FieldFont = settings.FindReplaceAppearance;
             }
         };
 
@@ -156,7 +161,7 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
         get => _findText;
         set
         {
-            if (SetProperty(ref _findText, value ?? string.Empty))
+            if (SetProperty(ref _findText, NormalizeNewlines(value)))
             {
                 // The Count/Replace All report concerns the previous pattern — it is no longer current.
                 ClearReport();
@@ -169,7 +174,58 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
     public string ReplaceText
     {
         get => _replaceText;
-        set => SetProperty(ref _replaceText, value ?? string.Empty);
+        set => SetProperty(ref _replaceText, NormalizeNewlines(value));
+    }
+
+    // The fields may hold several lines (Ctrl+Enter, or a paste); every kind of line break becomes "\n" — what the
+    // pattern is matched against and what a saved search keeps.
+    private static string NormalizeNewlines(string? value) =>
+        string.IsNullOrEmpty(value) ? string.Empty : value.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+
+    /// <summary>
+    /// Asks for a text (title, prompt, initial value); <c>null</c> when cancelled. Set by the view (it needs a window);
+    /// without it "Save search" has no way to ask for the name and does nothing.
+    /// </summary>
+    public Func<string, string, string, Task<string?>>? TextPrompt { get; set; }
+
+    /// <summary>Adds the current search to the saved searches under the given name (set by the main view model).</summary>
+    public Action<string>? SearchSaver { get; set; }
+
+    /// <summary>"Save search": asks for a name and adds the current Find / Replace and options to the saved searches.</summary>
+    public IAsyncRelayCommand SaveSearchCommand => _saveSearchCommand ??= new AsyncRelayCommand(SaveSearchAsync);
+
+    private IAsyncRelayCommand? _saveSearchCommand;
+
+    private async Task SaveSearchAsync()
+    {
+        if (_findText.Length == 0)
+        {
+            SetMessage(Strings.Get("FindReplace_NothingToSave"));
+            return;
+        }
+
+        if (TextPrompt is null || SearchSaver is null)
+        {
+            return;
+        }
+
+        string firstLine = _findText.Split('\n')[0].Trim();
+        string suggestion = firstLine.Length > 40 ? firstLine[..40] : firstLine;
+        string? name = await TextPrompt(
+            Strings.Get("FindReplace_SaveSearchTitle"), Strings.Get("FindReplace_SaveSearchPrompt"), suggestion);
+        if (name is null)
+        {
+            return;
+        }
+
+        name = name.Trim();
+        if (name.Length == 0)
+        {
+            name = Strings.Get("SearchEditor_UnnamedSearch");
+        }
+
+        SearchSaver(name);
+        SetMessage(Strings.Format("FindReplace_SearchSaved", name));
     }
 
     /// <summary>Search mode (index: 0 Normal, 1 Case Sensitive, 2 Regex).</summary>
@@ -506,6 +562,18 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
                 _settings.FindActionButtonDisplay = value;
             }
         }
+    }
+
+    private FindReplaceAppearance _fieldFont;
+
+    /// <summary>
+    /// The font of the Find and Replace fields (Preferences › Appearance › Find and Replace › Fonts). A Preferences preview,
+    /// which has settings of its own, is given the value directly.
+    /// </summary>
+    public FindReplaceAppearance FieldFont
+    {
+        get => _fieldFont;
+        set => SetProperty(ref _fieldFont, value);
     }
 
     /// <summary>Result message (number of replacements, "not found", pattern error).</summary>
