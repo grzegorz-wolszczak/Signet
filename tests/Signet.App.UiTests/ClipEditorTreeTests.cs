@@ -14,8 +14,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Actions;
 using Signet.App.Input;
 using Signet.App.Services;
+using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Controls.TreeDataGrid;
 using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.Misc;
 using Signet.Core.MiscEditors;
@@ -74,6 +76,58 @@ public sealed class ClipEditorTreeTests : IDisposable
     {
         window.MouseDown(at, MouseButton.Left, RawInputModifiers.None);
         window.MouseUp(at, MouseButton.Left, RawInputModifiers.None);
+    }
+
+    private static string[] MenuHeaders(ClipEditorWindow window) =>
+        window.TreeMenu!.Items.OfType<MenuItem>().Skip(1).Select(m => m.Header as string).OfType<string>().ToArray();
+
+    [AvaloniaFact]
+    public void The_text_of_every_button_of_the_panel_on_the_right_fits()
+    {
+        // Arrange
+        (ClipEditorWindow window, _) = ShowEditor();
+
+        // Act
+        System.Collections.Generic.List<Button> buttons = window.GetVisualDescendants().OfType<Button>()
+            .Where(btn => btn.Command is not null && btn.HorizontalAlignment == Avalonia.Layout.HorizontalAlignment.Stretch).ToList();
+
+        // Assert
+        buttons.Should().NotBeEmpty();
+        foreach (Button button in buttons)
+        {
+            Avalonia.Controls.Presenters.ContentPresenter presenter = button.GetVisualDescendants()
+                .OfType<Avalonia.Controls.Presenters.ContentPresenter>().First(p => p.Name == "PART_ContentPresenter");
+            presenter.Child!.DesiredSize.Width.Should().BeLessThanOrEqualTo(presenter.Bounds.Width, "the text of '" + button.Content + "' fits the button");
+        }
+
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_menu_of_an_empty_place_adds_and_the_menu_of_an_element_deletes()
+    {
+        // Arrange
+        (ClipEditorWindow window, ClipsViewModel vm) = ShowEditor();
+        TreeDataGrid tree = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+        ClipNodeViewModel entry = vm.Nodes[1];
+
+        // Act
+        tree.RaiseEvent(new ContextRequestedEventArgs());
+        Dispatcher.UIThread.RunJobs();
+        string[] emptyPlace = MenuHeaders(window);
+        NameLabel(window, entry).RaiseEvent(new ContextRequestedEventArgs());
+        Dispatcher.UIThread.RunJobs();
+        string[] element = MenuHeaders(window);
+
+        // Assert
+        window.TreeMenu!.Items.OfType<MenuItem>().First().Classes.Should().Contain(Signet.App.Infrastructure.MenuTitle.TitleClass);
+        emptyPlace.Should().Equal(
+            Strings.Get("ClipEditorWindow_AddEntry"), Strings.Get("ClipEditorWindow_AddGroup"),
+            Strings.Get("Common_Import"), Strings.Get("Common_Export"), Strings.Get("ClipEditorWindow_ExportAll"));
+        element.Should().Equal(
+            Strings.Get("Common_Delete"), Strings.Get("Common_Import"), Strings.Get("Common_Export"), Strings.Get("ClipEditorWindow_ExportAll"));
+        vm.SelectedNodes.Should().ContainSingle().Which.Should().BeSameAs(entry);
+        window.Close();
     }
 
     [AvaloniaFact]

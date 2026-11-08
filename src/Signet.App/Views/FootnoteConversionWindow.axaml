@@ -52,7 +52,7 @@
   <DockPanel Margin="16">
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
                 Spacing="8" Margin="0,12,0,0">
-      <Button x:Name="ConvertButton" Content="{loc:Loc FootnoteConversionWindow_Convert}"
+      <Button x:Name="ConvertButton" Classes="accent" Content="{loc:Loc FootnoteConversionWindow_Convert}"
               Command="{Binding ConvertCommand}" MinWidth="80" />
       <Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" IsCancel="True" MinWidth="80" />
     </StackPanel>

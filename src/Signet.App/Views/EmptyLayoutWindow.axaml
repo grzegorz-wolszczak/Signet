@@ -15,7 +15,7 @@
               IsEnabled="{Binding CanAddToSelection}" />
       <Button x:Name="AddFileButton" Content="{loc:Loc EmptyLayoutWindow_AddFile}"
               IsEnabled="{Binding CanAddToSelection}" />
-      <Button x:Name="RenameButton" Content="{loc:Loc EmptyLayoutWindow_RenameButton}"
+      <Button x:Name="RenameButton" Classes="accent" Content="{loc:Loc EmptyLayoutWindow_RenameButton}"
               IsEnabled="{Binding CanRenameSelection}" />
       <Button Classes="danger" x:Name="DeleteButton" Content="{loc:Loc Common_Delete}"
               IsEnabled="{Binding CanDeleteSelection}" />

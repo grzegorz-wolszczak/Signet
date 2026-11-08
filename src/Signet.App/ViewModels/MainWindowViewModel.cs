@@ -517,9 +517,14 @@ public sealed partial class MainWindowViewModel
         // The preview's own zoom, remembered across restarts (saved with the rest of the settings on exit).
         _preview.SetZoom(_settings.ZoomPreview);
         ZoomHint.Enabled = _settings.ShowZoomHint;
+        _dockFactory.FloatingTabReturnsOnClose = _settings.FloatingTabReturnsOnClose;
         _settings.SettingChanged += (_, e) =>
         {
-            if (e.QualifiedKey.EndsWith("/show_zoom_hint", StringComparison.Ordinal))
+            if (e.QualifiedKey.EndsWith("/floating_tab_returns_on_close", StringComparison.Ordinal))
+            {
+                _dockFactory.FloatingTabReturnsOnClose = _settings.FloatingTabReturnsOnClose;
+            }
+            else if (e.QualifiedKey.EndsWith("/show_zoom_hint", StringComparison.Ordinal))
             {
                 ZoomHint.Enabled = _settings.ShowZoomHint;
             }

@@ -123,6 +123,19 @@ public sealed class BookPositionTests
     }
 
     [Fact]
+    public void Closing_the_window_of_a_dragged_out_tab_closes_the_tab_by_default()
+    {
+        // Arrange
+        using TempDir dir = new();
+
+        // Act
+        SettingsStore settings = new(dir.Combine("settings.xml"));
+
+        // Assert
+        settings.FloatingTabReturnsOnClose.Should().BeFalse();
+    }
+
+    [Fact]
     public void Remembering_the_last_position_is_on_by_default()
     {
         // Arrange

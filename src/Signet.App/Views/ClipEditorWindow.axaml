@@ -52,16 +52,33 @@
            (hasChildren = IsGroup). -->
       <!-- TreeHost carries the key bindings of the panel-scoped actions (Rename): they fire only while the focus is
            in the tree, not in the clip text box. -->
-      <Panel x:Name="TreeHost" Grid.Column="0">
-        <TreeDataGrid x:Name="Tree"
-                      BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-          <TreeDataGrid.Styles>
-            <Style Selector="TextBlock.group">
-              <Setter Property="FontWeight" Value="Bold" />
-            </Style>
-          </TreeDataGrid.Styles>
-        </TreeDataGrid>
-      </Panel>
+      <DockPanel Grid.Column="0">
+        <!-- The narrow strip of tools at the left of the tree, as in the table of contents editor: Expand / Collapse act on the
+             selected groups (everything under them), or on the whole tree when no group is selected. -->
+        <Border DockPanel.Dock="Left" BorderThickness="0,0,1,0" Padding="2"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+          <StackPanel Spacing="4">
+            <Button x:Name="ExpandAllButton" Classes="panelTool" Command="{Binding ExpandAllCommand}"
+                    ToolTip.Tip="{loc:Loc ClipEditorWindow_ExpandTip}">
+              <Path Data="M8.42,9.29L12,5.72L15.58,9.29L16.68,8.19L12,3.51L7.32,8.19Z M8.42,14.71L12,18.28L15.58,14.71L16.68,15.81L12,20.49L7.32,15.81Z" />
+            </Button>
+            <Button x:Name="CollapseAllButton" Classes="panelTool" Command="{Binding CollapseAllCommand}"
+                    ToolTip.Tip="{loc:Loc ClipEditorWindow_CollapseTip}">
+              <Path Data="M8.42,4.11L12,7.68L15.58,4.11L16.68,5.21L12,9.89L7.32,5.21Z M8.42,19.89L12,16.32L15.58,19.89L16.68,18.79L12,14.11L7.32,18.79Z" />
+            </Button>
+          </StackPanel>
+        </Border>
+        <Panel x:Name="TreeHost">
+          <TreeDataGrid x:Name="Tree"
+                        BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+            <TreeDataGrid.Styles>
+              <Style Selector="TextBlock.group">
+                <Setter Property="FontWeight" Value="Bold" />
+              </Style>
+            </TreeDataGrid.Styles>
+          </TreeDataGrid>
+        </Panel>
+      </DockPanel>
 
       <GridSplitter Grid.Column="1" Width="4" ResizeDirection="Columns" Background="Transparent" />
 
@@ -74,7 +91,8 @@
                  VerticalContentAlignment="Top" />
       </Grid>
 
-      <StackPanel Grid.Column="3" Spacing="4" Width="130" Margin="4,0,0,0">
+      <!-- As wide as its widest button text (the column is Auto, the buttons stretch). -->
+      <StackPanel Grid.Column="3" Spacing="4" MinWidth="130" Margin="4,0,0,0">
         <Button Content="{loc:Loc ClipEditorWindow_Paste}" Command="{Binding PasteCommand}" HorizontalAlignment="Stretch" />
         <Separator />
         <Button Content="{loc:Loc ClipEditorWindow_AddEntry}" Command="{Binding AddEntryCommand}" HorizontalAlignment="Stretch" />
@@ -94,10 +112,6 @@
         <Button Content="{loc:Loc ClipEditorWindow_ExportAll}" Command="{Binding ExportAllCommand}" HorizontalAlignment="Stretch" />
         <Button Classes="accent" Content="{loc:Loc Common_Save}" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
         <Button Content="{loc:Loc Common_Reload}" Command="{Binding ReloadCommand}" HorizontalAlignment="Stretch" />
-        <UniformGrid Columns="2">
-          <Button Content="{loc:Loc Common_Expand}" Command="{Binding ExpandAllCommand}" />
-          <Button Content="{loc:Loc Common_Collapse}" Command="{Binding CollapseAllCommand}" />
-        </UniformGrid>
       </StackPanel>
     </Grid>
 

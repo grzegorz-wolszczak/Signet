@@ -68,6 +68,35 @@ public sealed class ClipsPanelViewTests : IDisposable
         window.Close();
     }
 
+    // The brush the button is drawn with (its template's presenter).
+    private static string DrawnBackground(Button button) =>
+        button.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>().First(p => p.Name == "PART_ContentPresenter").Background?.ToString() ?? string.Empty;
+
+    [AvaloniaFact]
+    public void The_default_button_of_a_window_is_blue_by_itself_unless_it_closes_or_is_red()
+    {
+        // Arrange
+        Button plain = new() { Content = "Plain" };
+        Button save = new() { Content = "Save", IsDefault = true };
+        Button close = new() { Content = "Close", IsDefault = true, IsCancel = true };
+        Button delete = new() { Content = "Delete", IsDefault = true };
+        delete.Classes.Add("danger");
+        Button accent = new() { Content = "Accent" };
+        accent.Classes.Add("accent");
+        Window window = new() { Content = new StackPanel { Children = { plain, save, close, delete, accent } } };
+
+        // Act
+        window.Show();
+        Render(window);
+
+        // Assert
+        DrawnBackground(save).Should().Be(DrawnBackground(accent), "the default button looks like the accent one");
+        DrawnBackground(plain).Should().NotBe(DrawnBackground(save));
+        DrawnBackground(close).Should().Be(DrawnBackground(plain), "a button that closes keeps the plain look");
+        DrawnBackground(delete).Should().NotBe(DrawnBackground(save), "a red button stays red");
+        window.Close();
+    }
+
     [AvaloniaFact]
     public void The_edit_button_above_the_tree_opens_the_clip_editor()
     {

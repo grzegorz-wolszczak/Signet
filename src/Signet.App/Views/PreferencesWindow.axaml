@@ -968,6 +968,8 @@
 
                   <CheckBox x:Name="ZoomEditorsSeparatelyBox" Content="{loc:Loc PreferencesWindow_ZoomEditorsSeparately}"
                             IsChecked="{Binding ZoomEditorsSeparately}" />
+                  <CheckBox x:Name="FloatingTabReturnsOnCloseBox" Content="{loc:Loc PreferencesWindow_FloatingTabReturnsOnClose}"
+                            IsChecked="{Binding FloatingTabReturnsOnClose}" />
 
                   <!-- The colors of the editor and of the hint are in the color scheme (its section is below), their fonts on the Appearance tab. -->
                   <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Padding="0"

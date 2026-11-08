@@ -66,7 +66,56 @@ public partial class ClipEditorWindow : Window
 
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);
         Tree.AddHandler(LostFocusEvent, OnRenameEditorLostFocus, RoutingStrategies.Bubble);
+        Tree.ContextRequested += OnTreeContextRequested;
     }
+
+    // The menu of the tree. On an empty place: add an entry or a group. On an element (or the selection it belongs to): delete.
+    // Always: import and export. An element that is not selected yet becomes the selection first, as in a file manager.
+    private void OnTreeContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        if (_bound is not { } vm || IsInRenameEditor(e.Source))
+        {
+            return;
+        }
+
+        ClipNodeViewModel? hit = (e.Source as StyledElement)?.DataContext as ClipNodeViewModel;
+        if (hit is not null && !vm.SelectedNodes.Contains(hit))
+        {
+            vm.SetSelectedNodes(new[] { hit });
+        }
+        else if (hit is null)
+        {
+            vm.SetSelectedNodes(System.Array.Empty<ClipNodeViewModel>());
+        }
+
+        List<Control> items = new()
+        {
+            MenuTitle.CreateItem(MenuTitle.ForSelection(vm.SelectedNodes.Select(n => n.Name), Strings.Get("ClipEditorWindow_Title"))),
+            MenuTitle.CreateSeparator(),
+        };
+        if (hit is null)
+        {
+            items.Add(new MenuItem { Header = Strings.Get("ClipEditorWindow_AddEntry"), Command = vm.AddEntryCommand });
+            items.Add(new MenuItem { Header = Strings.Get("ClipEditorWindow_AddGroup"), Command = vm.AddGroupCommand });
+        }
+        else
+        {
+            items.Add(new MenuItem { Header = Strings.Get("Common_Delete"), Command = vm.DeleteCommand });
+        }
+
+        items.Add(new Separator());
+        items.Add(new MenuItem { Header = Strings.Get("Common_Import"), Command = vm.ImportCommand });
+        items.Add(new MenuItem { Header = Strings.Get("Common_Export"), Command = vm.ExportCommand, IsEnabled = hit is not null });
+        items.Add(new MenuItem { Header = Strings.Get("ClipEditorWindow_ExportAll"), Command = vm.ExportAllCommand });
+
+        ContextMenu menu = new() { ItemsSource = items };
+        TreeMenu = menu;
+        menu.Open(Tree);
+        e.Handled = true;
+    }
+
+    /// <summary>The menu of the tree that was opened last (for the tests).</summary>
+    public ContextMenu? TreeMenu { get; private set; }
 
     /// <inheritdoc />
     protected override void OnOpened(EventArgs e)

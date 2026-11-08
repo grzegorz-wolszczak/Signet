@@ -1866,6 +1866,16 @@ public sealed class SettingsStore
         set => Write("zoom_editors_separately", value);
     }
 
+    /// <summary>
+    /// Whether a tab dragged out into a window of its own goes back to the tab strip of the main window when that window is
+    /// closed. When off (the default) closing the window closes the tab, as its own "x" does.
+    /// </summary>
+    public bool FloatingTabReturnsOnClose
+    {
+        get => ReadBool("floating_tab_returns_on_close", false);
+        set => Write("floating_tab_returns_on_close", value);
+    }
+
     /// <summary>Most slots one Clip Bar has (the first holds clips 1..30, the second 31..60).</summary>
     public const int ClipBarSlotsMax = 30;
 

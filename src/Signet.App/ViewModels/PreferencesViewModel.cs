@@ -157,6 +157,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _navigationHistoryRemember = _settings.NavigationHistoryRemember;
         _rememberLastPosition = _settings.RememberLastPosition;
         _zoomEditorsSeparately = _settings.ZoomEditorsSeparately;
+        _floatingTabReturnsOnClose = _settings.FloatingTabReturnsOnClose;
         _navigationHistoryDays = _settings.NavigationHistoryDays;
         _recentLocationsLimit = _settings.RecentLocationsLimit;
         _autoCloseTags = _settings.CodeEditorAutoCloseTags;
@@ -1028,6 +1029,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private int _findUsagesRowSpacing;
 
     partial void OnFindUsagesRowSpacingChanged(int value) => _settings.FindUsagesRowSpacing = value;
+
+    /// <summary>Whether closing the window of a tab dragged out of the tab strip puts the tab back (otherwise it closes the tab).</summary>
+    [ObservableProperty]
+    private bool _floatingTabReturnsOnClose;
+
+    partial void OnFloatingTabReturnsOnCloseChanged(bool value) => _settings.FloatingTabReturnsOnClose = value;
 
     /// <summary>Whether each Code Editor window has a zoom of its own (otherwise one zoom is shared by all of them).</summary>
     [ObservableProperty]

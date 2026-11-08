@@ -8666,4 +8666,16 @@ Zamknij zakładkę</value>
   <data name="FontPreview_ClipsMessage" xml:space="preserve">
     <value>Zapisano bibliotekę wycinków.</value>
   </data>
+  <data name="ClipEditorWindow_ExpandTip" xml:space="preserve">
+    <value>Rozwiń zaznaczone grupy (bez zaznaczonej grupy: wszystko)</value>
+  </data>
+  <data name="ClipEditorWindow_CollapseTip" xml:space="preserve">
+    <value>Zwiń zaznaczone grupy (bez zaznaczonej grupy: wszystko)</value>
+  </data>
+  <data name="Editor_Saved" xml:space="preserve">
+    <value>Zapisano.</value>
+  </data>
+  <data name="PreferencesWindow_FloatingTabReturnsOnClose" xml:space="preserve">
+    <value>Zamknięcie okna z wyciągniętą kartą odsyła kartę z powrotem do zakładek (wyłączone: zamyka kartę)</value>
+  </data>
 </root>

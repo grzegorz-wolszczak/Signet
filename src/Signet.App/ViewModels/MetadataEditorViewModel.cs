@@ -1,3 +1,5 @@
+using Signet.App.Resources;
+using System.Linq;
 using System;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -38,11 +40,21 @@ public sealed class MetadataEditorViewModel : ViewModelBase
         RemoveCommand = new RelayCommand(RemoveSelected, () => SelectedNode is not null);
         MoveUpCommand = new RelayCommand(MoveSelectedUp, () => SelectedNode is not null);
         MoveDownCommand = new RelayCommand(MoveSelectedDown, () => SelectedNode is not null);
-        AcceptCommand = new RelayCommand(Accept);
+        SaveCommand = new RelayCommand(Save);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
+        _savedFingerprint = Fingerprint(_root);
     }
 
-    /// <summary>Raised when the dialog should close (after "OK" or "Cancel").</summary>
+    // What the tree held when it was loaded or last saved: the editor has unsaved changes when it differs.
+    private string _savedFingerprint;
+
+    private static string Fingerprint(MetadataNodeViewModel node) =>
+        string.Concat(node.Children.Select(c => $"{c.Code}\u0001{c.Content}\u0002{Fingerprint(c)}\u0003"));
+
+    /// <summary>Whether the tree differs from what was loaded or saved last ("Close" then asks what to do).</summary>
+    public bool HasUnsavedChanges => Fingerprint(_root) != _savedFingerprint;
+
+    /// <summary>Raised when the window should close ("Close").</summary>
     public event EventHandler? CloseRequested;
 
     /// <summary>Whether the book is EPUB 3 (determines the field range and refines vs epub2 attribute handling).</summary>
@@ -76,7 +88,7 @@ public sealed class MetadataEditorViewModel : ViewModelBase
     public RelayCommand MoveDownCommand { get; }
 
     /// <summary>"OK" — save to the OPF and close.</summary>
-    public RelayCommand AcceptCommand { get; }
+    public RelayCommand SaveCommand { get; }
 
     /// <summary>"Cancel" — close without saving.</summary>
     public RelayCommand CancelCommand { get; }
@@ -196,7 +208,8 @@ public sealed class MetadataEditorViewModel : ViewModelBase
 
     // --- saving ---
 
-    private void Accept()
+    // Saves the metadata into the book; the editor stays open ("Close" closes it).
+    private void Save()
     {
         _state.Elements.Clear();
         foreach (MetadataNodeViewModel node in _root.Children)
@@ -206,7 +219,16 @@ public sealed class MetadataEditorViewModel : ViewModelBase
 
         MetadataEditModel.Save(_book, _state);
         Accepted = true;
-        CloseRequested?.Invoke(this, EventArgs.Empty);
+        _savedFingerprint = Fingerprint(_root);
+        Message = Strings.Get("Editor_Saved");
+    }
+
+    /// <summary>Saves the metadata into the book (what "Save" does).</summary>
+    /// <returns><see langword="true"/>: there is nothing that could keep it from being saved.</returns>
+    public bool SaveChanges()
+    {
+        Save();
+        return true;
     }
 
     private static MetadataEntry BuildEntry(MetadataNodeViewModel node)

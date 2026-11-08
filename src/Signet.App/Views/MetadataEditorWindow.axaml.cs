@@ -111,6 +111,39 @@ public partial class MetadataEditorWindow : Window
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();
+    private bool _forceClose;
+
+    // "Close" and the title bar's X: with unsaved changes the user is asked first (Save, Discard or stay).
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (_forceClose || _bound is not { HasUnsavedChanges: true })
+        {
+            return;
+        }
+
+        e.Cancel = true;
+        _ = AskBeforeClosingAsync();
+    }
+
+    private async Task AskBeforeClosingAsync()
+    {
+        switch (await SaveChangesDialog.AskAsync(this))
+        {
+            case Signet.App.Services.SaveChangesChoice.Save:
+                if (_bound is { } vm && vm.SaveChanges())
+                {
+                    _forceClose = true;
+                    Close();
+                }
+
+                break;
+            case Signet.App.Services.SaveChangesChoice.Discard:
+                _forceClose = true;
+                Close();
+                break;
+        }
+    }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {

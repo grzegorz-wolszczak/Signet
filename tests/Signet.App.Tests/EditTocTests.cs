@@ -285,6 +285,28 @@ public sealed class EditTocTests : IDisposable
     }
 
     [Fact]
+    public void Saving_keeps_the_editor_open_and_the_changes_are_unsaved_until_then()
+    {
+        // Arrange
+        EditTocViewModel vm = NewViewModel();
+        bool closeRequested = false;
+        vm.CloseRequested += (_, _) => closeRequested = true;
+        bool unsavedAtStart = vm.HasUnsavedChanges;
+
+        // Act
+        vm.Nodes[0].Text = "Changed title";
+        bool unsavedAfterEdit = vm.HasUnsavedChanges;
+        vm.SaveCommand.Execute(null);
+
+        // Assert
+        unsavedAtStart.Should().BeFalse();
+        unsavedAfterEdit.Should().BeTrue();
+        vm.HasUnsavedChanges.Should().BeFalse();
+        vm.Accepted.Should().BeTrue();
+        closeRequested.Should().BeFalse("Save does not close the window; Close does");
+    }
+
+    [Fact]
     public void Accept_is_blocked_when_an_entry_has_no_target()
     {
         // Arrange
@@ -293,7 +315,7 @@ public sealed class EditTocTests : IDisposable
         vm.AddBelowCommand.Execute(null);
 
         // Act
-        vm.AcceptCommand.Execute(null);
+        vm.SaveCommand.Execute(null);
 
         // Assert
         vm.Accepted.Should().BeFalse();
@@ -311,7 +333,7 @@ public sealed class EditTocTests : IDisposable
         alpha.Text = string.Empty;
         alphaOne.Target = string.Empty;
         gamma.Target = string.Empty;
-        vm.AcceptCommand.Execute(null);
+        vm.SaveCommand.Execute(null);
         vm.SetSelectedNodes(new[] { alpha });
 
         // Act
@@ -360,7 +382,7 @@ public sealed class EditTocTests : IDisposable
         EditTocNodeViewModel gamma = vm.Nodes[vm.Nodes.Count - 1];
         alpha.Text = string.Empty;
         gamma.Target = string.Empty;
-        vm.AcceptCommand.Execute(null);
+        vm.SaveCommand.Execute(null);
 
         // Act
         vm.NextInvalidEntryCommand.Execute(null);
@@ -383,7 +405,7 @@ public sealed class EditTocTests : IDisposable
         EditTocViewModel vm = NewViewModel();
         EditTocNodeViewModel alpha = vm.Nodes[0];
         alpha.Text = string.Empty;
-        vm.AcceptCommand.Execute(null);
+        vm.SaveCommand.Execute(null);
         alpha.Text = "Alpha";
 
         // Act
@@ -403,7 +425,7 @@ public sealed class EditTocTests : IDisposable
         vm.SetSelectedNodes(Array.Empty<EditTocNodeViewModel>());
 
         // Act
-        vm.AcceptCommand.Execute(null);
+        vm.SaveCommand.Execute(null);
 
         // Assert
         vm.Accepted.Should().BeTrue();

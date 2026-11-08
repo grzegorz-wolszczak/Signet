@@ -22,7 +22,7 @@
     <!-- Opens the Clip Editor window (the same as Tools › Clip Editor). -->
     <Button x:Name="EditButton" DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="0,0,0,6"
             Content="{loc:Loc ClipsPanelView_Edit}" Command="{Binding EditCommand}" />
-    <TextBlock DockPanel.Dock="Bottom" Text="{Binding Message}" Margin="0,6,0,0"
+    <TextBlock x:Name="MessageText" DockPanel.Dock="Bottom" Text="{Binding Message}" Margin="0,6,0,0"
                Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />
 
     <!-- The clips tree (Name, Text): source built in the code-behind; the filter hides nodes through

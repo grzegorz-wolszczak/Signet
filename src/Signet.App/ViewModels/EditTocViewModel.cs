@@ -65,15 +65,25 @@ public sealed class EditTocViewModel : ViewModelBase
         SortByBookOrderCommand = new RelayCommand(SortByBookOrder);
         SelectTargetCommand = new RelayCommand(() => SelectTargetRequested?.Invoke(this, EventArgs.Empty));
         RenameCommand = new RelayCommand(Rename);
-        AcceptCommand = new RelayCommand(Accept);
+        SaveCommand = new RelayCommand(Save);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
         PreviousInvalidEntryCommand = new RelayCommand(() => NavigateInvalidEntry(next: false));
         NextInvalidEntryCommand = new RelayCommand(() => NavigateInvalidEntry(next: true));
 
         Build();
+        _savedFingerprint = Fingerprint(_root);
     }
 
-    /// <summary>Raised when the dialog should close (after "OK" or "Cancel").</summary>
+    // What the entries held when they were loaded or last saved: the editor has unsaved changes when it differs.
+    private string _savedFingerprint = string.Empty;
+
+    private static string Fingerprint(EditTocNodeViewModel node) =>
+        string.Concat(node.Children.Select(c => $"{c.Text}\u0001{c.Target}\u0002{Fingerprint(c)}\u0003"));
+
+    /// <summary>Whether the entries differ from what was loaded or saved last ("Close" then asks what to do).</summary>
+    public bool HasUnsavedChanges => Fingerprint(_root) != _savedFingerprint;
+
+    /// <summary>Raised when the window should close ("Close").</summary>
     public event EventHandler? CloseRequested;
 
     /// <summary>Raised when the view should show the "Select Target" dialog for the selected entry.</summary>
@@ -138,7 +148,7 @@ public sealed class EditTocViewModel : ViewModelBase
     public RelayCommand RenameCommand { get; }
 
     /// <summary>"OK" — validate, save to nav/NCX and close.</summary>
-    public RelayCommand AcceptCommand { get; }
+    public RelayCommand SaveCommand { get; }
 
     /// <summary>"Cancel" — close without saving.</summary>
     public RelayCommand CancelCommand { get; }
@@ -718,7 +728,9 @@ public sealed class EditTocViewModel : ViewModelBase
 
     // --- saving ---
 
-    private void Accept()
+    // Saves the entries into the book; the editor stays open ("Close" closes it). An entry without a title or a target
+    // is reported instead.
+    private void Save()
     {
         int invalid = CountInvalid(_root.Children);
         if (invalid > 0)
@@ -727,10 +739,18 @@ public sealed class EditTocViewModel : ViewModelBase
             return;
         }
 
-        ShowMessage(string.Empty);
         TocEditModel.Save(_book, BuildRoot());
         Accepted = true;
-        CloseRequested?.Invoke(this, EventArgs.Empty);
+        _savedFingerprint = Fingerprint(_root);
+        ShowMessage(Strings.Get("Editor_Saved"));
+    }
+
+    /// <summary>Saves the entries into the book (what "Save" does).</summary>
+    /// <returns>Whether they were saved (not when an entry is invalid).</returns>
+    public bool SaveChanges()
+    {
+        Save();
+        return !HasUnsavedChanges;
     }
 
     // The message and HasInvalidEntries change together: the previous/next buttons beside the message belong to the

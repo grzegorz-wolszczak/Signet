@@ -51,10 +51,10 @@
         <TextBlock Text="{loc:Loc SpellcheckEditorWindow_ChangeAllTo}" />
         <AutoCompleteBox Text="{Binding ChangeAllText, Mode=TwoWay}" ItemsSource="{Binding Suggestions}"
                           FilterMode="None" MinimumPrefixLength="0" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc SpellcheckEditorWindow_ChangeAll}" Command="{Binding ChangeAllCommand}" HorizontalAlignment="Stretch" />
+        <Button Classes="accent" Content="{loc:Loc SpellcheckEditorWindow_ChangeAll}" Command="{Binding ChangeAllCommand}" HorizontalAlignment="Stretch" />
         <!-- One occurrence only: available while the selected row is one place in the book (an occurrence under a
              word, or a word that occurs once). -->
-        <Button Content="{loc:Loc SpellcheckEditorWindow_Replace}" Command="{Binding ReplaceOneCommand}" HorizontalAlignment="Stretch"
+        <Button Classes="accent" Content="{loc:Loc SpellcheckEditorWindow_Replace}" Command="{Binding ReplaceOneCommand}" HorizontalAlignment="Stretch"
                 ToolTip.Tip="{loc:Loc SpellcheckEditorWindow_ReplaceTip}" />
       </StackPanel>
     </Grid>

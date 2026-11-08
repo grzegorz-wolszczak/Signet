@@ -326,6 +326,29 @@
       <Setter Property="Background" Value="{DynamicResource SignetDangerButtonPressedBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource SignetDangerButtonTextBrush}" />
     </Style>
+    <!-- The default button of a window (IsDefault: the one Enter presses — Save, OK, Rename, Apply…) is blue like Fluent's
+         accent without Classes="accent" on it, so a new window needs nothing set by hand. A button that closes (IsCancel) or
+         is red / orange / a choice keeps its own look. -->
+    <Style Selector="Button[IsDefault=true][IsCancel=false]:not(.danger):not(.caution):not(.choice):not(.outline):not(.accent) /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentButtonForeground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBorderBrush}" />
+    </Style>
+    <Style Selector="Button[IsDefault=true][IsCancel=false]:not(.danger):not(.caution):not(.choice):not(.outline):not(.accent):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundPointerOver}" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundPointerOver}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBorderBrushPointerOver}" />
+    </Style>
+    <Style Selector="Button[IsDefault=true][IsCancel=false]:not(.danger):not(.caution):not(.choice):not(.outline):not(.accent):pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundPressed}" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundPressed}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBorderBrushPressed}" />
+    </Style>
+    <Style Selector="Button[IsDefault=true][IsCancel=false]:not(.danger):not(.caution):not(.choice):not(.outline):not(.accent):disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundDisabled}" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundDisabled}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBorderBrushDisabled}" />
+    </Style>
     <!-- Buttons that discard unsaved changes (e.g. Cancel in an editing view) are orange (Classes="caution"). -->
     <Style Selector="Button.caution">
       <Setter Property="Background" Value="{DynamicResource SignetCautionButtonBrush}" />

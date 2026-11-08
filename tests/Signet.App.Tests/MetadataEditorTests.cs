@@ -115,6 +115,27 @@ public sealed class MetadataEditorTests : IDisposable
     }
 
     [Fact]
+    public void Saving_keeps_the_editor_open_and_the_changes_are_unsaved_until_then()
+    {
+        // Arrange
+        MetadataEditorViewModel vm = new(_epub3);
+        bool closeRequested = false;
+        vm.CloseRequested += (_, _) => closeRequested = true;
+        bool unsavedAtStart = vm.HasUnsavedChanges;
+
+        // Act
+        vm.InsertElement("dc:contributor", "John Roe");
+        bool unsavedAfterEdit = vm.HasUnsavedChanges;
+        vm.SaveCommand.Execute(null);
+
+        // Assert
+        unsavedAtStart.Should().BeFalse();
+        unsavedAfterEdit.Should().BeTrue();
+        vm.HasUnsavedChanges.Should().BeFalse();
+        closeRequested.Should().BeFalse("Save does not close the window; Close does");
+    }
+
+    [Fact]
     public void Accept_saves_new_creator_with_role_refines_to_epub3_opf()
     {
         // Arrange
@@ -124,7 +145,7 @@ public sealed class MetadataEditorTests : IDisposable
         vm.SelectedNode = creator;
 
         // Act
-        vm.AcceptCommand.Execute(null);
+        vm.SaveCommand.Execute(null);
 
         // Assert
         vm.Accepted.Should().BeTrue();
@@ -150,7 +171,7 @@ public sealed class MetadataEditorTests : IDisposable
         vm.InsertChild("opf:role", "aut");
 
         // Act
-        vm.AcceptCommand.Execute(null);
+        vm.SaveCommand.Execute(null);
 
         OpfDocument doc = _epub2.GetOpf().GetOpfDocument();
         MetaEntry savedCreator = doc.Metadata.Single(m => m.Name == "dc:creator");

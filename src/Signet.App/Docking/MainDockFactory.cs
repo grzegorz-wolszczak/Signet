@@ -1250,17 +1250,31 @@ public sealed class MainDockFactory : Factory
     /// closed together with the window and vanish. When the main window closes them all
     /// (<see cref="CloseFloatingWindows"/>) the panels are only docked back.
     /// </summary>
+    /// <summary>
+    /// Whether closing the window of a tab dragged out of the tab strip puts the tab back there (Preferences). When off, the
+    /// tab is closed with its window. Closing the main window always puts them back (their places are saved for the
+    /// next time).
+    /// </summary>
+    public bool FloatingTabReturnsOnClose { get; set; }
+
     public override bool OnWindowClosing(IDockWindow? window)
     {
         FloatingBounds? bounds = !_closingAllWindows && window is not null ? BoundsOf(window) : null;
         bool close = base.OnWindowClosing(window);
         if (close && window?.Layout is { } layout)
         {
-            // Document tabs go back to the tab strip of the main window: closing the window only "attaches" them again
-            // (closing a tab is what closes the file).
+            // Document tabs: closing their window closes them, as their own "x" does — or, when Preferences say so (and always
+            // while the main window closes), they go back to the tab strip of the main window.
             foreach (IDocument document in DocumentsIn(layout).ToList())
             {
-                DockDocumentBack(document);
+                if (FloatingTabReturnsOnClose || _closingAllWindows)
+                {
+                    DockDocumentBack(document);
+                }
+                else
+                {
+                    CloseDockable(document);
+                }
             }
 
             foreach (Tool tool in ToolsIn(layout).ToList())

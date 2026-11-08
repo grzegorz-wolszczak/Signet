@@ -198,10 +198,30 @@ public sealed class FloatingDocumentTests
     }
 
     [AvaloniaFact]
-    public void Closing_the_window_of_a_floated_tab_attaches_it_to_the_tab_strip_again()
+    public void Closing_the_window_of_a_floated_tab_closes_the_tab_by_default()
     {
         // Arrange
         using Scenario s = new();
+        int before = s.Tabs.Count;
+        ContentTabViewModel tab = s.Tabs[1];
+        s.Factory.FloatDockable(tab);
+        s.Settle();
+
+        // Act
+        ((HostWindow)s.Windows[0].Host!).Close();
+        s.Settle();
+
+        // Assert
+        s.Windows.Should().BeEmpty();
+        s.Tabs.Should().NotContain(tab).And.HaveCount(before - 1, "closing the window closes the tab, as its own x does");
+    }
+
+    [AvaloniaFact]
+    public void Closing_the_window_of_a_floated_tab_attaches_it_to_the_tab_strip_again_when_Preferences_say_so()
+    {
+        // Arrange
+        using Scenario s = new();
+        s.Factory.FloatingTabReturnsOnClose = true;
         int before = s.Tabs.Count;
         ContentTabViewModel tab = s.Tabs[1];
 

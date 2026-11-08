@@ -14,7 +14,7 @@
   <DockPanel>
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
                 Spacing="8" Margin="8">
-      <Button Content="{loc:Loc SearchEditorWindow_Keep}" Command="{Binding SaveCommand}" MinWidth="80" />
+      <Button Classes="accent" Content="{loc:Loc SearchEditorWindow_Keep}" Command="{Binding SaveCommand}" MinWidth="80" />
       <Button Content="{loc:Loc Common_Close}" Click="OnCloseClick" MinWidth="80" />
     </StackPanel>
     <views:SearchEditorView x:Name="View" />

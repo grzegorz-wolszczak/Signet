@@ -236,7 +236,7 @@ public sealed class EditTocWindowTests : IDisposable
                 parent.IsExpanded = false;
 
                 // Act
-                vm.AcceptCommand.Execute(null);
+                vm.SaveCommand.Execute(null);
                 Settle(window);
 
                 // Assert

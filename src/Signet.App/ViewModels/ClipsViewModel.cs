@@ -610,7 +610,23 @@ public sealed class ClipsViewModel : ViewModelBase
         return null;
     }
 
-    private void SetExpandedAll(bool expanded) => SetExpandedAll(Nodes, expanded);
+    // Expand / Collapse: the selected groups with everything under them; without a selected group (nothing selected, or
+    // only clips) the whole tree.
+    private void SetExpandedAll(bool expanded)
+    {
+        List<ClipNodeViewModel> groups = _selectedNodes.Where(n => n.IsGroup).ToList();
+        if (groups.Count == 0)
+        {
+            SetExpandedAll(Nodes, expanded);
+            return;
+        }
+
+        foreach (ClipNodeViewModel group in groups)
+        {
+            group.IsExpanded = expanded;
+            SetExpandedAll(group.Children, expanded);
+        }
+    }
 
     private static void SetExpandedAll(IEnumerable<ClipNodeViewModel> nodes, bool expanded)
     {

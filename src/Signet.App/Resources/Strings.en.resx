@@ -8666,4 +8666,16 @@ Close the tab</value>
   <data name="FontPreview_ClipsMessage" xml:space="preserve">
     <value>The clip library was saved.</value>
   </data>
+  <data name="ClipEditorWindow_ExpandTip" xml:space="preserve">
+    <value>Expand the selected groups (no group selected: everything)</value>
+  </data>
+  <data name="ClipEditorWindow_CollapseTip" xml:space="preserve">
+    <value>Collapse the selected groups (no group selected: everything)</value>
+  </data>
+  <data name="Editor_Saved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="PreferencesWindow_FloatingTabReturnsOnClose" xml:space="preserve">
+    <value>Closing the window of a tab dragged out puts the tab back in the tab strip (off: closes the tab)</value>
+  </data>
 </root>

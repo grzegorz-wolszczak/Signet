@@ -1836,6 +1836,10 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         preview.GetVisualDescendants().OfType<Signet.Controls.TreeDataGrid.TreeDataGrid>().Should().ContainSingle();
         text.Text.Should().Contain("dokona");
         text.FontSize.Should().Be(30);
+        text.Focusable.Should().BeTrue("the text of the clip can be selected, to see the color of its selection");
+        Avalonia.Point center = text.TranslatePoint(new Avalonia.Point(text.Bounds.Width / 2, 20), window)!.Value;
+        Avalonia.Input.IInputElement? hit = window.InputHitTest(center);
+        (hit as Avalonia.Visual)?.GetSelfAndVisualAncestors().Contains(text).Should().BeTrue("a click reaches the text box");
         tabs.SelectedItem.Should().BeSameAs(window.FindControl<TabItem>("ClipsPage"));
         window.Close();
     }

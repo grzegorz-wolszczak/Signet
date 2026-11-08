@@ -114,6 +114,13 @@ public partial class ClipsPanelView : UserControl
         _selection?.SelectFromViewModel();
     }
 
+    /// <summary>Whether the result message is shown under the tree (the Preferences preview has its own under the whole window).</summary>
+    public bool ShowMessage
+    {
+        get => MessageText.IsVisible;
+        set => MessageText.IsVisible = value;
+    }
+
     /// <summary>Whether the "Edit" button is shown above the tree (the Preferences preview leaves it out).</summary>
     public bool ShowEditButton
     {

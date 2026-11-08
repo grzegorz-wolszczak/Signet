@@ -54,6 +54,67 @@ public sealed class ClipsViewModelTests : IDisposable
         return new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
     }
 
+    // Groups A { B { clip }, clip } and C { clip }, all collapsed.
+    private static (ClipsViewModel Clips, ClipNodeViewModel A, ClipNodeViewModel B, ClipNodeViewModel C, ClipNodeViewModel Clip) NewTree(ClipStore store)
+    {
+        var clips = new ClipsViewModel(store, () => null, () => null, new StatusBarService());
+        clips.AddGroupCommand.Execute(null);
+        ClipNodeViewModel a = clips.Nodes[0];
+        clips.SetSelectedNodes(new[] { a });
+        clips.AddGroupCommand.Execute(null);
+        ClipNodeViewModel nested = clips.Nodes[0].Children[0];
+        clips.SetSelectedNodes(new[] { nested });
+        clips.AddEntryCommand.Execute(null);
+        clips.SetSelectedNodes(new[] { clips.Nodes[0] });
+        clips.AddEntryCommand.Execute(null);
+        clips.SetSelectedNodes(System.Array.Empty<ClipNodeViewModel>());
+        clips.AddGroupCommand.Execute(null);
+        ClipNodeViewModel c = clips.Nodes[1];
+        clips.SetSelectedNodes(new[] { c });
+        clips.AddEntryCommand.Execute(null);
+        clips.SetSelectedNodes(System.Array.Empty<ClipNodeViewModel>());
+        clips.CollapseAllCommand.Execute(null);
+        return (clips, clips.Nodes[0], clips.Nodes[0].Children[0], clips.Nodes[1], clips.Nodes[0].Children[0].Children[0]);
+    }
+
+    [Fact]
+    public void Expand_without_a_selected_group_expands_everything()
+    {
+        // Arrange
+        (ClipsViewModel clips, ClipNodeViewModel a, ClipNodeViewModel b, ClipNodeViewModel c, ClipNodeViewModel clip) = NewTree(Store());
+        clips.SetSelectedNodes(new[] { clip });
+
+        // Act
+        clips.ExpandAllCommand.Execute(null);
+
+        // Assert
+        new[] { a, b, c }.Should().OnlyContain(g => g.IsExpanded, "a selected clip is not a group: everything is meant");
+    }
+
+    [Fact]
+    public void Expand_and_collapse_with_a_selected_group_reach_only_that_group_and_what_is_under_it()
+    {
+        // Arrange
+        (ClipsViewModel clips, ClipNodeViewModel a, ClipNodeViewModel b, ClipNodeViewModel c, _) = NewTree(Store());
+        clips.SetSelectedNodes(new[] { a });
+
+        // Act
+        clips.ExpandAllCommand.Execute(null);
+
+        // Assert
+        a.IsExpanded.Should().BeTrue();
+        b.IsExpanded.Should().BeTrue("everything under the selected group is expanded");
+        c.IsExpanded.Should().BeFalse("another group is left alone");
+
+        // Act
+        clips.SetSelectedNodes(new[] { b });
+        clips.CollapseAllCommand.Execute(null);
+
+        // Assert
+        b.IsExpanded.Should().BeFalse();
+        a.IsExpanded.Should().BeTrue("only the selected subgroup is collapsed");
+    }
+
     [Fact]
     public void AddPendingEntry_adds_an_unnamed_clip_at_the_top_and_selects_it()
     {
