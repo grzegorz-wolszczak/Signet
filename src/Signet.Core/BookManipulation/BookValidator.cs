@@ -93,6 +93,9 @@ public enum ValidationStage
 
     /// <summary>The footnotes.</summary>
     Footnotes,
+
+    /// <summary>The accessibility.</summary>
+    Accessibility,
 }
 
 /// <summary>Where <see cref="BookValidator.ValidateCurrentBook"/> is.</summary>
@@ -173,6 +176,7 @@ public static class BookValidator
         Check(ValidationStage.Images, () => ImageIntegrityValidator.Validate(book));
         Check(ValidationStage.Css, () => CssPropertyValidator.Validate(book));
         Check(ValidationStage.Footnotes, () => FootnoteValidator.Validate(book));
+        Check(ValidationStage.Accessibility, () => AccessibilityValidator.Validate(book));
 
         if (skippedCodes is { Count: > 0 })
         {

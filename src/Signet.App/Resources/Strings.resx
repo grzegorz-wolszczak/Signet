@@ -8678,4 +8678,7 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_FloatingTabReturnsOnClose" xml:space="preserve">
     <value>Zamknięcie okna z wyciągniętą kartą odsyła kartę z powrotem do zakładek (wyłączone: zamyka kartę)</value>
   </data>
+  <data name="ValidationProgress_Stage_Accessibility" xml:space="preserve">
+    <value>dostępność</value>
+  </data>
 </root>

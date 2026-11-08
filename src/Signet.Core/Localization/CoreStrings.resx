@@ -6254,4 +6254,10 @@
   <data name="DictionaryInstall_AlreadyExists" xml:space="preserve">
     <value>Słownik „{0}” jest już zainstalowany.</value>
   </data>
+  <data name="Validation_Accessibility_ImageNoAlt" xml:space="preserve">
+    <value>Obraz nie ma tekstu alternatywnego (atrybutu alt). Dla obrazu ozdobnego użyj alt=&quot;&quot;.</value>
+  </data>
+  <data name="Validation_Accessibility_SvgNoAlt" xml:space="preserve">
+    <value>Obraz SVG nie ma tekstu alternatywnego (elementu title, aria-label ani aria-labelledby).</value>
+  </data>
 </root>

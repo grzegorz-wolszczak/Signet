@@ -35,7 +35,7 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 `f3cba29a44` (SVG descriptions), `627717dfe4` (ARIA roles in generated navs), `8a7a70130a` / `eee070af52` / `91b5b81209`
 (SVG covers). Basis: the *EPUB Accessibility* specification and the *EPUB Type to ARIA Role Authoring Guide*.
 
-### A1. Check: images without alternative text — `[ ]`
+### A1. Check: images without alternative text — `[x]`
 
 - Report `<img>` without `alt` (an empty `alt=""` is legal: decorative) and SVG images without a text alternative
   (`<title>`, `aria-label`, `aria-labelledby`, `role="presentation"`/`none`).
@@ -45,6 +45,9 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 - No fix in this task (the text must come from a person; the editor is task A9).
 - Tests: validator unit tests + a corpus book with img/svg of each kind (alt present, empty, missing, `aria-label`).
 - Done when: the Validation Results panel lists the problems with file and line, and a skipped code hides them.
+- Done: `AccessibilityValidator` (tag scan via `TagLister`, so no DOM is built), stage `ValidationStage.Accessibility`.
+  Deviations: an `img` with `aria-label`/`aria-labelledby` counts as labelled; `aria-hidden="true"` exempts both kinds. The
+  cases are built in code in `AccessibilityValidatorTests` instead of a corpus book (no EPUB tooling needed for a single file).
 
 ### A2. Check: HTML files without a language — `[ ]`
 
