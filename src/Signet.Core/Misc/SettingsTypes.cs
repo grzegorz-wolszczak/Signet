@@ -812,6 +812,52 @@ public readonly record struct SearchEditorAppearance(
     private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
 }
 
+/// <summary>
+/// Font settings of the Clip Editor window and of the docked Clips panel: the column headers, the entries of the tree,
+/// the text of the selected clip, and everything else of the window (buttons, labels, the message at the bottom).
+/// A family that is empty / a size or weight of 0 = not set: the interface font (a size of 0: the interface size).
+/// </summary>
+/// <param name="HeaderFontFamily">Typeface of the column headers.</param>
+/// <param name="HeaderFontSize">Size (px) of the column headers.</param>
+/// <param name="HeaderFontWeight">Weight of the column headers (<see cref="FontWeightScale"/>).</param>
+/// <param name="EntriesFontFamily">Typeface of the entries of the tree (the Name and Text columns).</param>
+/// <param name="EntriesFontSize">Size (px) of the entries of the tree.</param>
+/// <param name="EntriesFontWeight">Weight of the entries of the tree.</param>
+/// <param name="TextFontFamily">Typeface of the text of the selected clip.</param>
+/// <param name="TextFontSize">Size (px) of the text of the selected clip.</param>
+/// <param name="TextFontWeight">Weight of the text of the selected clip.</param>
+/// <param name="OtherFontFamily">Typeface of the other elements of the window (buttons, labels, messages).</param>
+/// <param name="OtherFontSize">Size (px) of the other elements of the window.</param>
+/// <param name="OtherFontWeight">Weight of the other elements of the window.</param>
+public readonly record struct ClipEditorAppearance(
+    string HeaderFontFamily, int HeaderFontSize, int HeaderFontWeight,
+    string EntriesFontFamily, int EntriesFontSize, int EntriesFontWeight,
+    string TextFontFamily, int TextFontSize, int TextFontWeight,
+    string OtherFontFamily, int OtherFontSize, int OtherFontWeight)
+{
+    /// <summary>Lower bound of an explicit font size.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit font size.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>The monospaced typefaces of the text of a clip when none is chosen.</summary>
+    public const string DefaultTextFontFamily = "Cascadia Code,Consolas,monospace";
+
+    /// <summary>Default values: the interface font everywhere, the monospaced font for the text of a clip.</summary>
+    public static ClipEditorAppearance Default => new(
+        string.Empty, 0, 0, string.Empty, 0, 0, DefaultTextFontFamily, 0, 0, string.Empty, 0, 0);
+
+    /// <summary>A copy with the sizes clamped (0 stays "not set"), the typefaces trimmed and the weights normalized.</summary>
+    public ClipEditorAppearance Normalized() => new(
+        HeaderFontFamily?.Trim() ?? string.Empty, NormalizedFontSize(HeaderFontSize), FontWeightScale.Normalize(HeaderFontWeight),
+        EntriesFontFamily?.Trim() ?? string.Empty, NormalizedFontSize(EntriesFontSize), FontWeightScale.Normalize(EntriesFontWeight),
+        TextFontFamily?.Trim() ?? string.Empty, NormalizedFontSize(TextFontSize), FontWeightScale.Normalize(TextFontWeight),
+        OtherFontFamily?.Trim() ?? string.Empty, NormalizedFontSize(OtherFontSize), FontWeightScale.Normalize(OtherFontWeight));
+
+    private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
+}
+
 /// <summary>Font settings of the "Insert Special Character" window.</summary>
 /// <param name="FontFamily">Font family.</param>
 /// <param name="FontSize">Size (px).</param>

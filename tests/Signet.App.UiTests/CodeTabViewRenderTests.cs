@@ -683,6 +683,39 @@ public sealed class CodeTabViewRenderTests : IDisposable
         vm.Document.Text.Should().Be("<p><a href=\"aef.xhtml</p>");
     }
 
+    /// <summary>A click on the "Clips" entry of the context menu opens the Clip Editor (not only its submenu).</summary>
+    [AvaloniaFact]
+    public void Clicking_the_clips_entry_of_the_context_menu_opens_the_clip_editor()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+        var tabModel = new TabManagerModel();
+        OpenTab tab = tabModel.OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        FakeHost host = new();
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = host };
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+        Dispatcher.UIThread.RunJobs();
+        MenuItem clips = editor.ContextMenu!.Items.OfType<MenuItem>().Skip(1).First();
+        Avalonia.Point center = clips.TranslatePoint(new Avalonia.Point(clips.Bounds.Width / 2, clips.Bounds.Height / 2), window)!.Value;
+
+        // Act
+        window.MouseDown(center, Avalonia.Input.MouseButton.Left);
+        window.MouseUp(center, Avalonia.Input.MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        host.OpenClipEditorCalls.Should().Be(1);
+        window.Close();
+    }
+
     /// <summary>
     /// Regression: a right click in Code Editor showed no menu when there was no misspelled word
     /// under the caret (the only context menu was the spelling menu, cancelled in that case).
@@ -1429,6 +1462,10 @@ public sealed class CodeTabViewRenderTests : IDisposable
         public void AddToClips(string text)
         {
         }
+
+        public int OpenClipEditorCalls { get; private set; }
+
+        public void OpenClipEditor() => OpenClipEditorCalls++;
 
         public System.Collections.Generic.Dictionary<string, Avalonia.Input.KeyGesture> Gestures { get; } = new();
 

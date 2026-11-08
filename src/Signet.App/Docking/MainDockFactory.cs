@@ -1411,6 +1411,50 @@ public sealed class MainDockFactory : Factory
     private IDockWindow? WindowOf(Tool tool) =>
         _root?.Windows?.FirstOrDefault(w => w.Layout is { } layout && ToolsIn(layout).Contains(tool));
 
+    /// <summary>
+    /// The place and size of the window a document tab was dragged out into, or <see langword="null"/> when it is in the main
+    /// window — for the position kept per book.
+    /// </summary>
+    public (double X, double Y, double Width, double Height)? FloatingBoundsOfDocument(IDockable document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        IDockWindow? window = _root?.Windows?.FirstOrDefault(w => w.Layout is { } layout && Holds(layout, document));
+        if (window is null)
+        {
+            return null;
+        }
+
+        FloatingBounds bounds = BoundsOf(window);
+        return (bounds.X, bounds.Y, bounds.Width, bounds.Height);
+    }
+
+    /// <summary>The document tabs that are in windows of their own.</summary>
+    public IEnumerable<ViewModels.Tabs.ContentTabViewModel> FloatingDocuments() =>
+        (_root?.Windows ?? Enumerable.Empty<IDockWindow>())
+            .Where(w => w.Layout is not null)
+            .SelectMany(w => DocumentsIn(w.Layout!))
+            .OfType<ViewModels.Tabs.ContentTabViewModel>()
+            .ToList();
+
+    /// <summary>Drags a document tab out into a window of its own at the given place (corrected when it is not on screen).</summary>
+    /// <returns>Whether the tab now has a window of its own.</returns>
+    public bool FloatDocumentAt(IDockable document, double x, double y, double width, double height)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        FloatDockable(document);
+        if (_root?.Windows?.FirstOrDefault(w => w.Layout is { } layout && Holds(layout, document)) is not { } window)
+        {
+            return false;
+        }
+
+        Place(window, new FloatingBounds(x, y, width, height));
+        return true;
+    }
+
+    private static bool Holds(IDockable container, IDockable target) =>
+        ReferenceEquals(container, target)
+        || container is IDock { VisibleDockables: { } children } && children.Any(child => Holds(child, target));
+
     /// <summary>Whether the panel floats in its own window (neither docked in a region, collapsed, nor hidden).</summary>
     public bool IsToolFloating(string id) => _tools.TryGetValue(id, out Tool? tool) && IsFloating(tool);
 

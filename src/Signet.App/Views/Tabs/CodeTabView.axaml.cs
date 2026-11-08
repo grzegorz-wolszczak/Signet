@@ -10,6 +10,7 @@ using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using AvaloniaEdit;
 using AvaloniaEdit.CodeCompletion;
 using AvaloniaEdit.Document;
@@ -179,14 +180,24 @@ public partial class CodeTabView : UserControl
     // gets a new view). A view that was never laid out keeps what the tab remembered before.
     private void RememberViewState()
     {
-        TextView textView = Editor.TextArea.TextView;
-        if (_boundViewModel is null || Editor.Document is null || textView.Bounds.Height <= 0 || _pendingViewRestore is not null)
+        if (_boundViewModel is not null && CurrentViewState() is { } state)
         {
-            return;
+            _boundViewModel.ViewState = state;
+        }
+    }
+
+    // Where the user is now; null while the view is not laid out or still restoring a place (the tab's own
+    // ViewState is then the better answer).
+    private CodeTabViewState? CurrentViewState()
+    {
+        TextView textView = Editor.TextArea.TextView;
+        if (Editor.Document is null || textView.Bounds.Height <= 0 || _pendingViewRestore is not null)
+        {
+            return null;
         }
 
         int topLine = textView.GetDocumentLineByVisualTop(textView.VerticalOffset)?.LineNumber ?? 1;
-        _boundViewModel.ViewState = new CodeTabViewState(topLine, Editor.CaretOffset, Editor.SelectionStart, Editor.SelectionLength);
+        return new CodeTabViewState(topLine, Editor.CaretOffset, Editor.SelectionStart, Editor.SelectionLength);
     }
 
     // Puts the caret, the selection and the first visible line back (see _pendingViewRestore).
@@ -260,6 +271,7 @@ public partial class CodeTabView : UserControl
         SaveFoldedRegions(_boundViewModel);
         if (_boundViewModel is not null)
         {
+            _boundViewModel.LiveViewState = null;
             _boundViewModel.ScrollToLineRequested -= OnScrollToLineRequested;
             _boundViewModel.ScrollToOffsetRequested -= OnScrollToOffsetRequested;
             _boundViewModel.SelectionRequested -= OnSelectionRequested;
@@ -286,6 +298,7 @@ public partial class CodeTabView : UserControl
             return;
         }
 
+        _boundViewModel.LiveViewState = CurrentViewState;
         _boundViewModel.ScrollToLineRequested += OnScrollToLineRequested;
         _boundViewModel.ScrollToOffsetRequested += OnScrollToOffsetRequested;
         _boundViewModel.SelectionRequested += OnSelectionRequested;
@@ -800,7 +813,24 @@ public partial class CodeTabView : UserControl
         {
             MenuItem clips = new() { Header = Strings.Get("CodeEditorMenu_Clips") };
             AddClipEntries(clips, host.ClipLibraryRoot, host);
-            clips.IsEnabled = clips.Items.Count > 0;
+            // A click on the entry itself (not on a clip of its submenu) opens the Clip Editor; with no clips yet it
+            // is the way to add some.
+            // The press (not the release: the menu opens the submenu on the press and takes the pointer) tunnels down to
+            // the entry before the menu sees it.
+            clips.AddHandler(
+                InputElement.PointerPressedEvent,
+                (_, e) =>
+                {
+                    if (e.GetCurrentPoint(clips).Properties.IsLeftButtonPressed
+                        && ReferenceEquals((e.Source as Visual)?.FindAncestorOfType<MenuItem>(includeSelf: true), clips))
+                    {
+                        e.Handled = true;
+                        _contextMenu.Close();
+                        Dispatcher.UIThread.Post(host.OpenClipEditor);
+                    }
+                },
+                RoutingStrategies.Tunnel,
+                handledEventsToo: true);
             items.Add(clips);
 
             MenuItem addToClips = Item(Strings.Get("CodeEditorMenu_AddToClips"), () => host.AddToClips(vm.SelectedText));

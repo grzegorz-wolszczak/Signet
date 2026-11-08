@@ -25,6 +25,22 @@ public static partial class ActionTexts
         return Strings.TryGet("Action_" + descriptor.Id.Replace('.', '_')) ?? descriptor.Text;
     }
 
+    /// <summary>
+    /// The explanation of what the action does (the tooltip in Preferences → Keyboard Shortcuts), from
+    /// <c>ActionTip_&lt;id with "." → "_"&gt;</c>; <see langword="null"/> when there is none. Every action has one
+    /// (<c>AppActionCatalogTests</c>).
+    /// </summary>
+    public static string? Tooltip(AppActionDescriptor descriptor)
+    {
+        System.ArgumentNullException.ThrowIfNull(descriptor);
+        if (AppActionIds.TryGetClipSlot(descriptor.Id, out int slot))
+        {
+            return Strings.Format("ActionTip_ClipSlot", slot.ToString(CultureInfo.CurrentCulture));
+        }
+
+        return Strings.TryGet("ActionTip_" + descriptor.Id.Replace('.', '_'));
+    }
+
     /// <summary>Action category name in the UI language.</summary>
     public static string Category(string category)
     {

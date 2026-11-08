@@ -280,6 +280,7 @@ public sealed partial class KeymapViewModel : ViewModelBase
         KeymapNode node = new(NameOf(action), action.Id, parent.Path is null ? parent.Name : $"{parent.Path} | {parent.Name}")
         {
             Context = AppActionIds.IsCodeEditorAction(action.Id) ? Strings.Get("Keymap_ContextCodeEditor") : string.Empty,
+            ToolTip = ActionTexts.Tooltip(action.Descriptor),
         };
         node.Update(_shortcuts.Get(action.Id));
         if (!_nodesById.TryGetValue(action.Id, out List<KeymapNode>? nodes))
@@ -359,6 +360,9 @@ public sealed partial class KeymapNode : ObservableObject
 
     /// <summary>Where the action's shortcuts work when not window-wide (e.g. "code editor only"), or <c>""</c>.</summary>
     public string Context { get; init; } = string.Empty;
+
+    /// <summary>What the action does (shown as a tooltip over the row); <c>null</c> for a group.</summary>
+    public string? ToolTip { get; init; }
 
     /// <summary>The children of a group.</summary>
     public ObservableCollection<KeymapNode> Children { get; } = new();

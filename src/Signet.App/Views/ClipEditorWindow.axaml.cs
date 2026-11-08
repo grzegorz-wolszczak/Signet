@@ -54,12 +54,14 @@ public partial class ClipEditorWindow : Window
     private HierarchicalTreeDataGridSource<ClipNodeViewModel>? _source;
     private TreeMultiSelectionSync<ClipNodeViewModel>? _selection;
     private bool _forceClose;
+    private readonly ClipsLook _look;
 
     /// <summary>Initializes the window.</summary>
     public ClipEditorWindow()
     {
         InitializeComponent();
         _keys = new ShortcutKeyBindings(TreeHost);
+        _look = new ClipsLook(Tree);
         DataContextChanged += OnDataContextChanged;
 
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);
@@ -149,6 +151,7 @@ public partial class ClipEditorWindow : Window
             _bound.ImportRequested -= OnImportRequested;
             _bound.ExportRequested -= OnExportRequested;
             _bound.PropertyChanged -= OnViewModelPropertyChanged;
+            _bound.AppearanceChanged -= OnAppearanceChanged;
             _keys.Detach();
         }
 
@@ -162,6 +165,8 @@ public partial class ClipEditorWindow : Window
             _bound.ImportRequested += OnImportRequested;
             _bound.ExportRequested += OnExportRequested;
             _bound.PropertyChanged += OnViewModelPropertyChanged;
+            _bound.AppearanceChanged += OnAppearanceChanged;
+            ApplyAppearance();
             _keys.Attach(_bound.ShortcutActions);
             ClipsViewModel vm = _bound;
             _columns = new LocalizedColumns<ClipNodeViewModel>();
@@ -185,6 +190,18 @@ public partial class ClipEditorWindow : Window
 
         Tree.Source = _source;
         _selection?.SelectFromViewModel();
+    }
+
+    private void OnAppearanceChanged(object? sender, EventArgs e) => ApplyAppearance();
+
+    // The fonts of Preferences › Appearance › Clips › Fonts: the rest of the window (its root; the controls inherit it),
+    // the tree (headers, entries) and the text of the selected clip.
+    private void ApplyAppearance()
+    {
+        ClipEditorAppearance look = _bound?.Appearance ?? ClipEditorAppearance.Default;
+        ClipsLook.SetFont(WindowBody, look.OtherFontFamily, look.OtherFontSize, look.OtherFontWeight);
+        ClipsLook.SetFont(ClipTextBox, look.TextFontFamily, look.TextFontSize, look.TextFontWeight);
+        _look.Apply(look);
     }
 
     // --- in-place rename: double click / the Rename action (F2 by default, set in Preferences) ---- //

@@ -19,6 +19,9 @@
   </UserControl.Resources>
 
   <DockPanel Margin="8">
+    <!-- Opens the Clip Editor window (the same as Tools › Clip Editor). -->
+    <Button x:Name="EditButton" DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="0,0,0,6"
+            Content="{loc:Loc ClipsPanelView_Edit}" Command="{Binding EditCommand}" />
     <TextBlock DockPanel.Dock="Bottom" Text="{Binding Message}" Margin="0,6,0,0"
                Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />
 

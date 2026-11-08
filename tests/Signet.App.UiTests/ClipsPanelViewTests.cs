@@ -1,3 +1,4 @@
+using Avalonia;
 using System;
 using System.Linq;
 using Avalonia.Controls;
@@ -64,6 +65,24 @@ public sealed class ClipsPanelViewTests : IDisposable
         RowNames(tree).Should().Equal(vm.Nodes[0].Name, vm.Nodes[1].Name);
         tree.GetVisualDescendants().OfType<TreeDataGridTextCell>().Select(c => c.Value?.ToString())
             .Should().Contain("<p>hello</p>");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_edit_button_above_the_tree_opens_the_clip_editor()
+    {
+        // Arrange
+        (Window window, ClipsViewModel vm, TreeDataGrid tree) = Show();
+        int requests = 0;
+        vm.EditRequested += (_, _) => requests++;
+        Button edit = window.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, Strings.Get("ClipsPanelView_Edit")));
+
+        // Act
+        edit.Command!.Execute(null);
+
+        // Assert
+        requests.Should().Be(1);
+        edit.TranslatePoint(default, window)!.Value.Y.Should().BeLessThan(tree.TranslatePoint(default, window)!.Value.Y, "the button is above the tree");
         window.Close();
     }
 

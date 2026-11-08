@@ -63,7 +63,7 @@ public static class AppActionCatalog
         new("MainWindow.CasingUppercase", "&Uppercase", "Ctrl+Alt+U", "format-case-uppercase", "Edit"),
         new("MainWindow.CasingTitlecase", "&Titlecase", "", "format-case-titlecase", "Edit"),
         new("MainWindow.CasingCapitalize", "&Capitalize", "", "format-case-capitalize", "Edit"),
-        new("MainWindow.SplitSection", "&Split File At Cursor", "Ctrl+Return", "split-section", "Edit"),
+        new("MainWindow.SplitSection", "&Split File At Cursor", "", "split-section", "Edit"),
         new("MainWindow.SplitOnSGFSectionMarkers", "Split At &Markers", "F6", "split-markers", "Edit"),
         new("MainWindow.Preferences", "&Preferences...", "F5", "settings", "Edit"),
         new("MainWindow.MergeContent", "Merge C&ontent", "", "merge-content", "Edit"),
@@ -187,6 +187,7 @@ public static class AppActionCatalog
         new("MainWindow.ClipEditor", "&Clip Editor...", "Ctrl+Shift+C", "clip-editor", "Tools"),
         // See the comment on AppActionIds.SelectClip.
         new("MainWindow.SelectClip", "&Insert Clip From Library...", "", "insert-clip", "Tools"),
+        new("MainWindow.ShowClipsPopup", "Show Clips &Popup", "", "clip-editor", "Tools"),
         new("MainWindow.SearchEditor", "&Saved Searches...", "Ctrl+Alt+F", "saved-search", "Tools"),
         new("MainWindow.Cleanup", "&Cleanup...", "", "polish", "Tools"),
         new("MainWindow.ManageFonts", "Manage &Fonts...", "", "manage-fonts", "Tools"),
@@ -208,7 +209,7 @@ public static class AppActionCatalog
 
         // Panels.
         new("MainWindow.BookBrowser", "&Book Browser", "Alt+F1", "panel-book-browser", "View"),
-        new("MainWindow.ClipsWindow", "&Clips", "", "panel-clips", "View"),
+        new("MainWindow.ClipsWindow", "Clips &Panel", "", "panel-clips", "View"),
         new("MainWindow.PreviewWindow", "&Preview", "F10", "panel-preview", "View"),
         new("MainWindow.TableOfContents", "&Table Of Contents", "Alt+F3", "edit-toc", "View"),
         new("MainWindow.ValidationResults", "&Validation Results", "Alt+F2", "panel-validation", "View"),

@@ -1580,6 +1580,61 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_edit_button_of_the_clips_panel_opens_the_clip_editor()
+    {
+        // Arrange
+        MainWindowViewModel sut = New();
+        bool raised = false;
+        sut.ClipEditorRequested += (_, _) => raised = true;
+
+        // Act
+        sut.Clips.EditCommand.Execute(null);
+
+        // Assert
+        raised.Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_find_and_replace_panel_is_closed_when_a_book_is_opened()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = New();
+        sut.IsFindReplaceVisible = true;
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+
+        // Act
+        sut.LoadBook(book, epub);
+
+        // Assert
+        sut.IsFindReplaceVisible.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShowClipsPopup_action_raises_ShowClipsPopupRequested_only_with_a_code_tab()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = New();
+        bool enabledWithoutTab = sut.Actions.Require(AppActionIds.ShowClipsPopup).IsEnabled;
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+        sut.LoadBook(book, epub);
+        bool raised = false;
+        sut.ShowClipsPopupRequested += (_, _) => raised = true;
+        sut.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<HtmlResource>().First() });
+
+        // Act
+        sut.Actions.Require(AppActionIds.ShowClipsPopup).Execute(null);
+
+        // Assert
+        enabledWithoutTab.Should().BeFalse();
+        raised.Should().BeTrue();
+        AppActionIds.IsCodeEditorAction(AppActionIds.ShowClipsPopup).Should().BeTrue();
+    }
+
+    [Fact]
     public void Adding_a_top_level_clip_refreshes_the_first_clip_bar_action()
     {
         // Arrange

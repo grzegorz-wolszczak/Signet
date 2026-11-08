@@ -61,6 +61,9 @@ public sealed partial class PreferencesViewModel
     /// <summary>Preview Panel › Appearance: the text color forced on the book.</summary>
     public ColorKeyEditorViewModel PreviewTextColor => PanelColor(ThemeKeys.PreviewText);
 
+    /// <summary>Clips: the background of the selected text in the text of a clip.</summary>
+    public ColorKeyEditorViewModel ClipEditorSelectionColor => PanelColor(ThemeKeys.UiClipEditorSelection);
+
     /// <summary>Saved Searches: the background of the tree.</summary>
     public ColorKeyEditorViewModel SearchEditorBackgroundColor => PanelColor(ThemeKeys.UiSearchEditorBackground);
 

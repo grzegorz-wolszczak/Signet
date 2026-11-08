@@ -253,6 +253,97 @@ public sealed class TabManager : IDisposable
     }
 
     /// <summary>
+    /// Where the user is in the book: the open tabs, the active one, and in the Code Editor tabs the caret and the first
+    /// visible line (for <see cref="SettingsStore.SetBookPosition"/>).
+    /// </summary>
+    public BookPosition CapturePosition()
+    {
+        TabSession session = _model.CaptureSession();
+        List<BookTabPosition> tabs = new();
+        foreach (OpenTab tab in _model.Tabs)
+        {
+            if (_views.TryGetValue(tab, out ContentTabViewModel? view) && view is CodeTabViewModel code)
+            {
+                CodeTabViewState? state = code.CaptureViewState();
+                tabs.Add(new BookTabPosition(
+                    tab.Resource.BookPath, state?.CaretOffset ?? code.CaretOffset, state?.TopLine ?? 0, FloatingPlaceOf(view)));
+            }
+            else
+            {
+                tabs.Add(new BookTabPosition(tab.Resource.BookPath, -1, 0, view is null ? null : FloatingPlaceOf(view)));
+            }
+        }
+
+        return new BookPosition(tabs, session.ActiveBookPath);
+    }
+
+    private FloatingPlace? FloatingPlaceOf(ContentTabViewModel view) =>
+        _dockFactory.FloatingBoundsOfDocument(view) is { } b ? new FloatingPlace(b.X, b.Y, b.Width, b.Height) : null;
+
+    /// <summary>
+    /// Opens the tabs of <paramref name="position"/> and puts the caret and the scroll back. Files that the book no
+    /// longer has are skipped; <see langword="false"/> when no tab could be opened (the caller keeps what it had).
+    /// </summary>
+    public bool RestorePosition(BookPosition position)
+    {
+        ArgumentNullException.ThrowIfNull(position);
+        if (_book is null)
+        {
+            return false;
+        }
+
+        FolderKeeper folderKeeper = _book.GetFolderKeeper();
+        List<string> paths = position.Tabs
+            .Select(t => t.BookPath)
+            .Where(p => folderKeeper.GetResourceByBookPathNoThrow(p) is not null)
+            .ToList();
+        if (paths.Count == 0)
+        {
+            return false;
+        }
+
+        string? active = position.ActiveBookPath is { } a && paths.Contains(a, StringComparer.Ordinal) ? a : null;
+        _model.RestoreSession(new TabSession(paths, active), folderKeeper.GetResourceByBookPathNoThrow);
+
+        foreach (OpenTab tab in _model.Tabs)
+        {
+            BookTabPosition? saved = position.Tabs.FirstOrDefault(t => string.Equals(t.BookPath, tab.Resource.BookPath, StringComparison.Ordinal));
+            if (saved is null || saved.CaretOffset < 0 || !_views.TryGetValue(tab, out ContentTabViewModel? view) || view is not CodeTabViewModel code)
+            {
+                continue;
+            }
+
+            if (saved.TopLine > 0)
+            {
+                // The view puts the first visible line and the caret back when it shows the tab.
+                int caret = Math.Clamp(saved.CaretOffset, 0, code.Document.TextLength);
+                code.ViewState = new CodeTabViewState(saved.TopLine, caret, caret, 0);
+            }
+            else
+            {
+                code.GoToOffset(saved.CaretOffset);
+            }
+        }
+
+        // The tabs that were in windows of their own go back there (the last, so that the tabs are all open and in order).
+        foreach (OpenTab tab in _model.Tabs)
+        {
+            BookTabPosition? saved = position.Tabs.FirstOrDefault(t => string.Equals(t.BookPath, tab.Resource.BookPath, StringComparison.Ordinal));
+            if (saved?.Floating is { } place && _views.TryGetValue(tab, out ContentTabViewModel? view))
+            {
+                _dockFactory.FloatDocumentAt(view, place.X, place.Y, place.Width, place.Height);
+            }
+        }
+
+        if (active is not null && folderKeeper.GetResourceByBookPathNoThrow(active) is { } activeResource)
+        {
+            _model.ActivateResource(activeResource);
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// In-memory snapshot of the open tabs (order, active one, caret positions of Code Editor tabs)
     /// — to be restored after the book is replaced with a checkpoint state.
     /// </summary>
@@ -406,9 +497,9 @@ public sealed class TabManager : IDisposable
         OpenResourceAtOffset(target.BookPath, target.Offset);
     }
 
-    // The Code Editor zoom is shared by all code tabs and persistent (stored in the settings
-    // as zoom_text). A change in one tab propagates to the other open ones, and newly
-    // opened tabs start from the saved value.
+    // The Code Editor zoom is persistent (stored in the settings as zoom_text): newly opened tabs start from the saved
+    // value. Unless Preferences say that every tab has a zoom of its own (the default), a change in one tab propagates to
+    // the other open ones.
     private void OnCodeTabPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (_syncingZoom || e.PropertyName != nameof(ContentTabViewModel.ZoomFactor) || sender is not CodeTabViewModel source)
@@ -421,6 +512,11 @@ public sealed class TabManager : IDisposable
         {
             double factor = source.ZoomFactor;
             _settings.ZoomText = (float)factor;
+            if (_settings.ZoomEditorsSeparately)
+            {
+                return;
+            }
+
             foreach (ContentTabViewModel view in _views.Values)
             {
                 if (view is CodeTabViewModel code && !ReferenceEquals(code, source))

@@ -1,7 +1,9 @@
+using System.Globalization;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Actions;
 using Signet.App.Input;
+using Signet.App.Resources;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -28,6 +30,66 @@ public sealed class AppActionCatalogTests
     {
         // Act & Assert
         AppActionCatalog.All.Should().NotContain(a => a.Id.Contains(fragment));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("en")]
+    public void Every_action_has_a_tooltip_in_both_languages(string culture)
+    {
+        // Arrange
+        CultureInfo language = CultureInfo.GetCultureInfo(culture);
+        System.Collections.Generic.List<string> withoutTooltip = new();
+
+        // Act
+        foreach (AppActionDescriptor descriptor in AppActionCatalog.All)
+        {
+            string key = AppActionIds.TryGetClipSlot(descriptor.Id, out _)
+                ? "ActionTip_ClipSlot"
+                : "ActionTip_" + descriptor.Id.Replace('.', '_');
+            if (string.IsNullOrWhiteSpace(Strings.RawManager.GetString(key, language)))
+            {
+                withoutTooltip.Add(descriptor.Id);
+            }
+        }
+
+        // Assert
+        withoutTooltip.Should().BeEmpty("every action needs a tooltip explaining what it does");
+    }
+
+    [Fact]
+    public void Every_tooltip_belongs_to_an_action()
+    {
+        // Arrange
+        System.Collections.Generic.HashSet<string> keys = AppActionCatalog.All
+            .Select(a => "ActionTip_" + a.Id.Replace('.', '_'))
+            .ToHashSet(System.StringComparer.Ordinal);
+        keys.Add("ActionTip_ClipSlot");
+        System.Collections.Generic.List<string> orphans = new();
+
+        // Act
+        foreach (System.Collections.DictionaryEntry entry in Strings.RawManager
+                     .GetResourceSet(CultureInfo.InvariantCulture, createIfNotExists: true, tryParents: false)!
+                     .Cast<System.Collections.DictionaryEntry>())
+        {
+            if (entry.Key is string key && key.StartsWith("ActionTip_", System.StringComparison.Ordinal) && !keys.Contains(key))
+            {
+                orphans.Add(key);
+            }
+        }
+
+        // Assert
+        orphans.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(AppActionIds.SplitSection)]
+    [InlineData(AppActionIds.SplitTag)]
+    [InlineData(AppActionIds.BookBrowserSplit)]
+    public void Split_actions_have_no_default_shortcut(string id)
+    {
+        // Act & Assert
+        AppActionCatalog.All.Single(a => a.Id == id).DefaultShortcut.Should().BeEmpty();
     }
 
     [Fact]

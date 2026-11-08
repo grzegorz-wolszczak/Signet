@@ -291,6 +291,13 @@ public static class ThemeKeys
             "ui.searchEditor.background", ThemePage.Interface, "Controls", null, ownedByPanel: true,
             fallbackId: "fluent.regionColor");
 
+    /// <summary>
+    /// The background of the selected text in the text of a clip (Clip Editor); the blue of the selection in Code Editor
+    /// unless changed (Preferences › Appearance › Clips).
+    /// </summary>
+    public static readonly ThemeKey UiClipEditorSelection = Color(
+            "ui.clipEditor.selection", ThemePage.Interface, "Controls", Rgb(0xADD6FF), ownedByPanel: true);
+
     // The colors of a single panel or window (ownedByPanel: true) — the Book Browser, Saved Searches, Notifications, the
     // start screen, the context menus, Find Usages — are edited on that part's own Preferences page
     // (ColorKeyEditorViewModel), not in this shared tree, which keeps only what the whole application shares; see

@@ -26,6 +26,9 @@ public interface ICodeTabHost
     /// <summary>Root of the clip library (the "Clips" submenu).</summary>
     ClipEditorNode ClipLibraryRoot { get; }
 
+    /// <summary>Opens the Clip Editor window (a click on the "Clips" entry of the context menu).</summary>
+    void OpenClipEditor();
+
     /// <summary>Pastes the clip content into the active document.</summary>
     void PasteClip(string text);
 

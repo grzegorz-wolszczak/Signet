@@ -23,9 +23,11 @@ using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels;
+using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
+using Signet.Core.MiscEditors;
 using Signet.Core.Parsers;
 using Signet.Core.Resources;
 
@@ -208,6 +210,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.InsertHyperlinkRequested -= OnInsertHyperlinkRequested;
             _boundViewModel.InsertAriaClipRequested -= OnInsertAriaClipRequested;
             _boundViewModel.SelectClipRequested -= OnSelectClipRequested;
+            _boundViewModel.ShowClipsPopupRequested -= OnShowClipsPopupRequested;
             _boundViewModel.ClipEditorRequested -= OnClipEditorRequested;
             _boundViewModel.ViewImageRequested -= OnViewImageRequested;
             _boundViewModel.DryRunReplaceRequested -= OnDryRunReplaceRequested;
@@ -273,6 +276,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.InsertHyperlinkRequested += OnInsertHyperlinkRequested;
         _boundViewModel.InsertAriaClipRequested += OnInsertAriaClipRequested;
         _boundViewModel.SelectClipRequested += OnSelectClipRequested;
+        _boundViewModel.ShowClipsPopupRequested += OnShowClipsPopupRequested;
         _boundViewModel.ClipEditorRequested += OnClipEditorRequested;
         _boundViewModel.ViewImageRequested += OnViewImageRequested;
         _boundViewModel.DryRunReplaceRequested += OnDryRunReplaceRequested;
@@ -916,6 +920,57 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (!string.IsNullOrEmpty(text))
         {
             vm.ApplySelectedClip(text);
+        }
+    }
+
+    // "Show Clips Popup": a menu at the mouse pointer — a title, "Add To Clips..." (disabled without a selection),
+    // a separator and the clip library (groups as submenus). Without clips only the first entry is there.
+    private void OnShowClipsPopupRequested(object? sender, EventArgs e)
+    {
+        if (_boundViewModel is not { } vm)
+        {
+            return;
+        }
+
+        CodeTabViewModel? tab = vm.ActiveCodeTab;
+        bool hasSelection = tab?.HasSelection ?? false;
+        string selected = hasSelection ? tab!.SelectedText : string.Empty;
+
+        MenuItem add = new() { Header = Strings.Get("CodeEditorMenu_AddToClips"), IsEnabled = hasSelection };
+        add.Click += (_, _) => Dispatcher.UIThread.Post(() => vm.AddToClips(selected));
+
+        // The title bar every context menu has (MenuTitle), then the entries.
+        List<object> items = new() { MenuTitle.CreateItem(Strings.Get("ClipsPopup_Title")), MenuTitle.CreateSeparator(), add };
+        List<MenuItem> clipItems = new();
+        AddClipItems(clipItems, vm.Clips.LibraryRoot, vm);
+        if (clipItems.Count > 0)
+        {
+            items.Add(new Separator());
+            items.AddRange(clipItems);
+        }
+
+        ContextMenu menu = new() { ItemsSource = items, Placement = PlacementMode.Pointer };
+        menu.Open(this);
+    }
+
+    private static void AddClipItems(List<MenuItem> target, ClipEditorNode node, MainWindowViewModel vm)
+    {
+        foreach (ClipEditorNode child in node.Children)
+        {
+            MenuItem item = new() { Header = child.Name.Replace("_", "__", StringComparison.Ordinal) };
+            if (child.IsGroup)
+            {
+                List<MenuItem> sub = new();
+                AddClipItems(sub, child, vm);
+                item.ItemsSource = sub;
+            }
+            else
+            {
+                string text = child.Text;
+                item.Click += (_, _) => Dispatcher.UIThread.Post(() => vm.Clips.PasteText(text));
+            }
+
+            target.Add(item);
         }
     }
 

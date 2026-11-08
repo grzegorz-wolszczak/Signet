@@ -29,7 +29,7 @@
     </MultiBinding>
   </Window.Title>
 
-  <Grid Margin="12" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="6">
+  <Grid x:Name="WindowBody" Margin="12" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="6">
 
     <!-- Filter -->
     <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
@@ -68,9 +68,10 @@
       <Grid Grid.Column="2" RowDefinitions="Auto,*" RowSpacing="4"
             IsEnabled="{Binding SelectedNode.IsGroup, Converter={x:Static BoolConverters.Not}, FallbackValue=False}">
         <TextBlock Grid.Row="0" Text="{loc:Loc ClipEditorWindow_ClipTextLabel}" Opacity="0.8" />
-        <TextBox Grid.Row="1" Text="{Binding SelectedNode.Text, Mode=TwoWay}"
+        <TextBox x:Name="ClipTextBox" Grid.Row="1" Text="{Binding SelectedNode.Text, Mode=TwoWay}"
                  AcceptsReturn="True" TextWrapping="Wrap"
-                 VerticalContentAlignment="Top" FontFamily="Cascadia Code,Consolas,monospace" />
+                 SelectionBrush="{DynamicResource SignetClipEditorSelectionBrush}"
+                 VerticalContentAlignment="Top" />
       </Grid>
 
       <StackPanel Grid.Column="3" Spacing="4" Width="130" Margin="4,0,0,0">

@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:views="using:Signet.App.Views"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.ClipEditorPreviewView"
+             x:DataType="vm:ClipsViewModel">
+
+  <!-- The preview of the Clip Editor window on the Preferences › Clips pages: the same parts as the window (the filter,
+       the clips tree, the text of the clip, the buttons, the message), over a sample library, drawn with the fonts of
+       the settings at once. Nothing in it can be used. -->
+  <Grid x:Name="Body" Margin="8" RowDefinitions="Auto,*,Auto" RowSpacing="6" IsHitTestVisible="False">
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
+      <TextBlock Text="{loc:Loc ClipEditorWindow_Filter}" VerticalAlignment="Center" />
+      <TextBox Width="200" PlaceholderText="{loc:Loc ClipEditorWindow_FilterPlaceholder}" Focusable="False" />
+      <CheckBox Content="{loc:Loc ClipEditorWindow_FilterNameAndText}" VerticalAlignment="Center" Focusable="False" />
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="2*,3*,Auto" ColumnSpacing="6">
+      <views:ClipsPanelView x:Name="Tree" Grid.Column="0" ShowEditButton="False" />
+
+      <Grid Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="4">
+        <TextBlock Grid.Row="0" Text="{loc:Loc ClipEditorWindow_ClipTextLabel}" Opacity="0.8" />
+        <TextBox x:Name="ClipTextBox" Grid.Row="1" Text="{Binding SelectedNode.Text, Mode=OneWay}"
+                 AcceptsReturn="True" TextWrapping="Wrap" IsReadOnly="True" Focusable="False"
+                 VerticalContentAlignment="Top"
+                 SelectionBrush="{DynamicResource SignetClipEditorSelectionBrush}" />
+      </Grid>
+
+      <StackPanel Grid.Column="2" Spacing="4" Width="130">
+        <Button Content="{loc:Loc ClipEditorWindow_Paste}" HorizontalAlignment="Stretch" Focusable="False" />
+        <Button Content="{loc:Loc ClipEditorWindow_AddEntry}" HorizontalAlignment="Stretch" Focusable="False" />
+        <Button Content="{loc:Loc ClipEditorWindow_AddGroup}" HorizontalAlignment="Stretch" Focusable="False" />
+        <Button Classes="danger" Content="{loc:Loc Common_Delete}" HorizontalAlignment="Stretch" Focusable="False" />
+        <Button Classes="accent" Content="{loc:Loc Common_Save}" HorizontalAlignment="Stretch" Focusable="False" />
+      </StackPanel>
+    </Grid>
+
+    <TextBlock Grid.Row="2" Text="{Binding Message}" Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />
+  </Grid>
+</UserControl>

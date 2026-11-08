@@ -9,6 +9,7 @@ using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
+using Signet.Core.Misc;
 using Signet.Core.MiscEditors;
 
 namespace Signet.App.ViewModels;
@@ -25,6 +26,7 @@ public sealed class ClipsViewModel : ViewModelBase
     private readonly Func<CodeTabViewModel?> _activeCodeTab;
     private readonly Func<Book?> _currentBook;
     private readonly IStatusBarService _statusBar;
+    private readonly SettingsStore? _settings;
 
     private string _filterText = string.Empty;
     private bool _filterAll;
@@ -35,8 +37,10 @@ public sealed class ClipsViewModel : ViewModelBase
 
     /// <summary>Creates the view model and loads the clip library from the store.</summary>
     public ClipsViewModel(
-        ClipStore store, Func<CodeTabViewModel?> activeCodeTab, Func<Book?> currentBook, IStatusBarService statusBar)
+        ClipStore store, Func<CodeTabViewModel?> activeCodeTab, Func<Book?> currentBook, IStatusBarService statusBar,
+        SettingsStore? settings = null)
     {
+        _settings = settings;
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _activeCodeTab = activeCodeTab ?? throw new ArgumentNullException(nameof(activeCodeTab));
         _currentBook = currentBook ?? throw new ArgumentNullException(nameof(currentBook));
@@ -56,12 +60,40 @@ public sealed class ClipsViewModel : ViewModelBase
         ReloadCommand = new RelayCommand(Reload);
         CollapseAllCommand = new RelayCommand(() => SetExpandedAll(false));
         ExpandAllCommand = new RelayCommand(() => SetExpandedAll(true));
+        EditCommand = new RelayCommand(() => EditRequested?.Invoke(this, EventArgs.Empty));
         ImportCommand = new RelayCommand(() => ImportRequested?.Invoke(this, EventArgs.Empty));
         ExportCommand = new RelayCommand(() => ExportRequested?.Invoke(this, false));
         ExportAllCommand = new RelayCommand(() => ExportRequested?.Invoke(this, true));
 
+        if (_settings is not null)
+        {
+            _settings.SettingChanged += (_, e) =>
+            {
+                if (e.QualifiedKey.Contains("clip_editor_font", StringComparison.Ordinal)
+                    || e.QualifiedKey.Contains("clip_editor_appearance", StringComparison.Ordinal))
+                {
+                    AppearanceChanged?.Invoke(this, EventArgs.Empty);
+                }
+            };
+        }
+
         Load();
     }
+
+    /// <summary>
+    /// The fonts of the Clip Editor window and the Clips panel (Preferences › Appearance › Clips › Fonts); the defaults
+    /// without settings.
+    /// </summary>
+    public ClipEditorAppearance Appearance => _settings?.ClipEditorAppearance ?? ClipEditorAppearance.Default;
+
+    /// <summary>Raised when <see cref="Appearance"/> changed.</summary>
+    public event EventHandler? AppearanceChanged;
+
+    /// <summary>The "Edit" button of the Clips panel: asks for the Clip Editor window.</summary>
+    public IRelayCommand EditCommand { get; }
+
+    /// <summary>Raised by <see cref="EditCommand"/> — the main window opens the Clip Editor.</summary>
+    public event EventHandler? EditRequested;
 
     /// <summary>Raised when the view should show the file picker for import.</summary>
     public event EventHandler? ImportRequested;
@@ -168,6 +200,9 @@ public sealed class ClipsViewModel : ViewModelBase
         get => _message;
         private set => SetProperty(ref _message, value);
     }
+
+    /// <summary>Shows <paramref name="text"/> as the result message (the sample of the Preferences preview).</summary>
+    public void SetMessage(string text) => Message = text;
 
     /// <summary>Whether the data differs from what is saved on disk.</summary>
     public bool IsDataModified => _model.IsDataModified;

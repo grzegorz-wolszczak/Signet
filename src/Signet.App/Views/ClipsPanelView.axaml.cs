@@ -11,6 +11,7 @@ using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
 using Signet.App.Resources;
+using Signet.Core.Misc;
 
 namespace Signet.App.Views;
 
@@ -41,6 +42,7 @@ public partial class ClipsPanelView : UserControl
 
     // Keeps the column headers in the current UI language (held weakly by Strings).
     private LocalizedColumns<ClipNodeViewModel>? _columns;
+    private readonly ClipsLook _look;
     private HierarchicalTreeDataGridSource<ClipNodeViewModel>? _source;
     private TreeMultiSelectionSync<ClipNodeViewModel>? _selection;
 
@@ -54,6 +56,7 @@ public partial class ClipsPanelView : UserControl
             MenuTitle.AddTo(menu, () => MenuTitle.ForSelection(
                 _bound?.SelectedNodes.Select(n => n.Name) ?? Enumerable.Empty<string>(), Strings.Get("Panel_Clips")));
         }
+        _look = new ClipsLook(Tree);
         DataContextChanged += (_, _) => BuildTree();
         Tree.DoubleTapped += OnDoubleTapped;
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);
@@ -73,6 +76,7 @@ public partial class ClipsPanelView : UserControl
         if (_bound is not null)
         {
             _bound.PropertyChanged -= OnViewModelPropertyChanged;
+            _bound.AppearanceChanged -= OnAppearanceChanged;
             _keys.Detach();
         }
 
@@ -101,12 +105,23 @@ public partial class ClipsPanelView : UserControl
                 _source, roots, n => Visible(n.Children), () => vm.SelectedNodes, vm.SetSelectedNodes,
                 n => ClipsPanelView.Contains(vm.Nodes, n));
             vm.PropertyChanged += OnViewModelPropertyChanged;
+            vm.AppearanceChanged += OnAppearanceChanged;
+            _look.Apply(vm.Appearance);
             _keys.Attach(vm.ShortcutActions);
         }
 
         Tree.Source = _source;
         _selection?.SelectFromViewModel();
     }
+
+    /// <summary>Whether the "Edit" button is shown above the tree (the Preferences preview leaves it out).</summary>
+    public bool ShowEditButton
+    {
+        get => EditButton.IsVisible;
+        set => EditButton.IsVisible = value;
+    }
+
+    private void OnAppearanceChanged(object? sender, System.EventArgs e) => _look.Apply(_bound?.Appearance ?? ClipEditorAppearance.Default);
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

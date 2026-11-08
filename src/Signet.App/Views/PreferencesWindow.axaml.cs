@@ -350,6 +350,7 @@ public partial class PreferencesWindow : Window
         yield return FindUsagesPreviewHost;
         yield return FindReplacePreviewHost;
         yield return SearchEditorPreviewHost;
+        yield return ClipsPreviewHost;
         yield return SpecialCharactersPreviewHost;
         yield return CleanupPreviewHost;
         yield return FootnotesPreviewHost;
@@ -492,6 +493,8 @@ public partial class PreferencesWindow : Window
             FindReplaceFontsView.DataContext = vm.FindReplaceFonts;
             FindUsagesFontsView.DataContext = vm.FindUsagesFonts;
             SearchEditorFontsView.DataContext = vm.SearchEditorFonts;
+            ClipsPreview.DataContext = vm.ClipsSample;
+            ClipsFontsView.DataContext = vm.ClipsFonts;
             CheckpointsFontsView.DataContext = vm.CheckpointsFonts;
             ValidationFontsView.DataContext = vm.ValidationFonts;
             NotificationsFontsView.DataContext = vm.NotificationsFonts;

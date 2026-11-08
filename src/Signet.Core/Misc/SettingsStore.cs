@@ -1857,6 +1857,81 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether the zoom of Code Editor (Ctrl + wheel, Zoom In / Out) belongs to the tab it was changed in. When off, one zoom
+    /// is shared by all code tabs. Defaults to <c>true</c>. Either way <see cref="ZoomText"/> is where a new tab starts.
+    /// </summary>
+    public bool ZoomEditorsSeparately
+    {
+        get => ReadBool("zoom_editors_separately", true);
+        set => Write("zoom_editors_separately", value);
+    }
+
+    /// <summary>Most slots one Clip Bar has (the first holds clips 1..30, the second 31..60).</summary>
+    public const int ClipBarSlotsMax = 30;
+
+    /// <summary>
+    /// How many clips the first Clip Bar shows (0..<see cref="ClipBarSlotsMax"/>, default <see cref="ClipBarSlotsMax"/>): the
+    /// first clips of the library, one per slot.
+    /// </summary>
+    public int ClipBarSlots
+    {
+        get => Math.Clamp(ReadInt("clip_bar_slots", ClipBarSlotsMax), 0, ClipBarSlotsMax);
+        set => Write("clip_bar_slots", Math.Clamp(value, 0, ClipBarSlotsMax));
+    }
+
+    /// <summary>
+    /// How many clips the second Clip Bar shows (0..<see cref="ClipBarSlotsMax"/>, default <see cref="ClipBarSlotsMax"/>): the
+    /// clips that follow those of the first bar.
+    /// </summary>
+    public int ClipBar2Slots
+    {
+        get => Math.Clamp(ReadInt("clip_bar2_slots", ClipBarSlotsMax), 0, ClipBarSlotsMax);
+        set => Write("clip_bar2_slots", Math.Clamp(value, 0, ClipBarSlotsMax));
+    }
+
+    /// <summary>
+    /// The fonts of the Clip Editor window and the Clips panel (<see cref="ClipEditorAppearance"/>). Always read normalized.
+    /// </summary>
+    public ClipEditorAppearance ClipEditorAppearance
+    {
+        get
+        {
+            ClipEditorAppearance d = ClipEditorAppearance.Default;
+            return new ClipEditorAppearance(
+                ReadString("clip_editor_font_header_family", d.HeaderFontFamily),
+                ReadInt("clip_editor_font_header_size", d.HeaderFontSize),
+                ReadInt("clip_editor_font_header_weight", d.HeaderFontWeight),
+                ReadString("clip_editor_font_entries_family", d.EntriesFontFamily),
+                ReadInt("clip_editor_font_entries_size", d.EntriesFontSize),
+                ReadInt("clip_editor_font_entries_weight", d.EntriesFontWeight),
+                ReadString("clip_editor_font_text_family", d.TextFontFamily),
+                ReadInt("clip_editor_font_text_size", d.TextFontSize),
+                ReadInt("clip_editor_font_text_weight", d.TextFontWeight),
+                ReadString("clip_editor_font_other_family", d.OtherFontFamily),
+                ReadInt("clip_editor_font_other_size", d.OtherFontSize),
+                ReadInt("clip_editor_font_other_weight", d.OtherFontWeight)).Normalized();
+        }
+
+        set
+        {
+            ClipEditorAppearance v = value.Normalized();
+            WriteSilent("clip_editor_font_header_family", v.HeaderFontFamily);
+            WriteSilent("clip_editor_font_header_size", v.HeaderFontSize);
+            WriteSilent("clip_editor_font_header_weight", v.HeaderFontWeight);
+            WriteSilent("clip_editor_font_entries_family", v.EntriesFontFamily);
+            WriteSilent("clip_editor_font_entries_size", v.EntriesFontSize);
+            WriteSilent("clip_editor_font_entries_weight", v.EntriesFontWeight);
+            WriteSilent("clip_editor_font_text_family", v.TextFontFamily);
+            WriteSilent("clip_editor_font_text_size", v.TextFontSize);
+            WriteSilent("clip_editor_font_text_weight", v.TextFontWeight);
+            WriteSilent("clip_editor_font_other_family", v.OtherFontFamily);
+            WriteSilent("clip_editor_font_other_size", v.OtherFontSize);
+            WriteSilent("clip_editor_font_other_weight", v.OtherFontWeight);
+            RaiseChanged("clip_editor_appearance");
+        }
+    }
+
+    /// <summary>
     /// The fonts of the Saved Searches window (<see cref="SearchEditorAppearance"/>): the "Name" column header and
     /// the rows / Details preview / Name field. Always read normalized.
     /// </summary>
@@ -2135,6 +2210,75 @@ public sealed class SettingsStore
         {
             _file.SetRaw(MainWindowGroup, "recentfiles", new JsonArray(value.Select(s => JsonValue.Create(s)).ToArray<JsonNode?>()));
             RaiseChangedQualified($"{MainWindowGroup}/recentfiles");
+            ForgetPositionsOfBooksNotIn(value);
+        }
+    }
+
+    private const string BookPositionsGroup = "book_positions";
+
+    /// <summary>
+    /// Whether the open files and where they were scrolled are remembered per book and restored when the book is
+    /// opened again (<see cref="GetBookPosition"/>). Defaults to <c>true</c>.
+    /// </summary>
+    public bool RememberLastPosition
+    {
+        get => ReadBool("remember_last_position", true);
+        set => Write("remember_last_position", value);
+    }
+
+    /// <summary>
+    /// The position kept for a book file (see <see cref="MainUI.BookPosition"/>), or <see langword="null"/>. The path is
+    /// compared case-insensitively, as the recent files are.
+    /// </summary>
+    public MainUI.BookPosition? GetBookPosition(string bookFilePath)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(bookFilePath);
+        foreach ((string path, string text) in GetStringMap(BookPositionsGroup))
+        {
+            if (string.Equals(path, bookFilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return MainUI.BookPosition.Parse(text);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Keeps the position of a book file. Only a book that is in <see cref="RecentFiles"/> keeps one — it goes away
+    /// with its entry there.
+    /// </summary>
+    public void SetBookPosition(string bookFilePath, MainUI.BookPosition position)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(bookFilePath);
+        ArgumentNullException.ThrowIfNull(position);
+        if (!RecentFiles.Any(p => string.Equals(p, bookFilePath, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        Dictionary<string, string> map = GetStringMap(BookPositionsGroup)
+            .Where(pair => !string.Equals(pair.Key, bookFilePath, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        map[bookFilePath] = position.Serialize();
+        SetStringMap(BookPositionsGroup, map);
+    }
+
+    private void ForgetPositionsOfBooksNotIn(IEnumerable<string> recentFiles)
+    {
+        IReadOnlyDictionary<string, string> map = GetStringMap(BookPositionsGroup);
+        if (map.Count == 0)
+        {
+            return;
+        }
+
+        HashSet<string> keep = new(recentFiles, StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, string> kept = map
+            .Where(pair => keep.Contains(pair.Key))
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        if (kept.Count != map.Count)
+        {
+            SetStringMap(BookPositionsGroup, kept);
         }
     }
 
@@ -2634,6 +2778,18 @@ public sealed class SettingsStore
         yield return "spellcheck_editor_font_cells_family";
         yield return "spellcheck_editor_font_cells_size";
         yield return "spellcheck_editor_font_cells_weight";
+        yield return "clip_editor_font_header_family";
+        yield return "clip_editor_font_header_size";
+        yield return "clip_editor_font_header_weight";
+        yield return "clip_editor_font_entries_family";
+        yield return "clip_editor_font_entries_size";
+        yield return "clip_editor_font_entries_weight";
+        yield return "clip_editor_font_text_family";
+        yield return "clip_editor_font_text_size";
+        yield return "clip_editor_font_text_weight";
+        yield return "clip_editor_font_other_family";
+        yield return "clip_editor_font_other_size";
+        yield return "clip_editor_font_other_weight";
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             yield return TooltipFontKey(area, "family");

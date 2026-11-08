@@ -186,6 +186,12 @@ public static class AppActionIds
     /// </summary>
     public const string SelectClip = "MainWindow.SelectClip";
 
+    /// <summary>
+    /// "Show Clips Popup" — a popup menu at the mouse pointer with only the clips: "Add To Clips..." (enabled when the
+    /// Code Editor has a selection), a separator and the clip library (groups as submenus). No default shortcut.
+    /// </summary>
+    public const string ShowClipsPopup = "MainWindow.ShowClipsPopup";
+
     public const string SearchEditor = "MainWindow.SearchEditor";
 
     /// <summary>Cleanup — removing unused stylesheets/selectors/media and merging CSS rules in one dialog.</summary>
@@ -289,7 +295,7 @@ public static class AppActionIds
     {
         DeleteLine, ToggleComment, CasingLowercase, CasingUppercase, CasingTitlecase, CasingCapitalize, MergeContent, UnwrapDiv,
         RenameClass, InsertClosingTag, RemoveTagPair, JumpToOpeningTag, JumpToClosingTag, SelectTagContents, RenameTag,
-        SplitTag, GoToLinkOrStyle, FindUsages,
+        SplitTag, GoToLinkOrStyle, FindUsages, ShowClipsPopup,
     };
 
     /// <summary>Whether the action's shortcuts work only in a code editor (see <see cref="CodeEditorActionIds"/>).</summary>

@@ -138,6 +138,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadFindUsagesFonts();
         LoadSpellcheckEditorFonts();
         LoadSearchEditorFonts();
+        LoadClipsSettings();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
         LoadToolHeaderFont();
@@ -154,6 +155,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _findUsagesFitUsageColumn = _settings.FindUsagesFitUsageColumn;
         _findUsagesRowSpacing = _settings.FindUsagesRowSpacing;
         _navigationHistoryRemember = _settings.NavigationHistoryRemember;
+        _rememberLastPosition = _settings.RememberLastPosition;
+        _zoomEditorsSeparately = _settings.ZoomEditorsSeparately;
         _navigationHistoryDays = _settings.NavigationHistoryDays;
         _recentLocationsLimit = _settings.RecentLocationsLimit;
         _autoCloseTags = _settings.CodeEditorAutoCloseTags;
@@ -955,6 +958,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadFindUsagesFonts();
         LoadSpellcheckEditorFonts();
         LoadSearchEditorFonts();
+        LoadClipsSettings();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
         LoadToolHeaderFont();
@@ -1024,6 +1028,21 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private int _findUsagesRowSpacing;
 
     partial void OnFindUsagesRowSpacingChanged(int value) => _settings.FindUsagesRowSpacing = value;
+
+    /// <summary>Whether each Code Editor window has a zoom of its own (otherwise one zoom is shared by all of them).</summary>
+    [ObservableProperty]
+    private bool _zoomEditorsSeparately;
+
+    partial void OnZoomEditorsSeparatelyChanged(bool value) => _settings.ZoomEditorsSeparately = value;
+
+    /// <summary>
+    /// Whether the open files and where they were scrolled are kept per book (with its entry in the recent files) and
+    /// restored when the book is opened again.
+    /// </summary>
+    [ObservableProperty]
+    private bool _rememberLastPosition;
+
+    partial void OnRememberLastPositionChanged(bool value) => _settings.RememberLastPosition = value;
 
     /// <summary>Whether the Navigate Back / Forward history of a saved book is kept between sessions.</summary>
     [ObservableProperty]

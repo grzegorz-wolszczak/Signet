@@ -186,6 +186,7 @@ public static class AppTheme
         (ThemeKeys.UiFrame, "SignetFrameBrush"),
         (ThemeKeys.UiBookBrowserBackground, "SignetBookBrowserBackgroundBrush"),
         (ThemeKeys.UiSearchEditorBackground, "SignetSearchEditorBackgroundBrush"),
+        (ThemeKeys.UiClipEditorSelection, "SignetClipEditorSelectionBrush"),
         (ThemeKeys.UiNotificationsBackground, "SignetNotificationsBackgroundBrush"),
         (ThemeKeys.UiMutedText, "SignetMutedTextBrush"),
         (ThemeKeys.UiErrorText, "SignetErrorTextBrush"),

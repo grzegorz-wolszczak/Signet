@@ -168,9 +168,9 @@ public sealed partial class MainWindowViewModel
 
         _findReplace = new FindReplaceViewModel(settings, statusBar, () => ActiveCodeTab, this);
 
-        // The panel is not dockable — it appears at the bottom and can only be closed;
-        // its visibility is remembered.
-        _isFindReplaceVisible = settings.GetFindReplaceSettings().PanelVisible;
+        // The panel is not dockable — it appears at the bottom and can only be closed. Its visibility is not
+        // remembered: it is closed when the program starts and when a book is opened.
+        _isFindReplaceVisible = false;
 
         string savedSearchPath = System.IO.Path.Combine(
             System.IO.Path.GetDirectoryName(settings.FilePath) ?? AppDirectories.PrefsDirectory,
@@ -185,8 +185,9 @@ public sealed partial class MainWindowViewModel
         string clipsPath = System.IO.Path.Combine(
             System.IO.Path.GetDirectoryName(settings.FilePath) ?? AppDirectories.PrefsDirectory,
             ClipStore.DefaultFileName);
-        _clips = new ClipsViewModel(new ClipStore(clipsPath), () => ActiveCodeTab, () => _currentBook, statusBar);
+        _clips = new ClipsViewModel(new ClipStore(clipsPath), () => ActiveCodeTab, () => _currentBook, statusBar, settings);
         _clips.ClipsChanged += (_, _) => RefreshClipActions();
+        _clips.EditRequested += (_, _) => ClipEditorRequested?.Invoke(this, EventArgs.Empty);
         _tabManager.CodeTabHost = this;
         _tabManager.AnyTabModifiedChanged += (_, _) => RefreshTitle();
         _dockFactory.Clips = _clips;
@@ -525,6 +526,11 @@ public sealed partial class MainWindowViewModel
             else if (e.QualifiedKey.EndsWith("/window_title_full_path", StringComparison.Ordinal))
             {
                 RefreshTitle();
+            }
+            else if (e.QualifiedKey.EndsWith("/clip_bar_slots", StringComparison.Ordinal)
+                || e.QualifiedKey.EndsWith("/clip_bar2_slots", StringComparison.Ordinal))
+            {
+                RefreshClipActions();
             }
             else if (e.QualifiedKey.EndsWith("/ui_preview_timeout", StringComparison.Ordinal))
             {
@@ -909,6 +915,15 @@ public sealed partial class MainWindowViewModel
     /// <see cref="GetLeafClipPickerItems"/> and calls <see cref="ApplySelectedClip"/>.
     /// </summary>
     public event EventHandler? SelectClipRequested;
+
+    /// <summary>
+    /// Raised by the "Show Clips Popup" action (<see cref="AppActionIds.ShowClipsPopup"/>) — the view opens a popup
+    /// menu with the clips at the mouse pointer.
+    /// </summary>
+    public event EventHandler? ShowClipsPopupRequested;
+
+    /// <summary>"Add To Clips..." from the clips popup: the clip editor with <paramref name="text"/> as a new entry.</summary>
+    public void AddToClips(string text) => ((ICodeTabHost)this).AddToClips(text);
 
     /// <summary>
     /// Raised by the "Clip Editor" action — the view shows a non-modal, reusable
@@ -1296,7 +1311,8 @@ public sealed partial class MainWindowViewModel
         _findUsages.Clear();
         BookBrowser.SetBook(book);
         _toc.SetBook(book);
-        _tabManager.RestoreSession(_settings);
+        RestoreTabs(sourcePath);
+        HideFindPanel();
         StartCheckpointHistory(book);
         LoadNavigationHistory(sourcePath);
         UpdateBookOpenState();
@@ -1316,6 +1332,32 @@ public sealed partial class MainWindowViewModel
             book.LoadWarnings.Count > 0 ? NotificationLevel.Warning : NotificationLevel.Info);
     }
 
+    // The tabs of a book that was opened: where the user left this very file (Preferences: remember the last position),
+    // else — also when none of its files is in the book any more — the last session, as before.
+    private void RestoreTabs(string? sourcePath)
+    {
+        if (_settings.RememberLastPosition
+            && !string.IsNullOrEmpty(sourcePath)
+            && _settings.GetBookPosition(sourcePath) is { } position
+            && _tabManager.RestorePosition(position))
+        {
+            return;
+        }
+
+        _tabManager.RestoreSession(_settings);
+    }
+
+    // Keeps where the user is in the open book with its entry in the recent files (see SettingsStore.SetBookPosition).
+    private void SaveBookPosition()
+    {
+        if (_currentBook is null || !_settings.RememberLastPosition || NavigationBookFilePath() is not { Length: > 0 } path)
+        {
+            return;
+        }
+
+        _settings.SetBookPosition(path, _tabManager.CapturePosition());
+    }
+
     /// <inheritdoc />
     void IBookWorkspace.CloseBook()
     {
@@ -1326,6 +1368,7 @@ public sealed partial class MainWindowViewModel
 
         // The session (open tabs) and the navigation history of the closed book are kept for when it is opened again.
         SaveNavigationHistory();
+        SaveBookPosition();
         _tabManager.SaveAllTabs();
         _tabManager.CaptureSession(_settings);
         using (Tracker.Suspend())
@@ -1781,6 +1824,7 @@ public sealed partial class MainWindowViewModel
     public void PersistState()
     {
         SaveNavigationHistory();
+        SaveBookPosition();
         _settings.BookOpenAtExit = _currentBook is not null;
         _settings.SetStringMap(DockPanelsGroup, _dockFactory.CaptureToolVisibility());
         _settings.SetStringMap(DockOffStripeGroup, _dockFactory.CaptureOffStripe());
@@ -1792,7 +1836,7 @@ public sealed partial class MainWindowViewModel
             _tabManager.CaptureSession(_settings);
         }
 
-        _findReplace.PersistState(IsFindReplaceVisible);
+        _findReplace.PersistState(panelVisible: false);
         _searchEditor.PersistIfModified();
         _clips.PersistIfModified();
         _settings.Save();
@@ -2569,6 +2613,9 @@ public sealed partial class MainWindowViewModel
 
     /// <inheritdoc/>
     ClipEditorNode ICodeTabHost.ClipLibraryRoot => _clips.LibraryRoot;
+
+    /// <inheritdoc/>
+    void ICodeTabHost.OpenClipEditor() => ClipEditorRequested?.Invoke(this, EventArgs.Empty);
 
     /// <inheritdoc/>
     bool ICodeTabHost.IsBookOperationBusy => IsBookOperationBusy;
@@ -4404,7 +4451,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetEnabled(isHtml && (tab?.InsertFileEnabled ?? false), AppActionIds.InsertFile);
         _actions.SetEnabled(isHtml && (tab?.InsertIdEnabled ?? false), AppActionIds.InsertId);
         _actions.SetEnabled(isHtml && (tab?.InsertHyperlinkEnabled ?? false), AppActionIds.InsertHyperlink);
-        _actions.SetEnabled(tab is not null, AppActionIds.PasteClipboardHistory);
+        _actions.SetEnabled(tab is not null, AppActionIds.PasteClipboardHistory, AppActionIds.ShowClipsPopup);
     }
 
     // ------------------------------------------------- Clips --- //
@@ -4471,6 +4518,7 @@ public sealed partial class MainWindowViewModel
     {
         _actions.SetHandler(AppActionIds.ClipEditor, () => ClipEditorRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.SelectClip, () => SelectClipRequested?.Invoke(this, EventArgs.Empty));
+        _actions.SetHandler(AppActionIds.ShowClipsPopup, () => ShowClipsPopupRequested?.Invoke(this, EventArgs.Empty));
 
         for (int slot = 1; slot <= AppActionIds.ClipSlotCount; slot++)
         {
@@ -4483,7 +4531,7 @@ public sealed partial class MainWindowViewModel
 
     private void PasteClipSlot(int slot)
     {
-        ClipEditorNode? entry = _clips.GetSlot(slot);
+        ClipEditorNode? entry = ClipForSlot(slot);
         if (entry is not null)
         {
             _clips.PasteText(entry.Text);
@@ -4518,6 +4566,21 @@ public sealed partial class MainWindowViewModel
         RefreshTitle();
     }
 
+    // The clip a Clip Bar slot shows. Slots 1..30 are the first bar, 31..60 the second; the bars show as many clips as
+    // Preferences say (Appearance › Clips): the first bar the first clips of the library, the second one the clips that
+    // follow. A slot beyond its bar's count has no clip.
+    private ClipEditorNode? ClipForSlot(int slot)
+    {
+        int first = _settings.ClipBarSlots;
+        if (slot <= SettingsStore.ClipBarSlotsMax)
+        {
+            return slot <= first ? _clips.GetSlot(slot) : null;
+        }
+
+        int position = slot - SettingsStore.ClipBarSlotsMax;
+        return position <= _settings.ClipBar2Slots ? _clips.GetSlot(first + position) : null;
+    }
+
     /// <summary>
     /// Refreshes the text/availability of the 60 Clip Bar actions (<c>MainWindow.Clip1</c>..<c>Clip60</c>)
     /// according to the current slot assignment (top-level clips, no groups). An unassigned slot
@@ -4533,7 +4596,7 @@ public sealed partial class MainWindowViewModel
                 continue;
             }
 
-            ClipEditorNode? entry = _clips.GetSlot(slot);
+            ClipEditorNode? entry = ClipForSlot(slot);
 
             // An empty slot goes back to the default name from the catalog ("Clip N") — a single source of that name.
             action.Text = entry is not null

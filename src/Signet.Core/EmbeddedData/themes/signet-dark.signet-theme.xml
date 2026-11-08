@@ -59,6 +59,8 @@
     <color key="ui.icon.fileFold" value="#A0A0A0" />
     <!-- The Preview panel: the highlight of the caret keeps its color; the colors forced on the book are left to the book. -->
     <color key="preview.highlight" value="#FFEB3B" />
+    <!-- The selected text in the text of a clip (Clip Editor): the selection color of the dark theme's text boxes. -->
+    <color key="ui.clipEditor.selection" value="#264F78" />
   </colors>
   <attributes>
     <attribute key="ui.textSelection" foreground="#FFFFFF" background="#264F78" />

@@ -353,6 +353,7 @@ public sealed partial class PreferencesViewModel
                 ChooseSearchEditorRowsFontCommand,
                 () => SearchEditorRowsFontWeight, v => SearchEditorRowsFontWeight = v),
         });
+        ClipsFonts = CreateClipsFonts();
         NotificationsFonts = new FontPageViewModel(new[] { NotificationsTimestampFontRow(), NotificationsMessageFontRow() });
         TableOfContentsFonts = TooltipPage(TooltipArea.TableOfContents);
         FindReplaceFonts = TooltipPage(TooltipArea.FindReplace);
@@ -365,7 +366,7 @@ public sealed partial class PreferencesViewModel
         {
             AppearanceFonts, StartScreenFonts, ToolbarFonts, PanelStripeFonts, ContextMenuFonts, BookBrowserFonts, TableOfContentsFonts, CodeEditorFonts, PreviewFonts,
             FindReplaceFonts, FindUsagesFonts, SearchEditorFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts,
-            CleanupFonts, FootnotesFonts, NotificationsFonts,
+            CleanupFonts, FootnotesFonts, NotificationsFonts, ClipsFonts,
         });
 
         // The pages show values that change elsewhere too ("Restore Appearance Defaults", the compact mode): they are

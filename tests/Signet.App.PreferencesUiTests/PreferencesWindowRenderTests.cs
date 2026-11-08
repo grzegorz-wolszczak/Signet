@@ -603,7 +603,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
                 {
                     codeEditor, Strings.Get("PreferencesWindow_PreviewPanel"), Strings.Get("PreferencesWindow_FindUsagesWindow"),
                     Strings.Get("PreferencesWindow_SpellcheckEditorWindow"), Strings.Get("PreferencesWindow_SearchEditorWindow"),
-                    Strings.Get("PreferencesWindow_Footnotes"),
+                    Strings.Get("PreferencesWindow_Clips"), Strings.Get("PreferencesWindow_Footnotes"),
                 }));
         root.Children.Single(n => n.Title == appearance).Children.Should().BeEmpty("the parts have sections of their own");
         window.Sections.All.Where(n => PartsWithFonts.Any(p => n.Id == p + "AppearancePage"))
@@ -1810,6 +1810,37 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
+    /// The Clips page shows the Clip Editor under its settings, over a sample library, and it follows the fonts at once.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_clips_page_has_a_live_preview_of_the_clip_editor()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 900;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        TabControl tabs = ShowPage(window, "ClipsPage");
+        ClipEditorPreviewView preview = window.FindControl<ClipEditorPreviewView>("ClipsPreview")!;
+        TextBox text = preview.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "ClipTextBox");
+
+        // Act
+        vm.ClipsTextFontSize = 30;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        // Assert
+        preview.IsEffectivelyVisible.Should().BeTrue();
+        preview.GetVisualDescendants().OfType<Signet.Controls.TreeDataGrid.TreeDataGrid>().Should().ContainSingle();
+        text.Text.Should().Contain("dokona");
+        text.FontSize.Should().Be(30);
+        tabs.SelectedItem.Should().BeSameAs(window.FindControl<TabItem>("ClipsPage"));
+        window.Close();
+    }
+
+    /// <summary>
     /// The colors only one part of the application uses are edited on that part's own page (in place of the links to
     /// Interface Colors there were), and the shared Interface Colors tree does not list them.
     /// </summary>
@@ -1819,6 +1850,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [InlineData("BookBrowserAppearancePage", 3)]
     [InlineData("FindUsagesPage", 5)]
     [InlineData("SearchEditorPage", 1)]
+    [InlineData("ClipsPage", 1)]
     public void The_colors_of_a_part_of_the_application_are_edited_on_its_own_page(string pageName, int colors)
     {
         // Arrange

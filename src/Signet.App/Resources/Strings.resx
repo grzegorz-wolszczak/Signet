@@ -2696,6 +2696,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_SelectClip" xml:space="preserve">
     <value>&amp;Wstaw wycinek z biblioteki...</value>
   </data>
+  <data name="Action_MainWindow_ShowClipsPopup" xml:space="preserve">
+    <value>Pokaż menu &amp;wycinków</value>
+  </data>
+  <data name="ClipsPopup_Title" xml:space="preserve">
+    <value>Zapamiętane wycinki</value>
+  </data>
   <data name="Action_MainWindow_SearchEditor" xml:space="preserve">
     <value>&amp;Zapisane wyszukiwania...</value>
   </data>
@@ -2733,7 +2739,7 @@ Czy chcesz zapisać zmiany?</value>
     <value>&amp;Przeglądarka książki</value>
   </data>
   <data name="Action_MainWindow_ClipsWindow" xml:space="preserve">
-    <value>&amp;Wycinki</value>
+    <value>Panel &amp;wycinków</value>
   </data>
   <data name="Action_MainWindow_PreviewWindow" xml:space="preserve">
     <value>Pod&amp;gląd</value>
@@ -7957,5 +7963,707 @@ Zamknij zakładkę</value>
   </data>
   <data name="Status_SoftHyphensConverted" xml:space="preserve">
     <value>Zamieniono formę miękkich łączników.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NewDefault" xml:space="preserve">
+    <value>Tworzy nową książkę z domyślnym układem (EPUB w wersji ustawionej w Preferencjach).</value>
+  </data>
+  <data name="ActionTip_MainWindow_NewEpub2" xml:space="preserve">
+    <value>Tworzy nową, pustą książkę w formacie EPUB 2.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NewEpub3" xml:space="preserve">
+    <value>Tworzy nową, pustą książkę w formacie EPUB 3.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NewHTMLFile" xml:space="preserve">
+    <value>Dodaje do książki nowy, pusty plik HTML.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NewCSSFile" xml:space="preserve">
+    <value>Dodaje do książki nowy, pusty arkusz stylów CSS.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NewJSFile" xml:space="preserve">
+    <value>Dodaje do książki nowy, pusty plik JavaScript.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NewSVGFile" xml:space="preserve">
+    <value>Dodaje do książki nowy, pusty obraz SVG.</value>
+  </data>
+  <data name="ActionTip_MainWindow_AddExistingFile" xml:space="preserve">
+    <value>Dodaje do książki wybrane pliki z dysku (obrazy, czcionki, HTML, CSS...).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Open" xml:space="preserve">
+    <value>Otwiera plik EPUB z dysku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Close" xml:space="preserve">
+    <value>Zamyka bieżącą książkę (pyta o zapis zmian).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Save" xml:space="preserve">
+    <value>Zapisuje książkę do jej pliku EPUB.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SaveAs" xml:space="preserve">
+    <value>Zapisuje książkę pod nową nazwą lub w nowym miejscu i dalej pracuje na nowym pliku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SaveACopy" xml:space="preserve">
+    <value>Zapisuje kopię książki do wskazanego pliku, a dalej pracuje na bieżącym pliku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_PrintPreview" xml:space="preserve">
+    <value>Pokazuje podgląd wydruku bieżącego dokumentu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Print" xml:space="preserve">
+    <value>Drukuje bieżący dokument.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Exit" xml:space="preserve">
+    <value>Zamyka program (pyta o zapis zmian).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Undo" xml:space="preserve">
+    <value>Cofa ostatnią zmianę w bieżącym dokumencie.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Redo" xml:space="preserve">
+    <value>Ponawia ostatnio cofniętą zmianę.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RevertToBefore" xml:space="preserve">
+    <value>Przywraca całą książkę do stanu sprzed wybranego punktu kontrolnego.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RevertToAfter" xml:space="preserve">
+    <value>Przywraca całą książkę do stanu po wybranym punkcie kontrolnym.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CreateCheckpoint" xml:space="preserve">
+    <value>Zapamiętuje bieżący stan książki jako punkt kontrolny, do którego można później wrócić.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Cut" xml:space="preserve">
+    <value>Wycina zaznaczenie do schowka.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Copy" xml:space="preserve">
+    <value>Kopiuje zaznaczenie do schowka.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Paste" xml:space="preserve">
+    <value>Wkleja zawartość schowka w miejscu kursora.</value>
+  </data>
+  <data name="ActionTip_MainWindow_PasteClipboardHistory" xml:space="preserve">
+    <value>Pokazuje listę ostatnio skopiowanych fragmentów, z której wybierasz tekst do wklejenia.</value>
+  </data>
+  <data name="ActionTip_MainWindow_DeleteLine" xml:space="preserve">
+    <value>Usuwa wiersz, w którym stoi kursor.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ToggleComment" xml:space="preserve">
+    <value>Zamienia zaznaczony kod na komentarz lub zdejmuje z niego komentarz.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CasingLowercase" xml:space="preserve">
+    <value>Zamienia zaznaczony tekst na małe litery.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CasingUppercase" xml:space="preserve">
+    <value>Zamienia zaznaczony tekst na WIELKIE LITERY.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CasingTitlecase" xml:space="preserve">
+    <value>Zamienia pierwszą literę każdego słowa zaznaczenia na wielką.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CasingCapitalize" xml:space="preserve">
+    <value>Zamienia na wielką tylko pierwszą literę zaznaczenia, resztę pozostawia małą.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SplitSection" xml:space="preserve">
+    <value>Dzieli bieżący plik HTML na dwa w miejscu kursora: od kursora do końca powstaje nowy plik.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SplitOnSGFSectionMarkers" xml:space="preserve">
+    <value>Dzieli bieżący plik HTML na osobne pliki w każdym miejscu, w którym wstawiono znacznik podziału.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preferences" xml:space="preserve">
+    <value>Otwiera okno Preferencji programu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_MergeContent" xml:space="preserve">
+    <value>Scala zawartość zaznaczonych sąsiednich elementów (np. akapitów) w jeden element.</value>
+  </data>
+  <data name="ActionTip_MainWindow_UnwrapDiv" xml:space="preserve">
+    <value>Usuwa znaczniki otaczającego &lt;div&gt;, zostawiając jego zawartość.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RenameClass" xml:space="preserve">
+    <value>Zmienia nazwę klasy CSS pod kursorem w arkuszach i w znacznikach całej książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertSGFSectionMarker" xml:space="preserve">
+    <value>Wstawia w miejscu kursora znacznik podziału; później plik można podzielić w tych miejscach jednym poleceniem.</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertFile" xml:space="preserve">
+    <value>Wstawia odwołanie do pliku z książki (np. obrazu) w miejscu kursora.</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertSpecialCharacter" xml:space="preserve">
+    <value>Otwiera tabelę znaków specjalnych, z której wstawiasz znak w miejscu kursora.</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertId" xml:space="preserve">
+    <value>Dodaje atrybut id do elementu pod kursorem, by móc do niego linkować.</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertClip" xml:space="preserve">
+    <value>Wstawia gotowy fragment znaczników ARIA wybrany z listy (np. rola, etykieta). To nie jest biblioteka wycinków użytkownika.</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertRole" xml:space="preserve">
+    <value>Dodaje atrybut roli (role/epub:type) do elementu pod kursorem.</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertHyperlink" xml:space="preserve">
+    <value>Wstawia link do pliku, fragmentu książki lub adresu internetowego.</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertClosingTag" xml:space="preserve">
+    <value>Wstawia znacznik zamykający dla najbliższego niezamkniętego znacznika otwierającego.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Bold" xml:space="preserve">
+    <value>Pogrubia zaznaczony tekst (lub zdejmuje pogrubienie).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Italic" xml:space="preserve">
+    <value>Zmienia zaznaczony tekst na kursywę (lub zdejmuje kursywę).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Underline" xml:space="preserve">
+    <value>Podkreśla zaznaczony tekst (lub zdejmuje podkreślenie).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Strikethrough" xml:space="preserve">
+    <value>Przekreśla zaznaczony tekst (lub zdejmuje przekreślenie).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Subscript" xml:space="preserve">
+    <value>Zamienia zaznaczony tekst na indeks dolny.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Superscript" xml:space="preserve">
+    <value>Zamienia zaznaczony tekst na indeks górny.</value>
+  </data>
+  <data name="ActionTip_MainWindow_AlignLeft" xml:space="preserve">
+    <value>Wyrównuje akapit do lewej.</value>
+  </data>
+  <data name="ActionTip_MainWindow_AlignCenter" xml:space="preserve">
+    <value>Wyśrodkowuje akapit.</value>
+  </data>
+  <data name="ActionTip_MainWindow_AlignRight" xml:space="preserve">
+    <value>Wyrównuje akapit do prawej.</value>
+  </data>
+  <data name="ActionTip_MainWindow_AlignJustify" xml:space="preserve">
+    <value>Wyjustowuje akapit (wyrównanie do obu marginesów).</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertNumberedList" xml:space="preserve">
+    <value>Zamienia zaznaczone akapity na listę numerowaną.</value>
+  </data>
+  <data name="ActionTip_MainWindow_InsertBulletedList" xml:space="preserve">
+    <value>Zamienia zaznaczone akapity na listę punktowaną.</value>
+  </data>
+  <data name="ActionTip_MainWindow_IncreaseIndent" xml:space="preserve">
+    <value>Zwiększa wcięcie zaznaczonego bloku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_DecreaseIndent" xml:space="preserve">
+    <value>Zmniejsza wcięcie zaznaczonego bloku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_TextDirectionLTR" xml:space="preserve">
+    <value>Ustawia kierunek tekstu elementu od lewej do prawej.</value>
+  </data>
+  <data name="ActionTip_MainWindow_TextDirectionRTL" xml:space="preserve">
+    <value>Ustawia kierunek tekstu elementu od prawej do lewej (np. arabski, hebrajski).</value>
+  </data>
+  <data name="ActionTip_MainWindow_TextDirectionDefault" xml:space="preserve">
+    <value>Usuwa jawnie ustawiony kierunek tekstu, więc obowiązuje domyślny.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RemoveFormatting" xml:space="preserve">
+    <value>Usuwa z zaznaczenia znaczniki formatowania (pogrubienie, kursywę itp.), zostawiając sam tekst.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RemoveTagPair" xml:space="preserve">
+    <value>Usuwa parę znaczników (otwierający i zamykający) wokół kursora, zostawiając ich zawartość.</value>
+  </data>
+  <data name="ActionTip_MainWindow_JumpToOpeningTag" xml:space="preserve">
+    <value>Przenosi kursor do znacznika otwierającego bieżącego elementu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_JumpToClosingTag" xml:space="preserve">
+    <value>Przenosi kursor do znacznika zamykającego bieżącego elementu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SelectTagContents" xml:space="preserve">
+    <value>Zaznacza całą zawartość elementu, w którym stoi kursor.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RenameTag" xml:space="preserve">
+    <value>Zmienia nazwę znacznika (np. p na div) w parze: otwierającym i zamykającym.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SplitTag" xml:space="preserve">
+    <value>Dzieli element w miejscu kursora na dwa: zamyka go i otwiera kopię (np. dzieli akapit na dwa). Działa wewnątrz pliku, nie dzieli pliku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Heading1" xml:space="preserve">
+    <value>Zamienia bieżący akapit na nagłówek poziomu 1.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Heading2" xml:space="preserve">
+    <value>Zamienia bieżący akapit na nagłówek poziomu 2.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Heading3" xml:space="preserve">
+    <value>Zamienia bieżący akapit na nagłówek poziomu 3.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Heading4" xml:space="preserve">
+    <value>Zamienia bieżący akapit na nagłówek poziomu 4.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Heading5" xml:space="preserve">
+    <value>Zamienia bieżący akapit na nagłówek poziomu 5.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Heading6" xml:space="preserve">
+    <value>Zamienia bieżący akapit na nagłówek poziomu 6.</value>
+  </data>
+  <data name="ActionTip_MainWindow_HeadingNormal" xml:space="preserve">
+    <value>Zamienia bieżący nagłówek z powrotem na zwykły akapit.</value>
+  </data>
+  <data name="ActionTip_MainWindow_HeadingPreserveAttributes" xml:space="preserve">
+    <value>Przełącznik: przy zmianie stylu akapitu lub nagłówka zachowuje istniejące atrybuty (class, id...).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Find" xml:space="preserve">
+    <value>Otwiera panel Znajdź i zamień i ustawia w nim kursor.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SearchAllFilesOfSameType" xml:space="preserve">
+    <value>Wyszukuje frazę we wszystkich plikach tego samego typu co bieżący (np. we wszystkich HTML).</value>
+  </data>
+  <data name="ActionTip_MainWindow_SearchAllTextFiles" xml:space="preserve">
+    <value>Wyszukuje frazę we wszystkich plikach tekstowych książki (HTML, CSS, OPF, NCX...).</value>
+  </data>
+  <data name="ActionTip_MainWindow_HideFind" xml:space="preserve">
+    <value>Zamyka panel Znajdź i zamień.</value>
+  </data>
+  <data name="ActionTip_MainWindow_FindNext" xml:space="preserve">
+    <value>Przechodzi do następnego wystąpienia szukanej frazy.</value>
+  </data>
+  <data name="ActionTip_MainWindow_FindPrevious" xml:space="preserve">
+    <value>Przechodzi do poprzedniego wystąpienia szukanej frazy.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ReplaceCurrent" xml:space="preserve">
+    <value>Zamienia bieżące wystąpienie, nie przechodząc dalej.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ReplaceNext" xml:space="preserve">
+    <value>Zamienia bieżące wystąpienie i przechodzi do następnego.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ReplacePrevious" xml:space="preserve">
+    <value>Zamienia bieżące wystąpienie i przechodzi do poprzedniego.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ReplaceAll" xml:space="preserve">
+    <value>Zamienia wszystkie wystąpienia w zakresie wyszukiwania (plik, wybrane pliki lub cała książka).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Count" xml:space="preserve">
+    <value>Liczy wszystkie wystąpienia szukanej frazy w zakresie wyszukiwania, nic nie zmieniając.</value>
+  </data>
+  <data name="ActionTip_MainWindow_DryRunReplaceAll" xml:space="preserve">
+    <value>Pokazuje listę zmian, jakie wykonałoby „Zamień wszystkie”, bez zmieniania książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_FilterReplaceAll" xml:space="preserve">
+    <value>Pokazuje listę wystąpień i pozwala wybrać, które zamienić; zamienia tylko zaznaczone.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RestartSearch" xml:space="preserve">
+    <value>Rozpoczyna bieżące wyszukiwanie od początku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_FindNextInFile" xml:space="preserve">
+    <value>Znajduje następne wystąpienie, ale tylko w bieżącym pliku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ReplaceNextInFile" xml:space="preserve">
+    <value>Zamienia następne wystąpienie, ale tylko w bieżącym pliku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ReplaceAllInFile" xml:space="preserve">
+    <value>Zamienia wszystkie wystąpienia tylko w bieżącym pliku, niezależnie od zakresu wyszukiwania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CountInFile" xml:space="preserve">
+    <value>Liczy wystąpienia tylko w bieżącym pliku, niezależnie od zakresu wyszukiwania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookmarkLocation" xml:space="preserve">
+    <value>Zapamiętuje bieżące miejsce w tekście jako zakładkę.</value>
+  </data>
+  <data name="ActionTip_MainWindow_GoToLinkOrStyle" xml:space="preserve">
+    <value>Przechodzi do celu linku lub do definicji stylu (klasy CSS) pod kursorem.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NavigateBack" xml:space="preserve">
+    <value>Wraca do poprzedniego miejsca w historii nawigacji (jak „Wstecz” w przeglądarce).</value>
+  </data>
+  <data name="ActionTip_MainWindow_NavigateForward" xml:space="preserve">
+    <value>Przechodzi do następnego miejsca w historii nawigacji (po cofnięciu).</value>
+  </data>
+  <data name="ActionTip_MainWindow_RecentLocations" xml:space="preserve">
+    <value>Pokazuje listę ostatnio odwiedzonych miejsc w książce, z której można szybko wybrać cel.</value>
+  </data>
+  <data name="ActionTip_MainWindow_FindUsages" xml:space="preserve">
+    <value>Wyszukuje użycia klasy CSS pod kursorem i pokazuje je w panelu użyć.</value>
+  </data>
+  <data name="ActionTip_MainWindow_MarkSelection" xml:space="preserve">
+    <value>Oznacza zaznaczony tekst kolorem w całym dokumencie (powtórne użycie zdejmuje oznaczenie).</value>
+  </data>
+  <data name="ActionTip_MainWindow_GoToLine" xml:space="preserve">
+    <value>Przechodzi do wiersza o podanym numerze.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ZoomIn" xml:space="preserve">
+    <value>Powiększa widok edytora lub podglądu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ZoomOut" xml:space="preserve">
+    <value>Pomniejsza widok edytora lub podglądu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ZoomReset" xml:space="preserve">
+    <value>Przywraca domyślne powiększenie.</value>
+  </data>
+  <data name="ActionTip_MainWindow_WordWrap" xml:space="preserve">
+    <value>Włącza lub wyłącza zawijanie długich wierszy w edytorze kodu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NextTab" xml:space="preserve">
+    <value>Przełącza na następną kartę.</value>
+  </data>
+  <data name="ActionTip_MainWindow_PreviousTab" xml:space="preserve">
+    <value>Przełącza na poprzednią kartę.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CloseTab" xml:space="preserve">
+    <value>Zamyka bieżącą kartę.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CloseOtherTabs" xml:space="preserve">
+    <value>Zamyka wszystkie karty oprócz bieżącej.</value>
+  </data>
+  <data name="ActionTip_MainWindow_PreviousResource" xml:space="preserve">
+    <value>Otwiera poprzedni plik książki w kolejności czytania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NextResource" xml:space="preserve">
+    <value>Otwiera następny plik książki w kolejności czytania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_AddCover" xml:space="preserve">
+    <value>Dodaje obraz okładki do książki i oznacza go jako okładkę.</value>
+  </data>
+  <data name="ActionTip_MainWindow_MetaEditor" xml:space="preserve">
+    <value>Otwiera edytor metadanych książki (tytuł, autorzy, język, identyfikatory...).</value>
+  </data>
+  <data name="ActionTip_MainWindow_GenerateTOC" xml:space="preserve">
+    <value>Generuje spis treści z nagłówków książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_EditTOC" xml:space="preserve">
+    <value>Otwiera edytor spisu treści, w którym zmieniasz wpisy, ich kolejność i poziomy.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CreateHTMLTOC" xml:space="preserve">
+    <value>Tworzy plik HTML ze spisem treści widocznym dla czytelnika na podstawie spisu treści książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Standardize" xml:space="preserve">
+    <value>Otwiera jedno okno z podglądem czterech porządkujących kroków: standardowe foldery, rozszerzenia plików, ID manifestu i typy mediów.</value>
+  </data>
+  <data name="ActionTip_MainWindow_StandardizeEpub" xml:space="preserve">
+    <value>Przenosi pliki do standardowych folderów układu Signet (Text, Styles, Images...) i poprawia odwołania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_UseStandardFileExtensions" xml:space="preserve">
+    <value>Zmienia nietypowe rozszerzenia plików (np. .htm) na standardowe (.xhtml) i poprawia odwołania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RebaseManifestIDs" xml:space="preserve">
+    <value>Ustawia identyfikatory wpisów manifestu OPF według bieżących nazw plików.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CustomLayout" xml:space="preserve">
+    <value>Tworzy nowy, pusty EPUB o własnym układzie folderów i plików, który sam definiujesz.</value>
+  </data>
+  <data name="ActionTip_MainWindow_UpdateManifestMediaTypes" xml:space="preserve">
+    <value>Poprawia typy mediów wpisów manifestu OPF tak, by odpowiadały rzeczywistej zawartości plików.</value>
+  </data>
+  <data name="ActionTip_MainWindow_UpdateManifestProperties" xml:space="preserve">
+    <value>Aktualizuje właściwości wpisów manifestu (np. svg, scripted, mathml) według zawartości plików.</value>
+  </data>
+  <data name="ActionTip_MainWindow_UpgradeToEpub3" xml:space="preserve">
+    <value>Konwertuje książkę z EPUB 2 do EPUB 3.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NCXGuideFromNav" xml:space="preserve">
+    <value>Tworzy NCX i Guide ze spisu treści (nav), potrzebne starszym czytnikom EPUB 2.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RemoveNCXGuide" xml:space="preserve">
+    <value>Usuwa z książki NCX i Guide.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RemoveNavFromGuide" xml:space="preserve">
+    <value>Usuwa plik nav z kolejności czytania (spine).</value>
+  </data>
+  <data name="ActionTip_MainWindow_AddNavToSpine" xml:space="preserve">
+    <value>Dodaje plik nav do kolejności czytania (spine), by czytnik pokazywał go jako stronę.</value>
+  </data>
+  <data name="ActionTip_MainWindow_AddNavToSpineNonLinear" xml:space="preserve">
+    <value>Dodaje plik nav do kolejności czytania z linear="no": jest dostępny, ale poza zwykłym przewijaniem.</value>
+  </data>
+  <data name="ActionTip_MainWindow_MendPrettifyHTML" xml:space="preserve">
+    <value>Porządkuje wcięcia i układ kodu we wszystkich plikach HTML książki, bez naprawiania błędów.</value>
+  </data>
+  <data name="ActionTip_MainWindow_MendHTML" xml:space="preserve">
+    <value>Naprawia błędy składni (niezamknięte znaczniki itp.) we wszystkich plikach HTML książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_PrettifyCurrentHTML" xml:space="preserve">
+    <value>Porządkuje wcięcia i układ kodu w bieżącym pliku HTML, bez naprawiania błędów.</value>
+  </data>
+  <data name="ActionTip_MainWindow_MendCurrentHTML" xml:space="preserve">
+    <value>Naprawia błędy składni (niezamknięte znaczniki itp.) w bieżącym pliku HTML.</value>
+  </data>
+  <data name="ActionTip_MainWindow_PrettifyCurrentCSS" xml:space="preserve">
+    <value>Przepisuje bieżący arkusz stylów do postaci wielowierszowej (każda właściwość w osobnym wierszu).</value>
+  </data>
+  <data name="ActionTip_MainWindow_PrettifyAllCSS" xml:space="preserve">
+    <value>Przepisuje wszystkie arkusze stylów książki do postaci wielowierszowej.</value>
+  </data>
+  <data name="ActionTip_MainWindow_WellFormedCheckEpub" xml:space="preserve">
+    <value>Sprawdza, czy wszystkie pliki XML/XHTML książki są poprawne składniowo.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ValidateStylesheetsWithW3C" xml:space="preserve">
+    <value>Sprawdza arkusze stylów książki walidatorem W3C CSS.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Reports" xml:space="preserve">
+    <value>Otwiera okno raportów o książce (pliki, style, odwołania itp.).</value>
+  </data>
+  <data name="ActionTip_MainWindow_ClipEditor" xml:space="preserve">
+    <value>Otwiera edytor biblioteki wycinków, w którym dodajesz, zmieniasz i porządkujesz wycinki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SelectClip" xml:space="preserve">
+    <value>Otwiera okno z listą wycinków z biblioteki i wstawia wybrany w miejscu kursora.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ShowClipsPopup" xml:space="preserve">
+    <value>Pokazuje przy kursorze myszy menu z zapamiętanymi wycinkami oraz pozycją „Dodaj do wycinków”. Działa tylko w edytorze kodu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SearchEditor" xml:space="preserve">
+    <value>Otwiera listę zapisanych wyszukiwań, które można uruchamiać i edytować.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Cleanup" xml:space="preserve">
+    <value>Usuwa nieużywane arkusze stylów, selektory i media oraz scala reguły CSS w jednym oknie.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ManageFonts" xml:space="preserve">
+    <value>Pokazuje czcionki książki, ich reguły i użycia oraz brakujące kroje, i pozwala nimi zarządzać.</value>
+  </data>
+  <data name="ActionTip_MainWindow_LiveCssPanel" xml:space="preserve">
+    <value>Otwiera panel, w którym zmieniasz style CSS i od razu widzisz efekt w podglądzie.</value>
+  </data>
+  <data name="ActionTip_MainWindow_RenumberFootnotes" xml:space="preserve">
+    <value>Przenumerowuje przypisy w książce tak, by miały kolejne numery.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ConvertFootnotes" xml:space="preserve">
+    <value>Konwertuje przypisy pochodzące z innego źródła na przypisy w stylu Signet.</value>
+  </data>
+  <data name="ActionTip_MainWindow_UnifyFootnoteLetters" xml:space="preserve">
+    <value>Ujednolica litery przypisów wspólnych dla kilku miejsc, gdy są zapisane w innym stylu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ChangeFootnotePlacement" xml:space="preserve">
+    <value>Przenosi przypisy Signet między lokalnymi (przy rozdziale) a globalnymi (w jednym pliku).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Hyphenation" xml:space="preserve">
+    <value>Dodaje lub usuwa miękkie łączniki według wzorców dzielenia wyrazów języków książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_SpellcheckEditor" xml:space="preserve">
+    <value>Otwiera okno sprawdzania pisowni książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_AutoSpellCheck" xml:space="preserve">
+    <value>Włącza lub wyłącza podkreślanie błędnie zapisanych słów podczas pisania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Spellcheck" xml:space="preserve">
+    <value>Przechodzi do następnego błędnie zapisanego słowa.</value>
+  </data>
+  <data name="ActionTip_MainWindow_AddMispelledWord" xml:space="preserve">
+    <value>Dodaje błędne słowo pod kursorem do słownika, żeby nie było już zgłaszane.</value>
+  </data>
+  <data name="ActionTip_MainWindow_IgnoreMispelledWord" xml:space="preserve">
+    <value>Ignoruje błędne słowo pod kursorem (w tej sesji), bez dodawania go do słownika.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ClearIgnoredWords" xml:space="preserve">
+    <value>Zapomina wszystkie ignorowane słowa, więc znów będą zgłaszane.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CssPropertyReference" xml:space="preserve">
+    <value>Otwiera opis właściwości CSS obsługiwanych w EPUB.</value>
+  </data>
+  <data name="ActionTip_MainWindow_About" xml:space="preserve">
+    <value>Pokazuje informacje o programie i jego wersji.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel Przeglądarki książki (lista plików).</value>
+  </data>
+  <data name="ActionTip_MainWindow_ClipsWindow" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel Wycinki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_PreviewWindow" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel Podglądu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_TableOfContents" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel Spisu treści.</value>
+  </data>
+  <data name="ActionTip_MainWindow_ValidationResults" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel Wyników walidacji.</value>
+  </data>
+  <data name="ActionTip_MainWindow_CheckpointsWindow" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel Punktów kontrolnych.</value>
+  </data>
+  <data name="ActionTip_MainWindow_FindReplaceWindow" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel Znajdź i zamień.</value>
+  </data>
+  <data name="ActionTip_MainWindow_NotificationsWindow" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel Powiadomień.</value>
+  </data>
+  <data name="ActionTip_MainWindow_FindUsagesWindow" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel znalezionych użyć.</value>
+  </data>
+  <data name="ActionTip_MainWindow_FocusOnBookBrowser" xml:space="preserve">
+    <value>Przenosi fokus do Przeglądarki książki (otwierając ją, jeśli trzeba).</value>
+  </data>
+  <data name="ActionTip_MainWindow_FocusOnCodeEditor" xml:space="preserve">
+    <value>Przenosi fokus do edytora kodu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_FocusOnPreview" xml:space="preserve">
+    <value>Przenosi fokus do Podglądu (otwierając go, jeśli trzeba).</value>
+  </data>
+  <data name="ActionTip_MainWindow_FocusOnTOC" xml:space="preserve">
+    <value>Przenosi fokus do Spisu treści (otwierając go, jeśli trzeba).</value>
+  </data>
+  <data name="ActionTip_MainWindow_FocusOnClips" xml:space="preserve">
+    <value>Przenosi fokus do panelu Wycinki (otwierając go, jeśli trzeba).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_Inspect" xml:space="preserve">
+    <value>Otwiera narzędzia do badania strony w Podglądzie (struktura i style elementów).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_SelectAll" xml:space="preserve">
+    <value>Zaznacza całą zawartość Podglądu.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_Copy" xml:space="preserve">
+    <value>Kopiuje zaznaczenie z Podglądu do schowka.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_Reload" xml:space="preserve">
+    <value>Odświeża Podgląd na podstawie bieżącej wersji pliku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_CycleCustomCss" xml:space="preserve">
+    <value>Przełącza po kolei niestandardowe arkusze CSS stosowane w Podglądzie.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_Print" xml:space="preserve">
+    <value>Drukuje to, co widać w Podglądzie.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_Open" xml:space="preserve">
+    <value>Otwiera zaznaczone pliki w edytorze.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_Rename" xml:space="preserve">
+    <value>Zmienia nazwę zaznaczonego pliku i poprawia odwołania do niego.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_RenameWithTemplate" xml:space="preserve">
+    <value>Zmienia nazwy wielu plików naraz według wzorca (np. z numeracją).</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_RERename" xml:space="preserve">
+    <value>Zmienia nazwy wielu plików naraz wyrażeniem regularnym (znajdź i zamień w nazwach).</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_Delete" xml:space="preserve">
+    <value>Usuwa zaznaczone pliki z książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_Move" xml:space="preserve">
+    <value>Przenosi zaznaczone pliki do wybranego folderu książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_MoveUp" xml:space="preserve">
+    <value>Przesuwa zaznaczone pliki o jedno miejsce wcześniej w kolejności czytania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_MoveDown" xml:space="preserve">
+    <value>Przesuwa zaznaczone pliki o jedno miejsce później w kolejności czytania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_MoveToTop" xml:space="preserve">
+    <value>Przenosi zaznaczone pliki na początek kolejności czytania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_MoveToBottom" xml:space="preserve">
+    <value>Przenosi zaznaczone pliki na koniec kolejności czytania.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_Sort" xml:space="preserve">
+    <value>Sortuje zaznaczone pliki w kolejności czytania, np. według nazw.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_Merge" xml:space="preserve">
+    <value>Scala zaznaczone pliki HTML w jeden plik.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_Split" xml:space="preserve">
+    <value>Dzieli zaznaczony plik HTML na osobne pliki w miejscach znaczników podziału. Wersja dla pliku wybranego w Przeglądarce, nie dla pliku w edytorze.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_AddBlankHtml" xml:space="preserve">
+    <value>Dodaje do książki nowy, pusty plik HTML.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_AddBlankCss" xml:space="preserve">
+    <value>Dodaje do książki nowy, pusty arkusz stylów.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_AddBlankSvg" xml:space="preserve">
+    <value>Dodaje do książki nowy, pusty obraz SVG.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_AddBlankJs" xml:space="preserve">
+    <value>Dodaje do książki nowy, pusty plik JavaScript.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_AddExistingFiles" xml:space="preserve">
+    <value>Dodaje do książki wybrane pliki z dysku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_AddFontFiles" xml:space="preserve">
+    <value>Dodaje pliki czcionek z dysku i proponuje reguły @font-face dla nich.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_AddSemantics" xml:space="preserve">
+    <value>Dodaje zaznaczonym plikom znaczenie (np. okładka, strona tytułowa) w pliku OPF.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_RemoveSemantics" xml:space="preserve">
+    <value>Usuwa znaczenie (semantykę) przypisane zaznaczonemu plikowi.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_CoverImage" xml:space="preserve">
+    <value>Oznacza zaznaczony obraz jako okładkę książki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_MarkAsNav" xml:space="preserve">
+    <value>Ustawia zaznaczony plik HTML jako dokument nawigacji (spis treści) EPUB 3.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_LinkStylesheets" xml:space="preserve">
+    <value>Podłącza wybrane arkusze stylów do zaznaczonych plików HTML.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_LinkJavascripts" xml:space="preserve">
+    <value>Podłącza wybrane skrypty JavaScript do zaznaczonych plików HTML.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_ValidateWithW3C" xml:space="preserve">
+    <value>Sprawdza zaznaczone arkusze CSS walidatorem W3C.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_AddCopy" xml:space="preserve">
+    <value>Dodaje do książki kopię zaznaczonego pliku.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_RenumberToc" xml:space="preserve">
+    <value>Przenumerowuje wpisy spisu treści (np. nazwy plików lub numery) po zmianie kolejności.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_SaveAs" xml:space="preserve">
+    <value>Zapisuje zaznaczony plik na dysku poza książką.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_SelectAll" xml:space="preserve">
+    <value>Zaznacza wszystkie pliki w bieżącym folderze Przeglądarki.</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookBrowser_GetInfo" xml:space="preserve">
+    <value>Pokazuje informacje o zaznaczonych plikach (rozmiar, typ, użycia...).</value>
+  </data>
+  <data name="ActionTip_MainWindow_ClipEditor_Rename" xml:space="preserve">
+    <value>Zmienia nazwę zaznaczonego wycinka lub grupy w drzewie wycinków.</value>
+  </data>
+  <data name="ActionTip_ClipSlot" xml:space="preserve">
+    <value>Wkleja wycinek z miejsca {0} paska wycinków (kolejność wycinków w bibliotece).</value>
+  </data>
+  <data name="PreferencesWindow_RememberLastPosition" xml:space="preserve">
+    <value>Pamiętaj ostatnie położenie w książce (otwarte pliki i miejsce przewinięcia) i przywracaj je przy ponownym otwarciu</value>
+  </data>
+  <data name="PreferencesWindow_Clips" xml:space="preserve">
+    <value>Wycinki</value>
+  </data>
+  <data name="PreferencesWindow_ClipBars" xml:space="preserve">
+    <value>Paski wycinków</value>
+  </data>
+  <data name="PreferencesWindow_ClipBarSlots" xml:space="preserve">
+    <value>Liczba wycinków na pierwszym pasku (Clip Bar):</value>
+  </data>
+  <data name="PreferencesWindow_ClipBar2Slots" xml:space="preserve">
+    <value>Liczba wycinków na drugim pasku (Clip Bar2):</value>
+  </data>
+  <data name="PreferencesWindow_ClipBarSlotsHint" xml:space="preserve">
+    <value>Każdy pasek pokazuje do 30 wycinków. Pierwszy pasek bierze pierwsze wycinki z biblioteki, drugi – kolejne. Wycinki spoza obu pasków nie mają przycisków ani skrótów Clip N.</value>
+  </data>
+  <data name="PreferencesWindow_ClipsHeaderFont" xml:space="preserve">
+    <value>Nagłówki kolumn (Nazwa, Tekst)</value>
+  </data>
+  <data name="PreferencesWindow_ClipsEntriesFont" xml:space="preserve">
+    <value>Wpisy w drzewie wycinków</value>
+  </data>
+  <data name="PreferencesWindow_ClipsTextFont" xml:space="preserve">
+    <value>Treść wycinka (pole po prawej)</value>
+  </data>
+  <data name="PreferencesWindow_ClipsOtherFont" xml:space="preserve">
+    <value>Pozostałe elementy okna (przyciski, etykiety, komunikaty)</value>
+  </data>
+  <data name="FontPreview_ClipsHeader" xml:space="preserve">
+    <value>Nazwa    Tekst</value>
+  </data>
+  <data name="FontPreview_ClipsEntries" xml:space="preserve">
+    <value>letter_spacing_1</value>
+  </data>
+  <data name="FontPreview_ClipsText" xml:space="preserve">
+    <value>&lt;span class="a"&gt;dokonała&lt;/span&gt;</value>
+  </data>
+  <data name="FontPreview_ClipsOther" xml:space="preserve">
+    <value>Dodaj wpis    Zapisano wycinki.</value>
+  </data>
+  <data name="PreferencesWindow_ClipEditorWindow" xml:space="preserve">
+    <value>Edytor wycinków</value>
+  </data>
+  <data name="ThemeKey_ui_clipEditor_selection" xml:space="preserve">
+    <value>Kolor zaznaczenia w treści wycinka</value>
+  </data>
+  <data name="ClipsPanelView_Edit" xml:space="preserve">
+    <value>Edytuj</value>
+  </data>
+  <data name="Menu_Clips" xml:space="preserve">
+    <value>Wy&amp;cinki</value>
+  </data>
+  <data name="PreferencesWindow_ZoomEditorsSeparately" xml:space="preserve">
+    <value>Powiększenie czcionki osobno dla każdego okna edytora (wyłączone: jedno wspólne dla wszystkich)</value>
+  </data>
+  <data name="PreferencesWindow_ClipsSampleGroup" xml:space="preserve">
+    <value>Przykładowa grupa</value>
+  </data>
+  <data name="FontPreview_ClipsMessage" xml:space="preserve">
+    <value>Zapisano bibliotekę wycinków.</value>
   </data>
 </root>

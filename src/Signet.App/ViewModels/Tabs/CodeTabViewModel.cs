@@ -372,6 +372,17 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     /// </summary>
     public CodeTabViewState? ViewState { get; set; }
 
+    /// <summary>
+    /// Set by the view while it shows the tab: reads where the user is now (<c>null</c> when the view cannot tell).
+    /// </summary>
+    public Func<CodeTabViewState?>? LiveViewState { get; set; }
+
+    /// <summary>
+    /// Where the user is in the text: the live view when there is one, else what the tab remembered
+    /// (<see cref="ViewState"/>); <c>null</c> when neither knows.
+    /// </summary>
+    public CodeTabViewState? CaptureViewState() => LiveViewState?.Invoke() ?? ViewState;
+
     /// <summary>Formatted caret position for the status bar.</summary>
     public string CaretStatus => CodeEditorModel.FormatCaretPosition(_caretLine, _caretColumn, _caretCodepoint);
 

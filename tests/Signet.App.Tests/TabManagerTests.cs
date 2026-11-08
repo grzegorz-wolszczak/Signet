@@ -9,6 +9,7 @@ using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels.Tabs;
 using Signet.Core;
 using Signet.Core.BookManipulation;
+using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Spellcheck;
@@ -54,6 +55,82 @@ public sealed class TabManagerTests : IDisposable
 
     private static List<ContentTabViewModel> Documents(MainDockFactory dock) =>
         dock.DocumentDock!.VisibleDockables!.OfType<ContentTabViewModel>().ToList();
+
+    [Fact]
+    public void A_position_of_the_book_is_restored_with_its_caret_and_first_visible_line()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = Load(temp);
+        (TabManager tabs, MainDockFactory dock) = NewManager();
+        tabs.SetBook(book);
+        List<Resource> resources = ThreeResources(book);
+        tabs.OpenResources(resources);
+        CodeTabViewModel html = Documents(dock).OfType<CodeTabViewModel>().First(d => d.Resource == resources[0]);
+        html.ViewState = new CodeTabViewState(3, 2, 2, 0);
+        BookPosition position = tabs.CapturePosition();
+        tabs.CloseAllTabs();
+
+        // Act
+        bool restored = tabs.RestorePosition(position);
+
+        // Assert
+        restored.Should().BeTrue();
+        Documents(dock).Select(d => d.Resource).Should().Equal(resources);
+        dock.DocumentDock!.ActiveDockable.Should().BeSameAs(Documents(dock)[2]);
+        Documents(dock).OfType<CodeTabViewModel>().First(d => d.Resource == resources[0]).ViewState
+            .Should().Be(new CodeTabViewState(3, 2, 2, 0));
+        tabs.Dispose();
+    }
+
+    [Fact]
+    public void A_position_of_files_the_book_no_longer_has_restores_nothing()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = Load(temp);
+        (TabManager tabs, MainDockFactory dock) = NewManager();
+        tabs.SetBook(book);
+        int before = Documents(dock).Count;
+        BookPosition position = new(new[] { new BookTabPosition("OEBPS/Text/gone.xhtml", 5, 2) }, "OEBPS/Text/gone.xhtml");
+
+        // Act
+        bool restored = tabs.RestorePosition(position);
+
+        // Assert
+        restored.Should().BeFalse();
+        Documents(dock).Count.Should().Be(before);
+        tabs.Dispose();
+    }
+
+    [Theory]
+    [InlineData(true, 1.0)]
+    [InlineData(false, 1.5)]
+    public void The_zoom_of_a_code_tab_reaches_the_other_tabs_only_when_it_is_shared(bool separately, double expectedOther)
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = Load(temp);
+        StatusBarService statusBar = new();
+        MainDockFactory dockFactory = new();
+        dockFactory.InitLayout(dockFactory.CreateLayout());
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
+        settings.ZoomEditorsSeparately = separately;
+        TabManager tabs = new(dockFactory, statusBar, settings, spellChecker);
+        tabs.SetBook(book);
+        List<Resource> resources = book.GetAllResources().Where(r => r.Type is ResourceType.Html or ResourceType.Css).Take(2).ToList();
+        tabs.OpenResources(resources);
+        List<CodeTabViewModel> code = Documents(dockFactory).OfType<CodeTabViewModel>().ToList();
+
+        // Act
+        code[0].ZoomFactor = 1.5;
+
+        // Assert
+        code[0].ZoomFactor.Should().Be(1.5);
+        code[1].ZoomFactor.Should().Be(expectedOther);
+        settings.ZoomText.Should().Be(1.5f, "a new tab starts from the last zoom either way");
+        tabs.Dispose();
+    }
 
     [Fact]
     public void Opening_three_resources_puts_three_documents_in_the_dock()
@@ -260,12 +337,13 @@ public sealed class TabManagerTests : IDisposable
     }
 
     [Fact]
-    public void Zooming_one_code_tab_applies_the_same_zoom_to_other_open_code_tabs_and_settings()
+    public void Zooming_one_code_tab_applies_the_same_zoom_to_other_open_code_tabs_when_the_zoom_is_shared()
     {
         // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
+        settings.ZoomEditorsSeparately = false;
         MainDockFactory dock = new();
         dock.InitLayout(dock.CreateLayout());
         using TabManager tabs = new(dock, new StatusBarService(), settings, spellChecker);
