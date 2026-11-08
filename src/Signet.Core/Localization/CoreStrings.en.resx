@@ -6260,4 +6260,7 @@
   <data name="Validation_Accessibility_SvgNoAlt" xml:space="preserve">
     <value>The SVG image has no text alternative (a title element, aria-label or aria-labelledby).</value>
   </data>
+  <data name="Validation_Accessibility_NoLanguage" xml:space="preserve">
+    <value>The file does not specify a language (lang / xml:lang on the html element).</value>
+  </data>
 </root>

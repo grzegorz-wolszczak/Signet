@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Signet.Core.Localization;
 using Signet.Core.Resources;
 
@@ -25,11 +26,40 @@ public static class AccessibilityValidator
         List<ValidationResult> results = new();
         foreach (HtmlResource html in book.GetHtmlResources())
         {
+            CheckLanguage(book, html, results);
             CheckImages(html, results);
         }
 
         return results;
     }
+
+    // The <html> element names a language (lang, xml:lang); the fix gives it the language of the book.
+    private static void CheckLanguage(Book book, HtmlResource html, List<ValidationResult> results)
+    {
+        string text = html.GetText();
+        IReadOnlyList<TagLister.TagInfo> tags = TagLister.For(text).Tags;
+        TagLister.TagInfo? root = tags.FirstOrDefault(t => t.Kind == TagKind.Begin && t.TagName.Equals("html", StringComparison.OrdinalIgnoreCase));
+        if (root is null)
+        {
+            return;
+        }
+
+        string tagText = text.Substring(root.Pos, root.Len);
+        if (TagLister.ParseAttribute(tagText, "lang").Pos >= 0 || TagLister.ParseAttribute(tagText, "xml:lang").Pos >= 0)
+        {
+            return;
+        }
+
+        string language = BookLanguage(book);
+        int line = 1 + text.Take(root.Pos).Count(c => c == '\n');
+        results.Add(new ValidationResult(
+            ValidationSeverity.Warning, html.BookPath, line, -1, CoreStrings.Get("Validation_Accessibility_NoLanguage"),
+            "Validation_Accessibility_NoLanguage", language.Length > 0 ? new SetHtmlLanguageFix(html.BookPath, language) : null));
+    }
+
+    /// <summary>The main language of the book (the first <c>dc:language</c>), or an empty string when it has none.</summary>
+    internal static string BookLanguage(Book book) =>
+        book.GetMetadataValues("dc:language").Select(v => v.Trim()).FirstOrDefault(v => v.Length > 0) ?? string.Empty;
 
     private static void CheckImages(HtmlResource html, List<ValidationResult> results)
     {

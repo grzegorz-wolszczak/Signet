@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
+using Signet.Core.Resources;
 using Xunit;
 
 namespace Signet.Core.Tests.BookManipulation;
@@ -15,7 +16,7 @@ public sealed class AccessibilityValidatorTests
 
     private static string Xhtml(string body) =>
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html>\n"
-        + "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<title>t</title>\n</head>\n<body>\n"
+        + "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\">\n<head>\n<title>t</title>\n</head>\n<body>\n"
         + body + "\n</body>\n</html>";
 
     private static List<ValidationResult> Validate(string body, out int line)
@@ -102,5 +103,48 @@ public sealed class AccessibilityValidatorTests
         // Assert
         all.Should().Contain(r => r.Code == "Validation_Accessibility_ImageNoAlt" && r.Severity == ValidationSeverity.Warning);
         skipped.Should().NotContain(r => r.Code == "Validation_Accessibility_ImageNoAlt");
+    }
+
+    private const string NoLanguage = "Validation_Accessibility_NoLanguage";
+
+    private static string WithRoot(string root) =>
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html>\n" + root + "\n<head><title>t</title></head>\n<body><p>a</p></body>\n</html>";
+
+    [Theory]
+    [InlineData("<html xmlns=\"http://www.w3.org/1999/xhtml\">", true)]
+    [InlineData("<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"pl\">", false)]
+    [InlineData("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"pl\">", false)]
+    public void A_file_without_a_language_is_reported(string root, bool reported)
+    {
+        // Arrange
+        using Book book = BookCreator.CreateNewBook("3.0");
+        book.GetHtmlResourcesExcludingNav()[0].SetText(WithRoot(root));
+
+        // Act
+        List<ValidationResult> results = AccessibilityValidator.Validate(book).Where(r => r.Code == NoLanguage).ToList();
+
+        // Assert
+        results.Count.Should().Be(reported ? 1 : 0);
+    }
+
+    [Theory]
+    [InlineData("3.0", " lang=\"en\" xml:lang=\"en\"")]
+    [InlineData("2.0", " xml:lang=\"en\"")]
+    public void The_fix_gives_the_file_the_language_of_the_book_and_keeps_its_other_attributes(string version, string expected)
+    {
+        // Arrange
+        using Book book = BookCreator.CreateNewBook(version);
+        HtmlResource html = book.GetHtmlResourcesExcludingNav()[0];
+        html.SetText(WithRoot("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
+        ValidationResult result = AccessibilityValidator.Validate(book).Single(r => r.Code == NoLanguage);
+
+        // Act
+        bool applied = result.Fix!.Apply(book);
+
+        // Assert
+        applied.Should().BeTrue();
+        html.GetText().Should().Contain("<html" + expected + " xmlns=\"http://www.w3.org/1999/xhtml\">");
+        AccessibilityValidator.Validate(book).Should().NotContain(r => r.Code == NoLanguage);
+        result.Fix.Apply(book).Should().BeFalse("there is nothing left to change");
     }
 }

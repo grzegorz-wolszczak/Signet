@@ -49,13 +49,15 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   Deviations: an `img` with `aria-label`/`aria-labelledby` counts as labelled; `aria-hidden="true"` exempts both kinds. The
   cases are built in code in `AccessibilityValidatorTests` instead of a corpus book (no EPUB tooling needed for a single file).
 
-### A2. Check: HTML files without a language — `[ ]`
+### A2. Check: HTML files without a language — `[x]`
 
 - Report an XHTML file whose `<html>` has neither `lang` nor `xml:lang` (EPUB 3 wants both; EPUB 2 `xml:lang`).
 - Fix `SetHtmlLanguageFix`: set the attributes to the main language of the book (the first `dc:language`); no fix when
   the book has no language.
 - Reuse `LanguageUsageFinder` / `Signet.Core.Semantics.Language`.
 - Tests: with/without language, book without `dc:language` (no fix), the fix keeps the other attributes of `<html>`.
+- Done: `AccessibilityValidator.CheckLanguage`, `SetHtmlLanguageFix` (EPUB 3: `lang` + `xml:lang`; EPUB 2: `xml:lang`). The "no
+  `dc:language` = no fix" branch is implemented but not unit tested (no API to drop the language from a test book).
 
 ### A3. Check: headings skipping levels — `[ ]`
 
