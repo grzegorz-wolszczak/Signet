@@ -8,6 +8,10 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
+# .NET files: CRLF on every platform (keep in step with .gitattributes)
+[*.{cs,csx,vb,csproj,vbproj,props,targets,slnx,sln,axaml,xaml,resx}]
+end_of_line = crlf
+
 
 # Xml files
 [*.xml]

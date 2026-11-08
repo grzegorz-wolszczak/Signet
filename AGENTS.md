@@ -126,7 +126,9 @@ A package version change = its own `build` commit.
   `EnforceCodeStyleInBuild`, `AnalysisLevel latest-recommended`; `CS1591` suppressed.
 - **Fix warnings last.** `IDExxxx` style rules are warnings (`IdeWarnings.props`, severity in `.editorconfig`). Fix
   all warnings only at the very end, right before the final full test run.
-- **Line endings:** `* text=auto` (LF in git, platform endings on disk); only `*.sh` LF and `*.cmd`/`*.bat` CRLF.
-  Byte-stable: `tests/corpus/`, `src/Signet.Core/EmbeddedData/` (LF).
+- **Line endings:** stored as LF in git. .NET files (`.cs`, `.csproj`, `.props`, `.targets`, `.slnx`, `.axaml`, `.xaml`,
+  `.resx`) are CRLF on disk on every platform (`.gitattributes` `eol=crlf` + `.editorconfig` `end_of_line = crlf`; keep both
+  lists in step when adding an extension); `*.sh` LF; `*.cmd`/`*.bat` CRLF; other text `text=auto`. Byte-stable:
+  `tests/corpus/`, `src/Signet.Core/EmbeddedData/` (LF). A file a tool wrote as LF is fixed by converting it to CRLF.
 - **Version:** `<VersionPrefix>-<yyyyMMddHHmm UTC>` (`version/Versioning.targets`, only in `Signet.App.csproj`);
   at runtime `Signet.App.Infrastructure.AppVersion.Text`.

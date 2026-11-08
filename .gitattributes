@@ -1,9 +1,21 @@
-# Line endings as in Microsoft's .NET repositories (dotnet/runtime, roslyn, aspnetcore, sdk): text files are stored
-# with LF and checked out with the platform's line endings (LF on Linux, CRLF on Windows). No eol is forced for
-# C# or project files; .editorconfig sets no end_of_line for them either.
+# Line endings. .NET source and project files follow Visual Studio / Microsoft's recommendation: CRLF on disk on every
+# platform (stored as LF in git). Everything else is text=auto (platform line endings on disk). Keep .editorconfig
+# (end_of_line) in step with the .NET list below.
 * text=auto
 
-*.cs text diff=csharp
+# .NET files: CRLF everywhere.
+*.cs text eol=crlf diff=csharp
+*.csx text eol=crlf diff=csharp
+*.vb text eol=crlf
+*.csproj text eol=crlf
+*.vbproj text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.slnx text eol=crlf
+*.sln text eol=crlf
+*.axaml text eol=crlf
+*.xaml text eol=crlf
+*.resx text eol=crlf
 
 # Scripts that only work with one kind of line ending.
 *.sh text eol=lf
