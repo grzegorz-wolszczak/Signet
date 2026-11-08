@@ -505,6 +505,13 @@ public sealed class MainDockFactory : Factory
     /// whose second half is empty) and could be dragged for nothing. A splitter taken out goes back to its place as soon
     /// as both its sides show something; the parts themselves are never moved (their views and contents stay).
     /// </summary>
+    // The child of the row that holds the document area (the area itself, or the layout Dock wrapped it in when a tab was
+    // docked at one of its sides); null for any other part.
+    private IDockable? DocumentAreaHolder(IDockable part, IList<IDockable> children) =>
+        part is IDocumentDock && ReferenceEquals(part, DocumentDock)
+            ? children.FirstOrDefault(c => Holds(c, part))
+            : null;
+
     private void ShowSplittersBetweenShownParts()
     {
         foreach ((IProportionalDock host, IDockable[] all) in _splitHosts)
@@ -526,7 +533,18 @@ public sealed class MainDockFactory : Factory
                     shownBefore = true;
                 }
 
-                int at = children.IndexOf(child);
+                // Dock wraps the document area in a layout of its own when a tab is docked at one of its sides (the area and the
+                // new one side by side): the wrapper stands in the row where the area was, so the area is not missing.
+                int at = DocumentAreaHolder(child, children) is { } holder ? children.IndexOf(holder) : children.IndexOf(child);
+                bool documentArea = child is IDocumentDock && ReferenceEquals(child, DocumentDock);
+                if (documentArea && at < 0)
+                {
+                    // Dock is in the middle of docking a tab at a side of the area (it takes the area out of the row, then puts
+                    // the layout holding it in): the area is never put back here, or it would be in the row twice.
+                    kept++;
+                    continue;
+                }
+
                 if (wanted && at < 0)
                 {
                     children.Insert(Math.Min(kept, children.Count), child);
