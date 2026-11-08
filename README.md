@@ -1,165 +1,87 @@
 # Signet
 
-A desktop editor for EPUB 2 and EPUB 3 ebooks, written in C# with [Avalonia](https://avaloniaui.net/)
-(vibe coded with AI).
+A desktop editor for EPUB 2 and EPUB 3 ebooks, written in C# with [Avalonia](https://avaloniaui.net/) (vibe coded with AI).
 
-## Project status: use at your own risk
+## Use at your own risk
 
-Signet is still under heavy, active development. New features are added all the time (and new
-bugs are discovered every day!), so there is **no guarantee that any part of it works correctly**. Everyone who uses it does
-so entirely at their own risk. If Signet ruins your book, you have only yourself to blame, so
-always keep a backup copy of the original.
+Signet is under heavy development; **nothing is guaranteed to work correctly**. Keep a backup of the original book.
+It is built for the owner's personal use: no releases, support or roadmap.
 
-## Where this project comes from
+## Where it comes from
 
-Signet is a sandbox experiment: porting an existing C++ application to .NET with the help of AI.
-The reference was **[Sigil](https://github.com/Sigil-Ebook/Sigil)** (C++ / Qt6), the open-source
-EPUB editor maintained by the Sigil-Ebook project (based on commit
-[`654c579`](https://github.com/Sigil-Ebook/Sigil/tree/654c579bb65636ca4fdea1720057a4bc82a71f04)).
-I picked Sigil as the base because I think it is a great editor.
-
-Along the way the project picked up features from other sources:
-
-- several features are modelled on the ebook editor in **[calibre](https://github.com/kovidgoyal/calibre)**
-  (Edit Book), by Kovid Goyal;
-- others are my own additions.
-
-The code is now a hybrid of these approaches and has drifted away from upstream Sigil, although
-the UI still looks very similar. This is **not** Sigil and is not affiliated with the Sigil or
-calibre projects.
+A sandbox experiment porting **[Sigil](https://github.com/Sigil-Ebook/Sigil)** (C++/Qt6, based on commit
+[`654c579`](https://github.com/Sigil-Ebook/Sigil/tree/654c579bb65636ca4fdea1720057a4bc82a71f04)) to .NET with AI.
+Some features are modelled on **[calibre](https://github.com/kovidgoyal/calibre)**'s Edit Book, others are original. The
+code has drifted from Sigil; this is **not** Sigil and is not affiliated with Sigil or calibre.
 
 ## Features unique to Signet
+(As far as I know, neither Sigil nor calibre has them.)
 
-These features were designed for Signet. As far as I know, neither Sigil nor calibre (nor any other
-EPUB editor I know of) has them:
+- **Highlight of the clicked element in Preview** (Preferences → Preview: background or outline, colour, opacity,
+  optional fade).
+- **Merge Content:** joins adjacent sibling elements of the same kind
+  (`<p>The cat</p> <p>sat on the mat</p>` → `<p>The cat sat on the mat</p>`); the selection only has to start in the
+  first and end in the last.
+- **Cascade-aware CSS class rename**, from Code Editor (caret on a name in `class="…"`: whole book, or only elements
+  with the same nesting, copying style definitions to the new name) or from a stylesheet/`<style>` (caret on a class in
+  a selector: only elements using that stylesheet's rules; each defining source is renamed, copied or left alone).
+  Sigil and calibre rename everywhere, ignoring the cascade.
+- **Cleanup (Tools → Cleanup):** independent **CSS**, **HTML** and **Files** tabs, each planned and applied separately,
+  with a full preview, tick/untick per item and double-click to jump to the code.
+  - Every step simulates the CSS cascade before/after for each affected element; a change that would alter the look is
+    marked ⚠, unticked, with its consequences listed.
+  - **CSS:** merges rules with the same selector or properties into the first place where styling stays the same; flags
+    risky selector lists (vendor-prefixed, Selectors 4, unparsable); follows `@import`.
+  - **HTML** (not Prettify/Mend): collapses nested `<div>`s with identical attributes, removes empty `<p>`/`<span>`/`<div>`,
+    unwraps bare `<span>`s, removes `id`s nothing refers to (⚠ if a CSS selector still reaches it). An element whose `id`
+    is used is never removed.
+- **Remove span** (Code Editor context menu): unwraps the `<span>` at the caret, optionally every identical span in the
+  file or book; risky removals use the ⚠ confirmation.
+- **Unwrap `<div>`** (context and Edit menus): removes the innermost `<div>` tags around the caret, keeps content one
+  level up and shifts indentation; asks if it has an `id`; greyed out with a tooltip when unavailable; no default shortcut.
+- **Live CSS Panel** with the element hierarchy from `<body>` to the caret: matching rules per element, overridden
+  inherited properties struck through with the winning rule (selector, file, line). May show more than needed.
+- **Notifications panel:** history of status bar messages; errors in red (colour in Preferences); unread errors put a red
+  dot and count (`[4]`) on the bell tab and status bar.
+- **Edition page** (Preferences → Edition page): on the first save of a session Signet adds/refreshes a page with a table
+  (your fields, Signet version, revision number growing once per session — a number you type continues the count —, UTC
+  save date). You choose its position and whether it gets a TOC entry; a marker lets Signet find and remove it.
+- **Switching UI language (Polish/English) without restarting.**
 
-- **Highlighting the clicked element in Preview**: clicking in Code Editor does more than scroll the
-  Preview to the matching place (as Sigil does). It also highlights that element, so it is easy to
-  spot on a long page. The style can be set in Preferences → Preview: background or outline, colour,
-  opacity, and whether the highlight fades after a delay.
-- **Merge Content**: joins adjacent sibling elements of the same kind into one. One use is
-  paragraphs that an import split apart
-  (`<p>The cat</p> <p>sat on the mat</p>` → `<p>The cat sat on the mat</p>`).
-  The selection only has to start inside the first element and end inside the last one.
-- **Cascade-aware CSS class rename**: the class can be renamed from two places:
-  - from Code Editor of an XHTML file, with the caret on a name in `class="…"`. The rename covers
-    either the whole book or only the elements with the same nesting in the document structure.
-    In the second case the style definitions are copied under the new name.
-  - from a stylesheet or a `<style>` block, with the caret on the class in a selector. Only the
-    elements that actually use the rules of that stylesheet change. Each source that defines the
-    class is handled on its own: renamed in place, copied, or left unchanged.
-
-  Sigil's "Rename Selected Class" and calibre's "Rename the class" change the class everywhere,
-  without looking at the cascade.
-- **Cleanup (Tools → Cleanup)**: a single dialog with independent **CSS**, **HTML** and **Files**
-  tabs. Each tab is planned and applied separately. You see a full preview of every change before
-  anything is modified, can tick or untick single items, and can double-click an item to jump to
-  it in the code. How it works:
-  - **Risk analysis based on the CSS cascade**: every step simulates the cascade for each affected
-    element before and after the change. If a change would alter how the book looks, it is
-    marked ⚠, left unticked, and lists its consequences. You have to accept it explicitly.
-  - **CSS**: rules with the same selector or the same properties are merged. The merged rule goes to
-    the first place where the styling stays the same. Selector lists that are risky to merge
-    (vendor-prefixed, Selectors 4, unparsable) are flagged. `@import` is followed everywhere.
-  - **HTML cleanup**: this is **not** Prettify or Mend, which only fix or reformat the markup. It
-    removes structure that adds nothing:
-    - nested `<div>`s with identical attributes are collapsed into one;
-    - empty `<p>`, `<span>` and `<div>` elements (whitespace only) are removed;
-    - bare `<span>`s without attributes are unwrapped;
-    - `id` attributes that nothing in the book refers to (no link, ID reference or script) are removed, which also
-      frees the elements they kept from being removed or merged. An `id` that a CSS selector still reaches and whose
-      removal would change the styling is marked ⚠.
-
-    An element whose `id` is still used is never removed.
-- **Remove span** (Code Editor context menu): unwraps the `<span>` at the caret. It can also unwrap
-  every identical span (same attributes) in the file or in the whole book. Risky removals go through
-  the same ⚠ confirmation as in Cleanup.
-- **Unwrap `<div>`** (Code Editor context menu and Edit menu): removes the opening and closing tag of the
-  innermost `<div>` around the caret and keeps its content one level up, shifting the indentation back
-  (`<div class="a"><div class="b"><p>1</p></div></div>` → `<div class="a"><p>1</p></div>`). A `<div>` with an `id`
-  asks for confirmation. When it cannot be used the menu item is greyed out, and its tooltip says why. The action
-  has no default shortcut; assign one in Preferences if you want it.
-- **Live CSS Panel with the element hierarchy**: shows the matching rules of every element from
-  `<body>` down to the element at the caret. Inherited properties that a closer element overrides
-  are struck through, with the winning rule (selector, file and line) shown next to them. The panel
-  sometimes shows more than needed, so this may still change.
-- **Notifications panel**: a history of all status bar messages of the session. Errors (blocked or
-  failed operations) are shown in red (the color is set in Preferences). The panel tab has a bell icon.
-  Unread errors put a red dot on the bell with the count next to it (`[4]`), both on the tab and in
-  the status bar.
-- **Edition page** (Preferences → Edition page): on the first save after opening a book Signet adds or
-  refreshes a page with a table about the edition: your own fields (e.g. "Edited by: GreatWorksPublishing"),
-  the Signet version that wrote it, a revision number that grows once per editing session (a number you type over on the page is where the count continues from) and the save date
-  (UTC). Later saves in the same session leave the page alone. It shows on a
-  reader whether the file there is the latest version. You choose where the page goes (first, second, last but one or last) and whether it
-  gets a table of contents entry. Signet finds the page by a marker, so it can also be removed later.
-- **Switching the UI language (Polish / English) on the fly**, without restarting the application.
-
-## Sigil features that are not implemented
-
-Compared with Sigil, the following features are missing from Signet:
-
-- **Python plugin framework**: no Plugins menu, plugin runner or plugin preferences page.
-- **Automation lists**: no "Automate" lists or automation editor.
-- **Python function replacements in Find & Replace**: replacement patterns of the form
-  `\F<name>` and the function editor are not supported. Such a pattern is treated as literal text.
-- **Index Editor**: no Index Editor, "Mark for Index", "Add to Index" or "Create Index"
-  (index generation).
-- **Git-based checkpoints**: there are no Sigil repositories (Manage Repositories, Commit,
-  Checkout, Log, checkpoint compare). Signet has its own, simpler checkpoint snapshots instead.
-- **Audio, video and PDF viewing**: tabs for these resources show only file information and an
-  "open externally" button. There is no playback and no PDF rendering.
-- **External editors**: no "Open With" (other application) for resources and no "Edit with
-  external XHTML editor" action. The external editor path can be set in Preferences, but nothing
-  uses it.
-- **Change Reading Order dialog**: the reading order can be changed only with Move Up / Move Down
-  and Sort in the Book Browser.
-- **Help menu links**: no User Guide, FAQ, Tutorials, website or donation links, and no Markdown
-  viewer for plugin help.
-- **File dialog with preview**: the "Add Existing Files" dialog is the system dialog, without
-  Sigil's built-in file preview.
-
-Signet is built for the repository owner's personal use. There are no plans to turn it into a
-product, so there are no releases, support or roadmap commitments.
+## Sigil features not implemented
+- Python plugin framework; automation lists; Python function replacements in Find & Replace (`\F<name>` is literal).
+- Index Editor (mark, add, create index).
+- Git-based checkpoints (Signet has simpler snapshots).
+- Audio/video/PDF viewing (file info and "open externally" only).
+- External editors ("Open With", "Edit with external XHTML editor"; the Preferences path is unused).
+- Change Reading Order dialog (use Move Up/Down and Sort in the Book Browser).
+- Help menu links; file dialog with preview.
 
 ## Building
-
-Requires the .NET SDK **10.x**.
-
+.NET SDK **10.x**:
 ```bash
 dotnet build -c Release
 dotnet test  -c Release
 dotnet run --project src/Signet.App
 ```
 
-## Project layout
-
+## Layout
 | Project | Role |
 |---|---|
-| `src/Signet.Core` | domain model (EPUB/OCF/OPF, resources, import/export), no UI dependencies |
-| `src/Signet.App` | Avalonia desktop application (MVVM, CommunityToolkit.Mvvm) |
-| `src/Signet.Cli` | headless command-line tool (round-trip checks) |
-| `src/Signet.Controls.TreeDataGrid` | fork of the MIT Avalonia TreeDataGrid control (virtualized trees and tables) |
-| `tests/` | unit tests, Avalonia headless view tests and a test EPUB corpus |
+| `src/Signet.Core` | domain model (EPUB/OCF/OPF, import/export), no UI |
+| `src/Signet.App` | Avalonia app (MVVM, CommunityToolkit.Mvvm) |
+| `src/Signet.Cli` | headless CLI (round-trip checks) |
+| `src/Signet.Controls.TreeDataGrid` | fork of the MIT Avalonia TreeDataGrid |
+| `tests/` | unit tests, headless view tests, EPUB corpus |
 
 ## Icons
-
-The icons used in the application come from Sigil and calibre. Some of them were generated with
-AI. The icons added later for menu commands that had none come from two open-source families: Google's
+From Sigil and calibre, some AI-generated. Later additions come from Google's
 [Material Icons](https://github.com/google/material-design-icons) (Apache-2.0) and Microsoft's
-[Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) (MIT), the same families the Material and
-Fluent icon sets of Sigil are made from. They are composed (a base glyph with a small badge, or the icon of a
-single-file command repeated for the "all files" one) by `scripts/icons/build_icons.py`; see
-[`scripts/icons/README.md`](scripts/icons/README.md).
+[Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) (MIT), composed by
+`scripts/icons/build_icons.py` (see [`scripts/icons/README.md`](scripts/icons/README.md)).
 
 ## License
-
-**GNU GPL v3 or later**. See [`LICENSE`](LICENSE).
-
-Signet is a derivative work of Sigil (GPLv3) and includes code adapted from calibre (GPLv3) and
-some of its icons, so it is distributed under the same license.
-
-`src/Signet.Controls.TreeDataGrid` is a fork of the open-source
-[Avalonia TreeDataGrid](https://github.com/AvaloniaUI/Avalonia.Controls.TreeDataGrid) (MIT, Copyright (c)
-.NET Foundation and Contributors); its files keep the MIT license (see the `LICENSE.md` and `UPSTREAM.md`
-files in that folder).
+**GNU GPL v3 or later** ([`LICENSE`](LICENSE)): Signet derives from Sigil (GPLv3) and includes code and icons adapted
+from calibre (GPLv3). `src/Signet.Controls.TreeDataGrid` is a fork of the
+[Avalonia TreeDataGrid](https://github.com/AvaloniaUI/Avalonia.Controls.TreeDataGrid) (MIT, © .NET Foundation and
+Contributors) and keeps the MIT license (`LICENSE.md`, `UPSTREAM.md` there).

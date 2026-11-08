@@ -1,242 +1,132 @@
 # AGENTS.md
 
-## What this project is
+## Project
 
-**Signet** is a desktop editor for EPUB 2 and EPUB 3 ebooks, written in **C# + Avalonia**.
-Main areas: code editing (Code Editor), live Preview, Find & Replace, Table of Contents
-generation/editing, Metadata Editor, Reports, Spellcheck, Reformat/Clean, validation (Check Book: the
-EPUBCheck port plus Signet's own checks), checkpoints (snapshot + diff).
+**Signet**: desktop editor for EPUB 2/3 ebooks, C# + Avalonia. Areas: Code Editor, Preview, Find & Replace, TOC,
+Metadata Editor, Reports, Spellcheck, Reformat/Clean, Check Book (EPUBCheck port + Signet checks), checkpoints.
 
 ## Key facts
 
-- **Stack:** `net10.0`, Avalonia 12.x, `CommunityToolkit.Mvvm`, Dock.Avalonia (docking layout).
-- **Libraries:** `AngleSharp` (HTML5/CSS parsing), `AvaloniaEdit` + `TextMateSharp` (code editor),
-  `WeCantSpell.Hunspell` (spelling), `PCRE.NET` (regex in Find & Replace), `NativeWebView`
-  (Preview; its Linux backend is Signet's fork `Signet.NativeWebView.Platform.Linux`, see its `UPSTREAM.md`),
-  `SkiaSharp` (images/fonts), `DiffPlex` (diffs), Serilog (logging). Trees and tables use
-  `Signet.Controls.TreeDataGrid` — Signet's fork of the MIT Avalonia TreeDataGrid (see its `UPSTREAM.md`);
-  there is no `TreeView` / `DataGrid` in the app.
-- **Naming:** solution `Signet.slnx`; projects `Signet.Core` (domain model, no UI dependencies),
-  `Signet.App` (Avalonia app), `Signet.Cli` (headless CLI), `Signet.Controls.TreeDataGrid` (the
-  TreeDataGrid fork), `Signet.NativeWebView.Platform.Linux` (the NativeWebView Linux backend fork, assembly and namespace
-  keep the upstream `NativeWebView.Platform.Linux`), `Signet.EpubCheck.Core` (the C# port of the W3C's EPUBCheck: the checking
-  library, no dependency on `Signet.Core`) and `Signet.EpubCheck.Cli` (its standalone tool `epubcheck.net`); tests `Signet.Core.Tests`,
-  `Signet.App.Tests`, `Signet.App.UiTests`, `Signet.App.MainWindowUiTests`, `Signet.App.PreferencesUiTests`,
-  `Signet.Controls.TreeDataGrid.Tests`, `Signet.NativeWebView.Platform.Linux.Tests`, `Signet.EpubCheck.Core.Tests`,
-  `Signet.EpubCheck.Cli.Tests`, `Signet.EpubCheck.Conformance.Tests` (upstream's own scenarios); namespaces `Signet.*`.
-- **EPUBCheck port:** the plan, the decisions and the state are in `EPUBCHECK_PLAN.md`; what comes from upstream and every deliberate
-  deviation are in `src/Signet.EpubCheck.Core/UPSTREAM.md`. Check Book (`BookValidator.ValidateCurrentBook`) first runs EPUBCheck on the
-  book as it is in memory (`BookEpubSource`, `EpubCheckValidator`; results carry the message id, e.g. `OPF-003`, as their code) and then
-  Signet's own validators, whose codes are resource keys (`Validation_…`) and cannot collide with the ids. A check of Signet's was
-  retired only when a test in `EpubCheckCoverageTests` showed EPUBCheck reporting the same situation; keep that rule when changing the
-  set. The fixes of the panel are bound to message ids in `EpubCheckFixes`.
-- **License:** GNU GPL v3 or later (see `LICENSE`). Source files carry **no** license header.
-- **UI localization:** `.resx` resources — `Strings.resx` / `CoreStrings.resx` hold Polish (default),
-  `*.en.resx` hold English. Every user-visible string goes through resources, in both languages.
+- **Stack:** `net10.0`, Avalonia 12.x, `CommunityToolkit.Mvvm`, Dock.Avalonia.
+- **Libraries:** AngleSharp, AvaloniaEdit + TextMateSharp, WeCantSpell.Hunspell, PCRE.NET, NativeWebView (Preview),
+  SkiaSharp, DiffPlex, Serilog. Trees/tables use `Signet.Controls.TreeDataGrid` (our fork, see its `UPSTREAM.md`);
+  the app has no `TreeView`/`DataGrid`.
+- **Projects:** solution `Signet.slnx`; `Signet.Core` (domain, no UI), `Signet.App`, `Signet.Cli`,
+  `Signet.Controls.TreeDataGrid`, `Signet.NativeWebView.Platform.Linux` (fork; assembly/namespace keep upstream name),
+  `Signet.EpubCheck.Core` (EPUBCheck port, independent of `Signet.Core`), `Signet.EpubCheck.Cli`. Tests: one
+  `tests/<Project>.Tests` per project, plus `Signet.App.UiTests`, `Signet.App.MainWindowUiTests`,
+  `Signet.App.PreferencesUiTests`, `Signet.EpubCheck.Conformance.Tests`. Namespaces `Signet.*`.
+- **EPUBCheck port:** plan/state in `EPUBCHECK_PLAN.md`; upstream origin and deviations in
+  `src/Signet.EpubCheck.Core/UPSTREAM.md`. `BookValidator.ValidateCurrentBook` runs EPUBCheck on the in-memory book
+  (`BookEpubSource`, `EpubCheckValidator`; result code = message id, e.g. `OPF-003`), then Signet's own validators
+  (codes are `Validation_…` resource keys). Retire a Signet check only when a test in `EpubCheckCoverageTests` shows
+  EPUBCheck reports the same situation. Panel fixes are bound to message ids in `EpubCheckFixes`.
+- **License:** GPL v3 or later. Source files carry no license header.
+- **Localization:** `.resx`; `Strings.resx`/`CoreStrings.resx` = Polish (default), `*.en.resx` = English. Every
+  user-visible string goes through resources, in both languages.
 
 ## Ground rule — ask, don't assume
 
-Applies to **every kind of task** (code, planning, research, refactoring, configuration, anything).
-
-If you have any doubt, under-specified requirements, unclear assumptions, or see several reasonable
-interpretations — **stop and ask the user before assuming anything and starting work**. Do not
-"pick a sensible default and move on", do not guess intent, do not choose libraries/names/APIs/scope
-on your own when they have not been agreed.
-
-Better one question too many than an implementation built on a wrong assumption.
-When there are several doubts, collect them and ask all at once, not one by one.
+For every kind of task: if requirements are under-specified or have several reasonable interpretations, **stop and
+ask before starting**. Don't guess intent or pick libraries/names/APIs/scope that were not agreed. Collect all doubts
+and ask at once.
 
 ## Conventions
 
 - C# `nullable enable`, `TreatWarningsAsErrors`, `ImplicitUsings disable`.
-- Code comments and XML docs are written in **English**.
-- Examples (in docs, README, comments, tests, commit messages) are always written in **English**,
-  even when the conversation with the user is in Polish.
-- Central Package Management (`Directory.Packages.props`) — all package versions pinned.
-- Domain names in the code (Resource, FolderKeeper, OpfResource, BookPath, …) are established —
-  reuse them, do not introduce synonyms.
-- **Identifiers: ULID by default.** Wherever we generate our own unique identifier and its format is
-  **not** dictated by the EPUB standard or by an external library/API, use `Ulid` (package `Ulid`),
-  not `Guid`/UUID. `Guid`/UUID only where required (e.g. `urn:uuid:` in OPF metadata, `dc:identifier`).
-- Language of communication with the user: **Polish**.
+- Code comments, XML docs, examples (docs, tests, commit messages) in **English**; talk to the user in **Polish**.
+- Central Package Management (`Directory.Packages.props`); all versions pinned.
+- Reuse established domain names (Resource, FolderKeeper, OpfResource, BookPath, …); no synonyms.
+- **Own unique identifiers: `Ulid`**, not `Guid`, unless a standard/external API dictates (e.g. `urn:uuid:`).
 
 ## Architecture gotchas
 
-- **Dock.Avalonia deferred content is disabled.** Dock 12.1.0.6 defers materializing dockable
-  content through the dispatcher queue, which caused re-entrancy in views' `DataContextChanged`
-  handlers when docks were re-parented (e.g. a `NullReferenceException` in `CodeTabView` before the
-  `TextEditor.Document` binding resolved). Dock has no global switch for this; the only lever is
-  `IDeferredContentPresentation.DeferContentPresentation => false` on the content object. Therefore:
-  tools derive from `SignetTool : Tool, IDeferredContentPresentation`
-  (`src/Signet.App/Docking/DockTools.cs`) and document tabs from `ContentTabViewModel`. Any new
-  tool/tab type must keep that inheritance chain (covered by `DeferredContentOptOutTests`).
-- **TreeDataGrid sources belong to the views.** A `FlatTreeDataGridSource` / `HierarchicalTreeDataGridSource`
-  is bound to the UI thread (its selection and items views call `Dispatcher.VerifyAccess`), while view models
-  are unit-tested off the UI thread. Views build the source and its columns in code-behind when the
-  `DataContext` changes (`LocalizedColumns<T>` for headers that follow the UI language, cell templates as
-  XAML resources by key), and dispose the previous one. Selection helpers: `TreeSelectionSync<T>` /
-  `TreeMultiSelectionSync<T>`; filtered trees use `VisibleItems.For` (rows cannot be hidden). Columns are
-  virtualized horizontally too: do not put an `Auto` column after a star column (it never gets realized).
-- **The TreeDataGrid fork stays close to upstream.** It keeps its upstream style (analyzers off for the
-  project); every change against upstream is listed in `src/Signet.Controls.TreeDataGrid/UPSTREAM.md`.
-  The fork's `Fluent.axaml` must come after `FluentTheme` in `App.axaml` (it resolves Fluent colours with
-  `StaticResource`).
-
-- **The Preview on Linux: a forked NativeWebView backend.** `src/Signet.NativeWebView.Platform.Linux` is Signet's fork
-  of NativeWebView's WebKitGTK backend (the rest of NativeWebView is NuGet, all on the fork's version); its
-  `UPSTREAM.md` lists every change, why it was made, and how such problems were diagnosed. What it taught (October 2026):
-  - WebKitGTK runs on NativeWebView's own GTK thread. Upstream raised the web view's events there, so handlers touching
-    Avalonia threw, and an exception unwinding through native GTK frames ends the process with `stack smashing
-    detected` — a crash that looks random. The fork now raises the events on the UI thread (deferring WebKit's policy
-    decisions until the handler has run) and catches every exception in a native callback
-    (`LinuxNativeCallbackExceptions` → logged and shown in Notifications by `PreviewView`).
-  - Any code called back from native code (P/Invoke callbacks, GObject signals) must catch its exceptions and must keep
-    its delegate alive in a field — a method group passed to a native function that calls it later is collected by the
-    GC.
-  - Embedding the GTK window under Avalonia's X11 host: show it only after it is reparented, with the web view already in
-    it; GTK frame sync is off for it. Otherwise a compositor shows a transparent hole, or the view stays blank.
-  - A `GError` (or any pointer) a GObject signal hands to a handler belongs to the emitter: never free it there. Upstream
-    freed the one of `load-failed`, and WebKit's own handler then read freed memory — a `SIGSEGV` on the GTK thread
-    whenever a page in the Preview failed to load (e.g. after merging files).
-  - "stack smashing detected" is not always a managed exception through native frames: an abort from
-    `SwitchStackAndExecuteHandler` (libcoreclr) is the runtime handling a native `SIGSEGV`.
-  - Diagnose native crashes with `coredumpctl` and the runtime's crash report (`DOTNET_EnableCrashReport=1`), not by
-    guessing — see the fork's `UPSTREAM.md`. Signet logs at startup the variables it was started with, so the log shows
-    whether they reached it.
+- **Dock deferred content is disabled.** Dock defers dockable content via the dispatcher, causing re-entrancy in
+  `DataContextChanged` handlers. Tools derive from `SignetTool : Tool, IDeferredContentPresentation`
+  (`src/Signet.App/Docking/DockTools.cs`), tabs from `ContentTabViewModel`. Keep this chain for new tool/tab types
+  (`DeferredContentOptOutTests`).
+- **TreeDataGrid sources belong to the views.** Sources are UI-thread bound; view models are tested off-thread. Views
+  build source and columns in code-behind on `DataContext` change (`LocalizedColumns<T>`; cell templates as XAML
+  resources) and dispose the previous one. Selection: `TreeSelectionSync<T>`/`TreeMultiSelectionSync<T>`; filtered
+  trees: `VisibleItems.For`. Columns virtualize horizontally: no `Auto` column after a star column.
+- **TreeDataGrid fork stays close to upstream:** analyzers off; every change listed in its `UPSTREAM.md`; its
+  `Fluent.axaml` must come after `FluentTheme` in `App.axaml`.
+- **Preview on Linux uses a forked NativeWebView backend** (changes in its `UPSTREAM.md`):
+  - WebKitGTK runs on its own GTK thread; events are raised on the UI thread. An exception unwinding through native
+    frames kills the process ("stack smashing detected").
+  - Code called from native (P/Invoke callbacks, GObject signals) must catch all exceptions and keep its delegate in
+    a field (else the GC collects it).
+  - Never free a pointer/`GError` a signal hands to a handler; it belongs to the emitter.
+  - Embedding under Avalonia's X11 host: show the GTK window only after reparenting, with the web view in it.
+  - Diagnose native crashes with `coredumpctl` and `DOTNET_EnableCrashReport=1`, not by guessing.
 
 ## Running the GUI
 
-Never launch the desktop application or drive it (UI Automation, SendKeys, simulated mouse/keyboard)
-without asking the user first — it takes over their desktop. Headless tests (`dotnet test`,
-`[AvaloniaFact]`) are fine without asking.
+Never launch or drive the desktop app (UI Automation, SendKeys, simulated input) without asking first. Headless tests
+(`dotnet test`, `[AvaloniaFact]`) are fine.
 
 ## Commits
 
-Every commit made by an AI coding agent in this project must be a **Conventional Commit**
-(`type(scope): description`, e.g. `feat(core): add OPF parser`), with a type from:
-`feat`, `fix`, `refactor`, `test`, `docs`, `build`, `chore`, `perf`, `ci`.
-
-The commit body must be **detailed** — not a single sentence. Describe:
-- what was changed and why,
-- key design decisions / trade-offs,
-- impact on other modules, if any.
+Conventional Commits (`type(scope): description`), type from `feat fix refactor test docs build chore perf ci`.
+The body must be detailed: what changed and why, key decisions/trade-offs, impact on other modules.
+A package version change = its own `build` commit.
 
 ## Unit tests
 
-Fixed technology set for all test projects:
-
 | Purpose | Library |
 |---|---|
-| Test framework | **xUnit.v3**, variant **`xunit.v3.mtp-off`** (without Microsoft.Testing.Platform), **pinned to 3.2.2** |
-| Assertions | **AwesomeAssertions** (`value.Should().Be(...)` style) |
-| Mocks / stubs | **Moq** |
-| Anonymous / random values | **AutoFixture** (+ `AutoFixture.Xunit3` for `[Theory]` with `[AutoData]` / `[InlineAutoData]`) |
-| Avalonia view tests (UI thread) | **`Avalonia.Headless.XUnit`** — `[AvaloniaFact]` / `[AvaloniaTheory]`, projects `tests/Signet.App.UiTests`, `tests/Signet.App.MainWindowUiTests`, `tests/Signet.App.PreferencesUiTests` |
+| Framework | xUnit.v3 `xunit.v3.mtp-off`, **pinned 3.2.2** (runner 3.1.5) |
+| Assertions | AwesomeAssertions (never xUnit `Assert.*` for state) |
+| Mocks | Moq |
+| Values | AutoFixture (+ `AutoFixture.Xunit3`) |
+| Avalonia views | `Avalonia.Headless.XUnit` (`[AvaloniaFact]`/`[AvaloniaTheory]`) |
 
-Rules:
-- **Every test has explicit `// Arrange`, `// Act`, `// Assert` sections** (all test projects, the TreeDataGrid
-  fork's tests included). A test of several steps repeats the pairs in order (`// Act`, `// Assert`, `// Act`,
-  `// Assert`, …) instead of being split. When acting and asserting is one expression (e.g.
-  `sut.Invoking(x => x.Run()).Should().Throw<…>()`) the section is `// Act & Assert`. A test with nothing to
-  arrange has no `// Arrange` section.
-- Do not use xUnit `Assert.*` for state assertions — always AwesomeAssertions.
-- Generate values irrelevant to the tested behavior with AutoFixture; do not hard-code them.
-- Unit tests live in `tests/Signet.Core.Tests` and `tests/Signet.App.Tests`; tests that use sample
-  EPUBs read them from `tests/corpus/`.
-- Shared test-project settings (only MSBuild properties and analyzer suppressions — package
-  references go per project) are in `tests/Directory.Build.props`.
-- We use `xunit.v3.mtp-off` (not `xunit.v3`) so test projects stay plain libraries and `dotnet test`
-  works classically (VSTest + `xunit.runner.visualstudio`), without Microsoft.Testing.Platform and
-  without an opt-in in `global.json`. Do not switch to `xunit.v3` without adding a `test` section
-  to `global.json`.
-- **xUnit.v3 is pinned to `3.2.2`** (runner `3.1.5`). Reason: the official `Avalonia.Headless.XUnit`
-  (12.1.x) is built against xUnit.v3 3.2.x and fails during discovery on 4.0.0
-  (`MissingMethodException`). Do not bump xUnit without checking that the headless UI test projects still run.
-- **Three headless UI test projects, split only to run in parallel.** A headless test assembly runs all its tests
-  one by one on a single UI dispatcher, so one big assembly was the slowest part of `dotnet test`.
-  `Signet.App.MainWindowUiTests` holds the tests of the main window and the docking layout (panels, floating
-  tabs/windows, toolbar areas, main window shortcuts); `Signet.App.PreferencesUiTests` the tests of the Preferences
-  window; `Signet.App.UiTests` the tests of the other views and dialogs. Keep them roughly the same length when
-  adding slow tests.
-- **Avalonia.Headless creates a new `App` for every test** (the default `PerTest` isolation). Static state that
-  `App.Initialize` walks (registries of controls, static events) must start over for each new application —
-  otherwise every test starts slower than the one before (see `TooltipFonts.Reset`).
-- View render tests (`[AvaloniaFact]`): after `window.Show()` force a layout
-  pass with `Dispatcher.UIThread.RunJobs()` + `window.CaptureRenderedFrame()`.
-  A document tab can be opened in the main window's `DocumentDock` under headless
-  (`WindowRenderTests`; this used to hang with earlier versions). Tab logic that needs no UI
-  stays in `TabManagerModelTests` / `TabManagerTests`.
+- Every test has `// Arrange`, `// Act`, `// Assert` (repeat pairs for multi-step tests; `// Act & Assert` when one
+  expression does both; no `// Arrange` if nothing to arrange). Applies to all test projects.
+- Generate irrelevant values with AutoFixture.
+- Unit tests: `tests/Signet.Core.Tests`, `tests/Signet.App.Tests`; sample EPUBs from `tests/corpus/`. Shared settings
+  in `tests/Directory.Build.props`.
+- `xunit.v3.mtp-off` keeps classic VSTest `dotnet test`; don't switch to `xunit.v3` without a `test` section in
+  `global.json`. Don't bump xUnit without checking the headless projects (Avalonia.Headless.XUnit 12.1.x fails on 4.0.0).
+- Headless UI tests are split into three projects only to run in parallel (main window + docking /
+  Preferences / everything else); keep them similar in length.
+- Avalonia.Headless creates a new `App` per test: static state walked by `App.Initialize` must reset (see
+  `TooltipFonts.Reset`).
+- Render tests: after `window.Show()` call `Dispatcher.UIThread.RunJobs()` + `window.CaptureRenderedFrame()`.
+  Tab logic without UI goes in `TabManagerModelTests`/`TabManagerTests`.
 
+### A case found goes into a corpus book
 
-### A case found is a case written into a book
-
-- **When work finds a case the tests did not cover, the case goes into a corpus book — not into a note
-  in a `.md` file.** `tests/corpus/broken/` holds valid EPUBs written around the shapes that caught
-  Signet out (footnotes citing footnotes, a comment swallowing a closing tag, repeated ids…), each
-  with a comment saying when and why it was added; `tests/corpus/broken/README.md` has the rule and
-  how to add one. Assert the behaviour in the matching test — and if the behaviour is wrong and not
-  yet fixed, assert the wrong behaviour and say so, so the day it changes something says it changed.
-  (`tests/corpus/malformed/` is the other thing: books broken as EPUBs, which stop Signet at the door.)
-- **`tests/corpus/real/`** holds the markup of real published books with the prose replaced by Lorem
-  ipsum (`EpubAnonymizer`): everything structural is kept, including the faults the books shipped
-  with. Those faults stay — a fixture tidied up for the tests stops being evidence. A test on such a
-  book records what it comes with and holds the operation to **adding nothing**.
-- **Scale is generated, not stored.** `SyntheticBook` writes a book of any size and shape; the corpus
-  books hold one to three content files and cannot show a cost that grows with the book.
-- **Timings are never asserted.** `tests/Signet.Benchmarks` measures on demand only
-  (`SIGNET_BENCHMARKS=1`), asserts only that the work was done, and keeps numbers in `BASELINE.md`
-  to compare by eye. The same code measured 2145 ms and 3156 ms on one machine in one session.
+- A case the tests missed becomes a valid EPUB in `tests/corpus/broken/` (comment: when and why; see its README), with
+  the behaviour asserted in the matching test. If the behaviour is wrong and unfixed, assert the wrong behaviour and
+  say so. `tests/corpus/malformed/` = books broken as EPUBs.
+- `tests/corpus/real/` = markup of real books with prose replaced by Lorem ipsum (`EpubAnonymizer`), faults kept.
+  Tests record what the book comes with and hold the operation to adding nothing.
+- Scale is generated (`SyntheticBook`), not stored.
+- Timings are never asserted. `tests/Signet.Benchmarks` runs only with `SIGNET_BENCHMARKS=1`; numbers go to
+  `BASELINE*.md`.
 
 ### Tests leave nothing behind
 
-- **Every test deletes everything it made** — files, folders, books, view models. **When writing or changing tests,
-  always run them and check that they leave nothing behind** (the guard below must pass, not only the tests).
-- Make temporary files only in a `TempDir` (`Signet.Core.Tests.TestSupport`), never by building a path under
-  `Path.GetTempPath()` by hand. Dispose what owns files: `Book` (it extracts the EPUB to `%TEMP%/Signet/scratch`),
-  `MainWindowViewModel`, `PreferencesViewModel`, `SpellCheckSetup` (`SpellCheckTestFactory.New()`), `TestHost`.
-  Use `using`, or — when helpers hand out what they made — a `Disposables` field in a test class that implements
-  `IDisposable` (`_disposables.Add(...)`, `_disposables.DeleteFile(path)` for a file the code under test made, e.g. a
-  page passed to the external file opener).
-- Headless UI tests: the constructor and `Dispose` of a test class do not run on the UI thread — windows and views
-  are closed inside the test. Closing the main window disposes its view model only when the close goes through
-  (with a book open it asks first and is cancelled), so dispose it explicitly.
-- **The run checks it.** Each test project calls `TestIsolation.Install` from a module initializer
-  (`TestIsolationSetup.cs`): the test process gets `%TEMP%/Signet.TestRuns/<project>-<guid>/` with `temp` as its
-  `Path.GetTempPath()` and `prefs` as the application's data folder (`SIGNET_PREFS_DIR`), so tests never touch the
-  user's real data. The `TempCleanupGuard` assembly fixture fails the run ("Test Assembly Cleanup Failure") when
-  anything is left in `temp`; the list of leftovers shows with `dotnet test --logger "console;verbosity=detailed"`.
-  A new test project gets its own `TestIsolationSetup.cs`.
-- Why (found in October 2026): one full test run left ~31 MB and ~4900 files in `%TEMP%` and wrote into the user's
-  real data folder (`%LOCALAPPDATA%\Signet` on Windows). The kinds of garbage found:
-  - books never disposed — the extracted EPUBs (by far the most);
-  - paths built under `%TEMP%` with a GUID (settings, clip libraries, saved searches, dictionaries) never deleted,
-    and `TempDir`s made without `using`;
-  - helpers that handed out what they made with no way to dispose it (`SpellCheckTestFactory`), or deleted only the
-    settings file and not what was saved beside it (`TestHost`);
-  - the design-time `MainWindowViewModel()` wrote its settings straight into `%TEMP%` with the clips, saved
-    searches, navigation history and book locks next to them, and used the user's real dictionary and preferences
-    folders (it now has a folder of its own, deleted by `Dispose`);
-  - tests writing the real `settings.xml`, logs, book locks, `prettyprint.xml` and the default user dictionary of the
-    application data folder;
-  - files the code under test hands to an external program (the W3C validation page), never deleted by the test.
+- Every test deletes what it made. After writing/changing tests, run them and make sure the guard passes.
+- Temp files only via `TempDir` (`Signet.Core.Tests.TestSupport`), never hand-built `Path.GetTempPath()` paths.
+  Dispose owners of files: `Book`, `MainWindowViewModel`, `PreferencesViewModel`, `SpellCheckSetup`
+  (`SpellCheckTestFactory.New()`), `TestHost`. Use `using` or a `Disposables` field (`_disposables.Add(...)`,
+  `_disposables.DeleteFile(path)`).
+- Headless UI tests: constructor/`Dispose` don't run on the UI thread; close windows inside the test and dispose the
+  main window's view model explicitly (closing with a book open asks and cancels).
+- Each test project calls `TestIsolation.Install` from `TestIsolationSetup.cs` (new projects need their own): the
+  process gets `%TEMP%/Signet.TestRuns/<project>-<guid>/` with `temp` as temp path and `prefs` as app data folder
+  (`SIGNET_PREFS_DIR`). `TempCleanupGuard` fails the run if `temp` isn't empty; leftovers show with
+  `dotnet test --logger "console;verbosity=detailed"`.
 
 ## Build settings
 
-- `Directory.Build.props` (root): `TargetFramework net10.0`, `Nullable enable`,
-  `ImplicitUsings disable`, `TreatWarningsAsErrors true`, `EnforceCodeStyleInBuild true`,
-  `AnalysisLevel latest-recommended`. `CS1591` (missing XML doc) is suppressed globally — public API
-  documentation is enforced by review.
-- **Warnings are fixed last.** The style rules of the IDE (`IDExxxx`: unused usings, "lambda can be removed",
-  formatting…) are reported as warnings, not errors (`IdeWarnings.props`, imported by the root
-  `Directory.Build.props`; their severity is set in `.editorconfig`). While a feature is being developed do **not**
-  stop to fix them. Fix all warnings (the `IDExxxx` ones and any other) at the very end of the task, right
-  before the final run of all tests — never in the middle of development.
-- **Line endings** follow Microsoft's .NET repositories: `* text=auto` in `.gitattributes` — LF in git, the
-  platform's line endings on disk (LF on Linux, CRLF on Windows). No `eol`/`end_of_line` is forced for `.cs`,
-  `.csproj` or other source files; only `*.sh` (LF) and `*.cmd`/`*.bat` (CRLF). Byte-stable exceptions:
-  `tests/corpus/` (its own `.gitattributes`) and `src/Signet.Core/EmbeddedData/` (LF).
-- `Directory.Packages.props` — Central Package Management. A package version change = a separate
-  `build` commit.
-- **Versioning:** `<VersionPrefix>-<yyyyMMddHHmm UTC>`, e.g. `0.8.0-202610021432`
-  (`version/Versioning.targets`, imported only by `Signet.App.csproj`; `VersionPrefix` in
-  `Directory.Build.props`). At runtime: `Signet.App.Infrastructure.AppVersion.Text`.
+- Root `Directory.Build.props`: `net10.0`, nullable, `ImplicitUsings disable`, `TreatWarningsAsErrors`,
+  `EnforceCodeStyleInBuild`, `AnalysisLevel latest-recommended`; `CS1591` suppressed.
+- **Fix warnings last.** `IDExxxx` style rules are warnings (`IdeWarnings.props`, severity in `.editorconfig`). Fix
+  all warnings only at the very end, right before the final full test run.
+- **Line endings:** `* text=auto` (LF in git, platform endings on disk); only `*.sh` LF and `*.cmd`/`*.bat` CRLF.
+  Byte-stable: `tests/corpus/`, `src/Signet.Core/EmbeddedData/` (LF).
+- **Version:** `<VersionPrefix>-<yyyyMMddHHmm UTC>` (`version/Versioning.targets`, only in `Signet.App.csproj`);
+  at runtime `Signet.App.Infrastructure.AppVersion.Text`.
