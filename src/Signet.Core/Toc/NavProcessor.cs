@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
@@ -179,7 +181,7 @@ public sealed class NavProcessor
     public void SetToc(IReadOnlyList<NavTocEntry> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        SpliceSection(TocNavOpen, BuildToc(entries));
+        SpliceSection(TocNavOpen, BuildToc(entries, ReadOldSection(TocNavOpen, "toc")));
     }
 
     /// <summary>Writes the <c>toc</c> section from an entry tree (flattening it into a flat list).</summary>
@@ -193,14 +195,14 @@ public sealed class NavProcessor
     public void SetLandmarks(IReadOnlyList<NavLandmarkEntry> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        SpliceSection(LandmarksNavOpen, BuildLandmarks(entries));
+        SpliceSection(LandmarksNavOpen, BuildLandmarks(entries, ReadOldSection(LandmarksNavOpen, "landmarks")));
     }
 
     /// <summary>Writes the <c>page-list</c> section.</summary>
     public void SetPageList(IReadOnlyList<NavPageListEntry> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        SpliceSection(PageListNavOpen, BuildPageList(entries));
+        SpliceSection(PageListNavOpen, BuildPageList(entries, ReadOldSection(PageListNavOpen, "page-list")));
     }
 
     // --- operations on landmark codes ---
@@ -352,7 +354,8 @@ public sealed class NavProcessor
     {
         ArgumentNullException.ThrowIfNull(book);
 
-        string previousXml = BuildToc(GetToc());
+        // (Both are built without the ids of the old section: only the entries are compared.)
+        string previousXml = BuildToc(GetToc(), null);
 
         IReadOnlyList<Heading> headings =
             Headings.MakeHeadingHierarchy(Headings.GetHeadingList(book.GetHtmlResourcesExcludingNav()));
@@ -363,7 +366,7 @@ public sealed class NavProcessor
             tocList.AddRange(HeadingWalker(heading, 1));
         }
 
-        string newXml = BuildToc(tocList);
+        string newXml = BuildToc(tocList, null);
         SetToc(tocList);
         return !string.Equals(newXml, previousXml, StringComparison.Ordinal);
     }
@@ -626,23 +629,194 @@ public sealed class NavProcessor
 
     // --- building the section XHTML (TOC / landmarks / page-list) ---
 
-    private string BuildToc(IReadOnlyList<NavTocEntry> entries)
+    // The ids of the section that is about to be written over (Calibre 5a3593a1ef, 82d8dc6886): other files can link to them, so they
+    // go to the new section with the entries they belong to — the opening tag of the nav and its heading stay as they were, an entry
+    // keeps the ids of its li and a — and the ids of what is gone stay as empty anchors before the nav (a nav may hold only a heading and
+    // a list).
+    private sealed record OldItem(string Href, string? LiId, string? AId);
+
+    private sealed record OldSection(string OpenTag, string? Heading, string? OlId, List<OldItem> Items, List<string> AllIds, string OtherText);
+
+    private static readonly Regex HeadingAfterOpenTag = new(
+        @"^\s*(<h[1-6]\b[^>]*>.*?</h[1-6]\s*>)", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    private OldSection? ReadOldSection(Regex sectionOpen, string epubType)
+    {
+        string text = _nav.GetText();
+        Match match = sectionOpen.Match(text);
+        int end = match.Success ? text.IndexOf("</nav>", match.Index, StringComparison.OrdinalIgnoreCase) : -1;
+        if (end < 0)
+        {
+            return null;
+        }
+
+        int sectionEnd = end + "</nav>".Length;
+        string section = text[match.Index..sectionEnd];
+        IElement? nav = FindNav(Parse(section), epubType);
+        if (nav is null)
+        {
+            return null;
+        }
+
+        Match heading = HeadingAfterOpenTag.Match(section[match.Length..]);
+        List<OldItem> items = new();
+        foreach (IElement li in nav.QuerySelectorAll("li"))
+        {
+            IElement? anchor = li.Children.FirstOrDefault(c => c.LocalName.Equals("a", StringComparison.OrdinalIgnoreCase));
+            if (anchor is not null)
+            {
+                items.Add(new OldItem(anchor.GetAttribute("href") ?? string.Empty, NonEmpty(li.GetAttribute("id")), NonEmpty(anchor.GetAttribute("id"))));
+            }
+        }
+
+        IElement? ol = nav.Children.FirstOrDefault(c => c.LocalName.Equals("ol", StringComparison.OrdinalIgnoreCase));
+        List<string> allIds = nav.QuerySelectorAll("[id]").Where(e => !ReferenceEquals(e, nav)).Select(e => e.Id!).ToList();
+        return new OldSection(
+            match.Value, heading.Success ? heading.Groups[1].Value : null, NonEmpty(ol?.GetAttribute("id")), items, allIds,
+            string.Concat(text.AsSpan(0, match.Index), text.AsSpan(sectionEnd)));
+    }
+
+    private static string? NonEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
+
+    // The old entry that an entry of the new section continues: the same link, else the first one not taken yet that links to the same file.
+    private static List<OldItem?> MatchItems(OldSection? old, IEnumerable<string> hrefs, bool byFileToo)
+    {
+        List<OldItem?> matches = new();
+        if (old is null)
+        {
+            foreach (string _ in hrefs)
+            {
+                matches.Add(null);
+            }
+
+            return matches;
+        }
+
+        HashSet<OldItem> taken = new();
+        List<string> list = hrefs.ToList();
+        OldItem?[] result = new OldItem?[list.Count];
+        for (int i = 0; i < list.Count; i++)
+        {
+            OldItem? exact = old.Items.FirstOrDefault(o => !taken.Contains(o) && o.Href == list[i]);
+            if (exact is not null)
+            {
+                taken.Add(exact);
+                result[i] = exact;
+            }
+        }
+
+        if (byFileToo)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (result[i] is not null)
+                {
+                    continue;
+                }
+
+                OldItem? sameFile = old.Items.FirstOrDefault(o => !taken.Contains(o) && PathPart(o.Href) == PathPart(list[i]));
+                if (sameFile is not null)
+                {
+                    taken.Add(sameFile);
+                    result[i] = sameFile;
+                }
+            }
+        }
+
+        matches.AddRange(result);
+        return matches;
+    }
+
+    // An anchor of a nav must contain text (EPUBCheck: RSC-005): an entry without any gets the given text or, failing that, the name of the
+    // file it links to.
+    private static string TextOrFileName(string title, string href, string fallback = "")
+    {
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            return title;
+        }
+
+        if (!string.IsNullOrWhiteSpace(fallback))
+        {
+            return fallback;
+        }
+
+        string path = PathPart(href);
+        string name = Path.GetFileNameWithoutExtension(Utility.UrlDecodePath(path));
+        return name.Length > 0 ? name : href;
+    }
+
+    private static string IdAttribute(string? id) => id is null ? string.Empty : " id=\"" + WebUtility.HtmlEncode(id) + "\"";
+
+    // The opening tag of the old nav as it was, with the id and the role of the default one added when it has none.
+    private static string OpenTagOf(OldSection? old, string defaultOpenTag)
+    {
+        if (old is null)
+        {
+            return defaultOpenTag;
+        }
+
+        string tag = old.OpenTag;
+        foreach (string attribute in new[] { "id", "role" })
+        {
+            TagLister.AttInfo wanted = TagLister.ParseAttribute(defaultOpenTag, attribute);
+            if (wanted.Pos >= 0 && TagLister.ParseAttribute(tag, attribute).Pos < 0)
+            {
+                int close = tag.EndsWith("/>", StringComparison.Ordinal) ? tag.Length - 2 : tag.Length - 1;
+                tag = tag[..close].TrimEnd() + " " + attribute + "=\"" + wanted.AValue + "\"" + tag[close..];
+            }
+        }
+
+        return tag;
+    }
+
+    // The ids of the old section that the new one does not carry, as empty anchors before it (unless something else in the file has them).
+    private static string OrphanAnchors(OldSection? old, string newSection)
+    {
+        if (old is null)
+        {
+            return string.Empty;
+        }
+
+        StringBuilder anchors = new();
+        foreach (string id in old.AllIds.Distinct(StringComparer.Ordinal))
+        {
+            string quoted = "id=\"" + WebUtility.HtmlEncode(id) + "\"";
+            if (!newSection.Contains(quoted, StringComparison.Ordinal) && !old.OtherText.Contains(quoted, StringComparison.Ordinal))
+            {
+                anchors.Append("  <span").Append(IdAttribute(id)).Append("></span>\n");
+            }
+        }
+
+        return anchors.Length == 0 ? string.Empty : "\n" + anchors.ToString().TrimEnd('\n') + "\n";
+    }
+
+    private string BuildToc(IReadOnlyList<NavTocEntry> entries, OldSection? old)
     {
         const string step = "  ";
         string indentBase = step + step;
+        List<OldItem?> matches = MatchItems(old, entries.Select(e => e.Href), byFileToo: true);
 
         StringBuilder res = new();
-        res.Append('\n').Append(step).Append("<nav epub:type=\"toc\" id=\"toc\" role=\"doc-toc\">\n");
-        res.Append(indentBase).Append("<h1>").Append(Landmarks.GetTitle("toc", _language)).Append("</h1>\n");
-        res.Append(indentBase).Append("<ol>\n");
+        res.Append('\n').Append(step).Append(OpenTagOf(old, "<nav epub:type=\"toc\" id=\"toc\" role=\"doc-toc\">")).Append('\n');
+        res.Append(indentBase).Append(old?.Heading ?? "<h1>" + Landmarks.GetTitle("toc", _language) + "</h1>").Append('\n');
+        res.Append(indentBase).Append("<ol").Append(IdAttribute(old?.OlId)).Append(">\n");
 
         int curLevel = 1;
+        int previousLevel = 0;
         bool initial = true;
-        foreach (NavTocEntry entry in entries)
+        for (int index = 0; index < entries.Count; index++)
         {
-            int level = entry.Level;
+            NavTocEntry entry = entries[index];
+            OldItem? match = matches[index];
+
+            // A list can go one level deeper at a time and starts on the top level: an entry below that is put on the level it can be on.
+            int level = Math.Clamp(entry.Level, 1, previousLevel + 1);
+            previousLevel = level;
             string href = entry.Href;
-            string title = Utility.EncodeXml(entry.Title);
+            string title = Utility.EncodeXml(TextOrFileName(entry.Title, href));
+            string li = "<li" + IdAttribute(match?.LiId) + ">";
+            string anchor = "<a" + IdAttribute(match?.AId) + " href=\"" + href + "\">" + title + "</a>";
 
             if (level > curLevel)
             {
@@ -650,8 +824,8 @@ public sealed class NavProcessor
                 {
                     string indent = indentBase + Repeat(step, curLevel);
                     res.Append(indent).Append("<ol>\n");
-                    res.Append(indent).Append(step).Append("<li>\n");
-                    res.Append(indent).Append(step).Append(step).Append("<a href=\"").Append(href).Append("\">").Append(title).Append("</a>\n");
+                    res.Append(indent).Append(step).Append(li).Append('\n');
+                    res.Append(indent).Append(step).Append(step).Append(anchor).Append('\n');
                     curLevel++;
                 }
             }
@@ -667,8 +841,8 @@ public sealed class NavProcessor
 
                 string closeIndent = indentBase + Repeat(step, level - 1);
                 res.Append(closeIndent).Append(step).Append("</li>\n");
-                res.Append(closeIndent).Append(step).Append("<li>\n");
-                res.Append(closeIndent).Append(step).Append(step).Append("<a href=\"").Append(href).Append("\">").Append(title).Append("</a>\n");
+                res.Append(closeIndent).Append(step).Append(li).Append('\n');
+                res.Append(closeIndent).Append(step).Append(step).Append(anchor).Append('\n');
             }
             else
             {
@@ -678,8 +852,8 @@ public sealed class NavProcessor
                     res.Append(indent).Append(step).Append("</li>\n");
                 }
 
-                res.Append(indent).Append(step).Append("<li>\n");
-                res.Append(indent).Append(step).Append(step).Append("<a href=\"").Append(href).Append("\">").Append(title).Append("</a>\n");
+                res.Append(indent).Append(step).Append(li).Append('\n');
+                res.Append(indent).Append(step).Append(step).Append(anchor).Append('\n');
             }
 
             initial = false;
@@ -699,53 +873,59 @@ public sealed class NavProcessor
         }
 
         res.Append(step).Append("</nav>\n");
-        return res.ToString();
+        return OrphanAnchors(old, res.ToString()) + res.ToString();
     }
 
-    private string BuildLandmarks(IReadOnlyList<NavLandmarkEntry> entries)
+    private string BuildLandmarks(IReadOnlyList<NavLandmarkEntry> entries, OldSection? old)
     {
         const string step = "  ";
         string indentBase = step + step;
+        List<OldItem?> matches = MatchItems(old, entries.Select(e => e.Href), byFileToo: true);
 
         StringBuilder res = new();
-        res.Append('\n').Append(step).Append("<nav epub:type=\"landmarks\" id=\"landmarks\" hidden=\"\">\n");
-        res.Append(indentBase).Append("<h1>").Append(Landmarks.GetTitle("landmarks", _language)).Append("</h1>\n");
-        res.Append(indentBase).Append("<ol>\n");
+        res.Append('\n').Append(step).Append(OpenTagOf(old, "<nav epub:type=\"landmarks\" id=\"landmarks\" hidden=\"\">")).Append('\n');
+        res.Append(indentBase).Append(old?.Heading ?? "<h1>" + Landmarks.GetTitle("landmarks", _language) + "</h1>").Append('\n');
+        res.Append(indentBase).Append("<ol").Append(IdAttribute(old?.OlId)).Append(">\n");
 
-        foreach (NavLandmarkEntry entry in entries)
+        for (int index = 0; index < entries.Count; index++)
         {
-            res.Append(indentBase).Append(step).Append("<li>\n");
+            NavLandmarkEntry entry = entries[index];
+            OldItem? match = matches[index];
+            res.Append(indentBase).Append(step).Append("<li").Append(IdAttribute(match?.LiId)).Append(">\n");
             res.Append(indentBase).Append(step).Append(step)
-                .Append("<a epub:type=\"").Append(entry.EpubType).Append("\" href=\"").Append(entry.Href).Append("\">")
-                .Append(Utility.EncodeXml(entry.Title)).Append("</a>\n");
+                .Append("<a").Append(IdAttribute(match?.AId)).Append(" epub:type=\"").Append(entry.EpubType).Append("\" href=\"").Append(entry.Href).Append("\">")
+                .Append(Utility.EncodeXml(TextOrFileName(entry.Title, entry.Href, Landmarks.GetTitle(entry.EpubType, _language)))).Append("</a>\n");
             res.Append(indentBase).Append(step).Append("</li>\n");
         }
 
         res.Append(indentBase).Append("</ol>\n");
         res.Append(step).Append("</nav>\n");
-        return res.ToString();
+        return OrphanAnchors(old, res.ToString()) + res.ToString();
     }
 
-    private string BuildPageList(IReadOnlyList<NavPageListEntry> entries)
+    private string BuildPageList(IReadOnlyList<NavPageListEntry> entries, OldSection? old)
     {
         const string step = "  ";
         string indentBase = step + step + step;
+        List<OldItem?> matches = MatchItems(old, entries.Select(e => e.Href), byFileToo: false);
 
         StringBuilder res = new();
-        res.Append('\n').Append(step).Append("<nav epub:type=\"page-list\" id=\"page-list\" role=\"doc-pagelist\" hidden=\"\">\n");
-        res.Append(indentBase).Append("<h1>").Append(Landmarks.GetTitle("page-list", _language)).Append("</h1>\n");
-        res.Append('\n').Append(indentBase).Append("<ol>\n");
+        res.Append('\n').Append(step).Append(OpenTagOf(old, "<nav epub:type=\"page-list\" id=\"page-list\" role=\"doc-pagelist\" hidden=\"\">")).Append('\n');
+        res.Append(indentBase).Append(old?.Heading ?? "<h1>" + Landmarks.GetTitle("page-list", _language) + "</h1>").Append('\n');
+        res.Append('\n').Append(indentBase).Append("<ol").Append(IdAttribute(old?.OlId)).Append(">\n");
 
-        foreach (NavPageListEntry entry in entries)
+        for (int index = 0; index < entries.Count; index++)
         {
+            NavPageListEntry entry = entries[index];
+            OldItem? match = matches[index];
             res.Append(indentBase).Append(step)
-                .Append("<li><a href=\"").Append(entry.Href).Append("\">")
-                .Append(Utility.EncodeXml(entry.PageName)).Append("</a></li>\n");
+                .Append("<li").Append(IdAttribute(match?.LiId)).Append("><a").Append(IdAttribute(match?.AId)).Append(" href=\"").Append(entry.Href).Append("\">")
+                .Append(Utility.EncodeXml(TextOrFileName(entry.PageName, entry.Href))).Append("</a></li>\n");
         }
 
         res.Append(indentBase).Append("</ol>\n");
         res.Append(step).Append("</nav>\n");
-        return res.ToString();
+        return OrphanAnchors(old, res.ToString()) + res.ToString();
     }
 
     // --- helpers: parsing / cutting out / splice ---

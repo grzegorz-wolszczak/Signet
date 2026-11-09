@@ -190,15 +190,24 @@ For each: write the test first on a corpus book; if Signet already behaves corre
 - Done: Signet already did this (`EpubUpgrader.AddLandmarks` turns the guide into landmarks and, unlike Calibre, keeps the guide); the test
   `The_guide_entries_of_different_files_end_up_in_the_landmarks_with_their_types_and_titles` (cover + start in two files, `text` → `bodymatter`) keeps it so.
 
-### C2. nav element ids survive regeneration — `[ ]`
+### C2. nav element ids survive regeneration — `[x]`
 
 - Calibre `5a3593a1ef`: ids on `nav` elements are preserved when Signet regenerates the nav, so links to them keep working
   (`NavProcessor`, TOC editor save).
+- Done: `NavProcessor` rebuilt every section from nothing, so the ids of the nav, its heading, its lists and its entries were lost. Now the old
+  opening tag of the nav (with an `id` and a `role` added when it has none) and its heading are kept as they were, an entry keeps the ids of its `li`
+  and `a` (matched by link, then by file), and the ids of what is gone stay as empty `<span id>` anchors before the nav (a nav may hold only a
+  heading and a list; they are not written twice). Landmarks and the page list work the same way.
 
-### C3. Valid nav markup after regeneration — `[ ]`
+### C3. Valid nav markup after regeneration — `[x]`
 
 - Calibre `82d8dc6886`: verify our generated nav with the EPUBCheck port on corpus books (nested lists, empty entries,
   entries without text).
+- Done (tests in `NavMarkupValidityTests`, run through the EPUBCheck port): found and fixed three ways to write invalid markup: an entry without
+  text (`RSC-005: Anchors within nav elements must contain text`; now the file name, for a landmark its standard title), a first entry below the top
+  level (an unbalanced list: fatal `RSC-016`), a jump of more than one level (a duplicated entry; the level is now the one the list can have). An
+  empty toc stays an empty `<ol>` (invalid: a nav needs an entry; the new-book template has the same state), nested lists and `&`/`<` in titles
+  were fine.
 
 ### C4. Landmarks win over the legacy guide — `[ ]`
 
