@@ -174,6 +174,13 @@ public static class AppActionIds
 
     /// <summary>"Prettify All Stylesheets" — the same reformatting over every CSS file of the book.</summary>
     public const string PrettifyAllCss = "MainWindow.PrettifyAllCSS";
+
+    /// <summary>
+    /// Tools → CSS Tools → Extract Inline Styles: the dialog that turns the values of the <c>style</c> attribute shared by many
+    /// elements into classes of a stylesheet.
+    /// </summary>
+    public const string ExtractInlineStyles = "MainWindow.ExtractInlineStyles";
+
     public const string WellFormedCheckEpub = "MainWindow.WellFormedCheckEpub";
     public const string ValidateStylesheetsWithW3C = "MainWindow.ValidateStylesheetsWithW3C";
     public const string Reports = "MainWindow.Reports";

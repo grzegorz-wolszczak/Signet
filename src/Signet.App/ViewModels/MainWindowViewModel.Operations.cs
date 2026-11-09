@@ -50,6 +50,7 @@ public sealed partial class MainWindowViewModel : IBookOperationHost
         AppActionIds.MendPrettifyHtml,
         AppActionIds.MendHtml,
         AppActionIds.PrettifyAllCss,
+        AppActionIds.ExtractInlineStyles,
         AppActionIds.Hyphenation,
         AppActionIds.WellFormedCheckEpub,
         AppActionIds.RenumberFootnotes,

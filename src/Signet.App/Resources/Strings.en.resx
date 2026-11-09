@@ -8726,4 +8726,70 @@ Close the tab</value>
   <data name="FindReplace_Overwrite" xml:space="preserve">
     <value>Overwrite</value>
   </data>
+  <data name="Action_MainWindow_ExtractInlineStyles" xml:space="preserve">
+    <value>&amp;Extract Inline Styles to Classes…</value>
+  </data>
+  <data name="ActionTip_MainWindow_ExtractInlineStyles" xml:space="preserve">
+    <value>Turns repeated values of style attributes into shared CSS classes and adds those classes to the elements. Before changing anything it lists the classes with the files and tags they come from.</value>
+  </data>
+  <data name="Menu_CSSTools" xml:space="preserve">
+    <value>CSS T&amp;ools</value>
+  </data>
+  <data name="Operation_ExtractInlineStyles" xml:space="preserve">
+    <value>Extract Inline Styles to Classes</value>
+  </data>
+  <data name="Status_InlineStylesExtracted" xml:space="preserve">
+    <value>Inline styles were turned into classes.</value>
+  </data>
+  <data name="Status_NoInlineStyles" xml:space="preserve">
+    <value>The book has no style attributes to turn into classes.</value>
+  </data>
+  <data name="Status_NoStylesheetForInlineStyles" xml:space="preserve">
+    <value>The files with style attributes link no stylesheet, so there is nowhere to add the classes.</value>
+  </data>
+  <data name="InlineStylesWindow_Title" xml:space="preserve">
+    <value>Extract Inline Styles to Classes</value>
+  </data>
+  <data name="InlineStylesWindow_Intro" xml:space="preserve">
+    <value>Repeated values of the style attribute become classes of a stylesheet, and the elements get those classes in their class attribute. Classes that would lose to an existing rule of the stylesheets are unchecked at the start.</value>
+  </data>
+  <data name="InlineStylesWindow_Stylesheet" xml:space="preserve">
+    <value>The classes will be added to the stylesheet: {0}</value>
+  </data>
+  <data name="InlineStylesWindow_Outside" xml:space="preserve">
+    <value>{0} elements in files that do not link this stylesheet are left as they are.</value>
+  </data>
+  <data name="InlineStylesWindow_MinOccurrences" xml:space="preserve">
+    <value>Fewest elements with the same value:</value>
+  </data>
+  <data name="InlineStylesWindow_None" xml:space="preserve">
+    <value>No value of the style attribute repeats that many times. Lower the limit.</value>
+  </data>
+  <data name="InlineStylesWindow_Summary" xml:space="preserve">
+    <value>{0} of {1} classes checked ({2} elements)</value>
+  </data>
+  <data name="InlineStylesWindow_ColumnClass" xml:space="preserve">
+    <value>Class / file / element</value>
+  </data>
+  <data name="InlineStylesWindow_ColumnValue" xml:space="preserve">
+    <value>Value / place</value>
+  </data>
+  <data name="InlineStylesWindow_ClassTitle" xml:space="preserve">
+    <value>{0} ({1} el.)</value>
+  </data>
+  <data name="InlineStylesWindow_FileTitle" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="InlineStylesWindow_ElementTitle" xml:space="preserve">
+    <value>&lt;{0}&gt; — line {1}</value>
+  </data>
+  <data name="InlineStylesWindow_WarningMark" xml:space="preserve">
+    <value>⚠</value>
+  </data>
+  <data name="InlineStylesWindow_DoubleClickHint" xml:space="preserve">
+    <value>A double click opens the place in the code.</value>
+  </data>
+  <data name="InlineStylesWindow_Extract" xml:space="preserve">
+    <value>Extract</value>
+  </data>
 </root>

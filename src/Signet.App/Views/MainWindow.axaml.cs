@@ -223,6 +223,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.SpellcheckEditorRequested -= OnSpellcheckEditorRequested;
             _boundViewModel.CleanupRequested -= OnCleanupRequested;
             _boundViewModel.HyphenationRequested -= OnHyphenationRequested;
+            _boundViewModel.InlineStylesRequested -= OnInlineStylesRequested;
             _boundViewModel.ManageFontsRequested -= OnManageFontsRequested;
             _boundViewModel.FootnoteConversionRequested -= OnFootnoteConversionRequested;
             _boundViewModel.FootnoteLettersRequested -= OnFootnoteLettersRequested;
@@ -289,6 +290,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.SpellcheckEditorRequested += OnSpellcheckEditorRequested;
         _boundViewModel.CleanupRequested += OnCleanupRequested;
         _boundViewModel.HyphenationRequested += OnHyphenationRequested;
+        _boundViewModel.InlineStylesRequested += OnInlineStylesRequested;
         _boundViewModel.ManageFontsRequested += OnManageFontsRequested;
         _boundViewModel.FootnoteConversionRequested += OnFootnoteConversionRequested;
         _boundViewModel.FootnoteLettersRequested += OnFootnoteLettersRequested;
@@ -1536,6 +1538,46 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
                     : DictionaryManagerWindow.ShowAsync(owner, new DictionaryManagerViewModel(
                         services.GetRequiredService<Signet.Core.Spellcheck.SpellChecker>(), services.GetRequiredService<SettingsStore>()));
             }, window => dialog = window);
+        }
+        finally
+        {
+            vm.PropertyChanged -= busyChanged;
+        }
+    }
+
+    // "Extract Inline Styles…": the book is surveyed under a progress window, then the modal dialog is shown; "Extract" shows
+    // its progress over it.
+    private async void OnInlineStylesRequested(object? sender, EventArgs e)
+    {
+        MainWindowViewModel? vm = _boundViewModel;
+        if (vm is null)
+        {
+            return;
+        }
+
+        InlineStylesWindow? dialog = null;
+        InlineStylesViewModel? inlineStyles = await vm.PrepareInlineStylesAsync(
+            (title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
+                dialog ?? (Window)this, title, Strings.Get("Progress_Starting"), work, cancellable));
+        if (inlineStyles is null)
+        {
+            return;
+        }
+
+        // "Extract" is off while a book operation runs (this dialog's own included).
+        inlineStyles.IsBookOperationBusy = vm.IsBookOperationBusy;
+        PropertyChangedEventHandler busyChanged = (_, args) =>
+        {
+            if (args.PropertyName == nameof(MainWindowViewModel.IsBookOperationBusy))
+            {
+                inlineStyles.IsBookOperationBusy = vm.IsBookOperationBusy;
+            }
+        };
+        vm.PropertyChanged += busyChanged;
+        try
+        {
+            dialog = new InlineStylesWindow { DataContext = inlineStyles };
+            await dialog.ShowDialog(this);
         }
         finally
         {

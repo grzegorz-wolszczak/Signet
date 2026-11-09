@@ -1259,6 +1259,35 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>
+    /// "Extract Inline Styles": the chosen values of the <c>style</c> attribute become classes of the plan's stylesheet and the
+    /// elements get the class instead of the attribute (<see cref="InlineStyleExtraction"/>). Only files that link the
+    /// stylesheet are changed; a file that is not well-formed is skipped (left unchanged) and the rest is processed. The
+    /// rules of the classes that were used are added at the end of the stylesheet.
+    /// </summary>
+    /// <param name="plan">The stylesheet and the class name of each value (from <see cref="InlineStyleExtraction.Survey"/>).</param>
+    /// <param name="survey">The survey the plan was made from (the declarations of the values).</param>
+    /// <param name="run">Reports the progress and can stop it.</param>
+    public FileBatchResult ExtractInlineStyles(InlineStyleExtractionPlan plan, InlineStyleSurvey survey, FileBatchRun run = default)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(survey);
+        CssResource stylesheet = GetCssResources().Single(c => string.Equals(c.BookPath, plan.StylesheetBookPath, StringComparison.Ordinal));
+        Dictionary<string, InlineStyleGroup> groups = survey.Groups.ToDictionary(g => g.Key, StringComparer.Ordinal);
+        Dictionary<string, int> used = new(StringComparer.Ordinal);
+        List<HtmlResource> files = GetHtmlResources()
+            .Where(h => GetVisibleStylesheets(h).Contains(plan.StylesheetBookPath, StringComparer.Ordinal))
+            .ToList();
+        FileBatchResult result = ReplaceInEachWellFormed(
+            files, html => InlineStyleExtraction.Replace(html.GetText(), plan.ClassNames, used), run);
+        if (used.Count > 0)
+        {
+            stylesheet.SetText(InlineStyleExtraction.AppendClasses(stylesheet.GetText(), plan, groups, used));
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// "Remove Soft Hyphens": soft hyphens are removed from the text of the chosen languages in the chosen files and
     /// from the chosen places outside the text (<see cref="SoftHyphenInserter.RemoveSoftHyphens"/>). A file that is not
     /// well-formed is skipped (left unchanged) and the rest is processed; the skipped files are listed in the result.

@@ -181,6 +181,7 @@ public static class AppActionCatalog
         // time, one wants an HTML tab and the other a CSS tab).
         new("MainWindow.PrettifyCurrentCSS", "Prettify &Stylesheet", "", "beautify-css", "Tools"),
         new("MainWindow.PrettifyAllCSS", "Prettify &All Stylesheets", "", "beautify-css", "Tools"),
+        new(AppActionIds.ExtractInlineStyles, "&Extract Inline Styles to Classes…", "", "beautify-css", "Tools"),
         new("MainWindow.WellFormedCheckEpub", "Well-Formed Check &EPUB", "F7", "check-wellformed", "Tools"),
         new("MainWindow.ValidateStylesheetsWithW3C", "Validate Stylesheets With &W3C", "", "validate-css", "Tools"),
         new("MainWindow.Reports", "&Reports...", "Ctrl+Shift+R", "reports", "Tools"),

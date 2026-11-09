@@ -216,7 +216,7 @@ internal static class NestedDivRiskAnalyzer
 
     // The winning declaration of each property on the element: !important first, then specificity, then source
     // order; the style attribute beats selector rules within the same importance.
-    internal static Dictionary<string, Winner> Winners(List<(CssRule Rule, int Sequence)> rules, IElement element)
+    internal static Dictionary<string, Winner> Winners(List<(CssRule Rule, int Sequence)> rules, IElement element, bool includeInlineStyle = true)
     {
         Dictionary<string, Winner> winners = new(StringComparer.OrdinalIgnoreCase);
 
@@ -277,7 +277,7 @@ internal static class NestedDivRiskAnalyzer
             }
         }
 
-        string? style = element.GetAttribute("style");
+        string? style = includeInlineStyle ? element.GetAttribute("style") : null;
         if (!string.IsNullOrWhiteSpace(style) && new CssInfo("x{" + style + "}").Rules is { Count: > 0 } inline)
         {
             foreach (CssDeclaration declaration in inline[0].Declarations)

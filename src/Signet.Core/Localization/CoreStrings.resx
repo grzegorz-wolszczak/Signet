@@ -6266,4 +6266,7 @@
   <data name="Validation_Accessibility_HeadingSkip" xml:space="preserve">
     <value>Nagłówek h{0} pomija poziom: poprzedni nagłówek w kolejności czytania to h{1}.</value>
   </data>
+  <data name="InlineStyles_Risk_Overridden" xml:space="preserve">
+    <value>{0}: „{1}: {2}” przegra z regułą „{3}”{4} („{1}: {5}”)</value>
+  </data>
 </root>

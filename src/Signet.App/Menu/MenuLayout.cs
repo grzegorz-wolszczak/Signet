@@ -179,6 +179,8 @@ public static class MenuLayout
                 A("MainWindow.MendPrettifyHTML"), A("MainWindow.MendHTML")),
             MenuNode.Sub("Reformat &CSS",
                 A("MainWindow.PrettifyCurrentCSS"), A("MainWindow.PrettifyAllCSS")),
+            MenuNode.Sub("CSS T&ools",
+                A(AppActionIds.ExtractInlineStyles)),
             MenuNode.Sub("Epub&3 Tools",
                 A("MainWindow.UpgradeToEpub3"),
                 Sep,

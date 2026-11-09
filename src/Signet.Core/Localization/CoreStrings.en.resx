@@ -6266,4 +6266,7 @@
   <data name="Validation_Accessibility_HeadingSkip" xml:space="preserve">
     <value>The h{0} heading skips a level: the previous heading in reading order is h{1}.</value>
   </data>
+  <data name="InlineStyles_Risk_Overridden" xml:space="preserve">
+    <value>{0}: "{1}: {2}" would lose to the rule "{3}"{4} ("{1}: {5}")</value>
+  </data>
 </root>

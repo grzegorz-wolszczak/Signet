@@ -8726,4 +8726,70 @@ Zamknij zakładkę</value>
   <data name="FindReplace_Overwrite" xml:space="preserve">
     <value>Nadpisz</value>
   </data>
+  <data name="Action_MainWindow_ExtractInlineStyles" xml:space="preserve">
+    <value>&amp;Wyciągnij style inline do klas…</value>
+  </data>
+  <data name="ActionTip_MainWindow_ExtractInlineStyles" xml:space="preserve">
+    <value>Zamienia powtarzające się wartości atrybutów style na wspólne klasy CSS i dodaje te klasy do elementów. Przed zmianą pokazuje listę klas z plikami i znacznikami, z których pochodzą.</value>
+  </data>
+  <data name="Menu_CSSTools" xml:space="preserve">
+    <value>Narzędzia C&amp;SS</value>
+  </data>
+  <data name="Operation_ExtractInlineStyles" xml:space="preserve">
+    <value>Wyciąganie styli inline do klas</value>
+  </data>
+  <data name="Status_InlineStylesExtracted" xml:space="preserve">
+    <value>Style inline zostały zamienione na klasy.</value>
+  </data>
+  <data name="Status_NoInlineStyles" xml:space="preserve">
+    <value>W książce nie ma atrybutów style do zamiany na klasy.</value>
+  </data>
+  <data name="Status_NoStylesheetForInlineStyles" xml:space="preserve">
+    <value>Pliki z atrybutami style nie podłączają żadnego arkusza stylów, więc nie ma dokąd dodać klas.</value>
+  </data>
+  <data name="InlineStylesWindow_Title" xml:space="preserve">
+    <value>Wyciągnij style inline do klas</value>
+  </data>
+  <data name="InlineStylesWindow_Intro" xml:space="preserve">
+    <value>Powtarzające się wartości atrybutu style zostaną zamienione na klasy arkusza stylów, a elementy dostaną te klasy w atrybucie class. Klasy, które przegrałyby z istniejącą regułą arkusza, są domyślnie odznaczone.</value>
+  </data>
+  <data name="InlineStylesWindow_Stylesheet" xml:space="preserve">
+    <value>Klasy zostaną dodane do arkusza: {0}</value>
+  </data>
+  <data name="InlineStylesWindow_Outside" xml:space="preserve">
+    <value>{0} elementów w plikach, które nie podłączają tego arkusza, zostaje bez zmian.</value>
+  </data>
+  <data name="InlineStylesWindow_MinOccurrences" xml:space="preserve">
+    <value>Najmniej elementów z tą samą wartością:</value>
+  </data>
+  <data name="InlineStylesWindow_None" xml:space="preserve">
+    <value>Żadna wartość atrybutu style nie powtarza się tyle razy. Zmniejsz próg.</value>
+  </data>
+  <data name="InlineStylesWindow_Summary" xml:space="preserve">
+    <value>Zaznaczono {0} z {1} klas ({2} elementów)</value>
+  </data>
+  <data name="InlineStylesWindow_ColumnClass" xml:space="preserve">
+    <value>Klasa / plik / element</value>
+  </data>
+  <data name="InlineStylesWindow_ColumnValue" xml:space="preserve">
+    <value>Wartość / miejsce</value>
+  </data>
+  <data name="InlineStylesWindow_ClassTitle" xml:space="preserve">
+    <value>{0} ({1} el.)</value>
+  </data>
+  <data name="InlineStylesWindow_FileTitle" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="InlineStylesWindow_ElementTitle" xml:space="preserve">
+    <value>&lt;{0}&gt; — wiersz {1}</value>
+  </data>
+  <data name="InlineStylesWindow_WarningMark" xml:space="preserve">
+    <value>⚠</value>
+  </data>
+  <data name="InlineStylesWindow_DoubleClickHint" xml:space="preserve">
+    <value>Podwójne kliknięcie otwiera to miejsce w kodzie.</value>
+  </data>
+  <data name="InlineStylesWindow_Extract" xml:space="preserve">
+    <value>Wyciągnij</value>
+  </data>
 </root>
