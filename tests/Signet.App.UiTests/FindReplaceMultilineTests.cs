@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -117,6 +118,49 @@ public sealed class FindReplaceMultilineTests
         // Assert
         themed.Should().BeAssignableTo<IBrush>("the theme defines the color of the selection of the fields");
         text.SelectionBrush.Should().BeSameAs(themed);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_history_list_that_drops_down_uses_the_font_of_the_fields()
+    {
+        // Arrange
+        using TempDir temp = new();
+        (Window window, FindReplaceViewModel vm, AutoCompleteBox box) = Open(temp);
+        vm.FindHistory.Add("one");
+        vm.FindHistory.Add("two");
+
+        // Act
+        vm.FieldFont = new FindReplaceAppearance("Courier New", 19, 0);
+        box.IsDropDownOpen = true;
+        Render(window);
+        Avalonia.Controls.Primitives.Popup popup = box.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.Popup>().First();
+        Avalonia.Controls.Primitives.SelectingItemsControl list = ((Avalonia.LogicalTree.ILogical)popup.Child!).GetSelfAndLogicalDescendants()
+            .OfType<Avalonia.Controls.Primitives.SelectingItemsControl>().First();
+
+        // Assert
+        list.FontFamily.Name.Should().Be("Courier New");
+        list.FontSize.Should().Be(19);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void With_the_text_below_the_icon_the_content_of_the_action_buttons_is_centered()
+    {
+        // Arrange
+        using TempDir temp = new();
+        (Window window, FindReplaceViewModel vm, _) = Open(temp);
+        Button find = window.GetVisualDescendants().OfType<Button>().First(b => b.Classes.Contains("findAction") && (string?)b.Tag == "find");
+
+        // Act & Assert
+        find.HorizontalContentAlignment.Should().Be(Avalonia.Layout.HorizontalAlignment.Left, "the icons stand in one column");
+
+        // Act
+        vm.ActionButtonDisplay = FindActionButtonDisplay.TextBelowIcon;
+        Render(window);
+
+        // Assert
+        find.HorizontalContentAlignment.Should().Be(Avalonia.Layout.HorizontalAlignment.Center);
         window.Close();
     }
 }

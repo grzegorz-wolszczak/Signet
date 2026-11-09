@@ -29,7 +29,8 @@
          own setting (Preferences › Appearance › Saved Searches › Action buttons). -->
     <Style Selector="Button.findAction">
       <Setter Property="HorizontalAlignment" Value="Stretch" />
-      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="HorizontalContentAlignment"
+              Value="{Binding $self.((vm:SearchEditorViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.ContentAlignment}}" />
       <Setter Property="ContentTemplate">
         <DataTemplate x:DataType="x:String">
           <StackPanel Orientation="{Binding $parent[Button].((vm:SearchEditorViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.Layout}}" Spacing="6">

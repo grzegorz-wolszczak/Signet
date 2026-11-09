@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.VisualTree;
 using Signet.App.ViewModels;
@@ -40,15 +41,40 @@ public partial class FindReplaceView : UserControl
                 };
             }
         };
+        // The list of the history exists once the template of the field is applied (after the font was first set).
+        foreach (AutoCompleteBox box in new[] { FindBox, ReplaceBox })
+        {
+            box.TemplateApplied += (_, e) =>
+            {
+                if (e.NameScope.Find<SelectingItemsControl>("PART_SelectingItemsControl") is { } list)
+                {
+                    _historyLists[box] = list;
+                }
+
+                ApplyFieldFont(_fieldFont);
+            };
+        }
+
         FindBoxHistoryButton.Click += (_, _) => OpenHistory(FindBox);
         ReplaceBoxHistoryButton.Click += (_, _) => OpenHistory(ReplaceBox);
     }
 
-    // The font of the Find and Replace fields (Preferences); not set = the interface font.
+    private FindReplaceAppearance _fieldFont = FindReplaceAppearance.Default;
+    private readonly System.Collections.Generic.Dictionary<AutoCompleteBox, SelectingItemsControl> _historyLists = new();
+
+    // The font of the Find and Replace fields (Preferences); not set = the interface font. The list of the history that drops
+    // down from a field is in a popup of its own, which does not inherit it: it gets the same font.
     private void ApplyFieldFont(FindReplaceAppearance look)
     {
-        ClipsLook.SetFont(FindBox, look.FieldFontFamily, look.FieldFontSize, look.FieldFontWeight);
-        ClipsLook.SetFont(ReplaceBox, look.FieldFontFamily, look.FieldFontSize, look.FieldFontWeight);
+        _fieldFont = look;
+        foreach (AutoCompleteBox box in new[] { FindBox, ReplaceBox })
+        {
+            ClipsLook.SetFont(box, look.FieldFontFamily, look.FieldFontSize, look.FieldFontWeight);
+            if (_historyLists.TryGetValue(box, out SelectingItemsControl? list))
+            {
+                ClipsLook.SetFont(list, look.FieldFontFamily, look.FieldFontSize, look.FieldFontWeight);
+            }
+        }
     }
 
     /// <summary>Gives focus to the Find field (the "Find" action, Ctrl+F).</summary>

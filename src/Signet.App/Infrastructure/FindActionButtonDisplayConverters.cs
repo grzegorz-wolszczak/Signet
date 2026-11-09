@@ -19,6 +19,14 @@ public static class FindActionButtonDisplayConverters
         new FuncValueConverter<FindActionButtonDisplay, Orientation>(
             value => value == FindActionButtonDisplay.TextBelowIcon ? Orientation.Vertical : Orientation.Horizontal);
 
+    /// <summary>
+    /// How the content of an action button is aligned: centered when the text is under the icon (each button is then a small
+    /// column), else to the left (the icons of the buttons stand in one column).
+    /// </summary>
+    public static readonly IValueConverter ContentAlignment =
+        new FuncValueConverter<FindActionButtonDisplay, HorizontalAlignment>(
+            value => value == FindActionButtonDisplay.TextBelowIcon ? HorizontalAlignment.Center : HorizontalAlignment.Left);
+
     /// <summary>The text shows unless the display is icon-only.</summary>
     public static readonly IValueConverter ShowText =
         new FuncValueConverter<FindActionButtonDisplay, bool>(value => value != FindActionButtonDisplay.IconOnly);
