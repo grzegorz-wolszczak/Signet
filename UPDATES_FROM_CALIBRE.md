@@ -186,7 +186,7 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   that point at the file of the active tab (`TocEntryViewModel.IsCurrent`, shown in bold) and asks the view to reveal them; `TableOfContentsViewTests` cover the
   view. No setting: one pass over the entries per tab change. Added: `MainWindowTocMarkTests` (the mark follows opening and closing tabs).
 
-### B2. Colors in CSS and HTML: underline preview and color picker — `[ ]`
+### B2. Colors in CSS and HTML: underline preview and color picker — `[~]`
 
 - Calibre `9ec8e99d48`, `86546c1069`, `776db6a5c9`. In the Code Editor (AvaloniaEdit) draw an underline in the color for every
   color value in CSS (and inline `style` / `<style>`): hex, `rgb()`/`rgba()`, `hsl()`/`hsla()`, named colors; CSS Color 4
@@ -196,6 +196,11 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 - Subtasks: B2a Core `CssColorScanner` (+ tests; cases from `src/tinycss/tests/color4.py` in Calibre); B2b editor renderer and
   preference; B2c Ctrl+click picker.
 - Open question (ask): Avalonia `ColorPicker` or a small own dialog.
+- Decision taken (the owner asked for no questions): the picker is the app's own `ColorPickerWindow` (already used for the theme colors), not Avalonia's `ColorPicker`.
+- B2a `[x]`: `CssColorParser` (hex, `rgb()`/`rgba()`, `hsl()`/`hsla()`, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()`, `color()` in `srgb`, `srgb-linear`, `display-p3`,
+  the 148 names, `transparent`; Calibre's expected values from `tinycss/tests/color4.py` within one step; the other `color()` spaces are recognized, not converted) and
+  `CssColorScanner` (colors in the declarations of stylesheets, `<style>` elements and `style` attributes, with offsets; selectors, strings, `url()` and comments
+  are skipped; a named color counts only where the property takes colors; `Format` writes a new color in the notation of the old one).
 
 ---
 
