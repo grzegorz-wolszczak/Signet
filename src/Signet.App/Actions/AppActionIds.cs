@@ -181,6 +181,12 @@ public static class AppActionIds
     /// </summary>
     public const string ExtractInlineStyles = "MainWindow.ExtractInlineStyles";
 
+    /// <summary>
+    /// Tools → Accessibility: the dialog for the languages of the book and of its files, the text alternatives of its images and the
+    /// accessibility metadata.
+    /// </summary>
+    public const string Accessibility = "MainWindow.Accessibility";
+
     public const string WellFormedCheckEpub = "MainWindow.WellFormedCheckEpub";
     public const string ValidateStylesheetsWithW3C = "MainWindow.ValidateStylesheetsWithW3C";
     public const string Reports = "MainWindow.Reports";

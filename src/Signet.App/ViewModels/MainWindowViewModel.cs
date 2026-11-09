@@ -461,6 +461,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.PrettifyCurrentCss, () => ActiveCodeTab?.ReformatCss(multipleLineFormat: true));
         _actions.SetHandler(AppActionIds.PrettifyAllCss, () => RunAsyncAction(PrettifyAllCssAsync));
         _actions.SetHandler(AppActionIds.ExtractInlineStyles, () => InlineStylesRequested?.Invoke(this, EventArgs.Empty));
+        _actions.SetHandler(AppActionIds.Accessibility, () => AccessibilityRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.Hyphenation, () => HyphenationRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.StandardizeEpub, () => StandardizeEpubRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.UseStandardFileExtensions, () => RunAsyncAction(UseStandardFileExtensionsAsync));

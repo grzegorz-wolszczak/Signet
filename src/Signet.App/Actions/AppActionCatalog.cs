@@ -198,6 +198,7 @@ public static class AppActionCatalog
         new("MainWindow.UnifyFootnoteLetters", "&Unify Letters of Shared Footnotes...", "", "footnotes-unify-letters", "Tools"),
         new("MainWindow.ChangeFootnotePlacement", "Change Footnote &Placement (Local / Global)...", "", "footnotes-convert", "Tools"),
         new(AppActionIds.Hyphenation, "&Hyphenation…", "", "hyphen-add", "Tools"),
+        new(AppActionIds.Accessibility, "&Accessibility…", "", "inspect", "Tools"),
         new("MainWindow.SpellcheckEditor", "&Spellcheck...", "Ctrl+Alt+Q", "document-spellcheck", "Tools"),
         new("MainWindow.AutoSpellCheck", "&Highlight Misspelled Words", "", "spellcheck-highlight", "Tools"),
         new("MainWindow.Spellcheck", "&Next Misspelled Word", "F4", "spellcheck-next", "Tools"),

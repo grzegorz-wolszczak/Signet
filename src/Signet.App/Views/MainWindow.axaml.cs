@@ -224,6 +224,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.CleanupRequested -= OnCleanupRequested;
             _boundViewModel.HyphenationRequested -= OnHyphenationRequested;
             _boundViewModel.InlineStylesRequested -= OnInlineStylesRequested;
+            _boundViewModel.AccessibilityRequested -= OnAccessibilityRequested;
             _boundViewModel.ManageFontsRequested -= OnManageFontsRequested;
             _boundViewModel.FootnoteConversionRequested -= OnFootnoteConversionRequested;
             _boundViewModel.FootnoteLettersRequested -= OnFootnoteLettersRequested;
@@ -291,6 +292,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.CleanupRequested += OnCleanupRequested;
         _boundViewModel.HyphenationRequested += OnHyphenationRequested;
         _boundViewModel.InlineStylesRequested += OnInlineStylesRequested;
+        _boundViewModel.AccessibilityRequested += OnAccessibilityRequested;
         _boundViewModel.ManageFontsRequested += OnManageFontsRequested;
         _boundViewModel.FootnoteConversionRequested += OnFootnoteConversionRequested;
         _boundViewModel.FootnoteLettersRequested += OnFootnoteLettersRequested;
@@ -1538,6 +1540,45 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
                     : DictionaryManagerWindow.ShowAsync(owner, new DictionaryManagerViewModel(
                         services.GetRequiredService<Signet.Core.Spellcheck.SpellChecker>(), services.GetRequiredService<SettingsStore>()));
             }, window => dialog = window);
+        }
+        finally
+        {
+            vm.PropertyChanged -= busyChanged;
+        }
+    }
+
+    // "Accessibility…": the modal dialog; its "Save" shows its progress over the dialog.
+    private async void OnAccessibilityRequested(object? sender, EventArgs e)
+    {
+        MainWindowViewModel? vm = _boundViewModel;
+        if (vm is null)
+        {
+            return;
+        }
+
+        AccessibilityWindow? dialog = null;
+        AccessibilityViewModel? accessibility = vm.CreateAccessibilityViewModel(
+            (title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
+                dialog ?? (Window)this, title, Strings.Get("Progress_Starting"), work, cancellable));
+        if (accessibility is null)
+        {
+            return;
+        }
+
+        // "Save" is off while a book operation runs (this dialog's own included).
+        accessibility.IsBookOperationBusy = vm.IsBookOperationBusy;
+        PropertyChangedEventHandler busyChanged = (_, args) =>
+        {
+            if (args.PropertyName == nameof(MainWindowViewModel.IsBookOperationBusy))
+            {
+                accessibility.IsBookOperationBusy = vm.IsBookOperationBusy;
+            }
+        };
+        vm.PropertyChanged += busyChanged;
+        try
+        {
+            dialog = new AccessibilityWindow { DataContext = accessibility };
+            await dialog.ShowDialog(this);
         }
         finally
         {

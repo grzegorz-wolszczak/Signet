@@ -192,7 +192,7 @@ public static class MenuLayout
             A("MainWindow.SelectClip"), A("MainWindow.ShowClipsPopup"), A("MainWindow.SearchEditor"),
             Sep,
             A("MainWindow.Cleanup"), A("MainWindow.ManageFonts"),
-            A(AppActionIds.Hyphenation),
+            A(AppActionIds.Hyphenation), A(AppActionIds.Accessibility),
             Sep, A("MainWindow.LiveCssPanel")),
 
         MenuNode.Sub("&View",

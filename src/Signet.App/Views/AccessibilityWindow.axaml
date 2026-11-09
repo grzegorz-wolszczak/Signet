@@ -1,0 +1,121 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:infra="using:Signet.App.Infrastructure"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.AccessibilityWindow"
+        infra:TooltipFonts.Area="OtherWindows"
+        x:DataType="vm:AccessibilityViewModel"
+        Width="980" Height="700" MinWidth="640" MinHeight="460"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc AccessibilityWindow_Title}">
+
+  <Window.Resources>
+    <!-- A checklist of the "Accessibility metadata" tab: a heading and the values with check boxes. -->
+    <DataTemplate x:Key="ChoiceTemplate" x:DataType="vm:AccessibilityChoiceItem">
+      <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" Content="{Binding DisplayName}" Margin="0,0,16,2" />
+    </DataTemplate>
+  </Window.Resources>
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+      <Button x:Name="SaveButton" Content="{loc:Loc AccessibilityWindow_Save}" Command="{Binding SaveCommand}" Classes="accent" MinWidth="80" />
+      <Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" IsCancel="True" MinWidth="80" />
+    </StackPanel>
+
+    <TabControl x:Name="Tabs">
+      <!-- Language: the languages of the book and what to do with the language of the files. -->
+      <TabItem x:Name="LanguageTab" Header="{loc:Loc AccessibilityWindow_TabLanguage}">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,10,0,0">
+            <TextBlock Text="{loc:Loc AccessibilityWindow_LanguagesHeader}" TextWrapping="Wrap" />
+            <ListBox x:Name="LanguageList" ItemsSource="{Binding Languages}" MaxHeight="180">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:AccessibilityLanguageItem">
+                  <TextBlock Text="{Binding Display}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button x:Name="MakeMainButton" Content="{loc:Loc AccessibilityWindow_MakeMainLanguage}"
+                      Command="{Binding MakeMainLanguageCommand}" CommandParameter="{Binding #LanguageList.SelectedItem}" />
+              <Button x:Name="RemoveLanguageButton" Content="{loc:Loc AccessibilityWindow_RemoveLanguage}"
+                      Command="{Binding RemoveLanguageCommand}" CommandParameter="{Binding #LanguageList.SelectedItem}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <AutoCompleteBox x:Name="NewLanguageBox" MinWidth="280" Text="{Binding NewLanguage, Mode=TwoWay}"
+                               ItemsSource="{Binding KnownLanguageNames}" Watermark="{loc:Loc AccessibilityWindow_NewLanguageHint}" />
+              <Button x:Name="AddLanguageButton" Content="{loc:Loc AccessibilityWindow_AddLanguage}" Command="{Binding AddLanguageCommand}" />
+            </StackPanel>
+
+            <Separator Margin="0,6" />
+            <TextBlock Text="{loc:Loc AccessibilityWindow_HtmlLanguageHeader}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding FilesWithoutLanguageText}" FontWeight="SemiBold" />
+            <RadioButton x:Name="KeepRadio" GroupName="HtmlLanguage" Content="{loc:Loc AccessibilityWindow_HtmlKeep}" IsChecked="{Binding HtmlLanguageKeep, Mode=TwoWay}" />
+            <RadioButton x:Name="OnlyMissingRadio" GroupName="HtmlLanguage" Content="{loc:Loc AccessibilityWindow_HtmlOnlyMissing}" IsChecked="{Binding HtmlLanguageOnlyMissing, Mode=TwoWay}" />
+            <RadioButton x:Name="AllRadio" GroupName="HtmlLanguage" Content="{loc:Loc AccessibilityWindow_HtmlAll}" IsChecked="{Binding HtmlLanguageAll, Mode=TwoWay}" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Image descriptions: every image in reading order with a preview, its description and the decoration mark. -->
+      <TabItem x:Name="ImagesTab" Header="{loc:Loc AccessibilityWindow_TabImages}">
+        <DockPanel Margin="0,10,0,0">
+          <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+            <WrapPanel Orientation="Horizontal" ItemSpacing="12" LineSpacing="4" IsVisible="{Binding HasImages}">
+              <CheckBox x:Name="OnlyUndescribedBox" Content="{loc:Loc AccessibilityWindow_OnlyUndescribed}" IsChecked="{Binding ShowOnlyUndescribed, Mode=TwoWay}" />
+              <TextBlock Text="{Binding ImagesSummary}" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </WrapPanel>
+            <TextBlock Text="{loc:Loc AccessibilityWindow_ImagesHint}" FontSize="12" Opacity="0.75" TextWrapping="Wrap" IsVisible="{Binding HasImages}" />
+            <TextBlock Text="{loc:Loc AccessibilityWindow_NoImages}" IsVisible="{Binding !HasImages}" />
+          </StackPanel>
+          <ListBox x:Name="ImageList" ItemsSource="{Binding Images}" IsVisible="{Binding HasImages}" DoubleTapped="OnImageDoubleTapped">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:AccessibilityImageItem">
+                <Grid ColumnDefinitions="84,220,*,Auto" ColumnSpacing="10" Margin="0,4">
+                  <Border Grid.Column="0" Width="80" Height="80" BorderThickness="1" BorderBrush="{DynamicResource SignetFrameBrush}">
+                    <Panel>
+                      <Image Source="{Binding Preview}" Stretch="Uniform" />
+                      <TextBlock Text="{loc:Loc AccessibilityWindow_NoPreview}" FontSize="11" Opacity="0.6" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 IsVisible="{Binding Preview, Converter={x:Static ObjectConverters.IsNull}}" />
+                    </Panel>
+                  </Border>
+                  <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Text="{Binding Subject}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Subject}" />
+                    <TextBlock Text="{Binding Place}" FontSize="12" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                  <TextBox Grid.Column="2" Text="{Binding Description, Mode=TwoWay}" AcceptsReturn="False" TextWrapping="Wrap" VerticalAlignment="Center"
+                           IsEnabled="{Binding !IsDecorative}" Watermark="{loc:Loc AccessibilityWindow_DescriptionHint}" />
+                  <CheckBox Grid.Column="3" Content="{loc:Loc AccessibilityWindow_Decorative}" IsChecked="{Binding IsDecorative, Mode=TwoWay}" VerticalAlignment="Center" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </TabItem>
+
+      <!-- Accessibility metadata (EPUB 3): the summary and the checklists of schema.org values. -->
+      <TabItem x:Name="MetadataTab" Header="{loc:Loc AccessibilityWindow_TabMetadata}">
+        <Panel>
+          <TextBlock Text="{loc:Loc AccessibilityWindow_Epub2Note}" TextWrapping="Wrap" Margin="0,12,0,0" IsVisible="{Binding !IsEpub3}" />
+          <ScrollViewer IsVisible="{Binding IsEpub3}">
+            <StackPanel Spacing="6" Margin="0,10,12,0">
+              <TextBlock Text="{loc:Loc AccessibilityWindow_Summary}" TextWrapping="Wrap" />
+              <TextBox x:Name="SummaryBox" Text="{Binding Summary, Mode=TwoWay}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" />
+              <TextBlock Text="{loc:Loc AccessibilityWindow_AccessModes}" FontWeight="SemiBold" Margin="0,8,0,0" />
+              <ItemsControl ItemsSource="{Binding AccessModes}" ItemTemplate="{StaticResource ChoiceTemplate}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+              <TextBlock Text="{loc:Loc AccessibilityWindow_AccessModesSufficient}" FontWeight="SemiBold" Margin="0,8,0,0" />
+              <ItemsControl ItemsSource="{Binding AccessModesSufficient}" ItemTemplate="{StaticResource ChoiceTemplate}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+              <TextBlock Text="{loc:Loc AccessibilityWindow_Features}" FontWeight="SemiBold" Margin="0,8,0,0" />
+              <ItemsControl ItemsSource="{Binding Features}" ItemTemplate="{StaticResource ChoiceTemplate}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+              <TextBlock Text="{loc:Loc AccessibilityWindow_Hazards}" FontWeight="SemiBold" Margin="0,8,0,0" />
+              <ItemsControl ItemsSource="{Binding Hazards}" ItemTemplate="{StaticResource ChoiceTemplate}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+              <TextBlock Text="{loc:Loc AccessibilityWindow_ConformsTo}" FontWeight="SemiBold" Margin="0,8,0,0" />
+              <ItemsControl ItemsSource="{Binding ConformsTo}" ItemTemplate="{StaticResource ChoiceTemplate}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel></ItemsControl>
+            </StackPanel>
+          </ScrollViewer>
+        </Panel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

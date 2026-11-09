@@ -8810,4 +8810,265 @@ Close the tab</value>
   <data name="ValidationResultsView_Category" xml:space="preserve">
     <value>Type</value>
   </data>
+  <data name="Accessibility_Mode_auditory" xml:space="preserve">
+    <value>Auditory (sound)</value>
+  </data>
+  <data name="Accessibility_Mode_chartOnImage" xml:space="preserve">
+    <value>Charts as images</value>
+  </data>
+  <data name="Accessibility_Mode_chemOnImage" xml:space="preserve">
+    <value>Chemical formulas as images</value>
+  </data>
+  <data name="Accessibility_Mode_colorDependent" xml:space="preserve">
+    <value>Depends on colour</value>
+  </data>
+  <data name="Accessibility_Mode_diagramOnImage" xml:space="preserve">
+    <value>Diagrams as images</value>
+  </data>
+  <data name="Accessibility_Mode_mathOnImage" xml:space="preserve">
+    <value>Mathematics as images</value>
+  </data>
+  <data name="Accessibility_Mode_musicOnImage" xml:space="preserve">
+    <value>Music notation as images</value>
+  </data>
+  <data name="Accessibility_Mode_tactile" xml:space="preserve">
+    <value>Tactile (touch)</value>
+  </data>
+  <data name="Accessibility_Mode_textOnImage" xml:space="preserve">
+    <value>Text as images</value>
+  </data>
+  <data name="Accessibility_Mode_textual" xml:space="preserve">
+    <value>Textual (text)</value>
+  </data>
+  <data name="Accessibility_Mode_visual" xml:space="preserve">
+    <value>Visual (images)</value>
+  </data>
+  <data name="Accessibility_Feature_alternativeText" xml:space="preserve">
+    <value>Alternative text for images</value>
+  </data>
+  <data name="Accessibility_Feature_annotations" xml:space="preserve">
+    <value>Annotations</value>
+  </data>
+  <data name="Accessibility_Feature_ARIA" xml:space="preserve">
+    <value>ARIA roles</value>
+  </data>
+  <data name="Accessibility_Feature_audioDescription" xml:space="preserve">
+    <value>Audio description</value>
+  </data>
+  <data name="Accessibility_Feature_braille" xml:space="preserve">
+    <value>Braille</value>
+  </data>
+  <data name="Accessibility_Feature_captions" xml:space="preserve">
+    <value>Captions</value>
+  </data>
+  <data name="Accessibility_Feature_ChemML" xml:space="preserve">
+    <value>ChemML chemistry</value>
+  </data>
+  <data name="Accessibility_Feature_describedMath" xml:space="preserve">
+    <value>Described mathematics</value>
+  </data>
+  <data name="Accessibility_Feature_displayTransformability" xml:space="preserve">
+    <value>Display can be adjusted</value>
+  </data>
+  <data name="Accessibility_Feature_highContrastAudio" xml:space="preserve">
+    <value>High-contrast audio</value>
+  </data>
+  <data name="Accessibility_Feature_highContrastDisplay" xml:space="preserve">
+    <value>High-contrast display</value>
+  </data>
+  <data name="Accessibility_Feature_index" xml:space="preserve">
+    <value>Index</value>
+  </data>
+  <data name="Accessibility_Feature_largePrint" xml:space="preserve">
+    <value>Large print</value>
+  </data>
+  <data name="Accessibility_Feature_latex" xml:space="preserve">
+    <value>LaTeX mathematics</value>
+  </data>
+  <data name="Accessibility_Feature_latex-chemistry" xml:space="preserve">
+    <value>LaTeX chemistry</value>
+  </data>
+  <data name="Accessibility_Feature_longDescription" xml:space="preserve">
+    <value>Long descriptions</value>
+  </data>
+  <data name="Accessibility_Feature_MathML" xml:space="preserve">
+    <value>MathML mathematics</value>
+  </data>
+  <data name="Accessibility_Feature_MathML-chemistry" xml:space="preserve">
+    <value>MathML chemistry</value>
+  </data>
+  <data name="Accessibility_Feature_none" xml:space="preserve">
+    <value>No accessibility features</value>
+  </data>
+  <data name="Accessibility_Feature_pageBreakMarkers" xml:space="preserve">
+    <value>Page break markers</value>
+  </data>
+  <data name="Accessibility_Feature_pageNavigation" xml:space="preserve">
+    <value>Page navigation</value>
+  </data>
+  <data name="Accessibility_Feature_printPageNumbers" xml:space="preserve">
+    <value>Print page numbers</value>
+  </data>
+  <data name="Accessibility_Feature_readingOrder" xml:space="preserve">
+    <value>Logical reading order</value>
+  </data>
+  <data name="Accessibility_Feature_resizeText" xml:space="preserve">
+    <value>Text can be resized</value>
+  </data>
+  <data name="Accessibility_Feature_signLanguage" xml:space="preserve">
+    <value>Sign language</value>
+  </data>
+  <data name="Accessibility_Feature_structuralNavigation" xml:space="preserve">
+    <value>Structural navigation</value>
+  </data>
+  <data name="Accessibility_Feature_synchronizedAudioText" xml:space="preserve">
+    <value>Synchronized audio and text</value>
+  </data>
+  <data name="Accessibility_Feature_tableOfContents" xml:space="preserve">
+    <value>Table of contents</value>
+  </data>
+  <data name="Accessibility_Feature_taggedPDF" xml:space="preserve">
+    <value>Tagged PDF</value>
+  </data>
+  <data name="Accessibility_Feature_tactileGraphic" xml:space="preserve">
+    <value>Tactile graphics</value>
+  </data>
+  <data name="Accessibility_Feature_tactileObject" xml:space="preserve">
+    <value>Tactile 3D objects</value>
+  </data>
+  <data name="Accessibility_Feature_timingControl" xml:space="preserve">
+    <value>Control of timing</value>
+  </data>
+  <data name="Accessibility_Feature_transcript" xml:space="preserve">
+    <value>Transcript</value>
+  </data>
+  <data name="Accessibility_Feature_ttsMarkup" xml:space="preserve">
+    <value>Text-to-speech markup</value>
+  </data>
+  <data name="Accessibility_Feature_unlocked" xml:space="preserve">
+    <value>Not locked by DRM</value>
+  </data>
+  <data name="Accessibility_Hazard_flashing" xml:space="preserve">
+    <value>Flashing content</value>
+  </data>
+  <data name="Accessibility_Hazard_noFlashingHazard" xml:space="preserve">
+    <value>No flashing hazard</value>
+  </data>
+  <data name="Accessibility_Hazard_motionSimulation" xml:space="preserve">
+    <value>Motion simulation</value>
+  </data>
+  <data name="Accessibility_Hazard_noMotionSimulationHazard" xml:space="preserve">
+    <value>No motion simulation hazard</value>
+  </data>
+  <data name="Accessibility_Hazard_sound" xml:space="preserve">
+    <value>Sounds that can harm</value>
+  </data>
+  <data name="Accessibility_Hazard_noSoundHazard" xml:space="preserve">
+    <value>No sound hazard</value>
+  </data>
+  <data name="Accessibility_Hazard_unknown" xml:space="preserve">
+    <value>Hazards unknown</value>
+  </data>
+  <data name="Accessibility_Hazard_none" xml:space="preserve">
+    <value>No hazards</value>
+  </data>
+  <data name="AccessibilityWindow_Title" xml:space="preserve">
+    <value>Accessibility</value>
+  </data>
+  <data name="AccessibilityWindow_TabLanguage" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="AccessibilityWindow_TabImages" xml:space="preserve">
+    <value>Image descriptions</value>
+  </data>
+  <data name="AccessibilityWindow_TabMetadata" xml:space="preserve">
+    <value>Accessibility metadata</value>
+  </data>
+  <data name="AccessibilityWindow_LanguagesHeader" xml:space="preserve">
+    <value>Languages of the book (the first one is the main language):</value>
+  </data>
+  <data name="AccessibilityWindow_AddLanguage" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="AccessibilityWindow_RemoveLanguage" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="AccessibilityWindow_MakeMainLanguage" xml:space="preserve">
+    <value>Make main</value>
+  </data>
+  <data name="AccessibilityWindow_NewLanguageHint" xml:space="preserve">
+    <value>Code (pl, en-GB) or the name of a language</value>
+  </data>
+  <data name="AccessibilityWindow_HtmlLanguageHeader" xml:space="preserve">
+    <value>Language of the (X)HTML files, which screen readers use to choose the voice:</value>
+  </data>
+  <data name="AccessibilityWindow_HtmlKeep" xml:space="preserve">
+    <value>Leave as it is</value>
+  </data>
+  <data name="AccessibilityWindow_HtmlOnlyMissing" xml:space="preserve">
+    <value>Give the main language to the files that name none</value>
+  </data>
+  <data name="AccessibilityWindow_HtmlAll" xml:space="preserve">
+    <value>Give the main language to all files (replaces the language they have)</value>
+  </data>
+  <data name="AccessibilityWindow_FilesWithoutLanguage" xml:space="preserve">
+    <value>{0} (X)HTML files name no language.</value>
+  </data>
+  <data name="AccessibilityWindow_OnlyUndescribed" xml:space="preserve">
+    <value>Show only the images without a description</value>
+  </data>
+  <data name="AccessibilityWindow_ImagesSummary" xml:space="preserve">
+    <value>{0} of {1} images need a description.</value>
+  </data>
+  <data name="AccessibilityWindow_Decorative" xml:space="preserve">
+    <value>Decorative</value>
+  </data>
+  <data name="AccessibilityWindow_DescriptionHint" xml:space="preserve">
+    <value>Description for screen readers</value>
+  </data>
+  <data name="AccessibilityWindow_NoPreview" xml:space="preserve">
+    <value>no preview</value>
+  </data>
+  <data name="AccessibilityWindow_NoImages" xml:space="preserve">
+    <value>The book has no images.</value>
+  </data>
+  <data name="AccessibilityWindow_ImagesHint" xml:space="preserve">
+    <value>A double click opens the place in the code. A decorative image gets an empty alt and role="presentation".</value>
+  </data>
+  <data name="AccessibilityWindow_Summary" xml:space="preserve">
+    <value>Accessibility summary (a short description of the accessibility of the book for readers):</value>
+  </data>
+  <data name="AccessibilityWindow_AccessModes" xml:space="preserve">
+    <value>How the content can be perceived (access modes)</value>
+  </data>
+  <data name="AccessibilityWindow_AccessModesSufficient" xml:space="preserve">
+    <value>Access modes that are enough to read the book</value>
+  </data>
+  <data name="AccessibilityWindow_Features" xml:space="preserve">
+    <value>Accessibility features</value>
+  </data>
+  <data name="AccessibilityWindow_Hazards" xml:space="preserve">
+    <value>Hazards</value>
+  </data>
+  <data name="AccessibilityWindow_ConformsTo" xml:space="preserve">
+    <value>Conformance to a standard</value>
+  </data>
+  <data name="AccessibilityWindow_Epub2Note" xml:space="preserve">
+    <value>Accessibility metadata exists only in EPUB 3 books. Upgrade the book to EPUB 3 to add it.</value>
+  </data>
+  <data name="AccessibilityWindow_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Action_MainWindow_Accessibility" xml:space="preserve">
+    <value>&amp;Accessibility…</value>
+  </data>
+  <data name="ActionTip_MainWindow_Accessibility" xml:space="preserve">
+    <value>Sets the languages of the book and of its files, the text alternatives of its images and the accessibility metadata, which screen readers and online stores use.</value>
+  </data>
+  <data name="Operation_Accessibility" xml:space="preserve">
+    <value>Accessibility</value>
+  </data>
+  <data name="Status_AccessibilitySaved" xml:space="preserve">
+    <value>Accessibility changes saved.</value>
+  </data>
 </root>

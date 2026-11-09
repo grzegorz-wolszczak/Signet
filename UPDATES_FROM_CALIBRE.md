@@ -131,7 +131,7 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   and the same word in front of the rule name in the list of skipped rules (`ValidationResultsViewModel.RuleName`). Skipping itself needed no
   change: every code was skippable already. There is no separate skip dialog in Signet; the skipped rules are the menu of the panel's button.
 
-### A9. Tool "Accessibility" (Tools menu) — `[~]`
+### A9. Tool "Accessibility" (Tools menu) — `[x]`
 
 - Calibre `81cae32b24`: one window with three tabs. In Signet `AccessibilityWindow` + `AccessibilityViewModel`, action
   `AppActionIds.Accessibility` (catalog entry, menu entry, **tooltip** — memory rule on keymap tooltips; no default shortcut).
@@ -152,6 +152,11 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   `AccessibilityVocabulary` (the schema.org values), `AccessibilityImages` (list in reading order; write `alt`/`role` of an `img`, `aria-label` kept in
   step with `<title>`/`aria-hidden` of an inline svg; text named by `aria-labelledby` is never changed, the reference is replaced), `OpfResource.SetLanguages`/
   `RemoveMetaProperty`.
+- A9b–A9d `[x]`: `AccessibilityViewModel` + `AccessibilityWindow` (modal, three tabs: language and what to do with the language of the files; image
+  list with preview, editable description, "decorative" mark, filter "only without a description", double click opens the place; metadata checklists
+  with localized names, the summary, and values the vocabulary does not know kept; EPUB 2 shows a note instead); `MainWindowViewModel.Accessibility`
+  (one checkpoint, `Status_AccessibilitySaved`); action `AppActionIds.Accessibility` (catalog, Tools menu after Hyphenation, tooltip, disabled during
+  book operations, no shortcut); unsaved-changes prompt on close like the Metadata Editor. Not taken: setting the language of the OPF `<package>`.
 
 ### A10. Accessibility in what Signet generates — `[ ]`
 

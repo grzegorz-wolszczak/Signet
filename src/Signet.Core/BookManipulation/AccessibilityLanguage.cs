@@ -38,6 +38,26 @@ public static class AccessibilityLanguage
         book.Modified = true;
     }
 
+    /// <summary>How many (X)HTML files of the book name no language (<c>lang</c> / <c>xml:lang</c> on <c>&lt;html&gt;</c>).</summary>
+    public static int CountFilesWithoutLanguage(Book book)
+    {
+        ArgumentNullException.ThrowIfNull(book);
+        return book.GetHtmlResources().Count(h => !NamesLanguage(h.GetText()));
+    }
+
+    private static bool NamesLanguage(string text)
+    {
+        TagLister.TagInfo? root = TagLister.For(text).Tags
+            .FirstOrDefault(t => t.Kind == TagKind.Begin && t.TagName.Equals("html", StringComparison.OrdinalIgnoreCase));
+        if (root is null)
+        {
+            return true;
+        }
+
+        string tag = text.Substring(root.Pos, root.Len);
+        return TagLister.ParseAttribute(tag, "lang").Pos >= 0 || TagLister.ParseAttribute(tag, "xml:lang").Pos >= 0;
+    }
+
     /// <summary>
     /// Gives the (X)HTML files the main language of the book: only the ones that name no language (<paramref name="onlyMissing"/>), or all of
     /// them, replacing what they had. EPUB 3 files get <c>lang</c> and <c>xml:lang</c>, EPUB 2 files <c>xml:lang</c>. Returns how many files changed.
