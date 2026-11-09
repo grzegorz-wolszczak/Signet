@@ -8682,7 +8682,7 @@ Zamknij zakładkę</value>
     <value>dostępność</value>
   </data>
   <data name="FindReplaceView_SaveSearchTooltip" xml:space="preserve">
-    <value>Zapisz bieżące wyszukiwanie (Znajdź, Zamień i opcje) w Zapisanych wyszukiwaniach</value>
+    <value>Zapisz bieżące wyszukiwanie (Znajdź, Zamień i opcje) w Zapisanych wyszukiwaniach; gdy jest już zapisane, nadpisuje je (po potwierdzeniu)</value>
   </data>
   <data name="FindReplace_SaveSearchTitle" xml:space="preserve">
     <value>Zapisz wyszukiwanie</value>
@@ -8710,5 +8710,20 @@ Zamknij zakładkę</value>
   </data>
   <data name="ThemeKey_ui_findReplace_selection" xml:space="preserve">
     <value>Kolor zaznaczenia w polach Znajdź i Zamień (puste: jak zaznaczenie w polach tekstowych)</value>
+  </data>
+  <data name="FindReplaceView_SaveSearchAs" xml:space="preserve">
+    <value>Zapisz jako</value>
+  </data>
+  <data name="FindReplaceView_SaveSearchAsTooltip" xml:space="preserve">
+    <value>Zapisz bieżące wyszukiwanie w Zapisanych wyszukiwaniach pod nową nazwą</value>
+  </data>
+  <data name="FindReplace_OverwriteTitle" xml:space="preserve">
+    <value>Nadpisz wyszukiwanie</value>
+  </data>
+  <data name="FindReplace_OverwriteQuestion" xml:space="preserve">
+    <value>Czy nadpisać zapisane wyszukiwanie „{0}”?</value>
+  </data>
+  <data name="FindReplace_Overwrite" xml:space="preserve">
+    <value>Nadpisz</value>
   </data>
 </root>

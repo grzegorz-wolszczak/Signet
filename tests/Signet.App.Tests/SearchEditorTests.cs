@@ -65,6 +65,34 @@ public sealed class SearchEditorTests : IDisposable
     }
 
     [Fact]
+    public void AddCurrentSearch_under_a_name_that_exists_updates_that_search_and_loading_a_search_names_the_panel()
+    {
+        // Arrange
+        SavedSearchStore store = Store();
+        FindReplaceViewModel panelFindReplace = NewFindReplace(new FakeMultiFileSearchHost());
+        var panel = new SearchEditorViewModel(store, NewSettings(), panelFindReplace, NewFindReplace(new FakeMultiFileSearchHost()));
+        panelFindReplace.FindText = "a";
+        panel.AddCurrentSearch("Mine");
+        panelFindReplace.FindText = "b";
+
+        // Act
+        panel.AddCurrentSearch("Mine");
+
+        // Assert
+        panel.HasSearch("Mine").Should().BeTrue();
+        panel.HasSearch("Other").Should().BeFalse();
+        SearchEntry saved = store.Load().Should().ContainSingle().Subject;
+        saved.Find.Should().Be("b");
+
+        // Act
+        panel.SetSelectedNodes(new[] { panel.Nodes.Single() });
+        panel.LoadSearchCommand.Execute(null);
+
+        // Assert
+        panelFindReplace.SavedSearchName.Should().Be("Mine");
+    }
+
+    [Fact]
     public void AddCurrentSearch_stores_the_panel_state_under_the_name_and_writes_the_file_at_once()
     {
         // Arrange

@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.VisualTree;
+using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Core.Misc;
 
@@ -31,6 +32,7 @@ public partial class FindReplaceView : UserControl
             if (DataContext is FindReplaceViewModel vm)
             {
                 vm.TextPrompt = AskTextAsync;
+                vm.ConfirmOverwrite = ConfirmOverwriteAsync;
                 ApplyFieldFont(vm.FieldFont);
                 vm.PropertyChanged += (_, e) =>
                 {
@@ -88,6 +90,11 @@ public partial class FindReplaceView : UserControl
         box.Focus();
         box.IsDropDownOpen = true;
     }
+
+    private Task<bool> ConfirmOverwriteAsync(string title, string message) =>
+        TopLevel.GetTopLevel(this) is Window owner
+            ? ConfirmWindow.AskAsync(owner, title, message, Strings.Get("FindReplace_Overwrite"))
+            : Task.FromResult(false);
 
     private Task<string?> AskTextAsync(string title, string prompt, string initial) =>
         TopLevel.GetTopLevel(this) is Window owner ? TextPromptWindow.AskAsync(owner, title, prompt, initial) : Task.FromResult<string?>(null);

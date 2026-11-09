@@ -182,6 +182,7 @@ public sealed partial class MainWindowViewModel
         FindReplaceViewModel searchEditorFindReplace = new(settings, statusBar, () => ActiveCodeTab, this);
         _searchEditor = new SearchEditorViewModel(new SavedSearchStore(savedSearchPath), settings, _findReplace, searchEditorFindReplace);
         _findReplace.SearchSaver = _searchEditor.AddCurrentSearch;
+        _findReplace.SearchExists = _searchEditor.HasSearch;
 
         string clipsPath = System.IO.Path.Combine(
             System.IO.Path.GetDirectoryName(settings.FilePath) ?? AppDirectories.PrefsDirectory,

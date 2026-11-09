@@ -8682,7 +8682,7 @@ Close the tab</value>
     <value>accessibility</value>
   </data>
   <data name="FindReplaceView_SaveSearchTooltip" xml:space="preserve">
-    <value>Save the current search (Find, Replace and options) to the Saved Searches</value>
+    <value>Save the current search (Find, Replace and options) to the Saved Searches; overwrites it (after asking) when it is already saved</value>
   </data>
   <data name="FindReplace_SaveSearchTitle" xml:space="preserve">
     <value>Save search</value>
@@ -8710,5 +8710,20 @@ Close the tab</value>
   </data>
   <data name="ThemeKey_ui_findReplace_selection" xml:space="preserve">
     <value>Selection color in the Find and Replace fields (empty: as the selection of text boxes)</value>
+  </data>
+  <data name="FindReplaceView_SaveSearchAs" xml:space="preserve">
+    <value>Save as</value>
+  </data>
+  <data name="FindReplaceView_SaveSearchAsTooltip" xml:space="preserve">
+    <value>Save the current search to the Saved Searches under a new name</value>
+  </data>
+  <data name="FindReplace_OverwriteTitle" xml:space="preserve">
+    <value>Overwrite search</value>
+  </data>
+  <data name="FindReplace_OverwriteQuestion" xml:space="preserve">
+    <value>Overwrite the saved search “{0}”?</value>
+  </data>
+  <data name="FindReplace_Overwrite" xml:space="preserve">
+    <value>Overwrite</value>
   </data>
 </root>

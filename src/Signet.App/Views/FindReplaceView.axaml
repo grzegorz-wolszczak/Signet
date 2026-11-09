@@ -115,10 +115,14 @@
       </AutoCompleteBox>
 
       <WrapPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
-        <Button x:Name="SaveSearchButton" Classes="findAction" Tag="document-save" Margin="0,0,12,0"
+        <Button x:Name="SaveSearchButton" Classes="findAction" Tag="document-save" Margin="0,0,4,0"
                 HorizontalAlignment="Left" VerticalAlignment="Center"
                 Content="{loc:Loc FindReplaceView_SaveSearch}" Command="{Binding SaveSearchCommand}"
                 ToolTip.Tip="{loc:Loc FindReplaceView_SaveSearchTooltip}" />
+        <Button x:Name="SaveSearchAsButton" Classes="findAction" Tag="document-save-as" Margin="0,0,12,0"
+                HorizontalAlignment="Left" VerticalAlignment="Center"
+                Content="{loc:Loc FindReplaceView_SaveSearchAs}" Command="{Binding SaveSearchAsCommand}"
+                ToolTip.Tip="{loc:Loc FindReplaceView_SaveSearchAsTooltip}" />
         <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,0">
           <TextBlock Text="{loc:Loc FindReplaceView_Mode}" VerticalAlignment="Center" />
           <ComboBox SelectedIndex="{Binding ModeIndex, Mode=TwoWay}" MinWidth="130"

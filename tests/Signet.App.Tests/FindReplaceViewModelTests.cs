@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using AwesomeAssertions;
 using Signet.App.Resources;
@@ -497,6 +498,79 @@ public sealed class FindReplaceViewModelTests : IDisposable
         suggested.Should().Be("</p>", "the suggestion is the first line of the search");
         saved.Should().Be("Joined paragraphs");
         panel.Message.Should().Contain("Joined paragraphs");
+    }
+
+    private FindReplaceViewModel PanelWithSavedSearches(List<string> saved, List<string> asked, bool answer)
+    {
+        SettingsStore settings = new(_settingsPath);
+        var panel = new FindReplaceViewModel(settings, new StatusBarService(), () => null, new FakeMultiFileSearchHost())
+        {
+            FindText = "</p>\n<p>",
+        };
+        panel.SearchSaver = saved.Add;
+        panel.SearchExists = saved.Contains;
+        panel.TextPrompt = (_, _, _) => Task.FromResult<string?>("Joined");
+        panel.ConfirmOverwrite = (_, message) =>
+        {
+            asked.Add(message);
+            return Task.FromResult(answer);
+        };
+        return panel;
+    }
+
+    [Fact]
+    public async Task Save_overwrites_the_search_the_panel_holds_only_after_the_user_confirms()
+    {
+        // Arrange
+        List<string> saved = new();
+        List<string> asked = new();
+        FindReplaceViewModel panel = PanelWithSavedSearches(saved, asked, answer: true);
+
+        // Act
+        await panel.SaveSearchCommand.ExecuteAsync(null);
+        await panel.SaveSearchCommand.ExecuteAsync(null);
+
+        // Assert
+        asked.Should().ContainSingle().Which.Should().Contain("Joined", "the first save asked for a name, the second asks to overwrite");
+        saved.Should().Equal("Joined", "Joined");
+
+        // Arrange
+        asked.Clear();
+        saved.Clear();
+        saved.Add("Joined");
+        FindReplaceViewModel refusing = PanelWithSavedSearches(saved, asked, answer: false);
+        refusing.SavedSearchName = "Joined";
+
+        // Act
+        await refusing.SaveSearchCommand.ExecuteAsync(null);
+
+        // Assert
+        saved.Should().Equal("Joined");
+        asked.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Save_as_asks_for_a_name_and_confirms_only_when_the_name_is_taken()
+    {
+        // Arrange
+        List<string> saved = new();
+        List<string> asked = new();
+        FindReplaceViewModel panel = PanelWithSavedSearches(saved, asked, answer: false);
+
+        // Act
+        await panel.SaveSearchAsCommand.ExecuteAsync(null);
+
+        // Assert
+        asked.Should().BeEmpty("a new name has no conflict");
+        saved.Should().Equal("Joined");
+        panel.SavedSearchName.Should().Be("Joined");
+
+        // Act — the same name again, the user declines
+        await panel.SaveSearchAsCommand.ExecuteAsync(null);
+
+        // Assert
+        asked.Should().ContainSingle();
+        saved.Should().Equal("Joined");
     }
 
     [Fact]

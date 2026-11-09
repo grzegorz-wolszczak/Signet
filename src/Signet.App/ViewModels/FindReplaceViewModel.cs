@@ -188,15 +188,54 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
     /// </summary>
     public Func<string, string, string, Task<string?>>? TextPrompt { get; set; }
 
-    /// <summary>Adds the current search to the saved searches under the given name (set by the main view model).</summary>
+    /// <summary>Adds the current search to the saved searches under the given name, replacing the one of that name (set by the main view model).</summary>
     public Action<string>? SearchSaver { get; set; }
 
-    /// <summary>"Save search": asks for a name and adds the current Find / Replace and options to the saved searches.</summary>
+    /// <summary>Whether a saved search of the given name exists (set by the main view model).</summary>
+    public Func<string, bool>? SearchExists { get; set; }
+
+    /// <summary>Asks whether to overwrite (title, message); set by the view. Without it nothing is overwritten.</summary>
+    public Func<string, string, Task<bool>>? ConfirmOverwrite { get; set; }
+
+    /// <summary>
+    /// The saved search the panel holds: the name of the one loaded into it from the Saved Searches, or the one it was last saved
+    /// as; <c>null</c> for a search that was never saved. "Save search" overwrites it (after asking); "Save search as" asks for
+    /// another name.
+    /// </summary>
+    public string? SavedSearchName { get; set; }
+
+    /// <summary>"Save search": overwrites the saved search the panel holds (after asking), or asks for a name when it holds none.</summary>
     public IAsyncRelayCommand SaveSearchCommand => _saveSearchCommand ??= new AsyncRelayCommand(SaveSearchAsync);
 
     private IAsyncRelayCommand? _saveSearchCommand;
 
+    /// <summary>"Save search as": asks for a name and adds the current search under it (asking first when the name is taken).</summary>
+    public IAsyncRelayCommand SaveSearchAsCommand => _saveSearchAsCommand ??= new AsyncRelayCommand(SaveSearchAsAsync);
+
+    private IAsyncRelayCommand? _saveSearchAsCommand;
+
     private async Task SaveSearchAsync()
+    {
+        if (_findText.Length == 0)
+        {
+            SetMessage(Strings.Get("FindReplace_NothingToSave"));
+            return;
+        }
+
+        if (SavedSearchName is { } name && SearchExists?.Invoke(name) == true)
+        {
+            if (await ConfirmedOverwriteAsync(name))
+            {
+                Store(name);
+            }
+
+            return;
+        }
+
+        await SaveSearchAsAsync();
+    }
+
+    private async Task SaveSearchAsAsync()
     {
         if (_findText.Length == 0)
         {
@@ -210,7 +249,7 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
         }
 
         string firstLine = _findText.Split('\n')[0].Trim();
-        string suggestion = firstLine.Length > 40 ? firstLine[..40] : firstLine;
+        string suggestion = SavedSearchName ?? (firstLine.Length > 40 ? firstLine[..40] : firstLine);
         string? name = await TextPrompt(
             Strings.Get("FindReplace_SaveSearchTitle"), Strings.Get("FindReplace_SaveSearchPrompt"), suggestion);
         if (name is null)
@@ -224,7 +263,22 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
             name = Strings.Get("SearchEditor_UnnamedSearch");
         }
 
-        SearchSaver(name);
+        if (SearchExists?.Invoke(name) == true && !await ConfirmedOverwriteAsync(name))
+        {
+            return;
+        }
+
+        Store(name);
+    }
+
+    private async Task<bool> ConfirmedOverwriteAsync(string name) =>
+        ConfirmOverwrite is { } confirm
+        && await confirm(Strings.Get("FindReplace_OverwriteTitle"), Strings.Format("FindReplace_OverwriteQuestion", name));
+
+    private void Store(string name)
+    {
+        SearchSaver?.Invoke(name);
+        SavedSearchName = name;
         SetMessage(Strings.Format("FindReplace_SearchSaved", name));
     }
 

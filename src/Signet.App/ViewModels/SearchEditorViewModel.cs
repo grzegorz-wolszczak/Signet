@@ -456,7 +456,19 @@ public sealed class SearchEditorViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(name);
         SearchEntry entry = _findReplace.CurrentAsEntry(name);
-        SearchEditorNode node = _model.AddEntry(entry, isGroup: false, parent: null, row: -1);
+        SearchEditorNode node;
+        if (FindSearch(name) is { } existing)
+        {
+            _model.SetFind(existing, entry.Find);
+            _model.SetReplace(existing, entry.Replace);
+            _model.SetControls(existing, entry.Controls);
+            node = existing;
+        }
+        else
+        {
+            node = _model.AddEntry(entry, isGroup: false, parent: null, row: -1);
+        }
+
         RebuildNodes();
         SelectNode(node);
         Save();
@@ -586,11 +598,37 @@ public sealed class SearchEditorViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Whether the library has a search of this full name (<c>Group/Name</c>).</summary>
+    public bool HasSearch(string fullName) => FindSearch(fullName) is not null;
+
+    private SearchEditorNode? FindSearch(string fullName)
+    {
+        Stack<SearchEditorNode> pending = new();
+        pending.Push(_model.Root);
+        while (pending.Count > 0)
+        {
+            foreach (SearchEditorNode child in pending.Pop().Children)
+            {
+                if (child.IsGroup)
+                {
+                    pending.Push(child);
+                }
+                else if (string.Equals(_model.FullNameOf(child), fullName, StringComparison.Ordinal))
+                {
+                    return child;
+                }
+            }
+        }
+
+        return null;
+    }
+
     private void LoadSelected()
     {
         if (_selectedNode?.Node is { IsGroup: false } node)
         {
             _findReplace.LoadSearch(_model.ToEntry(node));
+            _findReplace.SavedSearchName = _model.FullNameOf(node);
             Message = Strings.Format("SearchEditor_LoadedIntoFindReplace", node.Name);
         }
     }
