@@ -131,7 +131,7 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   and the same word in front of the rule name in the list of skipped rules (`ValidationResultsViewModel.RuleName`). Skipping itself needed no
   change: every code was skippable already. There is no separate skip dialog in Signet; the skipped rules are the menu of the panel's button.
 
-### A9. Tool "Accessibility" (Tools menu) — `[ ]`
+### A9. Tool "Accessibility" (Tools menu) — `[~]`
 
 - Calibre `81cae32b24`: one window with three tabs. In Signet `AccessibilityWindow` + `AccessibilityViewModel`, action
   `AppActionIds.Accessibility` (catalog entry, menu entry, **tooltip** — memory rule on keymap tooltips; no default shortcut).
@@ -146,6 +146,12 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 - Subtasks (each its own commit): A9a Core operations (list images in order, apply descriptions, read/write the metadata);
   A9b window and view model; A9c action, menu, localization, tooltips; A9d UI tests.
 - Open questions (ask before starting): whether the list also shows images referenced only from CSS; the place in the menu.
+- Decisions taken (the owner asked for no questions): images referenced only from CSS are not listed (only `img` and inline `svg`); the menu
+  entry goes to Tools, after Hyphenation.
+- A9a `[x]`: `AccessibilityLanguage` (languages of the book, `lang`/`xml:lang` of the files: only the missing or all), `AccessibilityMetadataEditor` +
+  `AccessibilityVocabulary` (the schema.org values), `AccessibilityImages` (list in reading order; write `alt`/`role` of an `img`, `aria-label` kept in
+  step with `<title>`/`aria-hidden` of an inline svg; text named by `aria-labelledby` is never changed, the reference is replaced), `OpfResource.SetLanguages`/
+  `RemoveMetaProperty`.
 
 ### A10. Accessibility in what Signet generates — `[ ]`
 

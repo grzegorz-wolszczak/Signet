@@ -263,6 +263,43 @@ public sealed class OpfResource : XmlResource
     }
 
     /// <summary>
+    /// Replaces the <c>dc:language</c> elements with <paramref name="languages"/>, in the place of the first one (or at the end when there
+    /// was none); the other metadata stays.
+    /// </summary>
+    public void SetLanguages(IReadOnlyList<string> languages)
+    {
+        ArgumentNullException.ThrowIfNull(languages);
+        OpfDocument document = GetOpfDocument();
+        int at = document.Metadata.FindIndex(m => string.Equals(m.Name, "dc:language", StringComparison.Ordinal));
+        document.Metadata.RemoveAll(m => string.Equals(m.Name, "dc:language", StringComparison.Ordinal));
+        if (at < 0)
+        {
+            at = document.Metadata.Count;
+        }
+
+        document.Metadata.InsertRange(at, languages.Select(l => new MetaEntry { Name = "dc:language", Content = Utility.EncodeXml(l) }));
+        UpdateText(document);
+    }
+
+    /// <summary>
+    /// Removes the primary <c>&lt;meta property="…"&gt;</c> elements with the given property (the ones that refine another element stay);
+    /// returns whether any was removed.
+    /// </summary>
+    public bool RemoveMetaProperty(string property)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(property);
+        OpfDocument document = GetOpfDocument();
+        int removed = document.Metadata.RemoveAll(m => string.Equals(m.Name, "meta", StringComparison.Ordinal)
+            && m.Attributes.Value("property") == property && !m.Attributes.Contains("refines"));
+        if (removed > 0)
+        {
+            UpdateText(document);
+        }
+
+        return removed > 0;
+    }
+
+    /// <summary>
     /// Adds <c>&lt;meta property="…"&gt;value&lt;/meta&gt;</c> to the metadata (EPUB 3), refining the element <paramref name="refines"/>
     /// (<c>#id</c>) when it is given. The same property can be added again: some of them (<c>schema:accessMode</c>) take one value
     /// per element.
