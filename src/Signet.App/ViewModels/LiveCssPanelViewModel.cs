@@ -30,6 +30,13 @@ public sealed class LiveCssDeclarationViewModel
         IsOverridden = declaration.IsOverridden;
         IsRepeated = declaration.IsRepeated;
         IsDimmed = !declaration.AffectsElement;
+        DimmedReason = !IsDimmed
+            ? null
+            : IsRepeated
+                ? Strings.Get("LiveCssPanelWindow_DimmedRepeated")
+                : IsOverridden
+                    ? Strings.Get("LiveCssPanelWindow_DimmedOverridden")
+                    : Strings.Format("LiveCssPanelWindow_DimmedNotInherited", declaration.Property);
         if (declaration.OverriddenBy is { } source)
         {
             if (declaration.IsRepeated)
@@ -71,6 +78,12 @@ public sealed class LiveCssDeclarationViewModel
     /// property of an ancestor, or repeated by a child) — shown dimmed.
     /// </summary>
     public bool IsDimmed { get; }
+
+    /// <summary>
+    /// The tooltip that says why the declaration is shown dimmed (it is repeated by a closer element, it is overridden, or it
+    /// is a non-inherited property of an ancestor); <c>null</c> when it is not dimmed.
+    /// </summary>
+    public string? DimmedReason { get; }
 
     /// <summary>An explanation of what overrides or repeats this declaration, or empty when neither happens.</summary>
     public string OverriddenByText { get; } = string.Empty;

@@ -75,6 +75,8 @@ public sealed class LiveCssPanelViewModelTests
         overridden.IsDimmed.Should().BeTrue();
         overridden.HasOverriddenBy.Should().BeTrue();
         overridden.OverriddenByText.Should().Contain(".b, style.css:2");
+        overridden.DimmedReason.Should().NotBeNullOrEmpty();
+        winner.DimmedReason.Should().BeNull();
         winner.IsOverridden.Should().BeFalse();
         winner.IsDimmed.Should().BeFalse();
         winner.HasOverriddenBy.Should().BeFalse();
@@ -189,6 +191,32 @@ public sealed class LiveCssPanelViewModelTests
         repeated.IsRepeated.Should().BeTrue();
         repeated.IsDimmed.Should().BeTrue();
         repeated.OverriddenByText.Should().Contain("repeated by .paragraph");
+    }
+
+    [Fact]
+    public void Update_explains_why_a_non_inherited_property_of_an_ancestor_is_dimmed()
+    {
+        // Arrange
+        CssMatchedRule body = new(CssPath, 0, "body", new CssSpecificity(0, 0, 0, 1), false,
+            new[] { new CssMatchedDeclaration("margin", "1em", false, false, AffectsElement: false) });
+        CssCascadeResult result = new(
+            "EPUB/text/chapter1.xhtml", 0, "p",
+            new[]
+            {
+                new CssCascadeLevel("body", 0, false, new[] { body }),
+                new CssCascadeLevel("p", 10, true, Array.Empty<CssMatchedRule>()),
+            });
+        LiveCssPanelViewModel vm = new();
+
+        // Act
+        vm.Update(result, _ => CssText, (_, _) => { });
+        LiveCssDeclarationViewModel margin = vm.Levels[0].Rules.Single().Declarations.Single();
+
+        // Assert
+        margin.IsDimmed.Should().BeTrue();
+        margin.IsOverridden.Should().BeFalse();
+        margin.HasOverriddenBy.Should().BeFalse();
+        margin.DimmedReason.Should().Contain("margin");
     }
 
     [Fact]

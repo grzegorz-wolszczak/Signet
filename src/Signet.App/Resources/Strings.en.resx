@@ -8792,4 +8792,13 @@ Close the tab</value>
   <data name="InlineStylesWindow_Extract" xml:space="preserve">
     <value>Extract</value>
   </data>
+  <data name="LiveCssPanelWindow_DimmedNotInherited" xml:space="preserve">
+    <value>Dimmed because "{0}" is not inherited: a declaration of an ancestor does not apply to the inspected element.</value>
+  </data>
+  <data name="LiveCssPanelWindow_DimmedOverridden" xml:space="preserve">
+    <value>Dimmed and struck through because another declaration with a higher priority overrides it, so it does not apply to the inspected element.</value>
+  </data>
+  <data name="LiveCssPanelWindow_DimmedRepeated" xml:space="preserve">
+    <value>Dimmed because a closer element has the same value for this inherited property, so this declaration changes nothing here.</value>
+  </data>
 </root>

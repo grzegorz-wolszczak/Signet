@@ -8792,4 +8792,13 @@ Zamknij zakładkę</value>
   <data name="InlineStylesWindow_Extract" xml:space="preserve">
     <value>Wyciągnij</value>
   </data>
+  <data name="LiveCssPanelWindow_DimmedNotInherited" xml:space="preserve">
+    <value>Wyszarzone, bo „{0}” nie jest dziedziczone: deklaracja przodka nie działa na zaznaczony element.</value>
+  </data>
+  <data name="LiveCssPanelWindow_DimmedOverridden" xml:space="preserve">
+    <value>Wyszarzone i przekreślone, bo tę deklarację nadpisuje inna o wyższym priorytecie, więc nie działa na zaznaczony element.</value>
+  </data>
+  <data name="LiveCssPanelWindow_DimmedRepeated" xml:space="preserve">
+    <value>Wyszarzone, bo bliższy element ma tę samą wartość tej dziedziczonej właściwości, więc ta deklaracja nic tu nie zmienia.</value>
+  </data>
 </root>
