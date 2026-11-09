@@ -189,6 +189,36 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Find_action_leaves_the_scope_alone_once_the_panel_was_shown_also_after_it_was_hidden()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = New();
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+        sut.LoadBook(book, epub);
+        sut.Tabs.OpenResources(new Resource[] { book.GetHtmlResources().First() });
+        sut.IsFindReplaceVisible = false;
+        AppAction action = sut.Actions.Require(AppActionIds.Find);
+        action.Execute(null);
+        sut.FindReplace.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
+
+        // Act — Ctrl+F in the shown panel
+        action.Execute(null);
+
+        // Assert
+        sut.FindReplace.LookWhereIndex.Should().Be((int)LookWhere.AllHtmlFiles);
+
+        // Act — hidden, then Ctrl+F again
+        sut.IsFindReplaceVisible = false;
+        action.Execute(null);
+
+        // Assert
+        sut.IsFindReplaceVisible.Should().BeTrue();
+        sut.FindReplace.LookWhereIndex.Should().Be((int)LookWhere.AllHtmlFiles);
+    }
+
+    [Fact]
     public void Find_action_with_a_non_code_tab_active_keeps_the_selected_scope()
     {
         // Arrange

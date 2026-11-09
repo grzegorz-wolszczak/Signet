@@ -1597,12 +1597,13 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// The "Find" action (Ctrl+F): shows the Find &amp; Replace panel, sets the "Look in" scope to the
-    /// current file when a code tab is open, puts the text selected in the editor into the Find field
-    /// and raises a request to focus it.
+    /// current file when a code tab is open and the panel has not been shown yet in this session (after that the scope is
+    /// the user's: Ctrl+F in the shown panel, or after hiding it, leaves it), puts the text selected in the editor into
+    /// the Find field and raises a request to focus it.
     /// </summary>
     private void ShowFindPanel()
     {
-        if (ActiveCodeTab is not null)
+        if (ActiveCodeTab is not null && !_findPanelShownInSession)
         {
             _findReplace.LookWhereIndex = (int)LookWhere.CurrentFile;
         }
@@ -1634,8 +1635,15 @@ public sealed partial class MainWindowViewModel
     public bool IsFindReplaceVisible
     {
         get => _isFindReplaceVisible;
-        set => SetProperty(ref _isFindReplaceVisible, value);
+        set
+        {
+            _findPanelShownInSession |= value;
+            SetProperty(ref _isFindReplaceVisible, value);
+        }
     }
+
+    // Whether the Find & Replace panel was shown since the program started (hiding it does not undo that).
+    private bool _findPanelShownInSession;
 
     /// <summary>Closes the Find &amp; Replace panel (the X button, Esc, "Hide Find").</summary>
     [RelayCommand]
