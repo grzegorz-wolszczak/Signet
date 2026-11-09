@@ -422,7 +422,7 @@ public partial class OPFHandler : XmlHandler
         string? detail = null;
         if (string.IsNullOrEmpty(text))
         {
-            detail = "zero-length string";
+            detail = " zero-length string";
         }
         else
         {
@@ -433,7 +433,12 @@ public partial class OPFHandler : XmlHandler
             }
             catch (InvalidDateException e)
             {
-                detail = e.Message;
+                // Upstream 5.4.1: the reason follows the colon of the message after a space and has no dot of its own (the message ends with one).
+                detail = " " + e.Message;
+                if (detail.EndsWith('.'))
+                {
+                    detail = detail[..^1];
+                }
             }
         }
 

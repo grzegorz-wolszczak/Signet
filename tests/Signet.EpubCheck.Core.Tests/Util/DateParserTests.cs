@@ -24,6 +24,56 @@ public sealed class DateParserTests
         DateParser.Parse(value).Should().Be(year);
     }
 
+    [Fact]
+    public void Parse_DateEndingWithTheDot_IsInvalidNotAnException()
+    {
+        // Act & Assert
+        FluentActions.Invoking(() => DateParser.Parse("2017-06-14T00:00:01."))
+            .Should().Throw<InvalidDateException>().WithMessage("No fraction of a second specified.");
+    }
+
+    // Upstream's DateParserTest (JUnit, added in 5.4.1): the dates that are valid and the ones that are not.
+    [Theory]
+    [InlineData("2011")]
+    [InlineData("2011-02")]
+    [InlineData("2011-02-12")]
+    [InlineData("2011-03-01T13")]
+    [InlineData("2011-02-01T13:00")]
+    [InlineData("2011-02-01T13:00:00")]
+    [InlineData("2011-02-01T13:00:00Z")]
+    [InlineData("2011-02-01T13:00:00+01:00")]
+    [InlineData("2011-02-01T13:00:00-03:00")]
+    public void Parse_UpstreamsValidDates_AreAccepted(string value)
+    {
+        // Act & Assert
+        FluentActions.Invoking(() => DateParser.Parse(value)).Should().NotThrow();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("2011-")]
+    [InlineData("2011-02-")]
+    [InlineData("2011-02-01T")]
+    [InlineData("2011-02-01T13:")]
+    [InlineData("2011-02-01T13:00:")]
+    [InlineData("2011-02-01T13:00:00T")]
+    [InlineData("2011-02-01T13:00:00.")]
+    [InlineData("2011-02-01T13:00:00+01")]
+    [InlineData("2011-02-01T13:00:00+01:")]
+    [InlineData("2011-02-01T13:00:00-03")]
+    [InlineData("2011-02-01T13:00:00-03:")]
+    [InlineData("2011-02-01T13:00:00-03:AA")]
+    [InlineData("20a1")]
+    [InlineData(" 2")]
+    [InlineData("2011-02-29")]
+    [InlineData("2011-02-01T13:00:00.123aqb")]
+    [InlineData("1994-11-05T13:15:30Zab")]
+    public void Parse_UpstreamsInvalidDates_AreRejected(string value)
+    {
+        // Act & Assert
+        FluentActions.Invoking(() => DateParser.Parse(value)).Should().Throw<InvalidDateException>();
+    }
+
     [Theory]
     [InlineData("2001-02-29", "2001-02-29 class java.lang.IllegalArgumentException MONTH")]
     [InlineData("2000-13-01", "2000-13-01 class java.lang.IllegalArgumentException MONTH")]

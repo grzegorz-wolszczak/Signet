@@ -100,6 +100,12 @@ public static class DateParser
                 token = reader.Next();
                 if (token == ".")
                 {
+                    // Upstream 5.4.1: a date that ends with the dot (2017-06-14T00:00:01.) is an invalid date, not an exception.
+                    if (!reader.HasMore)
+                    {
+                        throw new InvalidDateException("No fraction of a second specified.");
+                    }
+
                     fields.Millisecond = ReadFraction(reader.Next());
                     if (!reader.HasMore)
                     {

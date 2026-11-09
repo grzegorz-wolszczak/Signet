@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using AutoFixture;
 using AwesomeAssertions;
+using Signet.EpubCheck.Core.Messages;
 using Signet.EpubCheck.Core.Reporting;
+using Signet.EpubCheck.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.EpubCheck.Core.Tests;
@@ -48,6 +51,23 @@ public sealed class SingleDocumentCheckerTests
     {
         // Act & Assert
         SingleDocumentChecker.IsSupported(kind, version).Should().Be(expected);
+    }
+
+    [Fact]
+    public void Check_OfADateEndingWithTheDot_ReportsTheReasonWithoutTheDotOfItsOwn()
+    {
+        // Arrange
+        List<object?[]> args = new();
+        Moq.Mock<IReport> report = new();
+        report.Setup(r => r.Message(MessageId.OPF_053, Moq.It.IsAny<EpubLocation>(), Moq.It.IsAny<object?[]>()))
+            .Callback<MessageId, EpubLocation, object?[]>((_, _, a) => args.Add(a));
+        string path = UpstreamCorpus.Combine("epub3", "05-package-document", "files", "metadata-date-trailing-dot-warning.opf");
+
+        // Act
+        SingleDocumentChecker.Check(path, SingleDocumentKind.PackageDocument, EpubVersion.Version3, EpubProfile.Default, report.Object);
+
+        // Assert
+        args.Should().ContainSingle().Which.Should().Equal("2017-06-14T00:00:01.", " No fraction of a second specified");
     }
 
     [Fact]
