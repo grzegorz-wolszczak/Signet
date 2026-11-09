@@ -20,7 +20,7 @@ public sealed class EpubCheckToolTests
         // Assert
         result.ExitCode.Should().Be(1);
         result.StdErr.Should().Be("At least one argument expected\n");
-        result.StdOut.Should().Be(Completed);
+        result.StdOut.Should().BeEmpty("there is no report, so no closing sentence either");
     }
 
     [Theory]
@@ -74,7 +74,7 @@ public sealed class EpubCheckToolTests
         // Assert
         result.ExitCode.Should().Be(1);
         result.StdErr.Should().Be("Unrecognized argument: \"--unknown\"\n");
-        result.StdOut.Should().StartWith("EPUBCheck v").And.EndWith(Completed);
+        result.StdOut.Should().StartWith("EPUBCheck v").And.NotContain(Completed);
     }
 
     [Fact]
@@ -100,7 +100,8 @@ public sealed class EpubCheckToolTests
         // Assert
         result.ExitCode.Should().Be(1);
         result.StdErr.Should().Be(message + "\n");
-        result.StdOut.Should().StartWith("-help displays help\n");
+        result.StdOut.Should().StartWith("EPUBCheck v").And.Contain("--version", "the whole help is shown (upstream 5.4.1)");
+        result.StdOut.Should().NotContain(Completed);
     }
 
     [Fact]
@@ -111,7 +112,8 @@ public sealed class EpubCheckToolTests
 
         // Assert
         result.ExitCode.Should().Be(1);
-        result.StdErr.Should().Be("Version not supported\n");
+        result.StdErr.Should().Be("Unrecognized argument: \"4\"\n");
+        result.StdOut.Should().StartWith("EPUBCheck v");
     }
 
     [Fact]
@@ -306,6 +308,24 @@ public sealed class EpubCheckToolTests
         result.ExitCode.Should().Be(1);
         result.StdErr.Should().Be("The checker doesn’t validate type nav and version 2.0.1.\n");
         result.StdOut.Should().StartWith("-help displays help\n");
+    }
+
+    [Fact]
+    public void Run_WhenTheReportCannotBeWritten_ExitsWith2WithoutTheClosingSentence()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string file = dir.Combine("book.opf");
+        File.WriteAllText(file, "x");
+        string report = dir.Combine("missing-folder", "report.xml");
+
+        // Act
+        ToolRunner.Result result = ToolRunner.Run("-mode", "opf", file, "-o", report);
+
+        // Assert
+        result.ExitCode.Should().Be(2, "upstream 5.4.1 keeps 1 for an invalid publication");
+        result.StdErr.Should().NotBeEmpty();
+        result.StdOut.Should().NotContain(Completed);
     }
 
     [Fact]

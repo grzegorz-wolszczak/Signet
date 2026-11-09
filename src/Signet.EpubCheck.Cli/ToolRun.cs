@@ -21,6 +21,9 @@ internal sealed class ToolRun
 {
     private const string CustomMessageFileVariable = "ePubCheckCustomMessageFile";
 
+    // The exit code of an unexpected exception (1 is "the publication has errors").
+    private const int UnexpectedExceptionExitCode = 2;
+
     private readonly ToolOutput _output;
     private readonly CultureInfo _defaultCulture;
     private ToolMessages _messages;
@@ -106,23 +109,37 @@ internal sealed class ToolRun
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
+            // Upstream 5.4.1: an unexpected exception is an exit code of 2 (not 1, which means "the publication is invalid"), and the
+            // closing sentence and the counters are left out; the port still says what happened.
             _output.PrintError(ex.Message);
-            returnValue = 1;
+            returnValue = UnexpectedExceptionExitCode;
         }
 
-        if (_report is not null)
+        if (_report is not null && returnValue < UnexpectedExceptionExitCode)
         {
             PrintCompleted(_report);
-        }
-        else
-        {
-            _output.Println(_messages.Get("epubcheck_completed"));
         }
 
         return returnValue;
     }
 
+    // Upstream 5.4.1: a runtime exception while checking (a bug) is shown and added to the report as a fatal RSC-016, so that the
+    // counters and the report do not look clean. IO errors (the checked exceptions of Java) go to Run.
     private int ProcessFile(ReportBase report)
+    {
+        try
+        {
+            return CheckPath(report);
+        }
+        catch (Exception ex) when (ex is not (IOException or UnauthorizedAccessException or InvalidOperationException or ToolArgumentException))
+        {
+            _output.PrintError(ex.ToString());
+            report.Message(MessageId.RSC_016, new EpubLocation(_path ?? string.Empty), $"{ex.GetType().FullName}: {ex.Message}");
+            return 1;
+        }
+    }
+
+    private int CheckPath(ReportBase report)
     {
         report.Info(null, FeatureKind.ToolName, "epubcheck");
         report.Info(null, FeatureKind.ToolVersion, EpubCheckVersion.Text);
@@ -167,7 +184,8 @@ internal sealed class ToolRun
         if (!IsSupportedMode(_mode, _version))
         {
             _output.Println(_messages.Get("display_help"));
-            throw new ToolArgumentException(_messages.Get("mode_version_not_supported", _mode, VersionText(_version)));
+            _output.PrintError(_messages.Get("mode_version_not_supported", _mode, VersionText(_version)));
+            return 1;
         }
 
         if (_mode is not null && SingleDocumentChecker.TryParseMode(_mode, out SingleDocumentKind kind))
@@ -346,20 +364,35 @@ internal sealed class ToolRun
                 case "v":
                     if (i + 1 >= args.Length)
                     {
-                        _output.Println(_messages.Get("display_help"));
-                        throw new ToolArgumentException(_messages.Get("version_argument_expected"));
+                        // Upstream 5.4.1: the reason and the help, and the tool stops.
+                        _output.PrintError(_messages.Get("version_argument_expected"));
+                        DisplayHelp();
+                        return false;
                     }
 
                     string version = args[++i];
-                    _version = version is "2.0" or "2" ? EpubVersion.Version2
-                        : version is "3.0" or "3" ? EpubVersion.Version3
-                        : throw UnsupportedVersion();
+                    if (version is "2.0" or "2")
+                    {
+                        _version = EpubVersion.Version2;
+                    }
+                    else if (version is "3.0" or "3")
+                    {
+                        _version = EpubVersion.Version3;
+                    }
+                    else
+                    {
+                        // Upstream 5.4.1: the unrecognized value and the help, and the tool stops.
+                        return Unrecognized(version);
+                    }
+
                     break;
                 case "m" or "mode":
                     if (i + 1 >= args.Length)
                     {
-                        _output.Println(_messages.Get("display_help"));
-                        throw new ToolArgumentException(_messages.Get("mode_argument_expected"));
+                        // Upstream 5.4.1: the reason and the help, and the tool stops.
+                        _output.PrintError(_messages.Get("mode_argument_expected"));
+                        DisplayHelp();
+                        return false;
                     }
 
                     _mode = args[++i];
@@ -368,8 +401,10 @@ internal sealed class ToolRun
                 case "p" or "profile":
                     if (i + 1 >= args.Length)
                     {
-                        _output.Println(_messages.Get("display_help"));
-                        throw new ToolArgumentException(_messages.Get("profile_argument_expected"));
+                        // Upstream 5.4.1: the reason and the help, and the tool stops.
+                        _output.PrintError(_messages.Get("profile_argument_expected"));
+                        DisplayHelp();
+                        return false;
                     }
 
                     string profileName = args[++i];
@@ -564,12 +599,6 @@ internal sealed class ToolRun
         _output.PrintError(_messages.Get("unrecognized_argument", arg));
         DisplayHelp();
         return false;
-    }
-
-    private ToolArgumentException UnsupportedVersion()
-    {
-        _output.Println(_messages.Get("display_help"));
-        return new ToolArgumentException("Version not supported");
     }
 
     // -o, -j, -x: a file name, or "-" for the console, or nothing (a name made from the file to check, which needs the file to be named before).
