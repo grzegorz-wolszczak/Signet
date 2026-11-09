@@ -57,7 +57,7 @@
     <value>META-INF/container.xml does not point to any OPF file (no matching rootfile).</value>
   </data>
   <data name="LoadError_OpfFromContainerMissing" xml:space="preserve">
-    <value>The OPF file referenced in container.xml does not exist in the EPUB: {0}</value>
+    <value>None of the OPF files that container.xml lists exists in the EPUB: {0}</value>
   </data>
   <data name="LoadError_CannotParse" xml:space="preserve">
     <value>Cannot parse {0}: {1}</value>
@@ -6280,5 +6280,11 @@
   </data>
   <data name="Validation_Accessibility_NoSummary" xml:space="preserve">
     <value>The book does not have an accessibility summary (schema:accessibilitySummary).</value>
+  </data>
+  <data name="LoadWarning_DamagedZipRecovered" xml:space="preserve">
+    <value>The EPUB archive is damaged (its central directory is missing), so {0} files were read from the headers of its entries. Check the book carefully.</value>
+  </data>
+  <data name="LoadWarning_RootfileMissing" xml:space="preserve">
+    <value>The OPF file that container.xml lists is not in the EPUB and was skipped: {0}</value>
   </data>
 </root>

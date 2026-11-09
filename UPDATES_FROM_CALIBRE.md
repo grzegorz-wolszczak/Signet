@@ -237,12 +237,17 @@ For each: write the test first on a corpus book; if Signet already behaves corre
   (before, an EPUB 3 book with a nav ignored its guide altogether, so a guide-only cover was missed). The other readers of landmarks
   (Book Browser, the semantics map, footnote files) already use the landmarks of an EPUB 3 book. "Reports" has nothing to change.
 
-### C5. Damaged ZIPs: missing entries and rootfiles — `[ ]`
+### C5. Damaged ZIPs: missing entries and rootfiles — `[x]`
 
 - Calibre "Fix handling of missing entries in damaged EPUB ZIPs" and "EPUB metadata: Ignore missing rootfiles in damaged ZIPs".
 - Add books to `tests/corpus/malformed/` (central directory points to a missing entry; `container.xml` lists a missing rootfile
   besides a valid one); `OcfReader` / `ImportEpub` load what can be loaded with a `LoadWarning` instead of failing the book.
   Where it must fail, the message names the entry.
+- Done: `OcfReader` loads what it can. A ZIP without its central directory is read from the local headers (`LocalZipReader`: stored and deflated entries; sizes from
+  the local header or from the data descriptor of an entry written to a stream that could not seek) and the book gets `LoadWarning_DamagedZipRecovered` (no file at all
+  is still `LoadError_CorruptZip`); a rootfile of `container.xml` that is not in the book is skipped for one that is (`LoadWarning_RootfileMissing`, the first used to
+  fail the book), and when none is there the message names them all. The corpus book `malformed/first-rootfile-missing`; the damaged ZIPs are made by the test from
+  `epub3/minimal` (README). A missing `container.xml` with no `.opf` already said so by name. Not taken: ZIP64, encrypted ZIP entries, descriptors without a signature.
 
 ---
 

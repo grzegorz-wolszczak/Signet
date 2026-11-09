@@ -18,7 +18,9 @@ directory via `AssemblyMetadata("CorpusRoot", …)` from the `.csproj`.
 | `epub3/obfuscated-fonts` | two obfuscated fonts (IDPF + Adobe) + `encryption.xml`; files stored **deobfuscated** |
 | `epub2/minimal` | OPF 2.0, NCX, `guide`, `dc:creator` with `opf:role`/`opf:file-as` |
 | `edge/deep-folders` | deep non-standard directory structure (`BookPath`) |
-| `malformed/*` | books broken as EPUBs (no `mimetype`, empty `<rootfiles/>`, unclosed OPF tag, non-well-formed XHTML) |
+| `malformed/*` | books broken as EPUBs (no `mimetype`, empty `<rootfiles/>`, a first `rootfile` that is not in the book, unclosed OPF tag, non-well-formed XHTML) |
+
+A ZIP without its central directory is not a directory here: `OcfRecoveryTests` makes it from `epub3/minimal` (cuts the archive where the central directory begins).
 | `broken/` | valid EPUBs with awkward content (see its README) |
 | `real/` | anonymised markup of real books (see its README) |
 | `epubcheck/` | upstream EPUBCheck fixtures and scenarios (see its README) |

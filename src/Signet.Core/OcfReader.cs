@@ -206,7 +206,9 @@ public sealed class OcfReader
         }
         catch (InvalidDataException ex)
         {
-            throw new EpubLoadException(CoreStrings.Format("LoadError_CorruptZip", _epubPath), ex);
+            // No central directory (or one that cannot be read): what can be read from the headers of the entries is the book.
+            ExtractDamagedArchive(root, warnings, ex);
+            return;
         }
 
         using (archive)
@@ -227,6 +229,41 @@ public sealed class OcfReader
                 ExtractEntry(entry, root);
             }
         }
+    }
+
+    // The entries of an archive that ZipArchive refuses to open, read one after another (LocalZipReader): a warning says so; when not a single file
+    // can be read the archive is just corrupt.
+    private void ExtractDamagedArchive(string root, List<string> warnings, InvalidDataException cause)
+    {
+        IReadOnlyList<(string Name, byte[] Data)> entries = LocalZipReader.Read(File.ReadAllBytes(_epubPath));
+        if (entries.Count == 0)
+        {
+            throw new EpubLoadException(CoreStrings.Format("LoadError_CorruptZip", _epubPath), cause);
+        }
+
+        foreach ((string name, byte[] data) in entries)
+        {
+            if (ResolveDestination(name, root) is { } destination)
+            {
+                Directory.CreateDirectory(SysPath.GetDirectoryName(destination)!);
+                File.WriteAllBytes(destination, data);
+            }
+        }
+
+        (string Name, byte[] Data) mimetype = entries.FirstOrDefault(e => e.Name == MimetypeEntryName);
+        string content = mimetype.Data is null ? string.Empty : Encoding.ASCII.GetString(mimetype.Data);
+        if (mimetype.Data is null)
+        {
+            warnings.Add(CoreStrings.Get("LoadWarning_MimetypeMissing"));
+        }
+        else if (content != OcfMimetype)
+        {
+            warnings.Add(content.Trim() == OcfMimetype
+                ? CoreStrings.Get("LoadWarning_MimetypeWhitespace")
+                : CoreStrings.Format("LoadWarning_MimetypeWrongContent", content, OcfMimetype));
+        }
+
+        warnings.Add(CoreStrings.Format("LoadWarning_DamagedZipRecovered", entries.Count));
     }
 
     // A book of many files is unpacked by several threads, each with an archive of its own on the same file (an archive is read by one thread at a
@@ -283,12 +320,13 @@ public sealed class OcfReader
         }
     }
 
-    private static void ExtractEntry(ZipArchiveEntry entry, string root)
+    // Where the file of an archive entry goes (a directory entry is created and gives null), after the checks that keep a malicious or damaged
+    // archive inside the folder.
+    private static string? ResolveDestination(string rawName, string root)
     {
-        string rawName = entry.FullName;
         if (rawName.Length == 0)
         {
-            return;
+            return null;
         }
 
         // Security (a malicious/corrupted archive): reject backslashes
@@ -309,7 +347,7 @@ public sealed class OcfReader
         if (normalized.EndsWith('/'))
         {
             Directory.CreateDirectory(SysPath.Combine(root, normalized.Replace('/', SysPath.DirectorySeparatorChar)));
-            return;
+            return null;
         }
 
         string relative = normalized.Replace('/', SysPath.DirectorySeparatorChar);
@@ -324,6 +362,17 @@ public sealed class OcfReader
         if (!string.IsNullOrEmpty(parent))
         {
             Directory.CreateDirectory(parent);
+        }
+
+        return destination;
+    }
+
+    private static void ExtractEntry(ZipArchiveEntry entry, string root)
+    {
+        string rawName = entry.FullName;
+        if (ResolveDestination(rawName, root) is not { } destination)
+        {
+            return;
         }
 
         try
@@ -395,19 +444,27 @@ public sealed class OcfReader
                 CoreStrings.Get("LoadError_ContainerNoRootfile"), warnings);
         }
 
-        if (rootfiles.Count > 1)
-        {
-            warnings.Add(CoreStrings.Format("LoadWarning_MultipleRenditions", rootfiles.Count));
-        }
-
-        string opfFullPath = SysPath.Combine(root, rootfiles[0].Replace('/', SysPath.DirectorySeparatorChar));
-        if (!File.Exists(opfFullPath))
+        // A rootfile that is not in the book is skipped for one that is (Calibre 88391ed54d); with none left the message names them all.
+        List<string> present = rootfiles
+            .Where(r => File.Exists(SysPath.Combine(root, r.Replace('/', SysPath.DirectorySeparatorChar))))
+            .ToList();
+        if (present.Count == 0)
         {
             throw new EpubLoadException(
-                CoreStrings.Format("LoadError_OpfFromContainerMissing", rootfiles[0]), warnings);
+                CoreStrings.Format("LoadError_OpfFromContainerMissing", string.Join(", ", rootfiles)), warnings);
         }
 
-        return rootfiles;
+        foreach (string missing in rootfiles.Except(present, StringComparer.Ordinal))
+        {
+            warnings.Add(CoreStrings.Format("LoadWarning_RootfileMissing", missing));
+        }
+
+        if (present.Count > 1)
+        {
+            warnings.Add(CoreStrings.Format("LoadWarning_MultipleRenditions", present.Count));
+        }
+
+        return present;
     }
 
     private static IReadOnlyDictionary<string, string> ReadEncryptionXml(string root, List<string> warnings)
