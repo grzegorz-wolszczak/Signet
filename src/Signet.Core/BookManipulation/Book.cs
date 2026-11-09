@@ -539,29 +539,33 @@ public sealed class Book : IDisposable
     /// The existing cover page: an HTML resource with the guide/landmark <c>cover</c> semantics or, failing that,
     /// the first resource named <see cref="HtmlCoverFilename"/>. <c>null</c> when there is none.
     /// </summary>
-    public HtmlResource? FindExistingCoverHtmlResource()
+    public HtmlResource? FindExistingCoverHtmlResource() =>
+        FindHtmlResourceBySemanticCode("cover", GetHtmlResources())
+        ?? GetHtmlResources().FirstOrDefault(h => string.Equals(h.Filename, HtmlCoverFilename, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// The first of <paramref name="candidates"/> whose semantics (the <c>epub:type</c> of its landmark in an EPUB 3 nav; the type of its
+    /// guide entry in EPUB 2) is <paramref name="code"/>. An EPUB 3 book can have both the landmarks and the legacy guide: the landmarks
+    /// win, and the guide is consulted only when no candidate has a landmark of that kind (Calibre 251c1726e7).
+    /// </summary>
+    public HtmlResource? FindHtmlResourceBySemanticCode(string code, IEnumerable<HtmlResource> candidates)
     {
+        ArgumentNullException.ThrowIfNull(code);
+        ArgumentNullException.ThrowIfNull(candidates);
+        List<HtmlResource> list = candidates.ToList();
         HtmlResource? navResource = IsEpub3 ? GetNavResource() : null;
-        NavProcessor? navProcessor = navResource is not null ? new NavProcessor(navResource) : null;
-        HtmlResource? byFilename = null;
-
-        foreach (HtmlResource html in GetHtmlResources())
+        if (navResource is not null)
         {
-            string code = navProcessor is not null
-                ? navProcessor.GetLandmarkCodeForResource(html)
-                : GetOpf().GetGuideSemanticCodeForResource(html);
-            if (string.Equals(code, "cover", StringComparison.Ordinal))
+            NavProcessor navProcessor = new(navResource);
+            HtmlResource? byLandmark = list.FirstOrDefault(h => string.Equals(navProcessor.GetLandmarkCodeForResource(h), code, StringComparison.Ordinal));
+            if (byLandmark is not null)
             {
-                return html;
-            }
-
-            if (byFilename is null && string.Equals(html.Filename, HtmlCoverFilename, StringComparison.OrdinalIgnoreCase))
-            {
-                byFilename = html;
+                return byLandmark;
             }
         }
 
-        return byFilename;
+        OpfResource opf = GetOpf();
+        return list.FirstOrDefault(h => string.Equals(opf.GetGuideSemanticCodeForResource(h), code, StringComparison.Ordinal));
     }
 
     /// <summary>

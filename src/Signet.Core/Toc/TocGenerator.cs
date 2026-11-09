@@ -66,30 +66,10 @@ public static class TocGenerator
 
         NavProcessor? navProcessor = epub3 && navResource is not null ? new NavProcessor(navResource) : null;
 
-        HtmlResource? tocResource = null;
-        foreach (HtmlResource html in htmlResources)
-        {
-            if (ReferenceEquals(html, navResource))
-            {
-                continue;
-            }
-
-            string semanticCode = navProcessor is not null
-                ? navProcessor.GetLandmarkCodeForResource(html)
-                : book.GetOpf().GetGuideSemanticCodeForResource(html);
-
-            if (string.Equals(semanticCode, "toc", StringComparison.Ordinal))
-            {
-                tocResource = html;
-                break;
-            }
-
-            if (tocResource is null &&
-                string.Equals(html.Filename, TocHtmlWriter.HtmlTocFilename, StringComparison.OrdinalIgnoreCase))
-            {
-                tocResource = html;
-            }
-        }
+        // The page the landmarks (or, where they say nothing, the guide) name as the table of contents; failing that, the one with the usual name.
+        List<HtmlResource> pages = htmlResources.Where(h => !ReferenceEquals(h, navResource)).ToList();
+        HtmlResource? tocResource = book.FindHtmlResourceBySemanticCode("toc", pages)
+            ?? pages.FirstOrDefault(h => string.Equals(h.Filename, TocHtmlWriter.HtmlTocFilename, StringComparison.OrdinalIgnoreCase));
 
         if (tocResource is null)
         {

@@ -209,10 +209,14 @@ For each: write the test first on a corpus book; if Signet already behaves corre
   empty toc stays an empty `<ol>` (invalid: a nav needs an entry; the new-book template has the same state), nested lists and `&`/`<` in titles
   were fine.
 
-### C4. Landmarks win over the legacy guide — `[ ]`
+### C4. Landmarks win over the legacy guide — `[x]`
 
 - Calibre `251c1726e7`: when a book has both landmarks and a `<guide>`, use the landmarks (`Landmarks`, `GuideItems`,
   cover detection, Reports).
+- Done: the places that look for a page by its semantics (`Book.FindExistingCoverHtmlResource`, `TocGenerator.CreateHtmlToc`) now use
+  `Book.FindHtmlResourceBySemanticCode`: the landmarks of the nav win; the guide is consulted only when no page has a landmark of that kind
+  (before, an EPUB 3 book with a nav ignored its guide altogether, so a guide-only cover was missed). The other readers of landmarks
+  (Book Browser, the semantics map, footnote files) already use the landmarks of an EPUB 3 book. "Reports" has nothing to change.
 
 ### C5. Damaged ZIPs: missing entries and rootfiles — `[ ]`
 
