@@ -107,7 +107,7 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 - Done: `AccessibilityValidator.CheckAriaReferences` (warning `Validation_Accessibility_AriaReference`, one result per missing id, with the
   line); EPUB 3 only (ARIA attributes are not valid in XHTML 1.1). Calibre has no such check: this one is ours.
 
-### A7. ID renaming also updates ARIA references and CSS selectors — `[ ]`
+### A7. ID renaming also updates ARIA references and CSS selectors — `[x]`
 
 - Calibre `a96f76afdd` (aria references) and `8eff51f371` (`#id` selectors in CSS) after an automatic invalid-id fix.
 - Extend `IdRenamer` / `InvalidIdFix` / `IdRenamePreparation` / `IdReferenceIndex`: one renaming rewrites the `aria-*` id lists
@@ -115,6 +115,11 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   strings and comments alone; handle ids that occur in several files.
 - The preparation (risk) dialog text mentions the new places.
 - Tests: `aria-labelledby` lists, a selector `#a.b`, an attribute selector `[id="…"]`, an id in a comment/string unchanged.
+- Done: `IdRefAttributes` (Calibre's `iteridrefs` list: the ARIA attributes, `for` of `label`/`output`, `headers` of `td`/`th`) is used by
+  `IdRenamer` (in the files that carry the id; counted in `ReferencesUpdated`, whose label in the dialog now says "links and ARIA references"), by
+  `InvalidIdFix` and by the A6 check (which also gained `aria-errormessage`, `for`, `headers`). `[id=…]` attribute selectors (exact match) are renamed
+  too: `CssToolbox.FindIdsInSelector` returns them (so Find Usages lists them), `CssIdSelectors.Rename` rewrites them. `#id`, comments, strings and
+  declaration blocks were handled before. Not taken from Calibre: its "remove the references to this id" fix for dangling references.
 
 ### A8. Accessibility group in the Validation Results panel — `[x]`
 

@@ -3701,7 +3701,7 @@ Only HTML files can be merged.</value>
     <value>New name:</value>
   </data>
   <data name="RenameIdWindow_Summary" xml:space="preserve">
-    <value>Id occurrences changed: {0} · selectors changed: {1} · links updated: {2} · files changed: {3}</value>
+    <value>Id occurrences changed: {0} · selectors changed: {1} · links and ARIA references updated: {2} · files changed: {3}</value>
   </data>
   <data name="RenameIdWindow_RenameButton" xml:space="preserve">
     <value>Rename</value>

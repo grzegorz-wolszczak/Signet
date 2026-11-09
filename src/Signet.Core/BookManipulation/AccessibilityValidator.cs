@@ -124,26 +124,17 @@ public static class AccessibilityValidator
         }
     }
 
-    // The attributes whose value is a list of ids (aria-activedescendant has one).
-    private static readonly string[] AriaReferenceAttributes =
-        ["aria-labelledby", "aria-describedby", "aria-controls", "aria-owns", "aria-flowto", "aria-details", "aria-activedescendant"];
-
     // An aria-labelledby (and the like) that names an id the file does not have refers to nothing: one result for each missing id.
     private static void CheckAriaReferences(HtmlResource html, List<ValidationResult> results)
     {
         string text = html.GetText();
-        if (!text.Contains("aria-", StringComparison.Ordinal))
-        {
-            return;
-        }
-
         IReadOnlyList<TagLister.TagInfo> tags = TagLister.For(text).Tags;
-        List<(int Pos, string Tag)> openTags = tags
+        List<(int Pos, string Tag, string Name)> openTags = tags
             .Where(t => t.Kind is TagKind.Begin or TagKind.SelfClosing)
-            .Select(t => (t.Pos, text.Substring(t.Pos, t.Len)))
+            .Select(t => (t.Pos, text.Substring(t.Pos, t.Len), t.TagName))
             .ToList();
         HashSet<string> ids = new(StringComparer.Ordinal);
-        foreach ((_, string tagText) in openTags)
+        foreach ((_, string tagText, _) in openTags)
         {
             TagLister.AttInfo id = TagLister.ParseAttribute(tagText, "id");
             if (id.Pos >= 0 && id.AValue.Length > 0)
@@ -154,35 +145,26 @@ public static class AccessibilityValidator
 
         int line = 1;
         int linePosition = 0;
-        foreach ((int pos, string tagText) in openTags)
+        foreach ((int pos, string tagText, string name) in openTags)
         {
-            if (!tagText.Contains("aria-", StringComparison.Ordinal))
+            foreach (IdRefToken token in IdRefAttributes.Tokens(tagText, name))
             {
-                continue;
-            }
-
-            foreach (string attribute in AriaReferenceAttributes)
-            {
-                string value = TagLister.ParseAttribute(tagText, attribute).AValue;
-                foreach (string id in value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+                if (ids.Contains(token.Id))
                 {
-                    if (ids.Contains(id))
-                    {
-                        continue;
-                    }
-
-                    for (; linePosition < pos; linePosition++)
-                    {
-                        if (text[linePosition] == '\n')
-                        {
-                            line++;
-                        }
-                    }
-
-                    results.Add(new ValidationResult(
-                        ValidationSeverity.Warning, html.BookPath, line, -1,
-                        CoreStrings.Format("Validation_Accessibility_AriaReference", attribute, id), "Validation_Accessibility_AriaReference"));
+                    continue;
                 }
+
+                for (; linePosition < pos; linePosition++)
+                {
+                    if (text[linePosition] == '\n')
+                    {
+                        line++;
+                    }
+                }
+
+                results.Add(new ValidationResult(
+                    ValidationSeverity.Warning, html.BookPath, line, -1,
+                    CoreStrings.Format("Validation_Accessibility_AriaReference", token.Attribute, token.Id), "Validation_Accessibility_AriaReference"));
             }
         }
     }

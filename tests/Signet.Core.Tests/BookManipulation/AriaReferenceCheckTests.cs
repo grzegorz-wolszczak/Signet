@@ -31,6 +31,7 @@ public sealed class AriaReferenceCheckTests
     [InlineData("aria-flowto")]
     [InlineData("aria-details")]
     [InlineData("aria-activedescendant")]
+    [InlineData("aria-errormessage")]
     public void Every_attribute_that_refers_to_an_id_is_checked(string attribute)
     {
         // Act
@@ -41,6 +42,33 @@ public sealed class AriaReferenceCheckTests
         result.Message.Should().Contain(attribute).And.Contain("nowhere");
         result.Severity.Should().Be(ValidationSeverity.Warning);
         result.Fix.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("<label for=\"gone\">x</label>")]
+    [InlineData("<output for=\"a gone\">x</output>")]
+    [InlineData("<table><tr><td headers=\"gone\">x</td></tr></table>")]
+    [InlineData("<table><tr><th headers=\"gone\">x</th></tr></table>")]
+    public void The_for_and_headers_attributes_of_the_elements_that_use_them_as_id_lists_are_checked(string body)
+    {
+        // Act
+        List<ValidationResult> results = Check("<p id=\"a\">a</p>" + body);
+
+        // Assert
+        results.Should().ContainSingle().Which.Message.Should().Contain("gone");
+    }
+
+    [Theory]
+    [InlineData("<div for=\"gone\">x</div>")]
+    [InlineData("<p headers=\"gone\">x</p>")]
+    [InlineData("<label headers=\"gone\">x</label>")]
+    public void The_for_and_headers_attributes_are_not_id_lists_on_other_elements(string body)
+    {
+        // Act
+        List<ValidationResult> results = Check(body);
+
+        // Assert
+        results.Should().BeEmpty();
     }
 
     [Fact]

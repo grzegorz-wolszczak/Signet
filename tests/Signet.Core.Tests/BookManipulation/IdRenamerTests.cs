@@ -112,6 +112,64 @@ public sealed class IdRenamerTests
     }
 
     [Fact]
+    public void Rename_updates_the_ids_in_aria_lists_and_other_id_lists_of_the_file()
+    {
+        // Arrange
+        IdRenamer sut = Renamer(
+            "<html><body><h2 id=\"note1\">t</h2>"
+            + "<p aria-labelledby=\"x  note1\tz\" aria-describedby=\"note1\" aria-errormessage=\"note1\">a</p>"
+            + "<label for=\"note1\">l</label><table><tr><td headers=\"a note1\">c</td></tr></table></body></html>");
+
+        // Act
+        IdRenameResult result = sut.Rename("note1", "note2");
+
+        // Assert
+        string text = result.ChangedTexts["text/ch1.xhtml"];
+        text.Should().Contain("aria-labelledby=\"x  note2\tz\"").And.Contain("aria-describedby=\"note2\"")
+            .And.Contain("aria-errormessage=\"note2\"").And.Contain("<label for=\"note2\">")
+            .And.Contain("headers=\"a note2\"").And.NotContain("note1");
+        result.Stats.ReferencesUpdated.Should().Be(5, "every reference counts, with the links");
+    }
+
+    [Fact]
+    public void Rename_leaves_aria_references_alone_in_files_that_do_not_carry_the_id_and_whole_tokens_only()
+    {
+        // Arrange
+        IdRenamer sut = Renamer(
+            "<html><body><p id=\"note1\">a</p><p aria-labelledby=\"note10 xnote1 note1x\">b</p></body></html>",
+            html2: "<html><body><p id=\"o\" aria-labelledby=\"note1\">c</p></body></html>");
+
+        // Act
+        IdRenameResult result = sut.Rename("note1", "note2");
+
+        // Assert
+        result.ChangedTexts.Should().NotContainKey("text/ch2.xhtml", "an aria reference points into its own file only");
+        result.ChangedTexts["text/ch1.xhtml"].Should().Contain("aria-labelledby=\"note10 xnote1 note1x\"");
+        result.Stats.ReferencesUpdated.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("[id=\"note1\"] { color: red }", "[id=\"note2\"] { color: red }")]
+    [InlineData("p[id=note1] { color: red }", "p[id=note2] { color: red }")]
+    [InlineData("[ ID = 'note1' ] { color: red }", "[ ID = 'note2' ] { color: red }")]
+    [InlineData("#note1.big, p[id=\"note1\"] { color: red }", "#note2.big, p[id=\"note2\"] { color: red }")]
+    [InlineData("[class=\"note1\"] { color: red }", "[class=\"note1\"] { color: red }")]
+    [InlineData("[id^=\"note1\"] { color: red }", "[id^=\"note1\"] { color: red }")]
+    [InlineData("[data-id=\"note1\"] { color: red }", "[data-id=\"note1\"] { color: red }")]
+    [InlineData("/* #note1 [id=\"note1\"] */ p::after { content: \"#note1\"; }", "/* #note1 [id=\"note1\"] */ p::after { content: \"#note1\"; }")]
+    public void Rename_changes_the_id_in_selectors_of_both_kinds_and_leaves_comments_strings_and_other_attributes(string css, string expected)
+    {
+        // Arrange
+        IdRenamer sut = Renamer("<html><body><p id=\"note1\">a</p></body></html>", css);
+
+        // Act
+        IdRenameResult result = sut.Rename("note1", "note2");
+
+        // Assert
+        (result.ChangedTexts.TryGetValue("styles/a.css", out string? text) ? text : css).Should().Be(expected);
+    }
+
+    [Fact]
     public void Preview_reports_the_scale_without_computing_the_texts()
     {
         // Arrange

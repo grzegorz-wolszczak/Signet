@@ -34,7 +34,10 @@ public sealed record IdNameValidation(IReadOnlyList<IdNameProblem> Problems)
 /// <summary>The scale of an id rename (the counter shown in the dialog).</summary>
 /// <param name="AttributeOccurrences">The <c>id="…"</c> attributes renamed (normally 1, more only for a pre-existing duplicate id).</param>
 /// <param name="SelectorOccurrences">The <c>#name</c> occurrences renamed in CSS selectors (stylesheets and <c>&lt;style&gt;</c> blocks).</param>
-/// <param name="ReferencesUpdated">The <c>href="…#name"</c> fragments updated because they pointed at a renamed <c>id</c>.</param>
+/// <param name="ReferencesUpdated">
+/// The references updated because they pointed at a renamed <c>id</c>: <c>href="…#name"</c> fragments and the ids in the attributes that
+/// list ids of the same file (<c>aria-labelledby</c>, <c>for</c>, <c>headers</c>…, <see cref="IdRefAttributes"/>).
+/// </param>
 /// <param name="ChangedFiles">The files that will change.</param>
 public sealed record IdRenameStats(int AttributeOccurrences, int SelectorOccurrences, int ReferencesUpdated, int ChangedFiles);
 
@@ -44,8 +47,9 @@ public sealed record IdRenameResult(IdRenameStats Stats, IReadOnlyDictionary<str
 /// <summary>
 /// "Rename #id" from the Code Editor context menu — renames an id across the whole book: every <c>id="…"</c>
 /// attribute equal to the name (every one of them, so a pre-existing duplicate id is kept consistent rather than
-/// split in two), every <c>#name</c> in a CSS selector (a stylesheet or a <c>&lt;style&gt;</c> block), and every
-/// <c>href="…#name"</c> fragment that actually points at a file carrying that id. Scoped to XHTML and CSS, like
+/// split in two), every <c>#name</c> and <c>[id="name"]</c> in a CSS selector (a stylesheet or a <c>&lt;style&gt;</c> block), every
+/// <c>href="…#name"</c> fragment that actually points at a file carrying that id, and the id in the attributes of such a file that list
+/// ids of the same document (<c>aria-labelledby</c>, <c>aria-describedby</c>, <c>for</c> of a label…). Scoped to XHTML and CSS, like
 /// <see cref="ClassRenamer"/> (not SVG/XML).
 /// </summary>
 /// <remarks>
@@ -198,6 +202,16 @@ public sealed class IdRenamer
                 }
 
                 EditsOf(editsByFile, html.BookPath).Add(new Edit(pos + href.VPos + hash + 1, oldId.Length, newId));
+                referencesUpdated++;
+            }
+        }
+
+        // The ids named by aria-labelledby and the like (a list of ids of the same file): in the files that carry the id.
+        foreach (ClassRenameSource html in _htmlSources.Where(h => homeFiles.Contains(h.BookPath)))
+        {
+            foreach (int offset in IdRefAttributes.Find(html.Text, oldId))
+            {
+                EditsOf(editsByFile, html.BookPath).Add(new Edit(offset, oldId.Length, newId));
                 referencesUpdated++;
             }
         }

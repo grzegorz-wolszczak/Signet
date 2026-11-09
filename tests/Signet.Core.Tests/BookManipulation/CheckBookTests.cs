@@ -108,6 +108,29 @@ public sealed class CheckBookTests
     }
 
     [Fact]
+    public void An_invalid_id_is_renamed_in_the_aria_references_and_attribute_selectors_that_refer_to_it()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<h2 id=\"1st\">t</h2>\n<p aria-labelledby=\"1st other\" aria-describedby=\"1stx\">a</p><label for=\"1st\">l</label>",
+            "<style>[id=\"1st\"] { color: red; } /* #1st [id=\"1st\"] */</style>");
+        using (book)
+        {
+            // Act
+            Single(book, "Validation_InvalidId").Fix!.Apply(book).Should().BeTrue();
+
+            // Assert
+            string text = html.GetText();
+            text.Should().Contain("<h2 id=\"id_1st\">")
+                .And.Contain("aria-labelledby=\"id_1st other\"")
+                .And.Contain("aria-describedby=\"1stx\"", "another id")
+                .And.Contain("<label for=\"id_1st\">")
+                .And.Contain("[id=\"id_1st\"] { color: red; }")
+                .And.Contain("/* #1st [id=\"1st\"] */", "a comment is not a selector");
+        }
+    }
+
+    [Fact]
     public void Bare_text_in_the_body_is_wrapped_in_paragraphs()
     {
         // Arrange

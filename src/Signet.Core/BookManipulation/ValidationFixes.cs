@@ -338,7 +338,8 @@ public sealed class DuplicateIdFix : ValidationFix
 
 /// <summary>
 /// Replaces an id that is not a valid XML name with a valid one: in the file, in every link to it (the (X)HTML files,
-/// the NCX and the OPF guide) and in the id selectors of the stylesheets the file uses (calibre 9.16). A stylesheet
+/// the NCX and the OPF guide), in the ids that its <c>aria-labelledby</c> and similar attributes list (calibre a96f76afdd) and in the id
+/// selectors (<c>#id</c>, <c>[id="…"]</c>) of the stylesheets the file uses (calibre 9.16, 8eff51f371). A stylesheet
 /// that another file with the same id also uses is left alone, so that file keeps its styling.
 /// </summary>
 public sealed class InvalidIdFix : ValidationFix
@@ -365,6 +366,9 @@ public sealed class InvalidIdFix : ValidationFix
         string text = target.GetText();
         string newId = MarkupEdits.UniqueId(MarkupEdits.MakeValidId(_id), MarkupEdits.CollectIds(text));
         string renamed = MarkupEdits.ReplaceAttributeValues(text, MarkupEdits.IdAttribute, value => value == _id ? newId : null);
+
+        // The ids named by aria-labelledby and the like point into the same file (Calibre a96f76afdd).
+        renamed = IdRefAttributes.Rename(renamed, _id, newId);
         if (!ReferenceFix.SetIfChanged(target, text, renamed))
         {
             return false;
@@ -658,6 +662,14 @@ internal static class CssIdSelectors
             {
                 result.Append('#').Append(newId);
                 i += 1 + length;
+                continue;
+            }
+            else if (c == '[' && !inDeclarations
+                && Parsers.CssToolbox.TryReadIdAttributeSelector(css, i, out int valueStart, out string value, out int close))
+            {
+                // [id="old"] matches the same element as #old (Calibre 8eff51f371): the value is renamed, its quotes stay.
+                result.Append(css, i, valueStart - i).Append(value == oldId ? newId : value).Append(css, valueStart + value.Length, close + 1 - valueStart - value.Length);
+                i = close + 1;
                 continue;
             }
 
