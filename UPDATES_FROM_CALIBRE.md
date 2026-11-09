@@ -176,12 +176,15 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 
 ## Part B — Editor features
 
-### B1. TOC view: mark entries that belong to the open file — `[ ]`
+### B1. TOC view: mark entries that belong to the open file — `[x]`
 
 - Calibre `665ef7bdcc`. In the TOC panel, entries pointing into the file of the active code tab get a visual mark (bold or an
   icon); the mark follows tab changes. Decide whether it needs a setting.
 - Touch the TOC view models and the tab-change notifications of `MainWindowViewModel`; no per-keystroke work.
 - Tests: view-model test of the marked set after a tab change; UI render test.
+- Done: Signet already had it: `TableOfContentsViewModel.SetCurrentFile` (called by `MainWindowViewModel` on every active-tab change) marks the entries
+  that point at the file of the active tab (`TocEntryViewModel.IsCurrent`, shown in bold) and asks the view to reveal them; `TableOfContentsViewTests` cover the
+  view. No setting: one pass over the entries per tab change. Added: `MainWindowTocMarkTests` (the mark follows opening and closing tabs).
 
 ### B2. Colors in CSS and HTML: underline preview and color picker — `[ ]`
 
