@@ -246,6 +246,43 @@ public sealed class OpfResource : XmlResource
             .Select(m => m.Content).ToList();
     }
 
+    /// <summary>
+    /// The values of the primary <c>&lt;meta property="…"&gt;</c> elements with the given property (<c>schema:accessMode</c>): the ones
+    /// that do not <c>refines</c> another element and have a value.
+    /// </summary>
+    public IReadOnlyList<string> GetMetaPropertyValues(string property)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(property);
+        return GetOpfDocument().Metadata
+            .Where(m => string.Equals(m.Name, "meta", StringComparison.Ordinal)
+                && m.Attributes.Value("property") == property
+                && !m.Attributes.Contains("refines")
+                && m.Content.Trim().Length > 0)
+            .Select(m => Utility.DecodeXml(m.Content.Trim()))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Adds <c>&lt;meta property="…"&gt;value&lt;/meta&gt;</c> to the metadata (EPUB 3), refining the element <paramref name="refines"/>
+    /// (<c>#id</c>) when it is given. The same property can be added again: some of them (<c>schema:accessMode</c>) take one value
+    /// per element.
+    /// </summary>
+    public void AddMetaProperty(string property, string value, string? refines = null)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(property);
+        ArgumentNullException.ThrowIfNull(value);
+        OpfDocument document = GetOpfDocument();
+        MetaEntry created = new() { Name = "meta", Content = Utility.EncodeXml(value) };
+        created.Attributes.Set("property", property);
+        if (refines is not null)
+        {
+            created.Attributes.Set("refines", refines);
+        }
+
+        document.Metadata.Add(created);
+        UpdateText(document);
+    }
+
     /// <summary>The <c>&lt;metadata&gt;</c> element with its content as an XML fragment.</summary>
     public string GetMetadataXml() => GetOpfDocument().GetMetadataXml();
 

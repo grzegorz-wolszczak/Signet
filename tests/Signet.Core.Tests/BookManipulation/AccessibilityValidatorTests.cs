@@ -23,7 +23,9 @@ public sealed class AccessibilityValidatorTests
     {
         using Book book = BookCreator.CreateNewBook("3.0");
         book.GetHtmlResourcesExcludingNav()[0].SetText(Xhtml(body));
-        List<ValidationResult> results = AccessibilityValidator.Validate(book).ToList();
+        // The metadata of a new book is a matter of its own tests (AccessibilityMetadataTests).
+        List<ValidationResult> results = AccessibilityValidator.Validate(book)
+            .Where(r => r.Code is not ("Validation_Accessibility_NoMetadata" or "Validation_Accessibility_NoSummary")).ToList();
         line = results.Count > 0 ? results[0].Line : -1;
         return results;
     }

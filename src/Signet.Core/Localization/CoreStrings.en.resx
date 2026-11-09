@@ -6275,4 +6275,10 @@
   <data name="Validation_Accessibility_AriaReference" xml:space="preserve">
     <value>{0}="{1}" points to an id that is not in this file.</value>
   </data>
+  <data name="Validation_Accessibility_NoMetadata" xml:space="preserve">
+    <value>The book does not have accessibility metadata. Missing: {0}.</value>
+  </data>
+  <data name="Validation_Accessibility_NoSummary" xml:space="preserve">
+    <value>The book does not have an accessibility summary (schema:accessibilitySummary).</value>
+  </data>
 </root>

@@ -46,9 +46,9 @@ public sealed class BookValidatorTests
         var results = BookValidator.ValidateCurrentBook(book, SkipDummyFont);
 
         // Assert
-        // The nav of the corpus book is <nav epub:type="toc"> without role="doc-toc": a hint (info) of the accessibility checks, which
-        // is right, so it is left out here (the corpus is byte-stable).
-        results.Where(r => r.Code != "Validation_Accessibility_MissingRole").Should().BeEmpty();
+        // The accessibility checks have their own say about the corpus book (it has no accessibility metadata, and its nav is
+        // <nav epub:type="toc"> without role="doc-toc"), which is right, so it is left out here (the corpus is byte-stable).
+        results.Where(r => !r.Code.StartsWith("Validation_Accessibility_", StringComparison.Ordinal)).Should().BeEmpty();
     }
 
     [Fact]
@@ -64,6 +64,8 @@ public sealed class BookValidatorTests
         var expectedOrder = book.GetHtmlResources().Select(r => r.BookPath).ToList();
 
         // Assert
-        results.Select(r => r.BookPath).Should().BeSubsetOf(expectedOrder);
+        // (The accessibility metadata is reported on the OPF, which is not one of the (X)HTML files.)
+        results.Where(r => !r.Code.StartsWith("Validation_Accessibility_", StringComparison.Ordinal)).Select(r => r.BookPath)
+            .Should().BeSubsetOf(expectedOrder);
     }
 }

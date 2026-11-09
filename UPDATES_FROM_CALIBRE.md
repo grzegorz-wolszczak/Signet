@@ -69,7 +69,7 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 - Done: `AccessibilityValidator.CheckHeadingLevels` (warning `Validation_Accessibility_HeadingSkip`, with the line). The nav
   document is skipped; headings are read with `TagLister` rather than `Headings.cs` (that one builds the TOC model).
 
-### A4. Check: accessibility metadata and summary (EPUB 3 only) — `[ ]`
+### A4. Check: accessibility metadata and summary (EPUB 3 only) — `[x]`
 
 - Report missing `schema:accessMode`, `schema:accessibilityFeature`, `schema:accessibilityHazard`,
   `schema:accessibilitySummary`. (`dcterms:conformsTo` is not reported; only the editor, A9, sets it.)
@@ -78,6 +78,12 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   `accessibilityHazard` = `unknown` (cannot be determined automatically). The summary is **not** invented: it stays reported.
 - Uses the Metadata layer (`Signet.Core/Metadata`, `MetadataEditModel`) so the OPF stays consistent.
 - Tests: book with and without images, with some images lacking alt, EPUB 2 book (no check).
+- Done: `AccessibilityValidator.CheckMetadata` (warning `Validation_Accessibility_NoMetadata` naming the missing properties, info
+  `Validation_Accessibility_NoSummary` without a fix), `AddAccessibilityMetadataFix`, `OpfResource.GetMetaPropertyValues`/`AddMetaProperty`.
+  Deviations: the checked list is Calibre's current one (it also has `schema:accessModeSufficient`); the fix adds only missing properties,
+  `accessModeSufficient` = `textual` when every image has an alternative, and `accessibilityFeature` also gets `tableOfContents` when the nav has
+  a toc with links (so a text book can satisfy the check). Calibre's newest version has no automatic fix for this metadata (it makes claims about the
+  book); the fix here keeps to what can be checked in the files. A new book has an empty nav, so it has no `tableOfContents` yet.
 
 ### A5. Check: `epub:type` without a matching ARIA role — `[x]`
 

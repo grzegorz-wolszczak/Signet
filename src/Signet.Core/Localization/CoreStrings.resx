@@ -6275,4 +6275,10 @@
   <data name="Validation_Accessibility_AriaReference" xml:space="preserve">
     <value>{0}=„{1}” wskazuje id, którego nie ma w tym pliku.</value>
   </data>
+  <data name="Validation_Accessibility_NoMetadata" xml:space="preserve">
+    <value>Książka nie ma metadanych dostępności. Brakuje: {0}.</value>
+  </data>
+  <data name="Validation_Accessibility_NoSummary" xml:space="preserve">
+    <value>Książka nie ma podsumowania dostępności (schema:accessibilitySummary).</value>
+  </data>
 </root>

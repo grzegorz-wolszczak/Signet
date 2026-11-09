@@ -38,8 +38,52 @@ public static class AccessibilityValidator
         }
 
         CheckHeadingLevels(book, results);
+        if (book.IsEpub3)
+        {
+            CheckMetadata(book, results);
+        }
 
         return results;
+    }
+
+    // The properties of the EPUB Accessibility specification that a book should have (the list of Calibre's check); the summary is
+    // reported on its own, as it is the only one that has to be written by a person.
+    internal static readonly string[] MetadataProperties =
+        ["schema:accessMode", "schema:accessModeSufficient", "schema:accessibilityFeature", "schema:accessibilityHazard"];
+
+    internal const string SummaryProperty = "schema:accessibilitySummary";
+
+    private static void CheckMetadata(Book book, List<ValidationResult> results)
+    {
+        OpfResource opf = book.GetOpf();
+        List<string> missing = MetadataProperties.Where(p => opf.GetMetaPropertyValues(p).Count == 0).ToList();
+        if (missing.Count > 0)
+        {
+            results.Add(new ValidationResult(
+                ValidationSeverity.Warning, opf.BookPath, -1, -1,
+                CoreStrings.Format("Validation_Accessibility_NoMetadata", string.Join(", ", missing)),
+                "Validation_Accessibility_NoMetadata", new AddAccessibilityMetadataFix()));
+        }
+
+        if (opf.GetMetaPropertyValues(SummaryProperty).Count == 0)
+        {
+            results.Add(new ValidationResult(
+                ValidationSeverity.Info, opf.BookPath, -1, -1, CoreStrings.Get("Validation_Accessibility_NoSummary"),
+                "Validation_Accessibility_NoSummary"));
+        }
+    }
+
+    /// <summary>How many images (<c>img</c> and inline <c>svg</c>) the book has and how many of them have no text alternative.</summary>
+    internal static (int Images, int Undescribed) CountImages(Book book)
+    {
+        int images = 0;
+        List<ValidationResult> undescribed = new();
+        foreach (HtmlResource html in book.GetHtmlResources())
+        {
+            images += CheckImages(html, undescribed);
+        }
+
+        return (images, undescribed.Count);
     }
 
     // The headings in reading order (the spine, file after file) go down by at most one level at a time: an h4 straight after
@@ -191,8 +235,10 @@ public static class AccessibilityValidator
     internal static string BookLanguage(Book book) =>
         book.GetMetadataValues("dc:language").Select(v => v.Trim()).FirstOrDefault(v => v.Length > 0) ?? string.Empty;
 
-    private static void CheckImages(HtmlResource html, List<ValidationResult> results)
+    // Reports the images without a text alternative; returns how many images the file has.
+    private static int CheckImages(HtmlResource html, List<ValidationResult> results)
     {
+        int images = 0;
         string text = html.GetText();
         TagLister lister = TagLister.For(text);
         IReadOnlyList<TagLister.TagInfo> tags = lister.Tags;
@@ -214,6 +260,7 @@ public static class AccessibilityValidator
                 continue;
             }
 
+            images++;
             string tagText = text.Substring(tag.Pos, tag.Len);
             if (IsHiddenOrDecorative(tagText))
             {
@@ -252,6 +299,8 @@ public static class AccessibilityValidator
 
             results.Add(new ValidationResult(ValidationSeverity.Warning, html.BookPath, line, -1, CoreStrings.Get(code), code));
         }
+
+        return images;
     }
 
     private static bool HasLabel(string tagText) =>
