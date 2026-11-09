@@ -116,12 +116,15 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 - The preparation (risk) dialog text mentions the new places.
 - Tests: `aria-labelledby` lists, a selector `#a.b`, an attribute selector `[id="…"]`, an id in a comment/string unchanged.
 
-### A8. Accessibility group in the Validation Results panel — `[ ]`
+### A8. Accessibility group in the Validation Results panel — `[x]`
 
 - Calibre `1627b70e33`: the accessibility checks are an entry in the list of results (instead of a separate checkbox).
 - In Signet every code is already skippable; make sure the codes of A1–A6 are labelled "Accessibility" in the skip dialog
   and the panel, with a short tooltip explaining the group.
 - Tests: UI test of the panel listing and of the skip.
+- Done: a "Type" column in the panel ("Accessibility" for every `Validation_Accessibility_…` code, with a tooltip explaining the group),
+  and the same word in front of the rule name in the list of skipped rules (`ValidationResultsViewModel.RuleName`). Skipping itself needed no
+  change: every code was skippable already. There is no separate skip dialog in Signet; the skipped rules are the menu of the panel's button.
 
 ### A9. Tool "Accessibility" (Tools menu) — `[ ]`
 

@@ -306,6 +306,33 @@ public sealed class CheckBookPanelTests : IDisposable
     }
 
     [Fact]
+    public void An_accessibility_rule_is_named_with_its_group_first()
+    {
+        // Act
+        string name = ValidationResultsViewModel.RuleName("Validation_Accessibility_ImageNoAlt");
+
+        // Assert
+        name.Should().StartWith(Strings.Get("ValidationCategory_Accessibility") + ": ").And.NotContain("{0}");
+        ValidationResultsViewModel.RuleName("Validation_DeadLink").Should().NotContain(Strings.Get("ValidationCategory_Accessibility"));
+    }
+
+    [Fact]
+    public void A_result_of_an_accessibility_check_is_in_the_accessibility_group_with_a_tooltip_that_explains_it()
+    {
+        // Arrange
+        ValidationResultRow accessibility = new(new ValidationResult(
+            ValidationSeverity.Warning, "OEBPS/a.xhtml", 3, -1, "x", "Validation_Accessibility_HeadingSkip"));
+        ValidationResultRow other = new(new ValidationResult(ValidationSeverity.Warning, "OEBPS/a.xhtml", 3, -1, "x", "Validation_DeadLink"));
+        ValidationResultRow epubcheck = new(new ValidationResult(ValidationSeverity.Error, "OEBPS/a.xhtml", 3, -1, "x", "RSC-005"));
+        ValidationResultRow plain = new(new ValidationResult(ValidationSeverity.Error, "OEBPS/a.xhtml", 3, -1, "x"));
+
+        // Act & Assert
+        accessibility.CategoryText.Should().Be(Strings.Get("ValidationCategory_Accessibility"));
+        accessibility.CategoryTip.Should().Be(Strings.Get("ValidationCategory_AccessibilityTip")).And.NotBeNullOrWhiteSpace();
+        new[] { other, epubcheck, plain }.Should().OnlyContain(r => r.CategoryText.Length == 0 && r.CategoryTip == null);
+    }
+
+    [Fact]
     public void An_EPUBCheck_rule_is_named_with_its_id_and_its_text_without_the_details()
     {
         // Act

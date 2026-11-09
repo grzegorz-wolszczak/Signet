@@ -52,12 +52,39 @@ public sealed class ValidationResultsViewTests
         grid.IsEffectivelyVisible.Should().BeTrue();
         grid.Classes.Should().Contain("gridLines");
         grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
-            Strings.Get("ReportsWindow_File"), Strings.Get("ValidationResultsView_Severity"), Strings.Get("ValidationResultsView_Line"),
+            Strings.Get("ReportsWindow_File"), Strings.Get("ValidationResultsView_Severity"), Strings.Get("ValidationResultsView_Category"),
+            Strings.Get("ValidationResultsView_Line"),
             Strings.Get("DryRunReplaceWindow_OffsetColumn"), Strings.Get("ValidationResultsView_Fixable"),
             Strings.Get("ValidationResultsView_Message"));
         grid.GetVisualDescendants().OfType<TreeDataGridRow>().Should().HaveCount(2);
         grid.GetVisualDescendants().OfType<TreeDataGridTextCell>().Select(c => c.Value?.ToString())
             .Should().Contain("first").And.Contain("second").And.Contain("3").And.Contain("N/A");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_category_column_names_the_accessibility_group_of_a_result()
+    {
+        // Arrange
+        ValidationResultsViewModel vm = new();
+        vm.LoadResults(new[]
+        {
+            new ValidationResult(ValidationSeverity.Warning, "OEBPS/Text/a.xhtml", 3, -1, "no alt", "Validation_Accessibility_ImageNoAlt"),
+            Result("OEBPS/Text/b.xhtml", 5, "other"),
+        });
+        Window window = new() { Width = 1000, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
+
+        // Act
+        window.Show();
+        Settle(window);
+        TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+
+        // Assert
+        grid.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text)
+            .Should().Contain(Strings.Get("ValidationCategory_Accessibility"));
+        grid.GetVisualDescendants().OfType<TextBlock>()
+            .Where(t => t.Text == Strings.Get("ValidationCategory_Accessibility"))
+            .Should().OnlyContain(t => (string?)ToolTip.GetTip(t) == Strings.Get("ValidationCategory_AccessibilityTip"));
         window.Close();
     }
 
@@ -125,13 +152,13 @@ public sealed class ValidationResultsViewTests
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
         string[] Messages() => Enumerable.Range(0, grid.Rows!.Count).Select(i => ((ValidationResultRow)grid.Rows[i].Model!).Message).ToArray();
 
-        grid.Source!.SortBy(grid.Columns![2], ListSortDirection.Ascending);
+        grid.Source!.SortBy(grid.Columns![3], ListSortDirection.Ascending);
 
         // Assert
         Messages().Should().Equal("two", "ten", "unknown");
 
         // Act
-        grid.Source.SortBy(grid.Columns[3], ListSortDirection.Ascending);
+        grid.Source.SortBy(grid.Columns[4], ListSortDirection.Ascending);
 
         // Assert
         Messages().Should().Equal("ten", "two", "unknown");

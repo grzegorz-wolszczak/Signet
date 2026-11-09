@@ -204,8 +204,16 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
         }
 
         string? message = code.Length > 0 ? CoreStrings.TryGet(code) : null;
-        return string.IsNullOrEmpty(message) ? code : Placeholder().Replace(message, "…");
+        string name = string.IsNullOrEmpty(message) ? code : Placeholder().Replace(message, "…");
+        return IsAccessibilityCode(code) ? Strings.Get("ValidationCategory_Accessibility") + ": " + name : name;
     }
+
+    /// <summary>The start of the codes of the accessibility checks (<c>Validation_Accessibility_…</c>): their group in the panel.</summary>
+    public const string AccessibilityCodePrefix = "Validation_Accessibility_";
+
+    /// <summary>Whether <paramref name="code"/> is the code of an accessibility check.</summary>
+    public static bool IsAccessibilityCode(string code) =>
+        code.StartsWith(AccessibilityCodePrefix, StringComparison.Ordinal);
 
     private void RequestFix(IEnumerable<ValidationResultRow> rows)
     {
@@ -256,6 +264,16 @@ public sealed class ValidationResultRow
     public string OffsetText => Result.CharOffset >= 0
         ? Result.CharOffset.ToString(System.Globalization.CultureInfo.InvariantCulture)
         : "N/A";
+
+    /// <summary>The group of the rule as the "Type" column shows it ("Accessibility"), or empty for the rules that have none.</summary>
+    public string CategoryText => ValidationResultsViewModel.IsAccessibilityCode(Result.Code)
+        ? Strings.Get("ValidationCategory_Accessibility")
+        : string.Empty;
+
+    /// <summary>The tooltip that explains the group, or <c>null</c> when the rule has none.</summary>
+    public string? CategoryTip => ValidationResultsViewModel.IsAccessibilityCode(Result.Code)
+        ? Strings.Get("ValidationCategory_AccessibilityTip")
+        : null;
 
     /// <summary>Whether the problem has an automatic fix.</summary>
     public bool CanFix => Result.Fix is not null;

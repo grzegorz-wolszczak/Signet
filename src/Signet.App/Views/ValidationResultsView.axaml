@@ -7,6 +7,14 @@
              infra:TooltipFonts.Area="Validation"
              x:DataType="vm:ValidationResultsViewModel">
 
+  <!-- The "Type" column: the group of the rule (Accessibility), with a tooltip that explains it. -->
+  <UserControl.Resources>
+    <DataTemplate x:Key="CategoryCellTemplate" x:DataType="vm:ValidationResultRow">
+      <TextBlock Text="{Binding CategoryText}" VerticalAlignment="Center" Background="Transparent"
+                 ToolTip.Tip="{Binding CategoryTip}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
   <UserControl.Styles>
     <!-- The buttons of the left toolbar: small, flat, with a vector icon (like the Find Usages panel). -->
     <Style Selector="Button.panelTool">

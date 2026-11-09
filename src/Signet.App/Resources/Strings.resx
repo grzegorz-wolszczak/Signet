@@ -8801,4 +8801,13 @@ Zamknij zakładkę</value>
   <data name="LiveCssPanelWindow_DimmedRepeated" xml:space="preserve">
     <value>Wyszarzone, bo bliższy element ma tę samą wartość tej dziedziczonej właściwości, więc ta deklaracja nic tu nie zmienia.</value>
   </data>
+  <data name="ValidationCategory_Accessibility" xml:space="preserve">
+    <value>Dostępność</value>
+  </data>
+  <data name="ValidationCategory_AccessibilityTip" xml:space="preserve">
+    <value>Problemy z dostępnością książki dla czytelników korzystających z czytników ekranu i innych technologii wspomagających (zalecenia EPUB Accessibility). Są podpowiedziami: można je pominąć.</value>
+  </data>
+  <data name="ValidationResultsView_Category" xml:space="preserve">
+    <value>Typ</value>
+  </data>
 </root>

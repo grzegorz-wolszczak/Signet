@@ -61,6 +61,8 @@ public partial class ValidationResultsView : UserControl
                     _columns.Text("ReportsWindow_File", r => r.FileName, new GridLength(220)),
                     _columns.Text("ValidationResultsView_Severity", r => r.SeverityText, new GridLength(110),
                         new TextColumnOptions<ValidationResultRow>().SortedBy(r => -(int)r.Result.Severity)),
+                    _columns.Template("ValidationResultsView_Category", "CategoryCellTemplate", new GridLength(110),
+                        new TemplateColumnOptions<ValidationResultRow> { CompareAscending = (a, b) => string.CompareOrdinal(a?.CategoryText, b?.CategoryText) }),
                     // Shown as text ("N/A" when unknown) but sorted as numbers, "N/A" last.
                     _columns.Text("ValidationResultsView_Line", r => r.LineText, new GridLength(70),
                         new TextColumnOptions<ValidationResultRow>().SortedBy(r => r.Result.Line > 0 ? r.Result.Line : int.MaxValue)),

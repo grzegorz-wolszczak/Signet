@@ -8801,4 +8801,13 @@ Close the tab</value>
   <data name="LiveCssPanelWindow_DimmedRepeated" xml:space="preserve">
     <value>Dimmed because a closer element has the same value for this inherited property, so this declaration changes nothing here.</value>
   </data>
+  <data name="ValidationCategory_Accessibility" xml:space="preserve">
+    <value>Accessibility</value>
+  </data>
+  <data name="ValidationCategory_AccessibilityTip" xml:space="preserve">
+    <value>Problems with the accessibility of the book for readers who use screen readers and other assistive technology (the EPUB Accessibility recommendations). They are hints: you can skip them.</value>
+  </data>
+  <data name="ValidationResultsView_Category" xml:space="preserve">
+    <value>Type</value>
+  </data>
 </root>
