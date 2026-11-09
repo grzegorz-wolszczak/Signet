@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
@@ -46,6 +47,28 @@ public sealed class EpubUpgraderTests
         book.GetOpf().GetOpfDocument().Guide.Should().ContainSingle(g => g.Type == "text");
         book.GetOpf().GetOpfDocument().Metadata
             .Should().Contain(m => m.Attributes.Value("property") == "dcterms:modified");
+    }
+
+    // Calibre fbf4423c6f: upgrading removes the guide there, so its entries must end up in the landmarks of the nav. Signet keeps the guide
+    // as well, and the landmarks must not be lost either: the cover and the start, each in its own file, with their titles.
+    [Fact]
+    public void The_guide_entries_of_different_files_end_up_in_the_landmarks_with_their_types_and_titles()
+    {
+        // Arrange
+        using Book book = BookCreator.CreateNewBook("2.0");
+        HtmlResource cover = book.GetHtmlResources()[0];
+        HtmlResource start = book.CreateEmptyHtmlFile();
+        book.GetOpf().AddGuideSemanticCode(cover, "cover");
+        book.GetOpf().AddGuideSemanticCode(start, "text");
+
+        // Act
+        EpubUpgradeResult result = EpubUpgrader.UpgradeToEpub3(book)!;
+
+        // Assert
+        IReadOnlyList<NavLandmarkEntry> landmarks = new NavProcessor(result.Nav).GetLandmarks();
+        landmarks.Select(l => (l.EpubType, l.Href)).Should().Equal(("cover", cover.Filename), ("bodymatter", start.Filename));
+        landmarks.Should().OnlyContain(l => l.Title.Length > 0);
+        book.GetOpf().GetOpfDocument().Guide.Should().HaveCount(2, "the guide stays for EPUB 2 readers");
     }
 
     [Fact]

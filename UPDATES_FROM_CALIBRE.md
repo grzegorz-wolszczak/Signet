@@ -184,9 +184,11 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 
 For each: write the test first on a corpus book; if Signet already behaves correctly, record it here and keep the test.
 
-### C1. Upgrade EPUB 2 → 3 keeps landmarks — `[ ]`
+### C1. Upgrade EPUB 2 → 3 keeps landmarks — `[x]`
 
 - Calibre `fbf4423c6f`: the `<guide>` references must become the landmarks `nav` in `EpubUpgrader`.
+- Done: Signet already did this (`EpubUpgrader.AddLandmarks` turns the guide into landmarks and, unlike Calibre, keeps the guide); the test
+  `The_guide_entries_of_different_files_end_up_in_the_landmarks_with_their_types_and_titles` (cover + start in two files, `text` → `bodymatter`) keeps it so.
 
 ### C2. nav element ids survive regeneration — `[ ]`
 
