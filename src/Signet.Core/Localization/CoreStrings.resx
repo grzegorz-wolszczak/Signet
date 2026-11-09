@@ -6263,4 +6263,7 @@
   <data name="Validation_Accessibility_NoLanguage" xml:space="preserve">
     <value>Plik nie podaje języka (atrybutów lang / xml:lang w elemencie html).</value>
   </data>
+  <data name="Validation_Accessibility_HeadingSkip" xml:space="preserve">
+    <value>Nagłówek h{0} pomija poziom: poprzedni nagłówek w kolejności czytania to h{1}.</value>
+  </data>
 </root>

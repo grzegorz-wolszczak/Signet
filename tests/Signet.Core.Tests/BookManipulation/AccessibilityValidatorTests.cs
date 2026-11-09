@@ -147,4 +147,63 @@ public sealed class AccessibilityValidatorTests
         AccessibilityValidator.Validate(book).Should().NotContain(r => r.Code == NoLanguage);
         result.Fix.Apply(book).Should().BeFalse("there is nothing left to change");
     }
+
+    private const string HeadingSkip = "Validation_Accessibility_HeadingSkip";
+
+    private static List<ValidationResult> Headings(params string[] bodies)
+    {
+        using Book book = BookCreator.CreateNewBook("3.0");
+        book.GetHtmlResourcesExcludingNav()[0].SetText(Xhtml(bodies[0]));
+        for (int i = 1; i < bodies.Length; i++)
+        {
+            HtmlResource next = book.CreateEmptyHtmlFile();
+            next.SetText(Xhtml(bodies[i]));
+        }
+
+        return AccessibilityValidator.Validate(book).Where(r => r.Code == HeadingSkip).ToList();
+    }
+
+    [Theory]
+    [InlineData("<h1>a</h1><h2>b</h2><h3>c</h3>", 0)]
+    [InlineData("<h1>a</h1><h3>b</h3>", 1)]
+    [InlineData("<h2>a</h2><h4>b</h4><h2>c</h2><h1>d</h1>", 1)]
+    [InlineData("<h3>first</h3><h2>up</h2>", 0)]
+    [InlineData("<H1>a</H1><H4>b</H4>", 1)]
+    [InlineData("<h1>a</h1><hr/><header>x</header><h2>b</h2>", 0)]
+    public void A_heading_may_not_skip_a_level_inside_a_file(string body, int reported)
+    {
+        // Act
+        List<ValidationResult> results = Headings(body);
+
+        // Assert
+        results.Count.Should().Be(reported);
+    }
+
+    [Fact]
+    public void A_heading_is_judged_against_the_last_one_of_the_previous_file_in_reading_order()
+    {
+        // Act — a part page with an h2, then a chapter starting with h4.
+        List<ValidationResult> results = Headings("<h1>Book</h1><h2>Part</h2>", "<h4>Chapter</h4>");
+
+        // Assert
+        results.Should().ContainSingle();
+        results[0].Message.Should().Contain("h4").And.Contain("h2");
+    }
+
+    [Fact]
+    public void Headings_in_files_outside_the_spine_are_not_part_of_the_reading_order()
+    {
+        // Arrange
+        using Book book = BookCreator.CreateNewBook("3.0");
+        book.GetHtmlResourcesExcludingNav()[0].SetText(Xhtml("<h1>a</h1>"));
+        HtmlResource loose = book.CreateEmptyHtmlFile();
+        loose.SetText(Xhtml("<h5>x</h5>"));
+        book.GetOpf().RemoveResourceFromSpine(loose);
+
+        // Act
+        List<ValidationResult> results = AccessibilityValidator.Validate(book).Where(r => r.Code == HeadingSkip).ToList();
+
+        // Assert
+        results.Should().BeEmpty();
+    }
 }

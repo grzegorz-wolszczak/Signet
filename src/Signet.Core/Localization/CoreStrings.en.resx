@@ -6263,4 +6263,7 @@
   <data name="Validation_Accessibility_NoLanguage" xml:space="preserve">
     <value>The file does not specify a language (lang / xml:lang on the html element).</value>
   </data>
+  <data name="Validation_Accessibility_HeadingSkip" xml:space="preserve">
+    <value>The h{0} heading skips a level: the previous heading in reading order is h{1}.</value>
+  </data>
 </root>

@@ -59,13 +59,15 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 - Done: `AccessibilityValidator.CheckLanguage`, `SetHtmlLanguageFix` (EPUB 3: `lang` + `xml:lang`; EPUB 2: `xml:lang`). The "no
   `dc:language` = no fix" branch is implemented but not unit tested (no API to drop the language from a test book).
 
-### A3. Check: headings skipping levels — `[ ]`
+### A3. Check: headings skipping levels — `[x]`
 
 - Walk the files in **spine order**; a heading deeper by more than one level than the previous heading (also the last one
   of an earlier file, `c7d7a6e222`) is reported. Descending by any amount is fine; the first heading may be any level.
 - Reuse `Headings.cs` where it already collects headings.
 - No fix (changing a level is an editorial decision).
 - Tests: skip inside one file, skip across files (`h2` part page → `h4` chapter), descending is fine, files outside the spine ignored.
+- Done: `AccessibilityValidator.CheckHeadingLevels` (warning `Validation_Accessibility_HeadingSkip`, with the line). The nav
+  document is skipped; headings are read with `TagLister` rather than `Headings.cs` (that one builds the TOC model).
 
 ### A4. Check: accessibility metadata and summary (EPUB 3 only) — `[ ]`
 

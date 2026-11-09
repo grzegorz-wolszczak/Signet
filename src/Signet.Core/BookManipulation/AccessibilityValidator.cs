@@ -30,7 +30,47 @@ public static class AccessibilityValidator
             CheckImages(html, results);
         }
 
+        CheckHeadingLevels(book, results);
+
         return results;
+    }
+
+    // The headings in reading order (the spine, file after file) go down by at most one level at a time: an h4 straight after
+    // an h2 — also when the h2 ends the previous file — is reported. Going up by any number of levels is fine.
+    private static void CheckHeadingLevels(Book book, List<ValidationResult> results)
+    {
+        FolderKeeper keeper = book.GetFolderKeeper();
+        HtmlResource? nav = book.GetNavResource();
+        int previous = 0;
+        foreach (string bookPath in book.GetOpf().GetSpineOrderBookPaths())
+        {
+            if (keeper.GetResourceByBookPathNoThrow(bookPath) is not HtmlResource html || ReferenceEquals(html, nav))
+            {
+                continue;
+            }
+
+            string text = html.GetText();
+            foreach (TagLister.TagInfo tag in TagLister.For(text).Tags)
+            {
+                if (tag.Kind != TagKind.Begin || tag.TagName.Length != 2 || char.ToLowerInvariant(tag.TagName[0]) != 'h'
+                    || tag.TagName[1] is < '1' or > '6')
+                {
+                    continue;
+                }
+
+                int level = tag.TagName[1] - '0';
+                if (previous > 0 && level > previous + 1)
+                {
+                    int line = 1 + text.Take(tag.Pos).Count(c => c == '\n');
+                    results.Add(new ValidationResult(
+                        ValidationSeverity.Warning, html.BookPath, line, -1,
+                        CoreStrings.Format("Validation_Accessibility_HeadingSkip", level, previous),
+                        "Validation_Accessibility_HeadingSkip"));
+                }
+
+                previous = level;
+            }
+        }
     }
 
     // The <html> element names a language (lang, xml:lang); the fix gives it the language of the book.
