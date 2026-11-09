@@ -93,11 +93,13 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   their table is Sigil's (role → epub:type, with entries that are not roles), Calibre's table is the one of the authoring guide. An empty
   `role=""` counts as no role and gets the value.
 
-### A6. Check: dangling ARIA references — `[ ]`
+### A6. Check: dangling ARIA references — `[x]`
 
 - `aria-labelledby`, `aria-describedby`, `aria-controls`, `aria-owns`, `aria-flowto`, `aria-details`,
   `aria-activedescendant` (space-separated id lists) that point to an id missing in the same file are reported. No fix.
 - Tests: every attribute, a list with one missing id, ids present.
+- Done: `AccessibilityValidator.CheckAriaReferences` (warning `Validation_Accessibility_AriaReference`, one result per missing id, with the
+  line); EPUB 3 only (ARIA attributes are not valid in XHTML 1.1). Calibre has no such check: this one is ours.
 
 ### A7. ID renaming also updates ARIA references and CSS selectors — `[ ]`
 

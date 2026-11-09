@@ -62,7 +62,7 @@ public sealed class AccessibilityValidatorTests
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><image href=\"a.png\"/></svg>", true)]
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><title>Cover</title><image href=\"a.png\"/></svg>", false)]
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\" aria-label=\"Cover\"><image href=\"a.png\"/></svg>", false)]
-    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\" aria-labelledby=\"t\"><image href=\"a.png\"/></svg>", false)]
+    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\" aria-labelledby=\"t\"><image href=\"a.png\"/></svg><p id=\"t\">title</p>", false)]
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\" role=\"presentation\"><image href=\"a.png\"/></svg>", false)]
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\"><image href=\"a.png\"/></svg>", false)]
     public void An_svg_needs_a_title_or_a_label(string body, bool reported)

@@ -6272,4 +6272,7 @@
   <data name="Validation_Accessibility_MissingRole" xml:space="preserve">
     <value>&lt;{0}&gt; has an epub:type but no ARIA role: screen readers use the role attribute (role="{1}").</value>
   </data>
+  <data name="Validation_Accessibility_AriaReference" xml:space="preserve">
+    <value>{0}="{1}" points to an id that is not in this file.</value>
+  </data>
 </root>
