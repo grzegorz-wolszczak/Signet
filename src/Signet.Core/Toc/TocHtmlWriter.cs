@@ -67,6 +67,18 @@ public static class TocHtmlWriter
         public IReadOnlyList<Entry> Children { get; init; } = Array.Empty<Entry>();
     }
 
+    // " lang="pl" xml:lang="pl"" (EPUB 3) or " xml:lang="pl"" (EPUB 2); nothing for no language.
+    private static string LanguageAttributes(string language, bool epub3)
+    {
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            return string.Empty;
+        }
+
+        string value = Utility.EncodeXml(language.Trim());
+        return epub3 ? $" lang=\"{value}\" xml:lang=\"{value}\"" : $" xml:lang=\"{value}\"";
+    }
+
     /// <summary>
     /// Builds the full XHTML document of the table of contents.
     /// </summary>
@@ -75,12 +87,14 @@ public static class TocHtmlWriter
     /// <param name="rootEntries">The top-level entries (level 1).</param>
     /// <param name="title">The page title (the heading + <c>&lt;title&gt;</c>).</param>
     /// <param name="version">The EPUB version (<c>"2.0"</c> =&gt; the XHTML 1.1 DOCTYPE, otherwise <c>&lt;!DOCTYPE html&gt;</c>).</param>
+    /// <param name="language">The language of the book, written on the <c>html</c> element; empty: none is claimed.</param>
     public static string WriteXml(
         string tocBookPath,
         string cssBookPath,
         IReadOnlyList<Entry> rootEntries,
         string title,
-        string version)
+        string version,
+        string language = "")
     {
         ArgumentException.ThrowIfNullOrEmpty(tocBookPath);
         ArgumentNullException.ThrowIfNull(cssBookPath);
@@ -97,12 +111,13 @@ public static class TocHtmlWriter
         {
             sb.Append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\n")
               .Append("   \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n");
-            sb.Append("<html xmlns=\"http://www.w3.org/1999/xhtml\">\n");
+            sb.Append("<html xmlns=\"http://www.w3.org/1999/xhtml\"").Append(LanguageAttributes(language, epub3: false)).Append(">\n");
         }
         else
         {
             sb.Append("<!DOCTYPE html>\n");
-            sb.Append("<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\">\n");
+            sb.Append("<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\"")
+                .Append(LanguageAttributes(language, epub3: true)).Append(">\n");
         }
 
         sb.Append("<head>\n");

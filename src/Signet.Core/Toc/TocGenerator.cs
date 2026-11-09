@@ -85,7 +85,8 @@ public static class TocGenerator
         IReadOnlyList<TocHtmlWriter.Entry> entries =
             book.GetTocForDisplay().Select(ToWriterEntry).ToList();
 
-        tocResource.SetText(TocHtmlWriter.WriteXml(tocResource.BookPath, cssResource.BookPath, entries, title, version));
+        string language = AccessibilityLanguage.GetLanguages(book).FirstOrDefault() ?? string.Empty;
+        tocResource.SetText(TocHtmlWriter.WriteXml(tocResource.BookPath, cssResource.BookPath, entries, title, version, language));
 
         if (navProcessor is not null)
         {

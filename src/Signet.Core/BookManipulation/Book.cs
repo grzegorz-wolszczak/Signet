@@ -68,11 +68,12 @@ public sealed class Book : IDisposable
         + "\"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n"
         + "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
         + "<head>\n"
-        + "  <title>Cover</title>\n"
+        + "  <title>SGC_COVER_TITLE</title>\n"
         + "</head>\n"
         + "<body>\n"
         + "  <div style=\"text-align: center; padding: 0pt; margin: 0pt;\">\n"
         + "    <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" version=\"1.1\" viewBox=\"0 0 SGC_IMAGE_WIDTH SGC_IMAGE_HEIGHT\" width=\"100%\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n"
+        + "      <title>SGC_COVER_TITLE</title>\n"
         + "      <image width=\"SGC_IMAGE_WIDTH\" height=\"SGC_IMAGE_HEIGHT\" xlink:href=\"SGC_IMAGE_FILENAME\"/>\n"
         + "    </svg>\n"
         + "  </div>\n"
@@ -85,11 +86,12 @@ public sealed class Book : IDisposable
         + "<!DOCTYPE html>\n\n"
         + "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\">\n"
         + "<head>\n"
-        + "  <title>Cover</title>\n"
+        + "  <title>SGC_COVER_TITLE</title>\n"
         + "</head>\n"
         + "<body>\n"
         + "  <div style=\"height: 100vh; text-align: center; padding: 0pt; margin: 0pt;\">\n"
         + "    <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"100%\" preserveAspectRatio=\"xMidYMid meet\" version=\"1.1\" viewBox=\"0 0 SGC_IMAGE_WIDTH SGC_IMAGE_HEIGHT\" width=\"100%\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n"
+        + "      <title>SGC_COVER_TITLE</title>\n"
         + "      <image width=\"SGC_IMAGE_WIDTH\" height=\"SGC_IMAGE_HEIGHT\" xlink:href=\"SGC_IMAGE_FILENAME\"/>\n"
         + "    </svg>\n"
         + "  </div>\n"
@@ -220,10 +222,23 @@ public sealed class Book : IDisposable
         }
 
         html.EpubVersion = EpubVersion;
-        html.SetText(data);
+        html.SetText(SetHtmlLanguageFix.AddLanguage(data, MainLanguage(), IsEpub3));
         html.SaveToDisk();
         Modified = true;
         return html;
+    }
+
+    // The main language of the book (its first dc:language), or "" when it has none — a generated page then claims no language.
+    private string MainLanguage() => AccessibilityLanguage.GetLanguages(this).FirstOrDefault() ?? string.Empty;
+
+    // A cover page template for this book: the title of the book (or "Cover") as the title of the page and the text alternative of the
+    // cover image (Calibre eee070af52, 91b5b81209), and the language of the book.
+    private string FillCoverTemplate(string template)
+    {
+        string title = GetOpf().GetPrimaryBookTitle().Trim();
+        string encoded = Utility.EncodeXml(title.Length > 0 ? title : "Cover");
+        return SetHtmlLanguageFix.AddLanguage(
+            template.Replace("SGC_COVER_TITLE", encoded, StringComparison.Ordinal), MainLanguage(), IsEpub3);
     }
 
     /// <summary>
@@ -581,7 +596,7 @@ public sealed class Book : IDisposable
         HtmlResource html = CreateEmptyHtmlFile();
         html.RenameTo(HtmlCoverFilename);
 
-        string data = string.IsNullOrEmpty(text) ? (IsEpub3 ? Html5CoverSource : HtmlCoverSource) : text;
+        string data = string.IsNullOrEmpty(text) ? FillCoverTemplate(IsEpub3 ? Html5CoverSource : HtmlCoverSource) : text;
         html.SetText(data);
         html.SaveToDisk();
 
@@ -615,7 +630,7 @@ public sealed class Book : IDisposable
     {
         ArgumentNullException.ThrowIfNull(image);
 
-        string template = IsEpub3 ? Html5CoverSource : HtmlCoverSource;
+        string template = FillCoverTemplate(IsEpub3 ? Html5CoverSource : HtmlCoverSource);
         HtmlResource html;
         if (existingCoverHtml is not null)
         {

@@ -158,7 +158,7 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   (one checkpoint, `Status_AccessibilitySaved`); action `AppActionIds.Accessibility` (catalog, Tools menu after Hyphenation, tooltip, disabled during
   book operations, no shortcut); unsaved-changes prompt on close like the Metadata Editor. Not taken: setting the language of the OPF `<package>`.
 
-### A10. Accessibility in what Signet generates — `[ ]`
+### A10. Accessibility in what Signet generates — `[x]`
 
 - `627717dfe4`: the EPUB 3 nav Signet writes (`NavProcessor`, `Toc/NavEntries`) gets the ARIA roles (`doc-toc`, `doc-pagelist`;
   check the guide for landmarks).
@@ -166,6 +166,11 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   alternative and the book language in `lang` / `xml:lang`.
 - `48863bb103`: an XHTML file Signet creates (new file, split, import) gets the language of the book.
 - Tests: generated nav and cover contain the attributes; split / new file carries the language.
+- Done: the nav already got `role="doc-toc"` / `role="doc-pagelist"` (checked and kept under test; the landmarks nav has no role). New (X)HTML files
+  (`Book.CreateEmptyHtmlFile`, so also the HTML toc page, the edition page and the notes file that use it) and the HTML toc (`TocHtmlWriter`) now carry the
+  main language of the book (`lang` + `xml:lang`, EPUB 2: `xml:lang`; nothing when the book has none, not English). The cover page template has the title of the
+  book (or "Cover") as the title of the page and of the svg image (`SGC_COVER_TITLE`) and the language of the book. A file made by "Split" keeps the language of
+  the original (it keeps its `<html>` tag; test added). Imports are not touched: the language of an imported file is the one it has.
 
 ---
 

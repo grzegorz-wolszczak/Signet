@@ -40,22 +40,36 @@ public sealed class SetHtmlLanguageFix : ValidationFix
     internal static bool SetLanguage(HtmlResource html, string language, bool epub3)
     {
         string text = html.GetText();
+        return ReferenceFix.SetIfChanged(html, text, AddLanguage(text, language, epub3));
+    }
+
+    /// <summary>
+    /// <paramref name="text"/> with the language on its <c>&lt;html&gt;</c> element when that names none (<c>lang</c> and <c>xml:lang</c>
+    /// in EPUB 3, <c>xml:lang</c> in EPUB 2); the same text when it names one, has no <c>html</c> element, or <paramref name="language"/> is empty.
+    /// </summary>
+    internal static string AddLanguage(string text, string language, bool epub3)
+    {
+        if (string.IsNullOrWhiteSpace(language))
+        {
+            return text;
+        }
+
         TagLister.TagInfo? root = TagLister.For(text).Tags
             .FirstOrDefault(t => t.Kind == TagKind.Begin && t.TagName.Equals("html", StringComparison.OrdinalIgnoreCase));
         if (root is null)
         {
-            return false;
+            return text;
         }
 
         string tagText = text.Substring(root.Pos, root.Len);
         if (TagLister.ParseAttribute(tagText, "lang").Pos >= 0 || TagLister.ParseAttribute(tagText, "xml:lang").Pos >= 0)
         {
-            return false;
+            return text;
         }
 
-        string value = WebUtility.HtmlEncode(language);
+        string value = WebUtility.HtmlEncode(language.Trim());
         string attributes = epub3 ? $" lang=\"{value}\" xml:lang=\"{value}\"" : $" xml:lang=\"{value}\"";
         int insertAt = root.Pos + 1 + root.TagName.Length;
-        return ReferenceFix.SetIfChanged(html, text, text.Insert(insertAt, attributes));
+        return text.Insert(insertAt, attributes);
     }
 }
