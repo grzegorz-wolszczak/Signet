@@ -186,7 +186,7 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   that point at the file of the active tab (`TocEntryViewModel.IsCurrent`, shown in bold) and asks the view to reveal them; `TableOfContentsViewTests` cover the
   view. No setting: one pass over the entries per tab change. Added: `MainWindowTocMarkTests` (the mark follows opening and closing tabs).
 
-### B2. Colors in CSS and HTML: underline preview and color picker — `[~]`
+### B2. Colors in CSS and HTML: underline preview and color picker — `[x]`
 
 - Calibre `9ec8e99d48`, `86546c1069`, `776db6a5c9`. In the Code Editor (AvaloniaEdit) draw an underline in the color for every
   color value in CSS (and inline `style` / `<style>`): hex, `rgb()`/`rgba()`, `hsl()`/`hsla()`, named colors; CSS Color 4
@@ -201,6 +201,11 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   the 148 names, `transparent`; Calibre's expected values from `tinycss/tests/color4.py` within one step; the other `color()` spaces are recognized, not converted) and
   `CssColorScanner` (colors in the declarations of stylesheets, `<style>` elements and `style` attributes, with offsets; selectors, strings, `url()` and comments
   are skipped; a named color counts only where the property takes colors; `Format` writes a new color in the notation of the old one).
+- B2b/B2c `[x]`: `ColorPreviewController` (App/CodeEditor; one per `CodeTabView`, `CodeTabView.ColorPreview`) draws a 3 px underline in the color of each value under the
+  visible lines of a stylesheet or an (X)HTML file; the colors are looked for on a background thread 400 ms after the text stopped changing (until then nothing is drawn: the
+  offsets are old; files over 2 million characters are not scanned). Preference "Show a color preview under color values" (`CodeEditorShowColorPreview`, on by default,
+  Preferences > Code Editor, applied to the open tabs at once). Ctrl+click on a value opens `ColorPickerWindow` (with alpha) and the value is replaced in its own notation, one
+  undo step. Not covered by a test: the modal picker itself (the replacement it triggers is).
 
 ---
 

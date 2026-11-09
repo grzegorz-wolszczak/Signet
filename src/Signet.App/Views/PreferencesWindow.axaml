@@ -1003,6 +1003,7 @@
                           <TextBlock Text="{loc:Loc PreferencesWindow_CodeEditorLook}" FontWeight="Bold" />
                           <CheckBox x:Name="ExtendedHighlightingBox" Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}"
                                     IsChecked="{Binding ExtendedHighlighting}" />
+                          <CheckBox x:Name="ShowColorPreviewBox" Content="{loc:Loc PreferencesWindow_ShowColorPreview}" IsChecked="{Binding ShowColorPreview}" />
                           <!-- The document tabs: several rows when they do not fit. -->
                           <CheckBox x:Name="MultilineTabsBox" Content="{loc:Loc PreferencesWindow_MultilineTabs}" IsChecked="{Binding MultilineTabs}" />
                           <!-- The characters that are drawn as nothing get a mark of their own (their color is in the

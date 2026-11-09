@@ -110,10 +110,13 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     /// <summary>Whether Code Editor marks the characters of zero width (<see cref="SettingsStore.CodeEditorShowZeroWidth"/>).</summary>
     public bool ShowZeroWidth => _settings.CodeEditorShowZeroWidth;
 
+    /// <summary>Whether Code Editor draws a preview under the color values (<see cref="SettingsStore.CodeEditorShowColorPreview"/>).</summary>
+    public bool ShowColorPreview => _settings.CodeEditorShowColorPreview;
+
     /// <summary>The font of the marks of the invisible characters (<see cref="SettingsStore.InvisibleCharacterAppearance"/>).</summary>
     public InvisibleCharacterAppearance InvisibleCharacterFont => _settings.InvisibleCharacterAppearance;
 
-    /// <summary>Raised after one of the three settings above changed — the view redraws the marks.</summary>
+    /// <summary>Raised after one of the settings above (the invisible characters, the color preview) changed — the view redraws.</summary>
     public event Action? InvisibleCharactersChanged;
 
     /// <summary>Called after a setting of the invisible characters changed (Preferences) — tells the view to redraw.</summary>
@@ -122,6 +125,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         OnPropertyChanged(nameof(ShowSoftHyphens));
         OnPropertyChanged(nameof(ShowNonBreakingSpaces));
         OnPropertyChanged(nameof(ShowZeroWidth));
+        OnPropertyChanged(nameof(ShowColorPreview));
         OnPropertyChanged(nameof(InvisibleCharacterFont));
         InvisibleCharactersChanged?.Invoke();
     }

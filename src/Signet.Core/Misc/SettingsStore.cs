@@ -560,6 +560,16 @@ public sealed class SettingsStore
         set => Write("soft_hyphen_form", value.ToString());
     }
 
+    /// <summary>
+    /// Whether Code Editor draws an underline in the color under every color value of CSS and of the <c>style</c> elements and attributes of
+    /// (X)HTML, and opens a color picker on a Ctrl+click. Enabled by default.
+    /// </summary>
+    public bool CodeEditorShowColorPreview
+    {
+        get => ReadBool("code_editor_show_color_preview", true);
+        set => Write("code_editor_show_color_preview", value);
+    }
+
     /// <summary>Whether Code Editor marks the non-breaking spaces (U+00A0), which look exactly like a space. Enabled by default.</summary>
     public bool CodeEditorShowNonBreakingSpaces
     {

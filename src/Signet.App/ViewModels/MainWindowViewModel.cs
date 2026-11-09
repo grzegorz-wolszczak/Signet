@@ -564,6 +564,7 @@ public sealed partial class MainWindowViewModel
             else if (e.QualifiedKey.EndsWith("/code_editor_show_soft_hyphens", StringComparison.Ordinal)
                 || e.QualifiedKey.EndsWith("/code_editor_show_non_breaking_spaces", StringComparison.Ordinal)
                 || e.QualifiedKey.EndsWith("/code_editor_show_zero_width", StringComparison.Ordinal)
+                || e.QualifiedKey.EndsWith("/code_editor_show_color_preview", StringComparison.Ordinal)
                 || SettingChangeKeys.Is(e, SettingChangeKeys.AppearanceSettingsCleared))
             {
                 // The marks of the characters that are drawn as nothing — the open tabs redraw them at once.

@@ -121,6 +121,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _showSoftHyphens = _settings.CodeEditorShowSoftHyphens;
         _showNonBreakingSpaces = _settings.CodeEditorShowNonBreakingSpaces;
         _showZeroWidth = _settings.CodeEditorShowZeroWidth;
+        _showColorPreview = _settings.CodeEditorShowColorPreview;
         _bookBrowserFollowsActiveTab = _settings.BookBrowserFollowsActiveTab;
         _multilineTabs = _settings.CodeEditorMultilineTabs;
         _enableAltGr = _settings.EnableAltGr;
@@ -772,6 +773,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnShowZeroWidthChanged(bool value) => _settings.CodeEditorShowZeroWidth = value;
 
+    /// <summary>Code Editor draws a preview under the color values of CSS and HTML, and opens a picker on a Ctrl+click.</summary>
+    [ObservableProperty]
+    private bool _showColorPreview;
+
+    partial void OnShowColorPreviewChanged(bool value) => _settings.CodeEditorShowColorPreview = value;
+
     /// <summary>The Book Browser selects the file of the active tab (also after a tab in a window of its own got the focus).</summary>
     [ObservableProperty]
     private bool _bookBrowserFollowsActiveTab;
@@ -952,6 +959,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         ShowSoftHyphens = _settings.CodeEditorShowSoftHyphens;
         ShowNonBreakingSpaces = _settings.CodeEditorShowNonBreakingSpaces;
         ShowZeroWidth = _settings.CodeEditorShowZeroWidth;
+        ShowColorPreview = _settings.CodeEditorShowColorPreview;
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
         LoadToolbarAppearance();

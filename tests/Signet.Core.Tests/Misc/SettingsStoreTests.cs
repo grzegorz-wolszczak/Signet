@@ -24,6 +24,24 @@ public sealed class SettingsStoreTests
         new(dir.Combine("settings.xml"));
 
     [Fact]
+    public void The_color_preview_of_the_code_editor_is_on_by_default_and_remembered()
+    {
+        // Arrange
+        using TempDir dir = new();
+        SettingsStore sut = NewStore(dir);
+
+        // Act & Assert
+        sut.CodeEditorShowColorPreview.Should().BeTrue();
+
+        // Act
+        sut.CodeEditorShowColorPreview = false;
+        sut.Save();
+
+        // Assert
+        NewStore(dir).CodeEditorShowColorPreview.Should().BeFalse();
+    }
+
+    [Fact]
     public void Defaults_apply_when_file_is_missing()
     {
         // Arrange

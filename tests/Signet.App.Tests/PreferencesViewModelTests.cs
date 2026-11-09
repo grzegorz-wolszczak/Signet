@@ -1335,6 +1335,23 @@ public sealed class PreferencesViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_color_preview_of_the_code_editor_is_on_at_first_and_can_be_switched_off()
+    {
+        // Arrange
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+
+        // Assert
+        vm.ShowColorPreview.Should().BeTrue();
+
+        // Act
+        vm.ShowColorPreview = false;
+
+        // Assert
+        vm.ShowColorPreview.Should().BeFalse();
+    }
+
+    [Fact]
     public void The_editor_font_is_previewed_as_code_with_the_highlighting_being_edited()
     {
         // Arrange

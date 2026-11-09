@@ -14,6 +14,7 @@ using AvaloniaEdit;
 using AvaloniaEdit.Rendering;
 using AwesomeAssertions;
 using Signet.App.Actions;
+using Signet.App.CodeEditor;
 using Signet.App.Infrastructure;
 using Signet.App.Services;
 using Signet.App.ViewModels.Tabs;
@@ -79,6 +80,51 @@ public sealed class CodeTabViewRenderTests : IDisposable
         // Assert
         editor.Document.Text.Should().Be(html.GetText());
         editor.Bounds.Height.Should().BeGreaterThan(0);
+    }
+
+    /// <summary>The colors of a stylesheet and of an (X)HTML file get a preview while the setting of Code Editor is on (Calibre 9ec8e99d48).</summary>
+    [AvaloniaFact]
+    public void The_color_values_of_css_and_html_are_found_while_the_preview_setting_is_on()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        CssResource css = book.GetCssResources().First();
+        css.InitialLoad();
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        var tabModel = new TabManagerModel();
+        var cssVm = new CodeTabViewModel(tabModel.OpenResource(css), new StatusBarService(), settings, spellChecker);
+        var htmlVm = new CodeTabViewModel(tabModel.OpenResource(html), new StatusBarService(), settings, spellChecker);
+        CodeTabView cssView = new() { DataContext = cssVm };
+        CodeTabView htmlView = new() { DataContext = htmlVm };
+        var window = new Window { Width = 600, Height = 400, Content = new StackPanel { Children = { cssView, htmlView } } };
+
+        // Act
+        window.Show();
+        cssVm.Document.Text = "p { color: #ff0000 }";
+        htmlVm.Document.Text = "<html><body><p style=\"color: red\">x</p></body></html>";
+        Dispatcher.UIThread.RunJobs();
+        cssView.ColorPreview.RefreshNow();
+        htmlView.ColorPreview.RefreshNow();
+
+        // Assert
+        cssView.ColorPreview.Kind.Should().Be(ColorPreviewKind.Css);
+        cssView.ColorPreview.Matches.Should().ContainSingle();
+        htmlView.ColorPreview.Kind.Should().Be(ColorPreviewKind.Html);
+        htmlView.ColorPreview.Matches.Should().ContainSingle();
+
+        // Act
+        settings.CodeEditorShowColorPreview = false;
+        cssVm.NotifyInvisibleCharactersSettingChanged();
+        Dispatcher.UIThread.RunJobs();
+        cssView.ColorPreview.RefreshNow();
+
+        // Assert
+        cssView.ColorPreview.Enabled.Should().BeFalse();
+        cssView.ColorPreview.Matches.Should().BeEmpty();
+        window.Close();
     }
 
     /// <summary>

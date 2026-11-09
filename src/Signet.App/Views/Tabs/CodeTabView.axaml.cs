@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -28,6 +29,7 @@ using Signet.Core.Footnotes;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.MiscEditors;
+using Signet.Core.Parsers;
 using Signet.Core.Search;
 
 namespace Signet.App.Views.Tabs;
@@ -36,6 +38,10 @@ namespace Signet.App.Views.Tabs;
 /// Code editor tab view: <c>AvaloniaEdit.TextEditor</c> + syntax highlighting, caret position
 /// tracking, well-formedness error underline, Ctrl+wheel zoom, "Go To Line".
 /// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Reliability",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "The color preview controller lives as long as the editor it is attached to; it holds only a timer, which is stopped whenever nothing is pending.")]
 public partial class CodeTabView : UserControl
 {
     /// <summary>
@@ -50,7 +56,12 @@ public partial class CodeTabView : UserControl
     private readonly SpellCheckHighlightRenderer _spellRenderer = new();
     private readonly SyntaxIssueRenderer _issueRenderer = new();
     private readonly InvisibleCharacterGenerator _invisibleCharacters = new();
+    private readonly ColorPreviewController _colors;
     private readonly ContextMenu _contextMenu = new();
+
+    /// <summary>The color preview of this editor: the underlines under the color values and what a Ctrl+click on one does.</summary>
+    public ColorPreviewController ColorPreview => _colors;
+
     private readonly ShortcutKeyBindings _codeEditorShortcuts;
 
     // Html/Xml/CSS: dedicated line colorizers; JavaScript/JSON: TextMate (created lazily, only
@@ -95,6 +106,7 @@ public partial class CodeTabView : UserControl
         Editor.TextArea.TextView.BackgroundRenderers.Add(_errorRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_spellRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_issueRenderer);
+        _colors = new ColorPreviewController(Editor);
         // The characters that are drawn as nothing (soft hyphen, non-breaking space, zero width) get a mark of their own.
         Editor.TextArea.TextView.ElementGenerators.Add(_invisibleCharacters);
         Editor.TextArea.TextView.AddHandler(TextView.PointerHoverEvent, OnTextViewPointerHover);
@@ -702,6 +714,35 @@ public partial class CodeTabView : UserControl
         _invisibleCharacters.ShowZeroWidth = _boundViewModel?.ShowZeroWidth ?? false;
         _invisibleCharacters.Font = _boundViewModel?.InvisibleCharacterFont ?? InvisibleCharacterAppearance.Default;
         Editor.TextArea.TextView.Redraw();
+        UpdateColorPreview();
+    }
+
+    // The preview under the color values: on for a stylesheet and an (X)HTML file when the setting says so.
+    private void UpdateColorPreview()
+    {
+        _colors.Kind = _boundViewModel switch
+        {
+            { IsCss: true } => ColorPreviewKind.Css,
+            { IsHtmlFlow: true } => ColorPreviewKind.Html,
+            _ => ColorPreviewKind.None,
+        };
+        _colors.Enabled = _boundViewModel?.ShowColorPreview ?? false;
+    }
+
+    // A Ctrl+click on a color value: the picker, and the value written in its own notation.
+    private async Task PickColorAsync(CssColorMatch match)
+    {
+        if (TopLevel.GetTopLevel(this) is not Window owner)
+        {
+            return;
+        }
+
+        string initial = match.Color is { } color ? $"#{color.A:X2}{color.R:X2}{color.G:X2}{color.B:X2}" : "#FF000000";
+        string? chosen = await ColorPickerWindow.AskAsync(owner, Strings.Get("CodeEditor_ColorPickerTitle"), initial, alpha: true);
+        if (chosen is not null && Avalonia.Media.Color.TryParse(chosen, out Avalonia.Media.Color picked))
+        {
+            _colors.ApplyColor(match, new CssColor(picked.R, picked.G, picked.B, picked.A));
+        }
     }
 
     private void UpdateSpellRenderer()
@@ -1431,6 +1472,13 @@ public partial class CodeTabView : UserControl
         }
 
         int offset = Editor.Document.GetOffset(tvp.Location);
+        if (_colors.MatchAt(offset) is { } colorMatch)
+        {
+            e.Handled = true;
+            _ = PickColorAsync(colorMatch);
+            return;
+        }
+
         if (_boundViewModel.RequestLinkOrClassJumpAt(offset))
         {
             e.Handled = true;

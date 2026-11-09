@@ -9071,4 +9071,10 @@ Close the tab</value>
   <data name="Status_AccessibilitySaved" xml:space="preserve">
     <value>Accessibility changes saved.</value>
   </data>
+  <data name="CodeEditor_ColorPickerTitle" xml:space="preserve">
+    <value>Choose a color</value>
+  </data>
+  <data name="PreferencesWindow_ShowColorPreview" xml:space="preserve">
+    <value>Show a color preview under color values (CSS and HTML); Ctrl+click opens the color picker</value>
+  </data>
 </root>
