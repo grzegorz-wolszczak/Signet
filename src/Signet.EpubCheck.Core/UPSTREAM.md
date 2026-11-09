@@ -5,9 +5,24 @@ the same. Plan: [`EPUBCHECK_PLAN.md`](../../EPUBCHECK_PLAN.md).
 
 | | |
 |---|---|
-| Upstream | <https://github.com/w3c/epubcheck>, release **5.4.0** (tag `v5.4.0`, commit `a51f751`, 2026-09-15); EPUB 3 files are checked against EPUB 3.4 |
+| Upstream | <https://github.com/w3c/epubcheck>, release **5.4.0** (tag `v5.4.0`, commit `a51f751`, 2026-09-15) **plus `main` up to `6000e8e` (2026-11-02), the future 5.4.1** (not released yet; see "After 5.4.0" below); EPUB 3 files are checked against EPUB 3.4 |
 | License | BSD-3-Clause, see [`LICENSE-EPUBCheck.md`](LICENSE-EPUBCheck.md); compatible with Signet's GPL v3+ — taken parts keep their notice |
 | Port version | `5.4.0-<yyyyMMddHHmm UTC>` (`version/EpubCheckVersion.props`, `version/Versioning.targets`) |
+
+## After 5.4.0 (upstream `main` `6000e8e`, the future 5.4.1)
+
+`git log v5.4.0..6000e8e` has 16 commits; these are in the port, each with upstream's scenario or test:
+- `epub-nav-30.rnc`: ARIA labels (`aria-label`, `aria-labelledby`) and the roles `menu`, `menubar`, `none`, `presentation`,
+  `tablist` on the `nav` of a Navigation Document (issue #1726; scenarios in `navigation-document.feature`).
+- `dc:date` ending with a dot: `DateParser` no longer throws, it reports `No fraction of a second specified.`;
+  `OPF-053`/`OPF-054` put a space before the reason and drop its own final dot (issue #1731).
+- `EpubChecker`: a runtime exception while checking is reported as a fatal `RSC-016`; an unexpected exception exits with 2
+  and prints no closing sentence; a missing or unrecognized value of `-v`, `-m`, `-p` prints the reason and the whole help
+  and stops (no exception).
+- `EPUBVersion` 3.4 (the port had it already, see Deviations).
+- Not in the port: dependency updates of the Java build (guava, jackson), UTF-8 Jing properties, the translations
+  branch, the website. `VersionPrefix` stays 5.4.0 until 5.4.1 is released; then `git diff v5.4.0..v5.4.1` shows what is
+  left to take (the schemas and the suite are imported by the two `import_upstream_*.sh` scripts, label in their READMEs).
 
 ## Taken from upstream
 - **Schemas** (RELAX NG, NVDL, Schematron) in `Xml/Schemas/schema` + the two XSLT stylesheets of its build
@@ -117,7 +132,7 @@ The `whattf` datatype library is not needed (upstream's `epubcheck.patch` replac
 - `OCFContainer` keyed by normalized URL; root URL `https://<guid>.epubcheck.w3c.org` as upstream.
 - `ValidationContext` is an immutable record (`with`).
 - A package document peeked without a version uses the requested version (upstream asserts).
-- `EPUBVersion.toString` is `3.4` (upstream says `3.3`).
+- `EPUBVersion.toString` is `3.4` (upstream 5.4.0 said `3.3`; upstream `main` says `3.4` too).
 
 **Package documents (`Opf/`)**
 - A guide `reference` whose URL didn't parse is skipped (upstream NPE).
@@ -168,8 +183,10 @@ The `whattf` datatype library is not needed (upstream's `epubcheck.patch` replac
   good.
 
 **Command line (`Signet.EpubCheck.Cli`)**
-- Argument error reasons go to stderr (upstream swallows them). Unknown `--profile` prints
-  `Unknown profile "x", using default validation profile.`
+- Unknown `--profile` prints `Unknown profile "x", using default validation profile.` (upstream prints the text about
+  ignored modes, which says nothing about a profile).
+- Without a report (a wrong argument) the closing sentence `EPUBCheck completed` is not printed, as upstream (the port
+  printed it up to the first 5.4.1 sync).
 - `-o/-j/-x` without a file name need the checked file before them, and say so.
 - Help text is upstream's word for word, typos included (`cli.feature` compares it).
 - `--locale` without texts falls back to the user's culture, then English.

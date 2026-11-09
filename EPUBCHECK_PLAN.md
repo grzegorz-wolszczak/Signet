@@ -108,7 +108,8 @@ dotnet test tests/Signet.EpubCheck.Conformance.Tests
   never needed. Measure first, with inclusive shares, stopwatch, allocation traces, exception counts.
 - The `itemref` duplicate assertion of `package-30.sch` is quadratic by upstream's design; a special case would be a
   deviation.
-- Upstream 5.4.1+: separate task.
+- Upstream 5.4.1: `main` up to `6000e8e` is taken (see "After 5.4.0" in `UPSTREAM.md`). When 5.4.1 is released: diff
+  `v5.4.0..v5.4.1`, re-run the two `import_upstream_*.sh` scripts on the tag, change `VersionPrefix`.
 - Polish texts (~320 messages, CLI) need the owner's review.
 
 ## Upstream facts
