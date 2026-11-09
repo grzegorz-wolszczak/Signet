@@ -79,7 +79,7 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
 - Uses the Metadata layer (`Signet.Core/Metadata`, `MetadataEditModel`) so the OPF stays consistent.
 - Tests: book with and without images, with some images lacking alt, EPUB 2 book (no check).
 
-### A5. Check: `epub:type` without a matching ARIA role — `[ ]`
+### A5. Check: `epub:type` without a matching ARIA role — `[x]`
 
 - For every element with `epub:type` that has a DPUB-ARIA role (`AriaRoles.EpubTypeMapping`, `AriaRoles.AllowedTags`, both
   already in `Signet.Core.Semantics`) and no `role`, report; EPUB 3 only.
@@ -87,6 +87,11 @@ Calibre commits: `6b4887b51e` (checks), `1c36946b42` (epub:type without role), `
   `doc-noteref` only on links); skip the WAI-ARIA roles `list`/`table`, the deprecated `doc-endnote` / `doc-biblioentry`
   and `doc-cover` (it is for images). Never replace an existing `role`.
 - Tests: noteref link, section vs body, existing role kept, deprecated types ignored, EPUB 2 ignored.
+- Done: `AriaRoleAdder` (the epub:type → role table and the element rules are Calibre's `ROLE_FOR_EPUB_TYPE` / `ACCEPTS_ANY_ROLE`; tag scan with
+  `TagLister`), `AddAriaRolesFix` (per file, like Calibre: the first fix of a file fixes all its results), code
+  `Validation_Accessibility_MissingRole`, severity **info** (as in Calibre). Deviation: `AriaRoles.EpubTypeMapping`/`AllowedTags` were not reused:
+  their table is Sigil's (role → epub:type, with entries that are not roles), Calibre's table is the one of the authoring guide. An empty
+  `role=""` counts as no role and gets the value.
 
 ### A6. Check: dangling ARIA references — `[ ]`
 

@@ -883,7 +883,9 @@ public sealed class MainWindowViewModelTests : IDisposable
 
             // The corpus font is a dummy, not a real font (see tests/corpus/generate-binaries.sh).
             // Assert
-            sut.ValidationResults.Rows.Should().ContainSingle().Which.Result.Code.Should().Be("Validation_FontCorrupt");
+            // The nav of the corpus book has no role="doc-toc": a hint of the accessibility checks (info), which is right.
+            sut.ValidationResults.Rows.Select(r => r.Result.Code).Where(c => c != "Validation_Accessibility_MissingRole")
+                .Should().ContainSingle().Which.Should().Be("Validation_FontCorrupt");
         });
     }
 

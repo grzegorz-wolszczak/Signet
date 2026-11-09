@@ -46,7 +46,9 @@ public sealed class BookValidatorTests
         var results = BookValidator.ValidateCurrentBook(book, SkipDummyFont);
 
         // Assert
-        results.Should().BeEmpty();
+        // The nav of the corpus book is <nav epub:type="toc"> without role="doc-toc": a hint (info) of the accessibility checks, which
+        // is right, so it is left out here (the corpus is byte-stable).
+        results.Where(r => r.Code != "Validation_Accessibility_MissingRole").Should().BeEmpty();
     }
 
     [Fact]

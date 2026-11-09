@@ -28,6 +28,12 @@ public static class AccessibilityValidator
         {
             CheckLanguage(book, html, results);
             CheckImages(html, results);
+
+            // The role attribute is not valid in the XHTML 1.1 of EPUB 2.
+            if (book.IsEpub3)
+            {
+                CheckAriaRoles(html, results);
+            }
         }
 
         CheckHeadingLevels(book, results);
@@ -70,6 +76,26 @@ public static class AccessibilityValidator
 
                 previous = level;
             }
+        }
+    }
+
+    // An element with an epub:type that has a DPUB-ARIA role but no role: screen readers use the role. One result per element; the fix
+    // adds the roles of the whole file.
+    private static void CheckAriaRoles(HtmlResource html, List<ValidationResult> results)
+    {
+        IReadOnlyList<MissingAriaRole> missing = AriaRoleAdder.Find(html.GetText());
+        if (missing.Count == 0)
+        {
+            return;
+        }
+
+        AddAriaRolesFix fix = new(html.BookPath);
+        foreach (MissingAriaRole role in missing)
+        {
+            results.Add(new ValidationResult(
+                ValidationSeverity.Info, html.BookPath, role.Line, -1,
+                CoreStrings.Format("Validation_Accessibility_MissingRole", role.TagName, role.Role),
+                "Validation_Accessibility_MissingRole", fix));
         }
     }
 

@@ -6269,4 +6269,7 @@
   <data name="InlineStyles_Risk_Overridden" xml:space="preserve">
     <value>{0}: „{1}: {2}” przegra z regułą „{3}”{4} („{1}: {5}”)</value>
   </data>
+  <data name="Validation_Accessibility_MissingRole" xml:space="preserve">
+    <value>&lt;{0}&gt; ma epub:type, ale nie ma roli ARIA: czytniki ekranu używają atrybutu role (role="{1}").</value>
+  </data>
 </root>
