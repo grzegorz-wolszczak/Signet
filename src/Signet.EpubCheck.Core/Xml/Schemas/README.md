@@ -1,6 +1,6 @@
 # Xml/Schemas
 
-The schemas of **EPUBCheck** (v5.4.0), copied by `scripts/epubcheck/import_upstream_schemas.sh`; do not edit them by
+The schemas of **EPUBCheck** (5.4.1-SNAPSHOT@6000e8e), copied by `scripts/epubcheck/import_upstream_schemas.sh`; do not edit them by
 hand.
 
 - `schema/` is upstream's `src/main/resources/com/adobe/epubcheck/schema`: RELAX NG (`.rnc`, `.rng`), NVDL,
