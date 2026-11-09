@@ -732,6 +732,11 @@
                       </ComboBox.ItemTemplate>
                     </ComboBox>
                   </Grid>
+                  <!-- The selected text of the Find and Replace fields: a color of the theme (ui.findReplace.selection), edited here. -->
+                  <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_findReplace_selection}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding FindReplaceSelectionColor}" />
+                  </Grid>
                 </StackPanel>
               </ScrollViewer>
             </TabItem>

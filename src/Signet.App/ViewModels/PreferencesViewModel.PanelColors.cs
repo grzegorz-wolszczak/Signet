@@ -64,6 +64,9 @@ public sealed partial class PreferencesViewModel
     /// <summary>Clips: the background of the selected text in the text of a clip.</summary>
     public ColorKeyEditorViewModel ClipEditorSelectionColor => PanelColor(ThemeKeys.UiClipEditorSelection);
 
+    /// <summary>Find and Replace: the background of the selected text in the Find and Replace fields.</summary>
+    public ColorKeyEditorViewModel FindReplaceSelectionColor => PanelColor(ThemeKeys.UiFindReplaceSelection);
+
     /// <summary>Saved Searches: the background of the tree.</summary>
     public ColorKeyEditorViewModel SearchEditorBackgroundColor => PanelColor(ThemeKeys.UiSearchEditorBackground);
 

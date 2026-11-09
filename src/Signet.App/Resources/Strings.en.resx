@@ -8649,7 +8649,7 @@ Close the tab</value>
     <value>Clip Editor</value>
   </data>
   <data name="ThemeKey_ui_clipEditor_selection" xml:space="preserve">
-    <value>Selection color in the clip text</value>
+    <value>Selection color in the clip text (empty: as the selection of text boxes)</value>
   </data>
   <data name="ClipsPanelView_Edit" xml:space="preserve">
     <value>Edit</value>
@@ -8707,5 +8707,8 @@ Close the tab</value>
   </data>
   <data name="FindReplaceView_SaveSearch" xml:space="preserve">
     <value>Save</value>
+  </data>
+  <data name="ThemeKey_ui_findReplace_selection" xml:space="preserve">
+    <value>Selection color in the Find and Replace fields (empty: as the selection of text boxes)</value>
   </data>
 </root>

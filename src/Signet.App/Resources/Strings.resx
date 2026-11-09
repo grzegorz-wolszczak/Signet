@@ -8649,7 +8649,7 @@ Zamknij zakładkę</value>
     <value>Edytor wycinków</value>
   </data>
   <data name="ThemeKey_ui_clipEditor_selection" xml:space="preserve">
-    <value>Kolor zaznaczenia w treści wycinka</value>
+    <value>Kolor zaznaczenia w treści wycinka (puste: jak zaznaczenie w polach tekstowych)</value>
   </data>
   <data name="ClipsPanelView_Edit" xml:space="preserve">
     <value>Edytuj</value>
@@ -8707,5 +8707,8 @@ Zamknij zakładkę</value>
   </data>
   <data name="FindReplaceView_SaveSearch" xml:space="preserve">
     <value>Zapisz</value>
+  </data>
+  <data name="ThemeKey_ui_findReplace_selection" xml:space="preserve">
+    <value>Kolor zaznaczenia w polach Znajdź i Zamień (puste: jak zaznaczenie w polach tekstowych)</value>
   </data>
 </root>

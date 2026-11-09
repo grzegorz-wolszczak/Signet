@@ -292,11 +292,18 @@ public static class ThemeKeys
             fallbackId: "fluent.regionColor");
 
     /// <summary>
-    /// The background of the selected text in the text of a clip (Clip Editor); the blue of the selection in Code Editor
-    /// unless changed (Preferences › Appearance › Clips).
+    /// The background of the selected text in the text of a clip (Clip Editor); unset = the selection of the text boxes
+    /// (<see cref="UiTextSelection"/>, Preferences › Appearance › Color Scheme).
     /// </summary>
     public static readonly ThemeKey UiClipEditorSelection = Color(
-            "ui.clipEditor.selection", ThemePage.Interface, "Controls", Rgb(0xADD6FF), ownedByPanel: true);
+            "ui.clipEditor.selection", ThemePage.Interface, "Controls", null, ownedByPanel: true);
+
+    /// <summary>
+    /// The background of the selected text in the Find and Replace fields; unset = the selection of the text boxes
+    /// (<see cref="UiTextSelection"/>, Preferences › Appearance › Color Scheme).
+    /// </summary>
+    public static readonly ThemeKey UiFindReplaceSelection = Color(
+            "ui.findReplace.selection", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     // The colors of a single panel or window (ownedByPanel: true) — the Book Browser, Saved Searches, Notifications, the
     // start screen, the context menus, Find Usages — are edited on that part's own Preferences page

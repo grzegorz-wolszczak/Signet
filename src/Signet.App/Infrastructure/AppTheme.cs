@@ -86,6 +86,11 @@ public sealed class ResolvedTheme
     public ThemeKey? InheritedFrom(ThemeKey key)
     {
         ArgumentNullException.ThrowIfNull(key);
+        if (ReferenceEquals(key, ThemeKeys.UiClipEditorSelection) || ReferenceEquals(key, ThemeKeys.UiFindReplaceSelection))
+        {
+            return ThemeKeys.UiTextSelection;
+        }
+
         return key.FallbackId is { } parentId && ThemeKeys.TryGet(parentId, out ThemeKey? parent) ? parent : null;
     }
 
@@ -101,7 +106,7 @@ public sealed class ResolvedTheme
         double opacity = 1.0;
         for (ThemeKey? k = key; k is not null && seen.Add(k.Id); k = InheritedFrom(k))
         {
-            if (((k.Kind == ThemeKeyKind.Color ? ColorOf(k) : null) ?? AppTheme.SystemColorOf(k)) is { } color)
+            if (((k.Kind == ThemeKeyKind.Color ? ColorOf(k) : null) ?? AppTheme.SystemColorOf(k) ?? SelectionFollowerColor(k)) is { } color)
             {
                 return WithOpacity(color, opacity);
             }
@@ -126,6 +131,24 @@ public sealed class ResolvedTheme
 
         return (fallback.Key, InheritedColorOf(fallback.Key) is { } color ? WithOpacity(color, fallback.Opacity) : null);
     }
+
+    /// <summary>
+    /// The background of the selected text of the text boxes (<see cref="ThemeKeys.UiTextSelection"/>); the default blue
+    /// when the theme sets none — a selection with no background would be invisible.
+    /// </summary>
+    public ThemeColor? TextSelectionBackground =>
+        Attributes(ThemeKeys.UiTextSelection).Background ?? ThemeKeys.UiTextSelection.DefaultAttributes?.Background;
+
+    /// <summary>The color of the selected text of the text boxes; the default when the theme sets none.</summary>
+    public ThemeColor? TextSelectionForeground =>
+        Attributes(ThemeKeys.UiTextSelection).Foreground ?? ThemeKeys.UiTextSelection.DefaultAttributes?.Foreground;
+
+    // The selection colors of single text boxes (the clip text, the Find and Replace fields) follow the one of all text
+    // boxes while they are unset.
+    private ThemeColor? SelectionFollowerColor(ThemeKey key) =>
+        ReferenceEquals(key, ThemeKeys.UiClipEditorSelection) || ReferenceEquals(key, ThemeKeys.UiFindReplaceSelection)
+            ? TextSelectionBackground
+            : null;
 
     // The color drawn at a part of its opacity (a see-through color the controls draw).
     private static ThemeColor WithOpacity(ThemeColor color, double opacity) =>
@@ -186,7 +209,6 @@ public static class AppTheme
         (ThemeKeys.UiFrame, "SignetFrameBrush"),
         (ThemeKeys.UiBookBrowserBackground, "SignetBookBrowserBackgroundBrush"),
         (ThemeKeys.UiSearchEditorBackground, "SignetSearchEditorBackgroundBrush"),
-        (ThemeKeys.UiClipEditorSelection, "SignetClipEditorSelectionBrush"),
         (ThemeKeys.UiNotificationsBackground, "SignetNotificationsBackgroundBrush"),
         (ThemeKeys.UiMutedText, "SignetMutedTextBrush"),
         (ThemeKeys.UiErrorText, "SignetErrorTextBrush"),
@@ -260,8 +282,16 @@ public static class AppTheme
         SetBrush(app, "SignetDocumentTabBackgroundBrush", theme.Background(ThemeKeys.UiDocumentTab));
         SetBrush(app, "SignetDocumentTabSelectedForegroundBrush", theme.Foreground(ThemeKeys.UiDocumentTabSelected));
         SetBrush(app, "SignetDocumentTabSelectedBackgroundBrush", theme.Background(ThemeKeys.UiDocumentTabSelected));
-        SetBrush(app, "SignetTextSelectionBrush", theme.Background(ThemeKeys.UiTextSelection));
-        SetBrush(app, "SignetTextSelectionForegroundBrush", theme.Foreground(ThemeKeys.UiTextSelection));
+        // The selected text of every text box. A theme that sets only one part (the text color, say) must not leave the
+        // other without a color — a selection with no background is invisible — so the unset part is the key's default
+        // (the blue of the selection of Code Editor).
+        Color? selectionBackground = theme.TextSelectionBackground is { } background ? ResolvedTheme.ToColor(background) : null;
+        Color? selectionForeground = theme.TextSelectionForeground is { } foreground ? ResolvedTheme.ToColor(foreground) : null;
+        SetBrush(app, "SignetTextSelectionBrush", selectionBackground);
+        SetBrush(app, "SignetTextSelectionForegroundBrush", selectionForeground);
+        // The text boxes of the Clip Editor and the Find and Replace fields follow it until their own color is set.
+        SetBrush(app, "SignetClipEditorSelectionBrush", theme.Color(ThemeKeys.UiClipEditorSelection) ?? selectionBackground);
+        SetBrush(app, "SignetFindReplaceSelectionBrush", theme.Color(ThemeKeys.UiFindReplaceSelection) ?? selectionBackground);
 
         // The two columns of the Notifications panel: which key each falls back to while it is unset is written on
         // the keys themselves (ThemeKey.FallbackId), so the editor can name the source of the color it shows.

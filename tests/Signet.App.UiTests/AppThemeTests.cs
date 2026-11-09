@@ -85,6 +85,35 @@ public sealed class AppThemeTests
     }
 
     [AvaloniaFact]
+    public void A_selection_with_no_background_in_the_theme_is_still_visible_and_the_text_boxes_of_the_panels_follow_it()
+    {
+        // Arrange — a theme that sets only the text color of the selection (the background would be empty: invisible).
+        Theme theme = new Theme(Ulid.NewUlid().ToString(), "Selection") { ParentId = ThemeStore.LightId }
+            .With(ThemeKeys.UiTextSelection.Id, ThemeEntry.Of(new TextAttributes { Foreground = ThemeColor.Parse("#000000") }));
+        try
+        {
+            // Act
+            AppTheme.Apply(Application.Current!, ResolvedTheme.Of(ThemeDocumentKind.Theme, theme, new ThemeResolver(_ => null)));
+            TextBox box = new() { Text = "abc" };
+            Window window = new() { Content = box };
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            // Assert
+            ((ISolidColorBrush)box.SelectionBrush!).Color.Should().Be(Color.Parse("#ADD6FF"), "the unset background is the default blue");
+            Application.Current!.TryGetResource("SignetClipEditorSelectionBrush", null, out object? clip);
+            Application.Current.TryGetResource("SignetFindReplaceSelectionBrush", null, out object? find);
+            ((ISolidColorBrush)clip!).Color.Should().Be(Color.Parse("#ADD6FF"));
+            ((ISolidColorBrush)find!).Color.Should().Be(Color.Parse("#ADD6FF"));
+            window.Close();
+        }
+        finally
+        {
+            AppTheme.Apply(Application.Current!, ResolvedTheme.Defaults);
+        }
+    }
+
+    [AvaloniaFact]
     public void A_theme_that_no_longer_exists_gives_way_to_signet_light()
     {
         // Arrange
