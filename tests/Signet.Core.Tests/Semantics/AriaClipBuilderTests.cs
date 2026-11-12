@@ -130,4 +130,13 @@ public sealed class AriaClipBuilderTests
         forSection.Should().ContainKey("doc-chapter");
         forSection.Values.Should().Contain(v => v.Name.Contains("(doc-chapter)"));
     }
+
+    [Theory]
+    [InlineData("doc-noteref", " epub:type=\"noteref\" role=\"doc-noteref\"")]
+    [InlineData("footnotes", " epub:type=\"footnotes\"")]
+    public void The_attributes_of_a_role_are_its_epub_type_and_role(string role, string expected)
+    {
+        // Act & Assert
+        AriaClipBuilder.RoleAttributes(role).Should().Be(expected);
+    }
 }

@@ -41,7 +41,7 @@ namespace Signet.App.ViewModels;
 /// An action without a handler shows a message on the status bar when executed.
 /// </summary>
 public sealed partial class MainWindowViewModel
-    : ViewModelBase, IBookWorkspace, IEditionPageHost, IRecentFilesMenu, IBookmarksMenu, IMultiFileSearchHost, ICodeTabHost, ILanguageAware,
+    : ViewModelBase, IBookWorkspace, IEditionPageHost, IRecentFilesMenu, IMultiFileSearchHost, ICodeTabHost, ILanguageAware,
         IDisposable
 {
     private readonly MenuBuilder _menuBuilder;
@@ -58,11 +58,11 @@ public sealed partial class MainWindowViewModel
     private readonly SpellcheckEditorViewModel _spellcheckEditor;
     private readonly ValidationResultsViewModel _validationResults = new();
     private readonly FindUsagesViewModel _findUsages;
-    private readonly List<Bookmark> _bookmarks = new();
+    private readonly BookmarkList _bookmarks = new();
+    private readonly BookmarksViewModel _bookmarksPanel;
     private bool _previewHasZoomFocus;
     private bool _isFindReplaceVisible;
     private Func<string, bool> _externalFileOpener = path => ExternalOpen.TryOpen(path, out _);
-    private event EventHandler? BookmarksChangedInternal;
 
     /// <summary>Settings group holding panel visibility.</summary>
     public const string DockPanelsGroup = "dock_panels";
@@ -209,6 +209,11 @@ public sealed partial class MainWindowViewModel
         _validationResults.SetUsageHints(_settings.CheckBookIncludeUsage);
         _validationResults.UsageHintsToggled += (_, show) => RunAsyncAction(() => ChangeUsageHintsAsync(show));
 
+        _bookmarks.ClosedFileLineText = ClosedFileLineText;
+        _bookmarksPanel = new BookmarksViewModel(_bookmarks);
+        _bookmarksPanel.BookmarkActivated += (_, bookmark) => GoToBookmark(bookmark);
+        _dockFactory.Bookmarks = _bookmarksPanel;
+
         _findUsages = new FindUsagesViewModel(_settings);
         _dockFactory.FindUsages = _findUsages;
         _findUsages.UsageActivated += (_, usage) =>
@@ -281,7 +286,7 @@ public sealed partial class MainWindowViewModel
             wordWrapAction.IsChecked = _settings.CodeEditorWordWrap;
         }
 
-        _menuBuilder = new(_actions, _toolbarManager, CustomizeToolbarsCommand, this, this);
+        _menuBuilder = new(_actions, _toolbarManager, CustomizeToolbarsCommand, this);
         MenuItems = _menuBuilder.Build();
 
         Toolbars = new ObservableCollection<ToolbarViewModel>(
@@ -374,8 +379,23 @@ public sealed partial class MainWindowViewModel
         });
         WireCheckpointActions();
 
+        // Editing the text of Code Editor from the menu and the toolbar (the keys are handled by the editor itself).
+        _actions.SetHandler(AppActionIds.Cut, () => ActiveCodeTab?.RequestClipboard(EditorClipboardCommand.Cut));
+        _actions.SetHandler(AppActionIds.Copy, () => ActiveCodeTab?.RequestClipboard(EditorClipboardCommand.Copy));
+        _actions.SetHandler(AppActionIds.Paste, () => ActiveCodeTab?.RequestClipboard(EditorClipboardCommand.Paste));
+        _actions.SetHandler(AppActionIds.DeleteLine, () => ActiveCodeTab?.DeleteLines());
+        _actions.SetHandler(AppActionIds.ShowCompletions, () => ActiveCodeTab?.RequestCompletion());
+        RefreshEditActionState();
+
+        // The files of the book in the reading order.
+        _actions.SetHandler(AppActionIds.NextResource, () => GoToNeighbourFile(forward: true));
+        _actions.SetHandler(AppActionIds.PreviousResource, () => GoToNeighbourFile(forward: false));
+
         // Navigation: bookmarks, Navigate Back / Forward.
-        _actions.SetHandler(AppActionIds.BookmarkLocation, AddBookmark);
+        _actions.SetHandler(AppActionIds.BookmarkLocation, ToggleBookmark);
+        _actions.SetHandler(AppActionIds.NextBookmark, () => GoToNeighbourBookmark(forward: true));
+        _actions.SetHandler(AppActionIds.PreviousBookmark, () => GoToNeighbourBookmark(forward: false));
+        _actions.SetHandler(AppActionIds.ShowBookmarks, ShowBookmarks);
         _actions.SetHandler(AppActionIds.GoToLinkOrStyle, GoToLinkOrStyle);
         WireNavigationActions();
         _actions.SetHandler(AppActionIds.JumpToOpeningTag, () => ActiveCodeTab?.JumpToOpeningTag());
@@ -565,6 +585,7 @@ public sealed partial class MainWindowViewModel
                 || e.QualifiedKey.EndsWith("/code_editor_show_non_breaking_spaces", StringComparison.Ordinal)
                 || e.QualifiedKey.EndsWith("/code_editor_show_zero_width", StringComparison.Ordinal)
                 || e.QualifiedKey.EndsWith("/code_editor_show_color_preview", StringComparison.Ordinal)
+                || e.QualifiedKey.EndsWith("/code_editor_show_folding_lines", StringComparison.Ordinal)
                 || SettingChangeKeys.Is(e, SettingChangeKeys.AppearanceSettingsCleared))
             {
                 // The marks of the characters that are drawn as nothing — the open tabs redraw them at once.
@@ -904,6 +925,12 @@ public sealed partial class MainWindowViewModel
     /// existing identifiers and calls <see cref="ApplyInsertId"/>.
     /// </summary>
     public event EventHandler? InsertIdRequested;
+
+    /// <summary>
+    /// Raised by the "Insert &#8594; Role" action — the view shows the list of the roles that fit the element at the caret
+    /// (<see cref="GetRoleOptionsAtCaret"/>) and calls <see cref="ApplyRole"/>.
+    /// </summary>
+    public event EventHandler? InsertRoleRequested;
 
     /// <summary>
     /// Raised by the "Insert &#8594; Link" action — the view shows a target picker dialog
@@ -1321,6 +1348,7 @@ public sealed partial class MainWindowViewModel
         _findUsages.Clear();
         BookBrowser.SetBook(book);
         _toc.SetBook(book);
+        LoadBookmarks(sourcePath);
         RestoreTabs(sourcePath);
         HideFindPanel();
         StartCheckpointHistory(book);
@@ -1379,6 +1407,7 @@ public sealed partial class MainWindowViewModel
         // The session (open tabs) and the navigation history of the closed book are kept for when it is opened again.
         SaveNavigationHistory();
         SaveBookPosition();
+        SaveBookmarks();
         _tabManager.SaveAllTabs();
         _tabManager.CaptureSession(_settings);
         using (Tracker.Suspend())
@@ -1404,7 +1433,6 @@ public sealed partial class MainWindowViewModel
         WatchNavigationFolderKeeper();
         UpdateNavigationPlace();
         _bookmarks.Clear();
-        BookmarksChangedInternal?.Invoke(this, EventArgs.Empty);
         UpdateBookOpenState();
         RefreshTitle();
         _statusBar.ShowMessage(Strings.Get("Status_BookClosed"), TimeSpan.FromSeconds(3));
@@ -1469,26 +1497,13 @@ public sealed partial class MainWindowViewModel
 
     private event EventHandler? Changed;
 
-    // ---------------------------------------------------- IBookmarksMenu --- //
+    // ------------------------------------------------------------- Bookmarks --- //
 
-    /// <inheritdoc />
-    IReadOnlyList<Bookmark> IBookmarksMenu.Bookmarks => _bookmarks;
+    /// <summary>The bookmarks of the open book (the gutter of Code Editor and the "Bookmarks" panel show them).</summary>
+    public BookmarkList Bookmarks => _bookmarks;
 
-    /// <inheritdoc />
-    event EventHandler? IBookmarksMenu.BookmarksChanged
-    {
-        add => BookmarksChangedInternal += value;
-        remove => BookmarksChangedInternal -= value;
-    }
-
-    /// <inheritdoc />
-    void IBookmarksMenu.GoToBookmark(Bookmark bookmark) => GoToBookmark(bookmark);
-
-    /// <inheritdoc />
-    void IBookmarksMenu.ClearBookmarks() => ClearBookmarks();
-
-    /// <summary>Session bookmarks (for tests and preview) — in the order they were added.</summary>
-    public IReadOnlyList<Bookmark> Bookmarks => _bookmarks;
+    /// <summary>View model of the "Bookmarks" panel.</summary>
+    public BookmarksViewModel BookmarksPanel => _bookmarksPanel;
 
     /// <summary>View model of the "Table Of Contents" panel.</summary>
     public TableOfContentsViewModel TableOfContents => _toc;
@@ -1505,10 +1520,9 @@ public sealed partial class MainWindowViewModel
     public void AttachExternalFileOpener(Func<string, bool> opener) => _externalFileOpener = opener;
 
     /// <summary>
-    /// "Bookmark Location" (Ctrl+Alt+B) — appends the current Code Editor position as a bookmark
-    /// at the end of the list in the Window menu.
+    /// "Toggle Bookmark" (F11) — adds the bookmark on the caret line of Code Editor, or removes the one that is there.
     /// </summary>
-    private void AddBookmark()
+    private void ToggleBookmark()
     {
         if (ActiveCodeTab is not { } tab)
         {
@@ -1516,11 +1530,115 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        string filename = System.IO.Path.GetFileName(tab.ResourceBookPath);
-        Bookmark mark = new(tab.ResourceBookPath, $"{filename}:{tab.CaretLine}", tab.CaretLine, tab.CaretOffset);
-        _bookmarks.Add(mark);
-        BookmarksChangedInternal?.Invoke(this, EventArgs.Empty);
-        _statusBar.ShowMessage(Strings.Format("Status_BookmarkAdded", mark.Name), TimeSpan.FromSeconds(3));
+        string name = $"{System.IO.Path.GetFileName(tab.ResourceBookPath)}:{tab.CaretLine}";
+        string message = _bookmarks.Toggle(tab.ResourceBookPath, tab.CaretLine) is null ? "Status_BookmarkRemoved" : "Status_BookmarkAdded";
+        _statusBar.ShowMessage(Strings.Format(message, name), TimeSpan.FromSeconds(3));
+    }
+
+    /// <summary>Raised by Show Bookmarks — the view shows the popup for the given model.</summary>
+    public event EventHandler<BookmarksPopupViewModel>? BookmarksPopupRequested;
+
+    /// <summary>
+    /// "Show Bookmarks" (Shift+F11) — the popup with the bookmarks and a preview of the file of the selected one
+    /// (<see cref="BookmarksPopupRequested"/>). It opens with no bookmark too, to say how to add one.
+    /// </summary>
+    public void ShowBookmarks()
+    {
+        if (_currentBook is not { } book)
+        {
+            return;
+        }
+
+        BookmarksPopupRequested?.Invoke(this, new BookmarksPopupViewModel(
+            _bookmarks,
+            bookPath => book.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath),
+            _tabManager.DocumentTextOf,
+            GoToBookmark,
+            _actions.Require(AppActionIds.BookmarkLocation).InputGestureText,
+            _settings.CodeEditorAppearance));
+    }
+
+    /// <summary>
+    /// "Next File" / "Previous File" — opens the next / previous file of the book in the reading order (the spine), from the
+    /// file of the active tab. It does not wrap around: at the first and at the last file it says so.
+    /// </summary>
+    private void GoToNeighbourFile(bool forward)
+    {
+        if (_currentBook is not { } book || _tabManager.ActiveTab?.Resource is not { } current)
+        {
+            return;
+        }
+
+        OpfResource opf = book.GetOpf();
+        List<Resource> spine = book.GetAllResources()
+            .Select(r => (Resource: r, Order: opf.GetReadingOrder(r)))
+            .Where(r => r.Order >= 0)
+            .OrderBy(r => r.Order)
+            .Select(r => r.Resource)
+            .ToList();
+        int index = spine.FindIndex(r => ReferenceEquals(r, current));
+        if (index < 0)
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_FileNotInReadingOrder"), TimeSpan.FromSeconds(4));
+            return;
+        }
+
+        int target = index + (forward ? 1 : -1);
+        if (target < 0 || target >= spine.Count)
+        {
+            _statusBar.ShowMessage(Strings.Get(forward ? "Status_NoNextFile" : "Status_NoPreviousFile"), TimeSpan.FromSeconds(4));
+            return;
+        }
+
+        Tracker.NoteNavigation();
+        _tabManager.OpenResource(spine[target]);
+    }
+
+    /// <summary>"Next Bookmark" / "Previous Bookmark" — the caret goes to the next / previous bookmark in the file.</summary>
+    private void GoToNeighbourBookmark(bool forward)
+    {
+        if (ActiveCodeTab is not { } tab)
+        {
+            return;
+        }
+
+        if (_bookmarks.Neighbour(tab.ResourceBookPath, tab.CaretLine, forward) is { } line)
+        {
+            tab.GoToLine(line);
+        }
+        else
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_BookmarkNone"), TimeSpan.FromSeconds(3));
+        }
+    }
+
+    // Reads the bookmarks kept for the book file (the book of a file that was not saved yet has none).
+    private void LoadBookmarks(string? sourcePath)
+    {
+        _bookmarks.Load(string.IsNullOrEmpty(sourcePath) ? Array.Empty<BookmarkPlace>() : _settings.GetBookBookmarks(sourcePath));
+    }
+
+    // Keeps the bookmarks of the open book with its entry in the recent files (see SettingsStore.SetBookBookmarks).
+    private void SaveBookmarks()
+    {
+        if (_currentBook is null || NavigationBookFilePath() is not { Length: > 0 } path)
+        {
+            return;
+        }
+
+        _settings.SetBookBookmarks(path, _bookmarks.Places);
+    }
+
+    // The text of a line of a file that is not open in a tab, for the "Bookmarks" panel.
+    private string? ClosedFileLineText(string bookPath, int line)
+    {
+        if (_currentBook?.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath) is not TextResource resource || line < 1)
+        {
+            return null;
+        }
+
+        string[] lines = resource.GetText().Split('\n');
+        return line <= lines.Length ? lines[line - 1] : null;
     }
 
     /// <summary>
@@ -1548,27 +1666,14 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(Strings.Get("Status_NavigationFileGone"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             _bookmarks.Remove(bookmark);
-            BookmarksChangedInternal?.Invoke(this, EventArgs.Empty);
             return;
         }
 
         _tabManager.OpenResource(resource);
         if (ActiveCodeTab is { } tab)
         {
-            tab.GoToOffset(bookmark.Offset);
+            tab.GoToLine(bookmark.Line);
         }
-    }
-
-    private void ClearBookmarks()
-    {
-        if (_bookmarks.Count == 0)
-        {
-            return;
-        }
-
-        _bookmarks.Clear();
-        BookmarksChangedInternal?.Invoke(this, EventArgs.Empty);
-        _statusBar.ShowMessage(Strings.Get("Status_BookmarksCleared"), TimeSpan.FromSeconds(3));
     }
 
     /// <summary>
@@ -1843,6 +1948,7 @@ public sealed partial class MainWindowViewModel
     {
         SaveNavigationHistory();
         SaveBookPosition();
+        SaveBookmarks();
         _settings.BookOpenAtExit = _currentBook is not null;
         _settings.SetStringMap(DockPanelsGroup, _dockFactory.CaptureToolVisibility());
         _settings.SetStringMap(DockOffStripeGroup, _dockFactory.CaptureOffStripe());
@@ -4084,6 +4190,7 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(TabStatus));
         RefreshFormatActionState();
         RefreshInsertActionState();
+        RefreshEditActionState();
         RefreshSpellcheckActionState();
 
         // Closing the active tab passes through "no active tab" before its neighbour is activated —
@@ -4173,9 +4280,14 @@ public sealed partial class MainWindowViewModel
         }
         else if (e.PropertyName is nameof(CodeTabViewModel.InsertFileEnabled)
             or nameof(CodeTabViewModel.InsertIdEnabled)
+            or nameof(CodeTabViewModel.InsertRoleEnabled)
             or nameof(CodeTabViewModel.InsertHyperlinkEnabled))
         {
             RefreshInsertActionState();
+        }
+        else if (e.PropertyName == nameof(CodeTabViewModel.HasSelection))
+        {
+            RefreshEditActionState();
         }
     }
 
@@ -4214,6 +4326,7 @@ public sealed partial class MainWindowViewModel
         WireToggle(AppActionIds.ToggleToc, DockableIds.TableOfContents);
         WireToggle(AppActionIds.ToggleValidationResults, DockableIds.ValidationResults);
         WireToggle(AppActionIds.ToggleFindUsages, DockableIds.FindUsages);
+        WireToggle(AppActionIds.ToggleBookmarks, DockableIds.Bookmarks);
         _actions.SetHandler(AppActionIds.FindUsages, FindUsagesAtCaret);
         _actions.SetHandler(AppActionIds.RenameClass, RenameClassAtCaret);
         _actions.SetHandler(AppActionIds.ToggleFindReplace, () =>
@@ -4451,6 +4564,9 @@ public sealed partial class MainWindowViewModel
             AppActionIds.InsertId,
             () => InsertIdRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(
+            AppActionIds.InsertRole,
+            () => InsertRoleRequested?.Invoke(this, EventArgs.Empty));
+        _actions.SetHandler(
             AppActionIds.InsertHyperlink,
             () => InsertHyperlinkRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(
@@ -4458,6 +4574,14 @@ public sealed partial class MainWindowViewModel
             () => InsertAriaClipRequested?.Invoke(this, EventArgs.Empty));
 
         RefreshInsertActionState();
+    }
+
+    // Cut and Copy need a selection in the active code tab; Paste and Delete Line only the tab.
+    private void RefreshEditActionState()
+    {
+        CodeTabViewModel? tab = ActiveCodeTab;
+        _actions.SetEnabled(tab?.HasSelection ?? false, AppActionIds.Cut, AppActionIds.Copy);
+        _actions.SetEnabled(tab is not null, AppActionIds.Paste, AppActionIds.DeleteLine, AppActionIds.ShowCompletions);
     }
 
     private void RefreshInsertActionState()
@@ -4469,6 +4593,9 @@ public sealed partial class MainWindowViewModel
         _actions.SetEnabled(isHtml && (tab?.InsertFileEnabled ?? false), AppActionIds.InsertFile);
         _actions.SetEnabled(isHtml && (tab?.InsertIdEnabled ?? false), AppActionIds.InsertId);
         _actions.SetEnabled(isHtml && (tab?.InsertHyperlinkEnabled ?? false), AppActionIds.InsertHyperlink);
+
+        // The role attribute is not valid in the XHTML 1.1 of an EPUB 2 book.
+        _actions.SetEnabled(isHtml && (tab?.InsertRoleEnabled ?? false) && _currentBook is { IsEpub3: true }, AppActionIds.InsertRole);
         _actions.SetEnabled(tab is not null, AppActionIds.PasteClipboardHistory, AppActionIds.ShowClipsPopup);
     }
 
@@ -4879,6 +5006,17 @@ public sealed partial class MainWindowViewModel
         }
 
         ActiveCodeTab?.InsertId(id);
+    }
+
+    /// <summary>The roles that fit the element at the caret, for the list of the "Insert Role" dialog.</summary>
+    public IReadOnlyDictionary<string, DescriptiveInfo> GetRoleOptionsAtCaret() =>
+        ActiveCodeTab?.RoleOptionsAtCaret ?? new Dictionary<string, DescriptiveInfo>(StringComparer.Ordinal);
+
+    /// <summary>Gives the element at the caret the chosen role (its <c>epub:type</c> and <c>role</c> attributes).</summary>
+    public void ApplyRole(string roleCode)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(roleCode);
+        ActiveCodeTab?.InsertRole(roleCode);
     }
 
     /// <summary>Value of the <c>href</c> attribute under the caret (to fill in the "Insert Link" dialog).</summary>

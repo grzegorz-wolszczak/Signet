@@ -70,6 +70,12 @@
       </Panel>
     </DataTemplate>
 
+    <DataTemplate DataType="docking:BookmarksTool">
+      <Panel IsEnabled="{Binding IsContentEnabled}">
+        <views:BookmarksView DataContext="{Binding ViewModel}" />
+      </Panel>
+    </DataTemplate>
+
     <DataTemplate DataType="vm:StartScreenViewModel">
       <views:StartScreenView />
     </DataTemplate>

@@ -507,17 +507,21 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Unimplemented_action_reports_on_the_status_bar()
     {
-        // InsertRole (Insert -> Role...) is not wired up.
+        // Every action has a handler now, so one is taken away: what a new action does until it is wired up.
         // Arrange
         MainWindowViewModel sut = NewWithBook();
-        AppAction insertRole = sut.Actions.Require(AppActionIds.InsertRole);
-        insertRole.IsEnabled = true;
+        AppAction action = sut.Actions.Require(AppActionIds.InsertHyperlink);
+        var handlers = (System.Collections.Generic.Dictionary<string, Action>)typeof(AppActionRegistry)
+            .GetField("_handlers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .GetValue(sut.Actions)!;
+        handlers.Remove(AppActionIds.InsertHyperlink);
+        action.IsEnabled = true;
 
         // Act
-        insertRole.Execute(null);
+        action.Execute(null);
 
         // Assert
-        sut.StatusMessage.Should().Be(Strings.Format("Status_NotImplemented", insertRole.DefaultText.Replace("&", string.Empty, StringComparison.Ordinal)));
+        sut.StatusMessage.Should().Be(Strings.Format("Status_NotImplemented", action.DefaultText.Replace("&", string.Empty, StringComparison.Ordinal)));
     }
 
     [Fact]

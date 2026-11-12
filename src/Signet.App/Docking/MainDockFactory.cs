@@ -240,6 +240,12 @@ public sealed class MainDockFactory : Factory
     /// </summary>
     public FindUsagesViewModel? FindUsages { get; set; }
 
+    /// <summary>
+    /// View model of the "Bookmarks" panel. Set by the main window BEFORE
+    /// <see cref="CreateLayout"/>.
+    /// </summary>
+    public BookmarksViewModel? Bookmarks { get; set; }
+
     /// <summary>Document tab area.</summary>
     public IDocumentDock? DocumentDock { get; private set; }
 
@@ -283,6 +289,7 @@ public sealed class MainDockFactory : Factory
         DockableIds.Checkpoints,
         DockableIds.Notifications,
         DockableIds.FindUsages,
+        DockableIds.Bookmarks,
     };
 
     /// <summary>
@@ -307,7 +314,7 @@ public sealed class MainDockFactory : Factory
     {
         (PanelPlace.LeftTop, new[] { DockableIds.BookBrowser, DockableIds.Clips }),
         (PanelPlace.RightTop, new[] { DockableIds.Preview, DockableIds.TableOfContents, DockableIds.Checkpoints }),
-        (PanelPlace.BottomLeft, new[] { DockableIds.ValidationResults, DockableIds.Notifications, DockableIds.FindUsages }),
+        (PanelPlace.BottomLeft, new[] { DockableIds.ValidationResults, DockableIds.Notifications, DockableIds.FindUsages, DockableIds.Bookmarks }),
     };
 
     /// <summary>The id of the column of the left places in the layout (its width is saved).</summary>
@@ -330,10 +337,11 @@ public sealed class MainDockFactory : Factory
         CheckpointsTool checkpoints = new() { ViewModel = Checkpoints };
         NotificationsTool notifications = new() { ViewModel = Notifications };
         FindUsagesTool findUsages = new() { ViewModel = FindUsages };
+        BookmarksTool bookmarks = new() { ViewModel = Bookmarks };
 
         foreach (Tool tool in new Tool[]
                  {
-                     bookBrowser, clips, preview, toc, validation, checkpoints, notifications, findUsages,
+                     bookBrowser, clips, preview, toc, validation, checkpoints, notifications, findUsages, bookmarks,
                  })
         {
             _tools[tool.Id] = tool;

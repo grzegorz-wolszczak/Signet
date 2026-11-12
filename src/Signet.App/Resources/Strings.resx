@@ -1316,9 +1316,6 @@
   <data name="CodeEditorMenu_AddToClips" xml:space="preserve">
     <value>Dodaj do wycinków...</value>
   </data>
-  <data name="CodeEditorMenu_ToggleLineWrapMode" xml:space="preserve">
-    <value>Przełącz tryb zawijania linii</value>
-  </data>
   <data name="CodeEditorMenu_GoToLinkOrStyle" xml:space="preserve">
     <value>Idź do łącza lub stylu</value>
   </data>
@@ -2252,21 +2249,6 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_NewEpub3" xml:space="preserve">
     <value>ePub&amp;3</value>
   </data>
-  <data name="Action_MainWindow_NewHTMLFile" xml:space="preserve">
-    <value>Pusty plik HTML</value>
-  </data>
-  <data name="Action_MainWindow_NewCSSFile" xml:space="preserve">
-    <value>Pusty arkusz stylów</value>
-  </data>
-  <data name="Action_MainWindow_NewJSFile" xml:space="preserve">
-    <value>Pusty skrypt JavaScript</value>
-  </data>
-  <data name="Action_MainWindow_NewSVGFile" xml:space="preserve">
-    <value>Pusty obraz SVG</value>
-  </data>
-  <data name="Action_MainWindow_AddExistingFile" xml:space="preserve">
-    <value>Istniejące pliki...</value>
-  </data>
   <data name="Action_MainWindow_Open" xml:space="preserve">
     <value>&amp;Otwórz...</value>
   </data>
@@ -2510,9 +2492,6 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_FilterReplaceAll" xml:space="preserve">
     <value>Filtruj zamiany</value>
   </data>
-  <data name="Action_MainWindow_RestartSearch" xml:space="preserve">
-    <value>Rozpocznij bieżące wyszukiwanie od nowa</value>
-  </data>
   <data name="Action_MainWindow_FindNextInFile" xml:space="preserve">
     <value>Znajdź &amp;następne w pliku</value>
   </data>
@@ -2526,7 +2505,7 @@ Czy chcesz zapisać zmiany?</value>
     <value>&amp;Policz wszystkie w pliku</value>
   </data>
   <data name="Action_MainWindow_BookmarkLocation" xml:space="preserve">
-    <value>Dodaj &amp;zakładkę w tym miejscu</value>
+    <value>Przełącz &amp;zakładkę</value>
   </data>
   <data name="Action_MainWindow_GoToLinkOrStyle" xml:space="preserve">
     <value>&amp;Przejdź do linku lub stylu</value>
@@ -2969,9 +2948,6 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Menu_Window" xml:space="preserve">
     <value>&amp;Okno</value>
   </data>
-  <data name="Menu_Bookmarks" xml:space="preserve">
-    <value>&amp;Zakładki</value>
-  </data>
   <data name="Menu_Help" xml:space="preserve">
     <value>Pomo&amp;c</value>
   </data>
@@ -3072,16 +3048,13 @@ Czy chcesz zapisać zmiany?</value>
     <value>Zakładkę można dodać tylko w Code Editor.</value>
   </data>
   <data name="Status_BookmarkAdded" xml:space="preserve">
-    <value>Zakładka dodana: {0}</value>
+    <value>Dodano zakładkę: {0}</value>
   </data>
   <data name="Status_CaretNotOnLinkOrClass" xml:space="preserve">
     <value>Karetka nie stoi na linku ani na nazwie klasy.</value>
   </data>
   <data name="Status_NavigationFileGone" xml:space="preserve">
     <value>Nawigacja anulowana — plik już nie istnieje.</value>
-  </data>
-  <data name="Status_BookmarksCleared" xml:space="preserve">
-    <value>Zakładki wyczyszczone.</value>
   </data>
   <data name="Status_TocTargetMissing" xml:space="preserve">
     <value>Cel spisu treści nie istnieje: {0}</value>
@@ -3979,9 +3952,6 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   <data name="Toolbar_Edit" xml:space="preserve">
     <value>Edycja</value>
   </data>
-  <data name="Toolbar_AddExisting" xml:space="preserve">
-    <value>Dodaj istniejące</value>
-  </data>
   <data name="Toolbar_UndoRedo" xml:space="preserve">
     <value>Cofnij/ponów</value>
   </data>
@@ -4071,12 +4041,6 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   </data>
   <data name="Menu_ClearRecentFiles" xml:space="preserve">
     <value>Wyczyść listę</value>
-  </data>
-  <data name="Menu_NoBookmarks" xml:space="preserve">
-    <value>(brak zakładek)</value>
-  </data>
-  <data name="Menu_ClearBookmarks" xml:space="preserve">
-    <value>Wyczyść zakładki</value>
   </data>
   <data name="Menu_HideAllToolbars" xml:space="preserve">
     <value>&amp;Ukryj wszystkie paski narzędzi</value>
@@ -7973,21 +7937,6 @@ Zamknij zakładkę</value>
   <data name="ActionTip_MainWindow_NewEpub3" xml:space="preserve">
     <value>Tworzy nową, pustą książkę w formacie EPUB 3.</value>
   </data>
-  <data name="ActionTip_MainWindow_NewHTMLFile" xml:space="preserve">
-    <value>Dodaje do książki nowy, pusty plik HTML.</value>
-  </data>
-  <data name="ActionTip_MainWindow_NewCSSFile" xml:space="preserve">
-    <value>Dodaje do książki nowy, pusty arkusz stylów CSS.</value>
-  </data>
-  <data name="ActionTip_MainWindow_NewJSFile" xml:space="preserve">
-    <value>Dodaje do książki nowy, pusty plik JavaScript.</value>
-  </data>
-  <data name="ActionTip_MainWindow_NewSVGFile" xml:space="preserve">
-    <value>Dodaje do książki nowy, pusty obraz SVG.</value>
-  </data>
-  <data name="ActionTip_MainWindow_AddExistingFile" xml:space="preserve">
-    <value>Dodaje do książki wybrane pliki z dysku (obrazy, czcionki, HTML, CSS...).</value>
-  </data>
   <data name="ActionTip_MainWindow_Open" xml:space="preserve">
     <value>Otwiera plik EPUB z dysku.</value>
   </data>
@@ -8234,9 +8183,6 @@ Zamknij zakładkę</value>
   <data name="ActionTip_MainWindow_FilterReplaceAll" xml:space="preserve">
     <value>Pokazuje listę wystąpień i pozwala wybrać, które zamienić; zamienia tylko zaznaczone.</value>
   </data>
-  <data name="ActionTip_MainWindow_RestartSearch" xml:space="preserve">
-    <value>Rozpoczyna bieżące wyszukiwanie od początku.</value>
-  </data>
   <data name="ActionTip_MainWindow_FindNextInFile" xml:space="preserve">
     <value>Znajduje następne wystąpienie, ale tylko w bieżącym pliku.</value>
   </data>
@@ -8250,7 +8196,7 @@ Zamknij zakładkę</value>
     <value>Liczy wystąpienia tylko w bieżącym pliku, niezależnie od zakresu wyszukiwania.</value>
   </data>
   <data name="ActionTip_MainWindow_BookmarkLocation" xml:space="preserve">
-    <value>Zapamiętuje bieżące miejsce w tekście jako zakładkę.</value>
+    <value>Dodaje zakładkę na bieżącej linii albo ją usuwa. Zakładkę widać w rynnie obok numerów linii.</value>
   </data>
   <data name="ActionTip_MainWindow_GoToLinkOrStyle" xml:space="preserve">
     <value>Przechodzi do celu linku lub do definicji stylu (klasy CSS) pod kursorem.</value>
@@ -9076,5 +9022,86 @@ Zamknij zakładkę</value>
   </data>
   <data name="PreferencesWindow_ShowColorPreview" xml:space="preserve">
     <value>Pokaż podgląd koloru pod wartościami kolorów (CSS i HTML); Ctrl+klik otwiera wybór koloru</value>
+  </data>
+  <data name="Action_MainWindow_NextBookmark" xml:space="preserve">
+    <value>Następna zakładka</value>
+  </data>
+  <data name="Action_MainWindow_PreviousBookmark" xml:space="preserve">
+    <value>Poprzednia zakładka</value>
+  </data>
+  <data name="Action_MainWindow_BookmarksWindow" xml:space="preserve">
+    <value>Panel zakładek</value>
+  </data>
+  <data name="ActionTip_MainWindow_NextBookmark" xml:space="preserve">
+    <value>Przechodzi do następnej zakładki w tym pliku (za ostatnią wraca do pierwszej).</value>
+  </data>
+  <data name="ActionTip_MainWindow_PreviousBookmark" xml:space="preserve">
+    <value>Przechodzi do poprzedniej zakładki w tym pliku (przed pierwszą skacze do ostatniej).</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookmarksWindow" xml:space="preserve">
+    <value>Pokazuje lub ukrywa panel zakładek.</value>
+  </data>
+  <data name="Panel_Bookmarks" xml:space="preserve">
+    <value>Zakładki</value>
+  </data>
+  <data name="Bookmarks_Delete" xml:space="preserve">
+    <value>Usuń zaznaczoną zakładkę</value>
+  </data>
+  <data name="Bookmarks_Clear" xml:space="preserve">
+    <value>Usuń wszystkie zakładki</value>
+  </data>
+  <data name="Bookmarks_None" xml:space="preserve">
+    <value>Brak zakładek. Dodaj zakładkę w Code Editor (domyślnie klawiszem F11) albo z menu rynny obok numerów linii.</value>
+  </data>
+  <data name="GutterMenu_AddBookmark" xml:space="preserve">
+    <value>Dodaj &amp;zakładkę</value>
+  </data>
+  <data name="GutterMenu_DeleteBookmark" xml:space="preserve">
+    <value>Usuń &amp;zakładkę</value>
+  </data>
+  <data name="GutterMenu_SoftWrap" xml:space="preserve">
+    <value>Zawijanie wierszy</value>
+  </data>
+  <data name="Status_BookmarkRemoved" xml:space="preserve">
+    <value>Usunięto zakładkę: {0}</value>
+  </data>
+  <data name="Status_BookmarkNone" xml:space="preserve">
+    <value>Brak innych zakładek w tym pliku.</value>
+  </data>
+  <data name="Action_MainWindow_ShowBookmarks" xml:space="preserve">
+    <value>Pokaż zakładki...</value>
+  </data>
+  <data name="ActionTip_MainWindow_ShowBookmarks" xml:space="preserve">
+    <value>Otwiera okno z listą zakładek i podglądem pliku zaznaczonej zakładki. Enter albo kliknięcie przechodzi do zakładki.</value>
+  </data>
+  <data name="BookmarksPopup_EmptyTitle" xml:space="preserve">
+    <value>Brak zakładek.</value>
+  </data>
+  <data name="BookmarksPopup_EmptyHint" xml:space="preserve">
+    <value>Dodaj zakładkę do linii kodu w Code Editor.</value>
+  </data>
+  <data name="BookmarksPopup_EmptyHintShortcut" xml:space="preserve">
+    <value>Dodaj zakładkę ({0}) do linii kodu w Code Editor.</value>
+  </data>
+  <data name="Status_NoNextFile" xml:space="preserve">
+    <value>To jest ostatni plik w kolejności czytania.</value>
+  </data>
+  <data name="Status_NoPreviousFile" xml:space="preserve">
+    <value>To jest pierwszy plik w kolejności czytania.</value>
+  </data>
+  <data name="Status_FileNotInReadingOrder" xml:space="preserve">
+    <value>Ten plik nie należy do kolejności czytania książki.</value>
+  </data>
+  <data name="Action_MainWindow_ShowCompletions" xml:space="preserve">
+    <value>Pokaż podpowiedzi</value>
+  </data>
+  <data name="ActionTip_MainWindow_ShowCompletions" xml:space="preserve">
+    <value>Pokazuje podpowiedzi w miejscu kursora: nazwy klas CSS w atrybucie class (z arkuszy podlinkowanych z pliku, bez klas, które atrybut już ma) oraz nazwy plików i kotwice w linkach. Podpowiedzi pojawiają się też same po wpisaniu pierwszego znaku.</value>
+  </data>
+  <data name="ClassCompletion_StyleBlock" xml:space="preserve">
+    <value>blok &lt;style&gt;</value>
+  </data>
+  <data name="PreferencesWindow_ShowFoldingLines" xml:space="preserve">
+    <value>Pokaż w rynnie linię łączącą początek zwijanego regionu z jego końcem (dla regionu pod kursorem)</value>
   </data>
 </root>

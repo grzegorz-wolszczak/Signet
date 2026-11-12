@@ -1352,6 +1352,24 @@ public sealed class PreferencesViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_folding_lines_are_off_at_first_and_the_choice_goes_to_the_settings()
+    {
+        // Arrange
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+
+        // Assert
+        vm.ShowFoldingLines.Should().BeFalse();
+
+        // Act
+        vm.ShowFoldingLines = true;
+        vm.ApplyCommand.Execute(null);
+
+        // Assert
+        host.Settings.CodeEditorShowFoldingLines.Should().BeTrue();
+    }
+
+    [Fact]
     public void The_editor_font_is_previewed_as_code_with_the_highlighting_being_edited()
     {
         // Arrange

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Signet.Core.Localization;
+using Signet.Core.Semantics;
 
 namespace Signet.Core.MainUI;
 
@@ -170,6 +172,116 @@ public static class CodeInsertOperations
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// The element that "Insert Role" gives a role: the one whose start tag the caret is in, else the innermost element the
+    /// caret is inside of (inside <c>&lt;body&gt;</c>). <see langword="null"/> when there is none.
+    /// </summary>
+    /// <returns>The lower-case name of the element, and where its start tag is.</returns>
+    public static (string Tag, int Pos, int Length)? RoleTarget(string text, int caretPosition)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        int pos = Math.Clamp(caretPosition, 0, text.Length);
+        var lister = TagLister.For(text);
+        if (!lister.IsPositionInBody(pos))
+        {
+            return null;
+        }
+
+        // In an end tag the element is the one it closes: look from just before the tag.
+        int at = lister.FindFirstTagOnOrAfter(pos);
+        TagLister.TagInfo inTag = lister.At(at);
+        if (inTag.Kind == TagKind.End && pos >= inTag.Pos && pos < inTag.Pos + inTag.Len)
+        {
+            pos = Math.Max(0, inTag.Pos - 1);
+        }
+
+        // The tags are walked back from the caret: an end tag opens an element that is over, its start tag closes it again;
+        // the first start tag with no end tag in between is the element the caret is in.
+        int i = lister.FindLastTagOnOrBefore(pos);
+        int closed = 0;
+        for (; i >= 0; i--)
+        {
+            TagLister.TagInfo tag = lister.At(i);
+            if (tag.Kind == TagKind.End)
+            {
+                closed++;
+            }
+            else if (tag.Kind == TagKind.SelfClosing)
+            {
+                if (pos >= tag.Pos && pos < tag.Pos + tag.Len)
+                {
+                    break;
+                }
+            }
+            else if (tag.Kind == TagKind.Begin)
+            {
+                if (closed == 0)
+                {
+                    break;
+                }
+
+                closed--;
+            }
+        }
+
+        if (i < 0)
+        {
+            return null;
+        }
+
+        TagLister.TagInfo target = lister.At(i);
+        string name = target.TagName.ToLowerInvariant();
+        return name is "body" or "html" ? null : (name, target.Pos, target.Len);
+    }
+
+    /// <summary>Whether "Insert Role" is allowed at the given position: there is an element and a role that fits it.</summary>
+    public static bool InsertRoleAllowed(string text, int caretPosition) =>
+        RoleTarget(text, caretPosition) is { } target && AriaClipBuilder.RoleOptions(target.Tag).Count > 0;
+
+    /// <summary>
+    /// Gives the element at the caret (<see cref="RoleTarget"/>) the role <paramref name="roleCode"/>: its
+    /// <c>epub:type</c> and <c>role</c> attributes (<see cref="AriaClipBuilder.RoleAttributes"/>) replace the ones the
+    /// start tag has.
+    /// </summary>
+    public static FormatEdit SetRole(string text, int selectionStart, int selectionEnd, string roleCode)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentException.ThrowIfNullOrEmpty(roleCode);
+        CodeFormatOperations.Normalize(text, ref selectionStart, ref selectionEnd);
+        if (RoleTarget(text, selectionStart) is not { } target)
+        {
+            return FormatEdit.Unchanged(text, selectionStart, selectionEnd);
+        }
+
+        string tag = text.Substring(target.Pos, target.Length);
+
+        // The attributes the tag has are taken out, the last one first so that the positions stay valid.
+        foreach (TagLister.AttInfo attribute in new[] { TagLister.ParseAttribute(tag, "role"), TagLister.ParseAttribute(tag, "epub:type") }
+            .Where(a => a.Pos >= 0).OrderByDescending(a => a.Pos))
+        {
+            int start = attribute.Pos;
+            while (start > 0 && char.IsWhiteSpace(tag[start - 1]))
+            {
+                start--;
+            }
+
+            tag = tag.Remove(start, attribute.Pos + attribute.Len - start);
+        }
+
+        // The new ones go before the end of the tag (before the slash of an empty element and the blanks in front of it).
+        int end = tag.Length - (tag.EndsWith("/>", StringComparison.Ordinal) ? 2 : 1);
+        while (end > 0 && char.IsWhiteSpace(tag[end - 1]))
+        {
+            end--;
+        }
+
+        tag = tag.Insert(end, AriaClipBuilder.RoleAttributes(roleCode));
+        string result = string.Concat(text.AsSpan(0, target.Pos), tag, text.AsSpan(target.Pos + target.Length));
+        int delta = tag.Length - target.Length;
+        int caret = selectionStart >= target.Pos + target.Length ? selectionStart + delta : Math.Min(selectionStart, target.Pos + tag.Length);
+        return new FormatEdit(result, caret, caret, Changed: true);
     }
 
     /// <summary>The current value of the <c>id</c> attribute under the caret (to prefill the dialog).</summary>

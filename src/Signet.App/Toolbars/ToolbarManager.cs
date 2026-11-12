@@ -57,7 +57,6 @@ public sealed class ToolbarManager
     {
         [ToolbarId.New] = new[] { AppActionIds.NewEpub2, AppActionIds.NewEpub3 },
         [ToolbarId.File] = new[] { AppActionIds.Open, AppActionIds.Save },
-        [ToolbarId.AddExisting] = new[] { AppActionIds.AddExistingFile },
         [ToolbarId.UndoRedo] = new[] { AppActionIds.Undo, AppActionIds.Redo },
         [ToolbarId.Edit] = new[] { AppActionIds.Cut, AppActionIds.Copy, AppActionIds.Paste, AppActionIds.RemoveTagPair },
         [ToolbarId.Find] = new[] { AppActionIds.Find, AppActionIds.SearchEditor },

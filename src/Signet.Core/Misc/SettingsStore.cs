@@ -570,6 +570,16 @@ public sealed class SettingsStore
         set => Write("code_editor_show_color_preview", value);
     }
 
+    /// <summary>
+    /// Whether the gutter of Code Editor draws a line from the start of a foldable region to its end while the pointer is over
+    /// the region (the outline of the folding of the JetBrains IDEs). Disabled by default.
+    /// </summary>
+    public bool CodeEditorShowFoldingLines
+    {
+        get => ReadBool("code_editor_show_folding_lines", false);
+        set => Write("code_editor_show_folding_lines", value);
+    }
+
     /// <summary>Whether Code Editor marks the non-breaking spaces (U+00A0), which look exactly like a space. Enabled by default.</summary>
     public bool CodeEditorShowNonBreakingSpaces
     {
@@ -2306,21 +2316,68 @@ public sealed class SettingsStore
         SetStringMap(BookPositionsGroup, map);
     }
 
-    private void ForgetPositionsOfBooksNotIn(IEnumerable<string> recentFiles)
+    private const string BookBookmarksGroup = "book_bookmarks";
+
+    /// <summary>
+    /// The bookmarks kept for a book file (see <see cref="MainUI.BookmarkPlace"/>); empty when there are none. The path is
+    /// compared case-insensitively, as the recent files are.
+    /// </summary>
+    public IReadOnlyList<MainUI.BookmarkPlace> GetBookBookmarks(string bookFilePath)
     {
-        IReadOnlyDictionary<string, string> map = GetStringMap(BookPositionsGroup);
-        if (map.Count == 0)
+        ArgumentException.ThrowIfNullOrEmpty(bookFilePath);
+        foreach ((string path, string text) in GetStringMap(BookBookmarksGroup))
+        {
+            if (string.Equals(path, bookFilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return MainUI.BookmarkPlace.Parse(text);
+            }
+        }
+
+        return Array.Empty<MainUI.BookmarkPlace>();
+    }
+
+    /// <summary>
+    /// Keeps the bookmarks of a book file; none forgets them. Only a book that is in <see cref="RecentFiles"/> keeps
+    /// them — they go away with its entry there, like <see cref="SetBookPosition"/>.
+    /// </summary>
+    public void SetBookBookmarks(string bookFilePath, IReadOnlyCollection<MainUI.BookmarkPlace> places)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(bookFilePath);
+        ArgumentNullException.ThrowIfNull(places);
+        if (!RecentFiles.Any(p => string.Equals(p, bookFilePath, StringComparison.OrdinalIgnoreCase)))
         {
             return;
         }
 
-        HashSet<string> keep = new(recentFiles, StringComparer.OrdinalIgnoreCase);
-        Dictionary<string, string> kept = map
-            .Where(pair => keep.Contains(pair.Key))
+        Dictionary<string, string> map = GetStringMap(BookBookmarksGroup)
+            .Where(pair => !string.Equals(pair.Key, bookFilePath, StringComparison.OrdinalIgnoreCase))
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
-        if (kept.Count != map.Count)
+        if (places.Count > 0)
         {
-            SetStringMap(BookPositionsGroup, kept);
+            map[bookFilePath] = MainUI.BookmarkPlace.Serialize(places);
+        }
+
+        SetStringMap(BookBookmarksGroup, map);
+    }
+
+    private void ForgetPositionsOfBooksNotIn(IEnumerable<string> recentFiles)
+    {
+        HashSet<string> keep = new(recentFiles, StringComparer.OrdinalIgnoreCase);
+        foreach (string group in new[] { BookPositionsGroup, BookBookmarksGroup })
+        {
+            IReadOnlyDictionary<string, string> map = GetStringMap(group);
+            if (map.Count == 0)
+            {
+                continue;
+            }
+
+            Dictionary<string, string> kept = map
+                .Where(pair => keep.Contains(pair.Key))
+                .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+            if (kept.Count != map.Count)
+            {
+                SetStringMap(group, kept);
+            }
         }
     }
 

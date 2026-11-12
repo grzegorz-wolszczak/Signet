@@ -2,17 +2,11 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using AwesomeAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
-using Signet.App.Actions;
-using Signet.App.Docking;
 using Signet.App.Infrastructure;
-using Signet.App.Input;
 using Signet.App.Services;
-using Signet.App.Tabs;
-using Signet.App.Toolbars;
+using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
 using Signet.Core.Misc;
-using Signet.Core.Spellcheck;
 using Signet.Core.Tests.TestSupport;
 using Xunit;
 
@@ -99,27 +93,7 @@ public sealed class StartupArgumentsTests : IDisposable
         vm.CheckpointHistory.Dispose();
     }
 
-    // The main window on the given settings (the parameterless constructor uses a settings file of its own); the
-    // dictionaries and the custom preview styles are looked up in the folder of the settings file.
-    private MainWindowViewModel NewOn(SettingsStore settings)
-    {
-        string folder = Path.GetDirectoryName(settings.FilePath)!;
-        StatusBarService statusBar = new();
-        KeyboardShortcutManager shortcuts = new(settings);
-        MissingDoctypeGuard doctypeGuard = new(settings);
-        BookBrowserViewModel bookBrowser = new(settings, statusBar, doctypeGuard);
-        PreviewViewModel preview = new(statusBar, folder);
-        MainDockFactory dockFactory = new(bookBrowser, preview);
-        SpellChecker spellChecker = new(settings, Path.Combine(folder, "hunspell_dictionaries"), Path.Combine(folder, "user_dictionaries"));
-        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel(
-            NullLogger<MainWindowViewModel>.Instance,
-            new AppActionRegistry(shortcuts, statusBar, NullLogger<AppActionRegistry>.Instance), shortcuts,
-            new ToolbarManager(settings), dockFactory, statusBar, settings, bookBrowser,
-            new TabManager(dockFactory, statusBar, settings, spellChecker), preview, spellChecker,
-            new ClipboardHistoryService(settings), doctypeGuard));
-        vm.AttachFileWorkflowPrompts(new FakeFileWorkflowPrompts());
-        return vm;
-    }
+    private MainWindowViewModel NewOn(SettingsStore settings) => MainWindowFactory.On(settings, _disposables);
 
     [Fact]
     public async Task The_last_book_is_reopened_only_when_a_book_was_open_at_exit()

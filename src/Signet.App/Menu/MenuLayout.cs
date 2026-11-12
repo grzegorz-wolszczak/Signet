@@ -21,9 +21,6 @@ public abstract record MenuNode
     /// </summary>
     public static MenuNode RecentFiles { get; } = new RecentFilesNode();
 
-    /// <summary>Dynamic "Bookmarks" submenu — filled from the session bookmarks list.</summary>
-    public static MenuNode Bookmarks(string header) => new BookmarksNode(header);
-
     internal sealed record SeparatorNode : MenuNode;
 
     internal sealed record ActionNode(string Id) : MenuNode;
@@ -31,8 +28,6 @@ public abstract record MenuNode
     internal sealed record SubmenuNode(string Header, IReadOnlyList<MenuNode> Children) : MenuNode;
 
     internal sealed record RecentFilesNode : MenuNode;
-
-    internal sealed record BookmarksNode(string Header) : MenuNode;
 }
 
 /// <summary>
@@ -64,12 +59,6 @@ public static class MenuLayout
                 A("MainWindow.NewDefault"), A("MainWindow.NewEpub2"), A("MainWindow.NewEpub3")),
             A("MainWindow.Open"),
             Sep,
-            MenuNode.Sub("A&dd",
-                A("MainWindow.AddExistingFile"),
-                Sep,
-                A("MainWindow.NewHTMLFile"), A("MainWindow.NewCSSFile"),
-                A("MainWindow.NewJSFile"), A("MainWindow.NewSVGFile")),
-            Sep,
             A("MainWindow.Save"), A("MainWindow.SaveAs"), A("MainWindow.SaveACopy"),
             Sep,
             A("MainWindow.PrintPreview"), A("MainWindow.Print"),
@@ -84,7 +73,7 @@ public static class MenuLayout
             A("MainWindow.RevertToBefore"), A("MainWindow.RevertToAfter"), A("MainWindow.CreateCheckpoint"),
             Sep,
             A("MainWindow.Cut"), A("MainWindow.Copy"), A("MainWindow.Paste"),
-            A("MainWindow.PasteClipboardHistory"), A("MainWindow.DeleteLine"),
+            A("MainWindow.PasteClipboardHistory"), A("MainWindow.DeleteLine"), A("MainWindow.ShowCompletions"),
             Sep,
             MenuNode.Sub("C&hange Case",
                 A("MainWindow.CasingLowercase"), A("MainWindow.CasingUppercase"),
@@ -144,7 +133,7 @@ public static class MenuLayout
             A("MainWindow.ReplacePrevious"), A("MainWindow.ReplaceAll"),
             Sep,
             A("MainWindow.Count"), A("MainWindow.DryRunReplaceAll"),
-            A("MainWindow.FilterReplaceAll"), A("MainWindow.RestartSearch"),
+            A("MainWindow.FilterReplaceAll"),
             Sep,
             MenuNode.Sub("Current Fil&e",
                 A("MainWindow.FindNextInFile"),
@@ -153,7 +142,9 @@ public static class MenuLayout
                 Sep,
                 A("MainWindow.CountInFile")),
             Sep,
-            A("MainWindow.BookmarkLocation"), A("MainWindow.GoToLinkOrStyle"),
+            A("MainWindow.BookmarkLocation"), A("MainWindow.NextBookmark"), A("MainWindow.PreviousBookmark"),
+            A("MainWindow.ShowBookmarks"),
+            A("MainWindow.GoToLinkOrStyle"),
             A("MainWindow.NavigateBack"), A("MainWindow.NavigateForward"), A("MainWindow.RecentLocations"),
             A("MainWindow.FindUsages"),
             Sep,
@@ -207,6 +198,7 @@ public static class MenuLayout
             A("MainWindow.PreviewWindow"),
             A("MainWindow.TableOfContents"), A("MainWindow.ValidationResults"), A("MainWindow.CheckpointsWindow"),
             A("MainWindow.FindReplaceWindow"), A("MainWindow.NotificationsWindow"), A("MainWindow.FindUsagesWindow"),
+            A("MainWindow.BookmarksWindow"),
             Sep,
             A("MainWindow.FocusOnBookBrowser"), A("MainWindow.FocusOnCodeEditor"), A("MainWindow.FocusOnPreview"),
             A("MainWindow.FocusOnTOC"), A("MainWindow.FocusOnClips")),
@@ -215,9 +207,7 @@ public static class MenuLayout
             A("MainWindow.NextTab"), A("MainWindow.PreviousTab"),
             A("MainWindow.CloseTab"), A("MainWindow.CloseOtherTabs"),
             Sep,
-            A("MainWindow.PreviousResource"), A("MainWindow.NextResource"),
-            Sep,
-            MenuNode.Bookmarks("&Bookmarks")),
+            A("MainWindow.PreviousResource"), A("MainWindow.NextResource")),
 
         MenuNode.Sub("&Help",
             A("MainWindow.CssPropertyReference"),

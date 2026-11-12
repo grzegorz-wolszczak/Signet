@@ -12,9 +12,6 @@ public enum ToolbarId
     /// <summary>"File": Open, Save.</summary>
     File,
 
-    /// <summary>"Add Existing".</summary>
-    AddExisting,
-
     /// <summary>"Undo/Redo".</summary>
     UndoRedo,
 
@@ -27,7 +24,7 @@ public enum ToolbarId
     /// <summary>"Insert": Split, File, Special Character, ID, Clip, Role, Link.</summary>
     Insert,
 
-    /// <summary>"Back": Bookmark Location, Go Back.</summary>
+    /// <summary>"Back": Toggle Bookmark, Go Back.</summary>
     Back,
 
     /// <summary>"Tools": Metadata, Generate/Edit TOC, Spellcheck.</summary>

@@ -23,6 +23,12 @@ public interface ICodeTabHost
     /// </summary>
     IReadOnlyList<AppAction> CodeEditorShortcutActions { get; }
 
+    /// <summary>
+    /// The bookmarks of the open book: a code tab hands over its document so that the bookmarks follow their lines
+    /// (<see cref="BookmarkList.Attach"/>), and its gutter shows and toggles them.
+    /// </summary>
+    BookmarkList Bookmarks { get; }
+
     /// <summary>Root of the clip library (the "Clips" submenu).</summary>
     ClipEditorNode ClipLibraryRoot { get; }
 

@@ -722,6 +722,7 @@ public sealed class TabManager : IDisposable
         view.PropertyChanged -= OnCodeTabPropertyChanged;
         view.PropertyChanged -= OnViewPropertyChanged;
         view.FocusReceived -= OnViewFocusReceived;
+        (view as CodeTabViewModel)?.DetachBookmarks();
         AnyTabModifiedChanged?.Invoke(this, EventArgs.Empty);
 
         if (ReferenceEquals(_current, view))

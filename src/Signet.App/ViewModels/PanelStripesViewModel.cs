@@ -31,6 +31,7 @@ public sealed partial class PanelStripesViewModel : ObservableObject
         [DockableIds.Checkpoints] = AppActionIds.ToggleCheckpoints,
         [DockableIds.Notifications] = AppActionIds.ToggleNotifications,
         [DockableIds.FindUsages] = AppActionIds.ToggleFindUsages,
+        [DockableIds.Bookmarks] = AppActionIds.ToggleBookmarks,
     };
 
     private readonly MainDockFactory _factory;

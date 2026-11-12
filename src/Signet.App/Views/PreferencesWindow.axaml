@@ -1004,6 +1004,7 @@
                           <CheckBox x:Name="ExtendedHighlightingBox" Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}"
                                     IsChecked="{Binding ExtendedHighlighting}" />
                           <CheckBox x:Name="ShowColorPreviewBox" Content="{loc:Loc PreferencesWindow_ShowColorPreview}" IsChecked="{Binding ShowColorPreview}" />
+                          <CheckBox x:Name="ShowFoldingLinesBox" Content="{loc:Loc PreferencesWindow_ShowFoldingLines}" IsChecked="{Binding ShowFoldingLines}" />
                           <!-- The document tabs: several rows when they do not fit. -->
                           <CheckBox x:Name="MultilineTabsBox" Content="{loc:Loc PreferencesWindow_MultilineTabs}" IsChecked="{Binding MultilineTabs}" />
                           <!-- The characters that are drawn as nothing get a mark of their own (their color is in the

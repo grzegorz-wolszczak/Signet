@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
+using Avalonia.Input;
 using Avalonia.Media;
 using AvaloniaEdit;
 using AvaloniaEdit.Editing;
@@ -116,6 +117,16 @@ public static class EditorTheming
                     themed.CurrentItalic = current.Italic;
                     themed.InvalidateVisual();
                     break;
+                case FoldingGutterMargin folding:
+                    folding.Background = Brush(numbers.Background);
+                    folding.ChevronBrush = numbersForeground;
+                    folding.HoverBrush = Brush(theme.Attributes(ThemeKeys.EditorCurrentLineNumber).Foreground) ?? numbersForeground;
+                    folding.InvalidateVisual();
+                    break;
+                case BookmarkMargin bookmarks:
+                    bookmarks.Background = Brush(numbers.Background);
+                    bookmarks.InvalidateVisual();
+                    break;
                 case Line dotted:
                     dotted.Stroke = numbersForeground;
                     break;
@@ -136,8 +147,14 @@ public static class EditorTheming
 /// </summary>
 public sealed class ThemedLineNumberMargin : LineNumberMargin
 {
-    /// <summary>The room between the numbers and the right edge of the margin (px).</summary>
+    /// <summary>The room between the left edge of the margin and the numbers (px).</summary>
+    public const double LeftPadding = 4;
+
+    /// <summary>The room between the numbers and the right edge of the margin, where the icon column starts (px).</summary>
     public const double RightPadding = 4;
+
+    // The margin has room for at least this many digits, so that it does not change width as the file grows past 99 lines.
+    private const int MinimumDigits = 3;
 
     /// <summary>The background of the line numbers; <c>null</c> = the editor's.</summary>
     public IBrush? Background { get; set; }
@@ -163,8 +180,35 @@ public sealed class ThemedLineNumberMargin : LineNumberMargin
     /// <inheritdoc />
     protected override Size MeasureOverride(Size availableSize)
     {
+        // The base measure keeps the margin informed of the number of lines; the width is that of the widest number.
         Size size = base.MeasureOverride(availableSize);
-        return new Size(size.Width + RightPadding, size.Height);
+        int digits = Math.Max(MinimumDigits, (Document?.LineCount ?? 1).ToString(CultureInfo.InvariantCulture).Length);
+        FormattedText widest = new(
+            new string('9', digits), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface, EmSize, Brushes.Black);
+        return new Size(widest.Width + LeftPadding + RightPadding, size.Height);
+    }
+
+    /// <summary>
+    /// A click on a number puts the caret at the start of that line, like a click in the bookmark column next to it. The
+    /// margin of AvaloniaEdit selects the whole line instead, with its line break, which leaves the caret at the start of
+    /// the line below; and it does so for the right button too, whose click opens the menu of the gutter.
+    /// </summary>
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed || TextView is not { } view || TextArea is not { } area)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        area.Focus();
+        if (BookmarkMargin.LineAt(view, e.GetPosition(view).Y) is { } line)
+        {
+            area.ClearSelection();
+            area.Caret.Line = line;
+            area.Caret.Column = 1;
+        }
     }
 
     /// <inheritdoc />
@@ -198,7 +242,7 @@ public sealed class ThemedLineNumberMargin : LineNumberMargin
                 number.ToString(CultureInfo.CurrentCulture), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, EmSize,
                 current ? CurrentForeground ?? foreground : foreground);
 
-            // The numbers are right-aligned to the margin, leaving the padding on the right.
+            // The numbers are aligned to the left (like in the IntelliJ editors); the room that is left is for the icons.
             double top = line.GetTextLineVisualYPosition(line.TextLines[0], VisualYPosition.TextTop) - textView.VerticalOffset;
             if (current)
             {
@@ -214,7 +258,7 @@ public sealed class ThemedLineNumberMargin : LineNumberMargin
                 }
             }
 
-            drawingContext.DrawText(text, new Point(size.Width - text.Width - RightPadding, top));
+            drawingContext.DrawText(text, new Point(LeftPadding, top));
         }
     }
 }

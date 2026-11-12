@@ -18,7 +18,7 @@ public sealed class ToolbarManagerTests
         using TestHost host = new();
 
         // Act & Assert
-        ToolbarManager.AllToolbars.Should().HaveCount(19);
+        ToolbarManager.AllToolbars.Should().HaveCount(18);
         host.Toolbars.GetItems(ToolbarId.UndoRedo).Should().Equal(AppActionIds.Undo, AppActionIds.Redo);
         host.Toolbars.GetItems(ToolbarId.Edit).Should().Equal(
             AppActionIds.Cut, AppActionIds.Copy, AppActionIds.Paste, AppActionIds.RemoveTagPair);
@@ -141,7 +141,7 @@ public sealed class ToolbarManagerTests
 
         // Act & Assert
         host.Toolbars.MoveToolbar(ToolbarId.File, ToolbarArea.Top, 0, ToolbarId.File).Should().BeFalse();
-        host.Toolbars.MoveToolbar(ToolbarId.File, ToolbarArea.Top, 0, ToolbarId.AddExisting).Should().BeFalse("it already sits right before it");
+        host.Toolbars.MoveToolbar(ToolbarId.File, ToolbarArea.Top, 0, ToolbarId.UndoRedo).Should().BeFalse("it already sits right before it");
 
         // Assert
         raised.Should().Be(0);
@@ -271,7 +271,7 @@ public sealed class ToolbarManagerTests
 
         // Assert
         sut.GetRows(ToolbarArea.Top)[0].Take(3).Should().Equal(
-            new[] { ToolbarId.New, ToolbarId.File, ToolbarId.AddExisting }, "the missing ones follow the toolbar before them");
+            new[] { ToolbarId.New, ToolbarId.File, ToolbarId.UndoRedo }, "the missing ones follow the toolbar before them");
         sut.GetRows(ToolbarArea.Bottom).Should().HaveCount(1);
         sut.GetRows(ToolbarArea.Bottom)[0].Take(2).Should().Equal(ToolbarId.Format, ToolbarId.Align);
         sut.GetRows(ToolbarArea.Top)[1].Take(1).Should().Equal(ToolbarId.Heading);
@@ -425,7 +425,7 @@ public sealed class ToolbarManagerTests
         using TestHost host = new();
         host.Settings.SetStringMap(ToolbarManager.PlacementGroup, new Dictionary<string, string>
         {
-            ["Top"] = "New,File,Tools,AddExisting;Heading,Format;Clips;Clips2",
+            ["Top"] = "New,File,Tools,UndoRedo;Heading,Format;Clips;Clips2",
         });
         host.Settings.Save();
 
@@ -434,7 +434,7 @@ public sealed class ToolbarManagerTests
 
         // Assert
         sut.GetRows(ToolbarArea.Top)[0].Take(5).Should().Equal(
-            ToolbarId.New, ToolbarId.File, ToolbarId.Tools, ToolbarId.PrettifyMend, ToolbarId.AddExisting);
+            ToolbarId.New, ToolbarId.File, ToolbarId.Tools, ToolbarId.PrettifyMend, ToolbarId.UndoRedo);
         sut.GetRows(ToolbarArea.Top).SelectMany(r => r).Should().OnlyHaveUniqueItems()
             .And.HaveCount(ToolbarManager.AllToolbars.Count);
     }

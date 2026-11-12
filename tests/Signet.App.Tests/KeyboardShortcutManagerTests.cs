@@ -203,14 +203,11 @@ public sealed class KeyboardShortcutManagerTests
     }
 
     [Fact]
-    public void Full_catalog_default_conflicts_are_the_known_context_dependent_pairs()
+    public void Full_catalog_has_no_default_shortcut_used_by_two_actions()
     {
         // Arrange
         using TestHost host = new();
 
-        // Ctrl+Shift+M is intentionally mapped to two context-dependent actions (Decrease Indent in Code Editor, Mark
-        // Selected Text elsewhere). The second conflict is a known, deliberately kept one: Clip 60 defaults to
-        // "Ctrl+0", the same as Zoom Reset, even though Clip 1..10 use Ctrl+Alt+N.
         // Act
         List<(string, string)> pairs = host.Shortcuts.AllShortcuts
             .SelectMany(s => s.Shortcuts.SelectMany(shortcut => host.Shortcuts.FindConflicts(s.Id, shortcut).Select(other => (s.Id, other))))
@@ -219,10 +216,6 @@ public sealed class KeyboardShortcutManagerTests
             .ToList();
 
         // Assert
-        pairs.Should().BeEquivalentTo(new[]
-        {
-            (AppActionIds.Clip(60), AppActionIds.ZoomReset),
-            (AppActionIds.DecreaseIndent, AppActionIds.MarkSelection),
-        });
+        pairs.Should().BeEmpty();
     }
 }

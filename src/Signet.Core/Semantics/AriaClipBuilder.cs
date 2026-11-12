@@ -79,6 +79,20 @@ public static class AriaClipBuilder
     }
 
     /// <summary>
+    /// The attributes that give an element the role <paramref name="roleCode"/>, with a leading space, ready to go into a
+    /// start tag: the <c>epub:type</c> of the role (when it has one) and the <c>role</c>; a role that is its own
+    /// <c>epub:type</c> gets the <c>epub:type</c> only.
+    /// </summary>
+    public static string RoleAttributes(string roleCode)
+    {
+        ArgumentNullException.ThrowIfNull(roleCode);
+        string epubType = AriaRoles.EpubTypeMapping(roleCode);
+        return string.Equals(epubType, roleCode, StringComparison.Ordinal)
+            ? " epub:type=\"" + epubType + "\""
+            : (epubType.Length > 0 ? " epub:type=\"" + epubType + "\" " : " ") + "role=\"" + roleCode + "\"";
+    }
+
+    /// <summary>
     /// Builds the clip content (without the interactive role selection,
     /// which the caller performs before calling this method). For codes from <see cref="UpdateOnlyNumber"/>/
     /// <see cref="UpdateNumberAndFill"/> it replaces <c>_N_</c> with the number extracted from the start of
@@ -113,15 +127,10 @@ public static class AriaClipBuilder
 
         if (RequiresRoleSelection(code) && !string.IsNullOrEmpty(roleCode))
         {
-            string epubType = AriaRoles.EpubTypeMapping(roleCode);
-            string attributesAdded = string.Equals(epubType, roleCode, StringComparison.Ordinal)
-                ? " epub:type=\"" + epubType + "\""
-                : (epubType.Length > 0 ? " epub:type=\"" + epubType + "\" " : " ") + "role=\"" + roleCode + "\"";
-
             int gt = clip.IndexOf('>', StringComparison.Ordinal);
             if (gt > -1)
             {
-                clip = clip.Insert(gt, attributesAdded);
+                clip = clip.Insert(gt, RoleAttributes(roleCode));
             }
         }
 

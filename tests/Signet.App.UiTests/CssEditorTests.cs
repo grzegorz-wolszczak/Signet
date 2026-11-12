@@ -184,20 +184,25 @@ public sealed class CssEditorTests
     }
 
     [AvaloniaFact]
-    public void The_line_numbers_have_room_to_the_right_of_the_numbers()
+    public void The_line_numbers_have_room_for_three_digits_and_the_paddings_whatever_the_size_of_the_file()
     {
         // Arrange
+        TextEditor small = new() { Text = "a\nb\nc", FontSize = 13 };
+        TextEditor larger = new() { Text = string.Join('\n', Enumerable.Range(1, 99).Select(i => i.ToString(System.Globalization.CultureInfo.InvariantCulture))), FontSize = 13 };
         TextEditor stock = new() { ShowLineNumbers = true, Text = "a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk", FontSize = 13 };
-        TextEditor themed = new() { Text = stock.Text, FontSize = 13 };
-        EditorTheming.ShowThemedLineNumbers(themed);
-        Window window = Show(stock, themed);
+        EditorTheming.ShowThemedLineNumbers(small);
+        EditorTheming.ShowThemedLineNumbers(larger);
+        Window window = Show(small, larger, stock);
 
         // Act
+        double smallWidth = small.TextArea.LeftMargins.OfType<ThemedLineNumberMargin>().Single().Bounds.Width;
+        double largerWidth = larger.TextArea.LeftMargins.OfType<ThemedLineNumberMargin>().Single().Bounds.Width;
         double stockWidth = stock.TextArea.LeftMargins.OfType<LineNumberMargin>().First().Bounds.Width;
-        double themedWidth = themed.TextArea.LeftMargins.OfType<ThemedLineNumberMargin>().Single().Bounds.Width;
 
         // Assert
-        themedWidth.Should().BeApproximately(stockWidth + ThemedLineNumberMargin.RightPadding, 0.5);
+        largerWidth.Should().BeApproximately(smallWidth, 0.5, "the margin does not widen between 3 and 99 lines");
+        smallWidth.Should().BeGreaterThan(ThemedLineNumberMargin.LeftPadding + ThemedLineNumberMargin.RightPadding);
+        smallWidth.Should().BeGreaterThan(stockWidth, "room for a digit more than the stock margin has for 11 lines, and the paddings");
         window.Close();
     }
 }

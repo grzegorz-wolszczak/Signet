@@ -1316,9 +1316,6 @@
   <data name="CodeEditorMenu_AddToClips" xml:space="preserve">
     <value>Add To Clips...</value>
   </data>
-  <data name="CodeEditorMenu_ToggleLineWrapMode" xml:space="preserve">
-    <value>Toggle Line Wrap Mode</value>
-  </data>
   <data name="CodeEditorMenu_GoToLinkOrStyle" xml:space="preserve">
     <value>Go To Link Or Style</value>
   </data>
@@ -2252,21 +2249,6 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_NewEpub3" xml:space="preserve">
     <value>ePub&amp;3</value>
   </data>
-  <data name="Action_MainWindow_NewHTMLFile" xml:space="preserve">
-    <value>Blank HTML File</value>
-  </data>
-  <data name="Action_MainWindow_NewCSSFile" xml:space="preserve">
-    <value>Blank Stylesheet</value>
-  </data>
-  <data name="Action_MainWindow_NewJSFile" xml:space="preserve">
-    <value>Blank Javascript</value>
-  </data>
-  <data name="Action_MainWindow_NewSVGFile" xml:space="preserve">
-    <value>Blank SVG Image</value>
-  </data>
-  <data name="Action_MainWindow_AddExistingFile" xml:space="preserve">
-    <value>Existing Files...</value>
-  </data>
   <data name="Action_MainWindow_Open" xml:space="preserve">
     <value>&amp;Open...</value>
   </data>
@@ -2510,9 +2492,6 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_FilterReplaceAll" xml:space="preserve">
     <value>Filter Replacements</value>
   </data>
-  <data name="Action_MainWindow_RestartSearch" xml:space="preserve">
-    <value>Restart Current Search</value>
-  </data>
   <data name="Action_MainWindow_FindNextInFile" xml:space="preserve">
     <value>Find &amp;Next In File</value>
   </data>
@@ -2526,7 +2505,7 @@ Do you want to save the changes?</value>
     <value>&amp;Count All In File</value>
   </data>
   <data name="Action_MainWindow_BookmarkLocation" xml:space="preserve">
-    <value>Book&amp;mark Location</value>
+    <value>Toggle &amp;Bookmark</value>
   </data>
   <data name="Action_MainWindow_GoToLinkOrStyle" xml:space="preserve">
     <value>&amp;Go To Link Or Style</value>
@@ -2969,9 +2948,6 @@ Do you want to save the changes?</value>
   <data name="Menu_Window" xml:space="preserve">
     <value>&amp;Window</value>
   </data>
-  <data name="Menu_Bookmarks" xml:space="preserve">
-    <value>&amp;Bookmarks</value>
-  </data>
   <data name="Menu_Help" xml:space="preserve">
     <value>&amp;Help</value>
   </data>
@@ -3079,9 +3055,6 @@ Do you want to save the changes?</value>
   </data>
   <data name="Status_NavigationFileGone" xml:space="preserve">
     <value>Navigation cancelled — the file no longer exists.</value>
-  </data>
-  <data name="Status_BookmarksCleared" xml:space="preserve">
-    <value>Bookmarks cleared.</value>
   </data>
   <data name="Status_TocTargetMissing" xml:space="preserve">
     <value>Table of contents target does not exist: {0}</value>
@@ -3979,9 +3952,6 @@ This file type cannot be edited in Signet yet.</value>
   <data name="Toolbar_Edit" xml:space="preserve">
     <value>Edit</value>
   </data>
-  <data name="Toolbar_AddExisting" xml:space="preserve">
-    <value>Add Existing</value>
-  </data>
   <data name="Toolbar_UndoRedo" xml:space="preserve">
     <value>Undo/Redo</value>
   </data>
@@ -4071,12 +4041,6 @@ This file type cannot be edited in Signet yet.</value>
   </data>
   <data name="Menu_ClearRecentFiles" xml:space="preserve">
     <value>Clear List</value>
-  </data>
-  <data name="Menu_NoBookmarks" xml:space="preserve">
-    <value>(no bookmarks)</value>
-  </data>
-  <data name="Menu_ClearBookmarks" xml:space="preserve">
-    <value>Clear Bookmarks</value>
   </data>
   <data name="Menu_HideAllToolbars" xml:space="preserve">
     <value>&amp;Hide All Toolbars</value>
@@ -7973,21 +7937,6 @@ Close the tab</value>
   <data name="ActionTip_MainWindow_NewEpub3" xml:space="preserve">
     <value>Creates a new, empty book in EPUB 3 format.</value>
   </data>
-  <data name="ActionTip_MainWindow_NewHTMLFile" xml:space="preserve">
-    <value>Adds a new, empty HTML file to the book.</value>
-  </data>
-  <data name="ActionTip_MainWindow_NewCSSFile" xml:space="preserve">
-    <value>Adds a new, empty CSS stylesheet to the book.</value>
-  </data>
-  <data name="ActionTip_MainWindow_NewJSFile" xml:space="preserve">
-    <value>Adds a new, empty JavaScript file to the book.</value>
-  </data>
-  <data name="ActionTip_MainWindow_NewSVGFile" xml:space="preserve">
-    <value>Adds a new, empty SVG image to the book.</value>
-  </data>
-  <data name="ActionTip_MainWindow_AddExistingFile" xml:space="preserve">
-    <value>Adds files chosen from disk to the book (images, fonts, HTML, CSS...).</value>
-  </data>
   <data name="ActionTip_MainWindow_Open" xml:space="preserve">
     <value>Opens an EPUB file from disk.</value>
   </data>
@@ -8234,9 +8183,6 @@ Close the tab</value>
   <data name="ActionTip_MainWindow_FilterReplaceAll" xml:space="preserve">
     <value>Shows the list of matches and lets you choose which to replace; replaces only the selected ones.</value>
   </data>
-  <data name="ActionTip_MainWindow_RestartSearch" xml:space="preserve">
-    <value>Restarts the current search from the beginning.</value>
-  </data>
   <data name="ActionTip_MainWindow_FindNextInFile" xml:space="preserve">
     <value>Finds the next match, but only in the current file.</value>
   </data>
@@ -8250,7 +8196,7 @@ Close the tab</value>
     <value>Counts matches only in the current file, whatever the search scope is.</value>
   </data>
   <data name="ActionTip_MainWindow_BookmarkLocation" xml:space="preserve">
-    <value>Remembers the current place in the text as a bookmark.</value>
+    <value>Adds a bookmark on the current line, or removes it. The bookmark shows in the gutter next to the line numbers.</value>
   </data>
   <data name="ActionTip_MainWindow_GoToLinkOrStyle" xml:space="preserve">
     <value>Jumps to the target of the link, or to the definition of the style (CSS class), under the caret.</value>
@@ -9076,5 +9022,86 @@ Close the tab</value>
   </data>
   <data name="PreferencesWindow_ShowColorPreview" xml:space="preserve">
     <value>Show a color preview under color values (CSS and HTML); Ctrl+click opens the color picker</value>
+  </data>
+  <data name="Action_MainWindow_NextBookmark" xml:space="preserve">
+    <value>Next Bookmark</value>
+  </data>
+  <data name="Action_MainWindow_PreviousBookmark" xml:space="preserve">
+    <value>Previous Bookmark</value>
+  </data>
+  <data name="Action_MainWindow_BookmarksWindow" xml:space="preserve">
+    <value>Bookmarks Panel</value>
+  </data>
+  <data name="ActionTip_MainWindow_NextBookmark" xml:space="preserve">
+    <value>Goes to the next bookmark in this file (after the last one it wraps around to the first).</value>
+  </data>
+  <data name="ActionTip_MainWindow_PreviousBookmark" xml:space="preserve">
+    <value>Goes to the previous bookmark in this file (before the first one it jumps to the last).</value>
+  </data>
+  <data name="ActionTip_MainWindow_BookmarksWindow" xml:space="preserve">
+    <value>Shows or hides the Bookmarks panel.</value>
+  </data>
+  <data name="Panel_Bookmarks" xml:space="preserve">
+    <value>Bookmarks</value>
+  </data>
+  <data name="Bookmarks_Delete" xml:space="preserve">
+    <value>Delete the selected bookmark</value>
+  </data>
+  <data name="Bookmarks_Clear" xml:space="preserve">
+    <value>Delete all bookmarks</value>
+  </data>
+  <data name="Bookmarks_None" xml:space="preserve">
+    <value>No bookmarks. Add one in Code Editor (F11 by default) or from the gutter menu next to the line numbers.</value>
+  </data>
+  <data name="GutterMenu_AddBookmark" xml:space="preserve">
+    <value>Add &amp;Bookmark</value>
+  </data>
+  <data name="GutterMenu_DeleteBookmark" xml:space="preserve">
+    <value>Delete &amp;Bookmark</value>
+  </data>
+  <data name="GutterMenu_SoftWrap" xml:space="preserve">
+    <value>Soft-Wrap</value>
+  </data>
+  <data name="Status_BookmarkRemoved" xml:space="preserve">
+    <value>Bookmark removed: {0}</value>
+  </data>
+  <data name="Status_BookmarkNone" xml:space="preserve">
+    <value>No other bookmark in this file.</value>
+  </data>
+  <data name="Action_MainWindow_ShowBookmarks" xml:space="preserve">
+    <value>Show Bookmarks...</value>
+  </data>
+  <data name="ActionTip_MainWindow_ShowBookmarks" xml:space="preserve">
+    <value>Opens a window with the list of bookmarks and a preview of the file of the selected one. Enter or a click goes to the bookmark.</value>
+  </data>
+  <data name="BookmarksPopup_EmptyTitle" xml:space="preserve">
+    <value>No bookmarks added.</value>
+  </data>
+  <data name="BookmarksPopup_EmptyHint" xml:space="preserve">
+    <value>Add a bookmark to a line of code in Code Editor.</value>
+  </data>
+  <data name="BookmarksPopup_EmptyHintShortcut" xml:space="preserve">
+    <value>Add Bookmark ({0}) to a line of code in Code Editor.</value>
+  </data>
+  <data name="Status_NoNextFile" xml:space="preserve">
+    <value>This is the last file in the reading order.</value>
+  </data>
+  <data name="Status_NoPreviousFile" xml:space="preserve">
+    <value>This is the first file in the reading order.</value>
+  </data>
+  <data name="Status_FileNotInReadingOrder" xml:space="preserve">
+    <value>This file is not in the reading order of the book.</value>
+  </data>
+  <data name="Action_MainWindow_ShowCompletions" xml:space="preserve">
+    <value>Show Completions</value>
+  </data>
+  <data name="ActionTip_MainWindow_ShowCompletions" xml:space="preserve">
+    <value>Shows the suggestions at the caret: CSS class names in a class attribute (from the stylesheets linked from the file, without the classes the attribute already has) and file names and anchors in a link. The suggestions also appear on their own once the first character is typed.</value>
+  </data>
+  <data name="ClassCompletion_StyleBlock" xml:space="preserve">
+    <value>&lt;style&gt; block</value>
+  </data>
+  <data name="PreferencesWindow_ShowFoldingLines" xml:space="preserve">
+    <value>Show a line in the gutter from the start of a foldable region to its end (for the region under the pointer)</value>
   </data>
 </root>

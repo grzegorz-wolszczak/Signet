@@ -80,7 +80,7 @@ public sealed class PanelStripeTests
         // Act & Assert
         Ids(host.Left, "TopGroup").Should().Equal(DockableIds.BookBrowser, DockableIds.Clips);
         Ids(host.Left, "MiddleGroup").Should().BeEmpty();
-        Ids(host.Left, "BottomGroup").Should().Equal(DockableIds.ValidationResults, DockableIds.Notifications, DockableIds.FindUsages);
+        Ids(host.Left, "BottomGroup").Should().Equal(DockableIds.ValidationResults, DockableIds.Notifications, DockableIds.FindUsages, DockableIds.Bookmarks);
         Ids(host.Right, "TopGroup").Should().Equal(DockableIds.Preview, DockableIds.TableOfContents, DockableIds.Checkpoints);
         Ids(host.Right, "BottomGroup").Should().BeEmpty();
         host.Left.FindControl<Border>("GroupSeparator")!.IsVisible.Should().BeFalse("the second half has no buttons");

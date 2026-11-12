@@ -31,22 +31,6 @@ public interface IRecentFilesMenu
     void ClearAll();
 }
 
-/// <summary>Source of the session bookmarks list for the dynamic "Bookmarks" submenu.</summary>
-public interface IBookmarksMenu
-{
-    /// <summary>Session bookmarks in the order they were added.</summary>
-    IReadOnlyList<Signet.App.ViewModels.Bookmark> Bookmarks { get; }
-
-    /// <summary>Raised when the bookmarks list changes.</summary>
-    event EventHandler? BookmarksChanged;
-
-    /// <summary>Navigates to the given bookmark.</summary>
-    void GoToBookmark(Signet.App.ViewModels.Bookmark bookmark);
-
-    /// <summary>Removes all bookmarks.</summary>
-    void ClearBookmarks();
-}
-
 /// <summary>
 /// Builds the <see cref="MenuItemViewModel"/> tree from the static <see cref="MenuLayout"/>,
 /// binding items to actions from <see cref="AppActionRegistry"/>. The empty "Toolbars" submenu
@@ -61,32 +45,27 @@ public sealed class MenuBuilder
     private readonly ToolbarManager _toolbars;
     private readonly ICommand _customizeToolbarsCommand;
     private readonly IRecentFilesMenu? _recentFiles;
-    private readonly IBookmarksMenu? _bookmarks;
 
     // Items with text that does not come from an action (submenu headers, toolbar toggles…) — to be
     // recomputed after a language change; action items track AppAction.Text themselves.
     private readonly List<(MenuItemViewModel Item, Func<string> Header)> _localizedHeaders = new();
     private readonly List<RecentFilesSegment> _recentFileSegments = new();
-    private readonly List<ObservableCollection<MenuItemViewModel>> _bookmarkLists = new();
 
     /// <summary>Creates the builder.</summary>
     /// <param name="actions">Action registry.</param>
     /// <param name="toolbars">Toolbar manager (for the "Toolbars" submenu).</param>
     /// <param name="customizeToolbars">Command that opens the toolbar configuration window.</param>
     /// <param name="recentFiles">Source of the "Recent Files" list (optional — without it the submenu is empty).</param>
-    /// <param name="bookmarks">Source of the "Bookmarks" list (optional — without it the submenu is empty).</param>
     public MenuBuilder(
         AppActionRegistry actions,
         ToolbarManager toolbars,
         ICommand customizeToolbars,
-        IRecentFilesMenu? recentFiles = null,
-        IBookmarksMenu? bookmarks = null)
+        IRecentFilesMenu? recentFiles = null)
     {
         _actions = actions ?? throw new ArgumentNullException(nameof(actions));
         _toolbars = toolbars ?? throw new ArgumentNullException(nameof(toolbars));
         _customizeToolbarsCommand = customizeToolbars ?? throw new ArgumentNullException(nameof(customizeToolbars));
         _recentFiles = recentFiles;
-        _bookmarks = bookmarks;
     }
 
     /// <summary>
@@ -97,7 +76,7 @@ public sealed class MenuBuilder
 
     /// <summary>
     /// Recomputes the texts of the built menu after the UI language changes (in place — without
-    /// rebuilding, so as not to duplicate the subscriptions of the recent files and bookmarks lists).
+    /// rebuilding, so as not to duplicate the subscriptions of the recent files lists).
     /// </summary>
     public void RefreshTexts()
     {
@@ -107,7 +86,6 @@ public sealed class MenuBuilder
         }
 
         _recentFileSegments.ForEach(Rebuild);
-        _bookmarkLists.ForEach(RebuildBookmarks);
     }
 
     private MenuItemViewModel Localized(MenuItemViewModel item, Func<string> header)
@@ -134,11 +112,6 @@ public sealed class MenuBuilder
             case MenuNode.ActionNode action:
                 AppAction? resolved = _actions.Get(action.Id);
                 return resolved is null ? null : MenuItemViewModel.ForAction(resolved);
-
-            case MenuNode.BookmarksNode bookmarks:
-                return Localized(
-                    MenuItemViewModel.Submenu(AppAction.ConvertMnemonics(ActionTexts.MenuHeader(bookmarks.Header)), BuildBookmarksSubmenu()),
-                    () => AppAction.ConvertMnemonics(ActionTexts.MenuHeader(bookmarks.Header)));
 
             case MenuNode.SubmenuNode submenu:
                 string Header() => AppAction.ConvertMnemonics(ActionTexts.MenuHeader(submenu.Header));
@@ -281,45 +254,6 @@ public sealed class MenuBuilder
         public MenuItemViewModel? Anchor { get; } = anchor;
 
         public int Count { get; set; }
-    }
-
-    private ObservableCollection<MenuItemViewModel> BuildBookmarksSubmenu()
-    {
-        ObservableCollection<MenuItemViewModel> items = new();
-        RebuildBookmarks(items);
-        _bookmarkLists.Add(items);
-
-        if (_bookmarks is not null)
-        {
-            _bookmarks.BookmarksChanged += (_, _) => RebuildBookmarks(items);
-        }
-
-        return items;
-    }
-
-    private void RebuildBookmarks(ObservableCollection<MenuItemViewModel> items)
-    {
-        items.Clear();
-
-        IReadOnlyList<Signet.App.ViewModels.Bookmark> marks =
-            _bookmarks?.Bookmarks ?? Array.Empty<Signet.App.ViewModels.Bookmark>();
-        if (marks.Count == 0)
-        {
-            items.Add(MenuItemViewModel.ForCommand(Strings.Get("Menu_NoBookmarks"), new RelayCommand(() => { }, () => false)));
-            return;
-        }
-
-        int index = 1;
-        foreach (Signet.App.ViewModels.Bookmark mark in marks)
-        {
-            Signet.App.ViewModels.Bookmark captured = mark;
-            items.Add(MenuItemViewModel.ForCommand(
-                $"_{index} {mark.Name}", new RelayCommand(() => _bookmarks!.GoToBookmark(captured))));
-            index++;
-        }
-
-        items.Add(MenuItemViewModel.Separator());
-        items.Add(MenuItemViewModel.ForCommand(Strings.Get("Menu_ClearBookmarks"), new RelayCommand(() => _bookmarks!.ClearBookmarks())));
     }
 
     /// <summary>

@@ -298,4 +298,110 @@ public sealed class CodeInsertOperationsTests
         result.Changed.Should().BeFalse();
         result.Text.Should().Be(text);
     }
+
+    // ---------------------------------------------------------------- Insert Role --- //
+
+    [Theory]
+    [InlineData("<a href=\"n.xhtml#n1\">1</a>", "<a href", "a")] // in the start tag
+    [InlineData("<p>text <em>emphasis</em> end</p>", "text ", "p")] // in the text of the paragraph
+    [InlineData("<p>text <em>emphasis</em> end</p>", "emphasis", "em")] // in the text of the inner element
+    [InlineData("<p>text <em>emphasis</em> end</p>", "</em>", "em")] // in the end tag: the element it closes
+    [InlineData("<section><p>a</p></section>", "</section>", "section")]
+    public void The_role_target_is_the_element_at_the_caret(string body, string at, string expected)
+    {
+        // Arrange
+        string text = Doc(body);
+        int caret = text.IndexOf(at, StringComparison.Ordinal) + (at.StartsWith("</", StringComparison.Ordinal) ? 2 : 1);
+
+        // Act
+        (string Tag, int Pos, int Length)? target = CodeInsertOperations.RoleTarget(text, caret);
+
+        // Assert
+        target.Should().NotBeNull();
+        target!.Value.Tag.Should().Be(expected);
+        text.Substring(target.Value.Pos, target.Value.Length).Should().StartWith("<" + expected);
+    }
+
+    [Fact]
+    public void There_is_no_role_target_outside_the_body()
+    {
+        // Arrange
+        string text = Doc("<p>x</p>");
+
+        // Act & Assert
+        CodeInsertOperations.RoleTarget(text, 5).Should().BeNull("the caret is in the XML declaration");
+        CodeInsertOperations.RoleTarget(text, text.IndexOf("<title>", StringComparison.Ordinal) + 3).Should().BeNull("the caret is in the head");
+    }
+
+    [Fact]
+    public void Insert_Role_is_allowed_where_a_role_fits_the_element()
+    {
+        // Arrange
+        string link = Doc("<p>see <a href=\"n.xhtml#n1\">1</a></p>");
+        string emphasis = Doc("<p>see <em>this</em></p>");
+
+        // Act & Assert
+        CodeInsertOperations.InsertRoleAllowed(link, CaretAfter(link, "<a href=\"n.xhtml#n1\">1")).Should().BeTrue("note references are links");
+        CodeInsertOperations.InsertRoleAllowed(emphasis, CaretAfter(emphasis, "<em>th")).Should().BeFalse("no role fits <em>");
+    }
+
+    [Fact]
+    public void Setting_a_role_adds_epub_type_and_role_to_the_start_tag()
+    {
+        // Arrange
+        string text = Doc("<p>see <a href=\"n.xhtml#n1\">1</a></p>");
+        int caret = CaretAfter(text, "<a href=\"n.xhtml#n1\">1");
+
+        // Act
+        FormatEdit edit = CodeInsertOperations.SetRole(text, caret, caret, "doc-noteref");
+
+        // Assert
+        edit.Changed.Should().BeTrue();
+        edit.Text.Should().Contain("<a href=\"n.xhtml#n1\" epub:type=\"noteref\" role=\"doc-noteref\">1</a>");
+        edit.SelectionStart.Should().Be(edit.Text.IndexOf(">1</a>", StringComparison.Ordinal) + 2, "the caret stays after the 1");
+    }
+
+    [Fact]
+    public void Setting_a_role_replaces_the_role_and_the_epub_type_the_tag_has()
+    {
+        // Arrange
+        string text = Doc("<p><a role=\"doc-backlink\" href=\"x.xhtml\" epub:type='backlink'>back</a></p>");
+        int caret = CaretAfter(text, "<a role");
+
+        // Act
+        FormatEdit edit = CodeInsertOperations.SetRole(text, caret, caret, "doc-noteref");
+
+        // Assert
+        edit.Text.Should().Contain("<a href=\"x.xhtml\" epub:type=\"noteref\" role=\"doc-noteref\">back</a>");
+        edit.Text.Should().NotContain("backlink");
+    }
+
+    [Fact]
+    public void A_role_that_is_its_own_epub_type_gets_the_epub_type_only_and_an_empty_element_keeps_its_slash()
+    {
+        // Arrange
+        string text = Doc("<section class=\"notes\" />");
+        int caret = CaretAfter(text, "<section");
+
+        // Act
+        FormatEdit edit = CodeInsertOperations.SetRole(text, caret, caret, "footnotes");
+
+        // Assert
+        edit.Text.Should().Contain("<section class=\"notes\" epub:type=\"footnotes\" />");
+        edit.Text.Should().NotContain("role=");
+    }
+
+    [Fact]
+    public void Setting_a_role_without_an_element_changes_nothing()
+    {
+        // Arrange
+        string text = Doc("<p>x</p>");
+
+        // Act
+        FormatEdit edit = CodeInsertOperations.SetRole(text, 3, 3, "doc-noteref");
+
+        // Assert
+        edit.Changed.Should().BeFalse();
+        edit.Text.Should().Be(text);
+    }
 }

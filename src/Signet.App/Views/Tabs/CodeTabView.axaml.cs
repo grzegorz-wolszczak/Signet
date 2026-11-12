@@ -59,6 +59,15 @@ public partial class CodeTabView : UserControl
     private readonly ColorPreviewController _colors;
     private readonly ContextMenu _contextMenu = new();
 
+    // The column of the gutter that marks the bookmarked lines, and the bookmarks it shows (those of the bound tab's host).
+    private readonly BookmarkMargin _bookmarkMargin = new();
+    private BookmarkList? _bookmarks;
+
+    // Set while a right click in the gutter opens the context menu: the line the click is on (null below the last line). The
+    // gutter has a menu of its own (bookmark, soft wrap) instead of the menu of the text.
+    private bool _gutterMenuRequested;
+    private int? _gutterMenuLine;
+
     /// <summary>The color preview of this editor: the underlines under the color values and what a Ctrl+click on one does.</summary>
     public ColorPreviewController ColorPreview => _colors;
 
@@ -101,6 +110,8 @@ public partial class CodeTabView : UserControl
         Editor.Options.EnableHyperlinks = false;
         Editor.Options.EnableEmailHyperlinks = false;
         EditorTheming.ShowThemedLineNumbers(Editor);
+        _bookmarkMargin.Lines = BookmarkedLines;
+        Editor.TextArea.LeftMargins.Insert(1, _bookmarkMargin); // after the numbers, before the separator
         Editor.TextArea.TextView.BackgroundRenderers.Add(_tagRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_searchRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_errorRenderer);
@@ -281,10 +292,18 @@ public partial class CodeTabView : UserControl
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
         SaveFoldedRegions(_boundViewModel);
+        if (_bookmarks is not null)
+        {
+            _bookmarks.Changed -= OnBookmarksChanged;
+            _bookmarks = null;
+        }
+
         if (_boundViewModel is not null)
         {
             _boundViewModel.LiveViewState = null;
             _boundViewModel.ScrollToLineRequested -= OnScrollToLineRequested;
+            _boundViewModel.ClipboardRequested -= OnClipboardRequested;
+            _boundViewModel.CompletionRequested -= OnCompletionRequested;
             _boundViewModel.ScrollToOffsetRequested -= OnScrollToOffsetRequested;
             _boundViewModel.SelectionRequested -= OnSelectionRequested;
             _boundViewModel.FocusRequested -= OnFocusRequested;
@@ -301,6 +320,14 @@ public partial class CodeTabView : UserControl
         }
 
         _boundViewModel = DataContext as CodeTabViewModel;
+        _bookmarks = _boundViewModel?.Host?.Bookmarks;
+        if (_bookmarks is not null)
+        {
+            _bookmarks.Changed += OnBookmarksChanged;
+        }
+
+        _bookmarkMargin.InvalidateVisual();
+
         // The sample of the Preferences preview shows the look: it is not edited and has no menu.
         Editor.IsReadOnly = _boundViewModel is { IsSample: true };
         AttachCodeEditorShortcuts();
@@ -312,6 +339,8 @@ public partial class CodeTabView : UserControl
 
         _boundViewModel.LiveViewState = CurrentViewState;
         _boundViewModel.ScrollToLineRequested += OnScrollToLineRequested;
+        _boundViewModel.ClipboardRequested += OnClipboardRequested;
+        _boundViewModel.CompletionRequested += OnCompletionRequested;
         _boundViewModel.ScrollToOffsetRequested += OnScrollToOffsetRequested;
         _boundViewModel.SelectionRequested += OnSelectionRequested;
         _boundViewModel.FocusRequested += OnFocusRequested;
@@ -399,25 +428,26 @@ public partial class CodeTabView : UserControl
             Editor.CaretOffset = caret;
         }
 
-        UpdateLinkCompletion();
+        UpdateCompletion(manual: false);
     }
 
     private void OnTextAreaKeyUp(object? sender, KeyEventArgs e)
     {
         if (e.Key is Key.Back or Key.Delete)
         {
-            UpdateLinkCompletion();
+            UpdateCompletion(manual: false);
         }
     }
 
     /// <summary>
-    /// File name / anchor completion popup — shown when the caret is inside an <c>href</c>/<c>src</c>
-    /// value or inside <c>url(</c>, and recomputed after every character (fuzzy filtering is done by
-    /// <see cref="CodeTabViewModel.GetLinkCompletions"/>, not by the AvaloniaEdit list).
+    /// Completion popup — the file names / anchors when the caret is inside an <c>href</c>/<c>src</c> value or inside
+    /// <c>url(</c>, the CSS classes inside a <c>class</c> attribute — recomputed after every character (fuzzy filtering is
+    /// done by <see cref="CodeTabViewModel.GetCompletions"/>, not by the AvaloniaEdit list). A list of classes appears once
+    /// a character was typed; <paramref name="manual"/> (the "Show Completions" action) shows it before that.
     /// </summary>
-    private void UpdateLinkCompletion()
+    private void UpdateCompletion(bool manual)
     {
-        if (_boundViewModel?.GetLinkCompletions(Editor.CaretOffset) is not { } result)
+        if (_boundViewModel?.GetCompletions(Editor.CaretOffset, manual) is not { } result)
         {
             _completionWindow?.Close();
             return;
@@ -451,7 +481,7 @@ public partial class CodeTabView : UserControl
     private void Fill(CompletionWindow window, LinkCompletionResult result)
     {
         window.StartOffset = result.ReplaceStart;
-        window.EndOffset = Editor.CaretOffset;
+        window.EndOffset = result.ReplaceEnd ?? Editor.CaretOffset;
         CompletionList list = window.CompletionList;
         list.SelectedItem = null;
         IList<ICompletionData> data = list.CompletionData;
@@ -713,6 +743,7 @@ public partial class CodeTabView : UserControl
         _invisibleCharacters.ShowNonBreakingSpaces = _boundViewModel?.ShowNonBreakingSpaces ?? false;
         _invisibleCharacters.ShowZeroWidth = _boundViewModel?.ShowZeroWidth ?? false;
         _invisibleCharacters.Font = _boundViewModel?.InvisibleCharacterFont ?? InvisibleCharacterAppearance.Default;
+        _foldingGutter.ShowLines = _boundViewModel?.ShowFoldingLines ?? false;
         Editor.TextArea.TextView.Redraw();
         UpdateColorPreview();
     }
@@ -745,6 +776,12 @@ public partial class CodeTabView : UserControl
         }
     }
 
+    // The lines of the file of the bound tab that carry a bookmark (what the gutter marks).
+    private IReadOnlyCollection<int> BookmarkedLines() =>
+        _boundViewModel is { } vm && _bookmarks is { } bookmarks ? bookmarks.LinesIn(vm.ResourceBookPath) : Array.Empty<int>();
+
+    private void OnBookmarksChanged(object? sender, EventArgs e) => _bookmarkMargin.InvalidateVisual();
+
     private void UpdateSpellRenderer()
     {
         _spellRenderer.SetWords(_boundViewModel?.MisspelledWordHighlights ?? Array.Empty<(int, int)>());
@@ -753,7 +790,7 @@ public partial class CodeTabView : UserControl
 
     /// <summary>
     /// Builds the Code Editor context menu right before it is shown. Order from the top:
-    /// View Image / Open Tab For Image, spelling, Clips / Add To Clips, Toggle Line Wrap Mode,
+    /// View Image / Open Tab For Image, spelling, Clips / Add To Clips,
     /// Go To Link Or Style, Rename Class, Footnotes, Merge Content, Mark Selected Text, Reformat HTML
     /// (or Reformat CSS), then the standard Undo … Select All.
     /// </summary>
@@ -763,6 +800,13 @@ public partial class CodeTabView : UserControl
         if (_boundViewModel is not { } vm || vm.IsSample)
         {
             e.Cancel = true;
+            return;
+        }
+
+        if (_gutterMenuRequested)
+        {
+            _gutterMenuRequested = false;
+            BuildGutterMenu(vm);
             return;
         }
 
@@ -879,10 +923,6 @@ public partial class CodeTabView : UserControl
             items.Add(addToClips);
             items.Add(new Separator());
         }
-
-        // ---- Toggle Line Wrap Mode ----
-        items.Add(Item(Strings.Get("CodeEditorMenu_ToggleLineWrapMode"), vm.ToggleLineWrapMode));
-        items.Add(new Separator());
 
         if (host is not null)
         {
@@ -1291,6 +1331,27 @@ public partial class CodeTabView : UserControl
         }
     }
 
+    // The menu of the gutter (a right click on the line numbers or the bookmark column): add or delete the bookmark of the
+    // line under the pointer, and the soft wrap of the text.
+    private void BuildGutterMenu(CodeTabViewModel vm)
+    {
+        if (_bookmarks is { } bookmarks && _gutterMenuLine is { } line)
+        {
+            bool marked = bookmarks.Find(vm.ResourceBookPath, line) is not null;
+            _contextMenu.Items.Add(Item(
+                Strings.Get(marked ? "GutterMenu_DeleteBookmark" : "GutterMenu_AddBookmark"),
+                () => bookmarks.Toggle(vm.ResourceBookPath, line),
+                vm.Host?.GetActionIcon(AppActionIds.BookmarkLocation),
+                gesture: vm.Host?.GetActionGesture(AppActionIds.BookmarkLocation)));
+            _contextMenu.Items.Add(new Separator());
+        }
+
+        MenuItem softWrap = Item(Strings.Get("GutterMenu_SoftWrap"), vm.ToggleLineWrapMode);
+        softWrap.ToggleType = MenuItemToggleType.CheckBox;
+        softWrap.IsChecked = vm.WordWrap;
+        _contextMenu.Items.Add(softWrap);
+    }
+
     private static MenuItem Item(
         string header,
         Action onClick,
@@ -1448,9 +1509,19 @@ public partial class CodeTabView : UserControl
 
         if (e.GetCurrentPoint(Editor.TextArea.TextView).Properties.IsRightButtonPressed)
         {
-            MoveCaretForContextMenu(e);
+            // A right click in the gutter opens the menu of the gutter and leaves the caret where it is.
+            Avalonia.Point inTextView = e.GetPosition(Editor.TextArea.TextView);
+            _gutterMenuRequested = IsInGutter(inTextView);
+            _gutterMenuLine = _gutterMenuRequested ? BookmarkMargin.LineAt(Editor.TextArea.TextView, inTextView.Y) : null;
+            if (!_gutterMenuRequested)
+            {
+                MoveCaretForContextMenu(e);
+            }
+
             return;
         }
+
+        _gutterMenuRequested = false;
 
         if (_boundViewModel is null || !e.KeyModifiers.HasFlag(KeyModifiers.Control))
         {
@@ -1498,6 +1569,26 @@ public partial class CodeTabView : UserControl
         }
     }
 
+    // The "Show Completions" action: the popup at the caret, also before anything was typed.
+    private void OnCompletionRequested() => UpdateCompletion(manual: true);
+
+    // The Cut, Copy and Paste actions of the main window (the menu, the toolbar) do what the keys do in the editor.
+    private void OnClipboardRequested(EditorClipboardCommand command)
+    {
+        switch (command)
+        {
+            case EditorClipboardCommand.Cut:
+                Editor.Cut();
+                break;
+            case EditorClipboardCommand.Copy:
+                Editor.Copy();
+                break;
+            case EditorClipboardCommand.Paste:
+                Paste();
+                break;
+        }
+    }
+
     // AvaloniaEdit's paste (newlines of the document, tabs to spaces) with the clipboard text prepared by the view
     // model (NFC normalization); without normalization it is AvaloniaEdit's paste.
     private async void Paste()
@@ -1540,6 +1631,15 @@ public partial class CodeTabView : UserControl
         {
             _boundViewModel?.NotifyNavigation();
         }
+    }
+
+    // Whether a position (in the coordinates of the text view) is in the left margins of the editor — the line numbers and the
+    // bookmark column, which sit left of the text view. Told by the position: the margins draw themselves and are not what a
+    // click hits.
+    private bool IsInGutter(Avalonia.Point inTextView)
+    {
+        double width = Editor.TextArea.LeftMargins.Where(m => m.IsVisible).Sum(m => m.Bounds.Width);
+        return inTextView.X < 0 && inTextView.X >= -width && inTextView.Y >= 0 && inTextView.Y <= Editor.TextArea.TextView.Bounds.Height;
     }
 
     // A right click outside the selection moves the caret to the click position so the context

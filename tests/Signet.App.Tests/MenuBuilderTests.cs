@@ -52,7 +52,7 @@ public sealed class MenuBuilderTests
         IReadOnlyList<MenuItemViewModel> menus = Build(host);
         MenuItemViewModel[] bookOnly =
         {
-            SubmenuOf(menus, AppActionIds.AddExistingFile), SubmenuOf(menus, AppActionIds.CasingLowercase),
+            SubmenuOf(menus, AppActionIds.CasingLowercase),
             SubmenuOf(menus, AppActionIds.Heading1), SubmenuOf(menus, AppActionIds.FindNextInFile),
             SubmenuOf(menus, AppActionIds.GenerateToc), SubmenuOf(menus, AppActionIds.SpellcheckEditor),
             SubmenuOf(menus, AppActionIds.MendHtml), SubmenuOf(menus, AppActionIds.UpgradeToEpub3),

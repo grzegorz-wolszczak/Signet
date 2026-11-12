@@ -42,6 +42,24 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_folding_lines_of_the_gutter_are_off_at_first_and_the_choice_is_kept()
+    {
+        // Arrange
+        using TempDir dir = new();
+        SettingsStore sut = NewStore(dir);
+
+        // Act & Assert
+        sut.CodeEditorShowFoldingLines.Should().BeFalse("as in the JetBrains IDEs");
+
+        // Act
+        sut.CodeEditorShowFoldingLines = true;
+        sut.Save();
+
+        // Assert
+        NewStore(dir).CodeEditorShowFoldingLines.Should().BeTrue();
+    }
+
+    [Fact]
     public void Defaults_apply_when_file_is_missing()
     {
         // Arrange

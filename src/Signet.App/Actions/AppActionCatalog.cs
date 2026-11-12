@@ -12,10 +12,9 @@ namespace Signet.App.Actions;
 /// making it impossible to type in the editor or in text boxes. Shortcuts that would clash with
 /// Polish characters (ą ć ł ń) are therefore kept off Ctrl+Alt:
 /// Replace All <c>Ctrl+Shift+A</c>, Count All <c>Ctrl+Shift+N</c>, Clip Editor
-/// <c>Ctrl+Shift+C</c>, Lowercase <c>Ctrl+Shift+K</c> (the letter L cannot be used —
-/// <c>Ctrl+Shift+L</c> is taken by Bulleted List). This is guarded by the test
+/// <c>Ctrl+Shift+C</c>, Lowercase <c>Ctrl+Shift+K</c>. This is guarded by the test
 /// <c>AppActionCatalogTests.No_default_shortcut_blocks_a_polish_AltGr_character</c>.
-/// The remaining <c>Ctrl+Alt+&lt;letter&gt;</c> shortcuts (V, U, M, T, B, W, F, J, Q) do not clash
+/// The remaining <c>Ctrl+Alt+&lt;letter&gt;</c> shortcuts (V, U, T, W, F, J, Q) do not clash
 /// with the Polish layout but may clash with other layouts (e.g. German AltGr+Q = @,
 /// AltGr+M = µ) — a full solution would require AltGr detection, which is deliberately not done.
 /// </para>
@@ -32,11 +31,6 @@ public static class AppActionCatalog
         new("MainWindow.NewDefault", "New Default", "Ctrl+N", "document-new", "File"),
         new("MainWindow.NewEpub2", "ePub&2", "", "document-new-epub2", "File"),
         new("MainWindow.NewEpub3", "ePub&3", "", "document-new-epub3", "File"),
-        new("MainWindow.NewHTMLFile", "Blank HTML File", "", "file-new-html", "File"),
-        new("MainWindow.NewCSSFile", "Blank Stylesheet", "", "file-new-css", "File"),
-        new("MainWindow.NewJSFile", "Blank Javascript", "", "file-new-js", "File"),
-        new("MainWindow.NewSVGFile", "Blank SVG Image", "", "file-new-svg", "File"),
-        new("MainWindow.AddExistingFile", "Existing Files...", "", "document-add", "File"),
         new("MainWindow.Open", "&Open...", "Ctrl+O", ActionIconKeys.Open, "File"),
         new("MainWindow.Close", "Close", "Ctrl+Shift+W", "document-close", "File"),
         new("MainWindow.Save", "&Save", "Ctrl+S", "document-save", "File"),
@@ -58,6 +52,7 @@ public static class AppActionCatalog
         new("MainWindow.Paste", "&Paste", "", "edit-paste", "Edit"),
         new("MainWindow.PasteClipboardHistory", "Edit/Paste From Clipboard &History...", "Ctrl+Alt+V", "paste-history", "Edit"),
         new("MainWindow.DeleteLine", "&Delete Line", "Ctrl+D", "delete-line", "Edit"),
+        new("MainWindow.ShowCompletions", "Show Completions", "Ctrl+Shift+Space", null, "Edit"),
         new("MainWindow.ToggleComment", "Toggle &Comment", "Ctrl+Shift+/", "toggle-comment", "Edit"),
         new("MainWindow.CasingLowercase", "&Lowercase", "Ctrl+Shift+K", "format-case-lowercase", "Edit"),
         new("MainWindow.CasingUppercase", "&Uppercase", "Ctrl+Alt+U", "format-case-uppercase", "Edit"),
@@ -79,37 +74,37 @@ public static class AppActionCatalog
         new("MainWindow.InsertHyperlink", "&Link...", "", "insert-hyperlink", "Insert"),
         new("MainWindow.InsertClosingTag", "&Closing Tag", "Ctrl+.", "tag-closing", "Insert"),
 
-        new("MainWindow.Bold", "&Bold", "Ctrl+B", "format-text-bold", "Format"),
-        new("MainWindow.Italic", "&Italic", "Ctrl+I", "format-text-italic", "Format"),
-        new("MainWindow.Underline", "&Underline", "Ctrl+U", "format-text-underline", "Format"),
+        new("MainWindow.Bold", "&Bold", "", "format-text-bold", "Format"),
+        new("MainWindow.Italic", "&Italic", "", "format-text-italic", "Format"),
+        new("MainWindow.Underline", "&Underline", "", "format-text-underline", "Format"),
         new("MainWindow.Strikethrough", "Stri&kethrough", "", "format-text-strikethrough", "Format"),
         new("MainWindow.Subscript", "&Subscript", "", "format-text-subscript", "Format"),
         new("MainWindow.Superscript", "Su&perscript", "", "format-text-superscript", "Format"),
         new("MainWindow.AlignLeft", "Align &Left", "", "format-justify-left", "Format"),
-        new("MainWindow.AlignCenter", "&Center", "Ctrl+E", "format-justify-center", "Format"),
+        new("MainWindow.AlignCenter", "&Center", "", "format-justify-center", "Format"),
         new("MainWindow.AlignRight", "Align &Right", "", "format-justify-right", "Format"),
-        new("MainWindow.AlignJustify", "&Justify", "Ctrl+J", "format-justify-fill", "Format"),
+        new("MainWindow.AlignJustify", "&Justify", "", "format-justify-fill", "Format"),
         new("MainWindow.InsertNumberedList", "&Numbered List", "", "insert-numbered-list", "Format"),
-        new("MainWindow.InsertBulletedList", "Bulle&ted List", "Ctrl+Shift+L", "insert-bullet-list", "Format"),
-        new("MainWindow.IncreaseIndent", "Incre&ase Indent", "Ctrl+Alt+M", "format-indent-more", "Format"),
-        new("MainWindow.DecreaseIndent", "&Decrease Indent", "Ctrl+Shift+M", "format-indent-less", "Format"),
+        new("MainWindow.InsertBulletedList", "Bulle&ted List", "", "insert-bullet-list", "Format"),
+        new("MainWindow.IncreaseIndent", "Incre&ase Indent", "", "format-indent-more", "Format"),
+        new("MainWindow.DecreaseIndent", "&Decrease Indent", "", "format-indent-less", "Format"),
         new("MainWindow.TextDirectionLTR", "Te&xt Direction LTR", "", "format-direction-ltr", "Format"),
         new("MainWindow.TextDirectionRTL", "T&ext Direction RTL", "", "format-direction-rtl", "Format"),
         new("MainWindow.TextDirectionDefault", "Text Directi&on Default", "", "format-direction-default", "Format"),
-        new("MainWindow.RemoveFormatting", "Remove &Formatting", "Ctrl+Space", "remove-formatting", "Format"),
+        new("MainWindow.RemoveFormatting", "Remove &Formatting", "", "remove-formatting", "Format"),
         new("MainWindow.RemoveTagPair", "Remove Tag Pair", "", "tag-pair-remove", "Format"),
         new("MainWindow.JumpToOpeningTag", "Jump To &Opening Tag", "Ctrl+Shift+[", "tag-jump-opening", "Format"),
         new("MainWindow.JumpToClosingTag", "Jump To C&losing Tag", "Ctrl+Shift+]", "tag-jump-closing", "Format"),
         new("MainWindow.SelectTagContents", "Select Tag &Contents", "Ctrl+Alt+T", "tag-select", "Format"),
         new("MainWindow.RenameTag", "Re&name Tag...", "", "tag-rename", "Format"),
         new("MainWindow.SplitTag", "S&plit Tag", "", "tag-split", "Format"),
-        new("MainWindow.Heading1", "Heading &1", "Ctrl+1", "heading-1", "Format"),
-        new("MainWindow.Heading2", "Heading &2", "Ctrl+2", "heading-2", "Format"),
-        new("MainWindow.Heading3", "Heading &3", "Ctrl+3", "heading-3", "Format"),
-        new("MainWindow.Heading4", "Heading &4", "Ctrl+4", "heading-4", "Format"),
-        new("MainWindow.Heading5", "Heading &5", "Ctrl+5", "heading-5", "Format"),
-        new("MainWindow.Heading6", "Heading &6", "Ctrl+6", "heading-6", "Format"),
-        new("MainWindow.HeadingNormal", "&Normal", "Ctrl+7", "heading-normal", "Format"),
+        new("MainWindow.Heading1", "Heading &1", "", "heading-1", "Format"),
+        new("MainWindow.Heading2", "Heading &2", "", "heading-2", "Format"),
+        new("MainWindow.Heading3", "Heading &3", "", "heading-3", "Format"),
+        new("MainWindow.Heading4", "Heading &4", "", "heading-4", "Format"),
+        new("MainWindow.Heading5", "Heading &5", "", "heading-5", "Format"),
+        new("MainWindow.Heading6", "Heading &6", "", "heading-6", "Format"),
+        new("MainWindow.HeadingNormal", "&Normal", "", "heading-normal", "Format"),
         new("MainWindow.HeadingPreserveAttributes", "&Preserve Existing Attributes", "", "preserve-attributes", "Format"),
 
         new("MainWindow.Find", "&Find && Replace...", "Ctrl+F", "edit-find", "Search"),
@@ -126,19 +121,23 @@ public static class AppActionCatalog
         new("MainWindow.Count", "&Count All", "Ctrl+Shift+N", "count-all", "Search"),
         new("MainWindow.DryRunReplaceAll", "Dry Run Replace All", "", "replace-all-dry-run", "Search"),
         new("MainWindow.FilterReplaceAll", "Filter Replacements", "", "replace-all-filter", "Search"),
-        new("MainWindow.RestartSearch", "Restart Current Search", "", "restart", "Search"),
         new("MainWindow.FindNextInFile", "Find &Next In File", "", "find-next", "Search"),
         new("MainWindow.ReplaceNextInFile", "&Replace Next In File", "", "replace-find", "Search"),
         new("MainWindow.ReplaceAllInFile", "Replace &All In File", "", "replace-all", "Search"),
         new("MainWindow.CountInFile", "&Count All In File", "", "count-all", "Search"),
-        new("MainWindow.BookmarkLocation", "Book&mark Location", "Ctrl+Alt+B", "bookmark", "Search"),
+        // Bookmarks, like the JetBrains IDEs: F11 toggles one on the caret line (the gutter marks it), the panel lists them.
+        new("MainWindow.BookmarkLocation", "Toggle &Bookmark", "F11", "bookmark", "Search"),
+        // Next / Previous Bookmark have no default shortcut — they are set in Preferences, like Navigate Back / Forward.
+        new("MainWindow.NextBookmark", "Next Bookmark", "", "arrow-down", "Search"),
+        new("MainWindow.PreviousBookmark", "Previous Bookmark", "", "arrow-up", "Search"),
+        new("MainWindow.ShowBookmarks", "Show Bookmarks...", "Shift+F11", "bookmark", "Search"),
         new("MainWindow.GoToLinkOrStyle", "&Go To Link Or Style", "F3", "go-to-definition", "Search"),
         // Navigate Back / Forward (IntelliJ-style navigation history) — no default shortcut, set in Preferences.
         new("MainWindow.NavigateBack", "Navigate &Back", "", "back", "Search"),
         new("MainWindow.NavigateForward", "Navigate For&ward", "", "forward", "Search"),
         new("MainWindow.RecentLocations", "Recent &Locations...", "", "recent-locations", "Search"),
         new("MainWindow.FindUsages", "Find Usages", "Alt+F7", "find-usages", "Search"),
-        new("MainWindow.MarkSelection", "Mar&k Selected Text", "Ctrl+Shift+M", "mark-selection", "Search"),
+        new("MainWindow.MarkSelection", "Mar&k Selected Text", "", "mark-selection", "Search"),
         new("MainWindow.GoToLine", "Go To &Line...", "Ctrl+/", "go-to-line", "Search"),
 
         new("MainWindow.ZoomIn", "Zoom &In", "Ctrl+=", "list-add", "View"),
@@ -184,7 +183,7 @@ public static class AppActionCatalog
         new(AppActionIds.ExtractInlineStyles, "&Extract Inline Styles to Classes…", "", "beautify-css", "Tools"),
         new("MainWindow.WellFormedCheckEpub", "Well-Formed Check &EPUB", "F7", "check-wellformed", "Tools"),
         new("MainWindow.ValidateStylesheetsWithW3C", "Validate Stylesheets With &W3C", "", "validate-css", "Tools"),
-        new("MainWindow.Reports", "&Reports...", "Ctrl+Shift+R", "reports", "Tools"),
+        new("MainWindow.Reports", "&Reports...", "", "reports", "Tools"),
         new("MainWindow.ClipEditor", "&Clip Editor...", "Ctrl+Shift+C", "clip-editor", "Tools"),
         // See the comment on AppActionIds.SelectClip.
         new("MainWindow.SelectClip", "&Insert Clip From Library...", "", "insert-clip", "Tools"),
@@ -219,6 +218,7 @@ public static class AppActionCatalog
         new("MainWindow.FindReplaceWindow", "&Find && Replace Panel", "", "find", "View"),
         new("MainWindow.NotificationsWindow", "&Notifications Panel", "", "panel-notifications", "View"),
         new("MainWindow.FindUsagesWindow", "Find Usages Panel", "", "find-usages", "View"),
+        new("MainWindow.BookmarksWindow", "Bookmarks Panel", "", "bookmark", "View"),
         new("MainWindow.FocusOnBookBrowser", "Focus on Book Browser", "", "focus-book-browser", "View"),
         new("MainWindow.FocusOnCodeEditor", "Focus on Code Editor", "", "focus-code-editor", "View"),
         new("MainWindow.FocusOnPreview", "Focus on Preview", "", "focus-preview", "View"),
@@ -250,7 +250,7 @@ public static class AppActionCatalog
         new(AppActionIds.BookBrowserMoveToTop, "Move To &Top", "", "move-to-top", AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserMoveToBottom, "Move To &Bottom", "", "move-to-bottom", AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserSort, "&Sort", "", "sort", AppActionIds.BookBrowserCategory),
-        new(AppActionIds.BookBrowserMerge, "Mer&ge", "Ctrl+M", "merge-content", AppActionIds.BookBrowserCategory),
+        new(AppActionIds.BookBrowserMerge, "Mer&ge", "", "merge-content", AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserSplit, "Split At Markers", "", "split-markers", AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserAddBlankHtml, "Add Blank HTML File", "", "file-add-html", AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserAddBlankCss, "Add Blank Stylesheet", "", "file-add-css", AppActionIds.BookBrowserCategory),
@@ -280,15 +280,13 @@ public static class AppActionCatalog
         // in Preferences → Keyboard Shortcuts).
         // MainWindowViewModel.RefreshClipActions() replaces it with the name of the assigned clip
         // and restores this value when the slot is empty.
-        // Default shortcuts: only Clip1..10 (Ctrl+Alt+1..9, Ctrl+Alt+0)
-        // and Clip60 (Ctrl+0 — intentionally shares its shortcut with MainWindow.ZoomReset).
+        // Default shortcuts: only Clip1..10 (Ctrl+Alt+1..9, Ctrl+Alt+0).
         for (int slot = 1; slot <= AppActionIds.ClipSlotCount; slot++)
         {
             string shortcut = slot switch
             {
                 >= 1 and <= 9 => "Ctrl+Alt+" + slot.ToString(CultureInfo.InvariantCulture),
                 10 => "Ctrl+Alt+0",
-                60 => "Ctrl+0",
                 _ => string.Empty,
             };
 

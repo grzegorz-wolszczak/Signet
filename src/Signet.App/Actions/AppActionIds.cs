@@ -10,11 +10,6 @@ public static class AppActionIds
     public const string NewDefault = "MainWindow.NewDefault";
     public const string NewEpub2 = "MainWindow.NewEpub2";
     public const string NewEpub3 = "MainWindow.NewEpub3";
-    public const string NewHtmlFile = "MainWindow.NewHTMLFile";
-    public const string NewCssFile = "MainWindow.NewCSSFile";
-    public const string NewJsFile = "MainWindow.NewJSFile";
-    public const string NewSvgFile = "MainWindow.NewSVGFile";
-    public const string AddExistingFile = "MainWindow.AddExistingFile";
     public const string Open = "MainWindow.Open";
     public const string Save = "MainWindow.Save";
     public const string SaveAs = "MainWindow.SaveAs";
@@ -104,12 +99,26 @@ public static class AppActionIds
     public const string Count = "MainWindow.Count";
     public const string DryRunReplaceAll = "MainWindow.DryRunReplaceAll";
     public const string FilterReplaceAll = "MainWindow.FilterReplaceAll";
-    public const string RestartSearch = "MainWindow.RestartSearch";
     public const string FindNextInFile = "MainWindow.FindNextInFile";
     public const string ReplaceNextInFile = "MainWindow.ReplaceNextInFile";
     public const string ReplaceAllInFile = "MainWindow.ReplaceAllInFile";
     public const string CountInFile = "MainWindow.CountInFile";
+
+    /// <summary>Toggle Bookmark — adds or removes the bookmark on the caret line (the id is the old "Bookmark Location").</summary>
     public const string BookmarkLocation = "MainWindow.BookmarkLocation";
+
+    /// <summary>Show Completions — the popup with the suggestions at the caret (CSS classes in a <c>class</c> attribute, file names in a link).</summary>
+    public const string ShowCompletions = "MainWindow.ShowCompletions";
+
+    /// <summary>Next Bookmark — the caret goes to the next bookmark in the file (wrapping around).</summary>
+    public const string NextBookmark = "MainWindow.NextBookmark";
+
+    /// <summary>Previous Bookmark — the caret goes to the previous bookmark in the file (wrapping around).</summary>
+    public const string PreviousBookmark = "MainWindow.PreviousBookmark";
+
+    /// <summary>Show Bookmarks — the popup with the bookmarks and a preview of the file of the selected one.</summary>
+    public const string ShowBookmarks = "MainWindow.ShowBookmarks";
+
     public const string GoToLinkOrStyle = "MainWindow.GoToLinkOrStyle";
     public const string NavigateBack = "MainWindow.NavigateBack";
     public const string NavigateForward = "MainWindow.NavigateForward";
@@ -222,6 +231,9 @@ public static class AppActionIds
     /// <summary>Shows/hides the "Find Usages" panel.</summary>
     public const string ToggleFindUsages = "MainWindow.FindUsagesWindow";
 
+    /// <summary>Shows/hides the "Bookmarks" panel.</summary>
+    public const string ToggleBookmarks = "MainWindow.BookmarksWindow";
+
     /// <summary>Live CSS Panel.</summary>
     public const string LiveCssPanel = "MainWindow.LiveCssPanel";
 
@@ -308,7 +320,7 @@ public static class AppActionIds
     {
         DeleteLine, ToggleComment, CasingLowercase, CasingUppercase, CasingTitlecase, CasingCapitalize, MergeContent, UnwrapDiv,
         RenameClass, InsertClosingTag, RemoveTagPair, JumpToOpeningTag, JumpToClosingTag, SelectTagContents, RenameTag,
-        SplitTag, GoToLinkOrStyle, FindUsages, ShowClipsPopup,
+        SplitTag, GoToLinkOrStyle, FindUsages, ShowClipsPopup, BookmarkLocation, NextBookmark, PreviousBookmark, ShowCompletions,
     };
 
     /// <summary>Whether the action's shortcuts work only in a code editor (see <see cref="CodeEditorActionIds"/>).</summary>
@@ -323,7 +335,7 @@ public static class AppActionIds
         NewDefault, NewEpub2, NewEpub3, Open, Exit, Preferences, CustomLayout, ClipEditor, SearchEditor,
         About, CssPropertyReference,
         ToggleBookBrowser, ToggleClips, TogglePreview, ToggleToc, ToggleValidationResults, ToggleCheckpoints,
-        ToggleNotifications, ToggleFindReplace, ToggleFindUsages,
+        ToggleNotifications, ToggleFindReplace, ToggleFindUsages, ToggleBookmarks,
         FocusCodeEditor, FocusBookBrowser, FocusPreview, FocusToc, FocusClips,
     };
 

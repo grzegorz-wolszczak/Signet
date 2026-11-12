@@ -198,6 +198,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.UnwrapDivConfirmationRequested -= OnUnwrapDivConfirmationRequested;
             _boundViewModel.RevertConfirmationRequested -= OnRevertConfirmationRequested;
             _boundViewModel.RecentLocationsRequested -= OnRecentLocationsRequested;
+            _boundViewModel.BookmarksPopupRequested -= OnBookmarksPopupRequested;
             _boundViewModel.CreateCheckpointRequested -= OnCreateCheckpointRequested;
             _boundViewModel.CompareCheckpointRequested -= OnCompareCheckpointRequested;
             _boundViewModel.MendDiffRequested -= OnCompareCheckpointRequested;
@@ -207,6 +208,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.PasteClipboardHistoryRequested -= OnPasteClipboardHistoryRequested;
             _boundViewModel.InsertFileRequested -= OnInsertFileRequested;
             _boundViewModel.InsertIdRequested -= OnInsertIdRequested;
+            _boundViewModel.InsertRoleRequested -= OnInsertRoleRequested;
             _boundViewModel.InsertHyperlinkRequested -= OnInsertHyperlinkRequested;
             _boundViewModel.InsertAriaClipRequested -= OnInsertAriaClipRequested;
             _boundViewModel.SelectClipRequested -= OnSelectClipRequested;
@@ -266,6 +268,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.UnwrapDivConfirmationRequested += OnUnwrapDivConfirmationRequested;
         _boundViewModel.RevertConfirmationRequested += OnRevertConfirmationRequested;
         _boundViewModel.RecentLocationsRequested += OnRecentLocationsRequested;
+        _boundViewModel.BookmarksPopupRequested += OnBookmarksPopupRequested;
         _boundViewModel.CreateCheckpointRequested += OnCreateCheckpointRequested;
         _boundViewModel.CompareCheckpointRequested += OnCompareCheckpointRequested;
         _boundViewModel.MendDiffRequested += OnCompareCheckpointRequested;
@@ -275,6 +278,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.PasteClipboardHistoryRequested += OnPasteClipboardHistoryRequested;
         _boundViewModel.InsertFileRequested += OnInsertFileRequested;
         _boundViewModel.InsertIdRequested += OnInsertIdRequested;
+        _boundViewModel.InsertRoleRequested += OnInsertRoleRequested;
         _boundViewModel.InsertHyperlinkRequested += OnInsertHyperlinkRequested;
         _boundViewModel.InsertAriaClipRequested += OnInsertAriaClipRequested;
         _boundViewModel.SelectClipRequested += OnSelectClipRequested;
@@ -647,6 +651,14 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         window.Show(this);
     }
 
+    // Show Bookmarks — a popup like Recent Locations: closes when it loses focus; its size and place are remembered.
+    private void OnBookmarksPopupRequested(object? sender, BookmarksPopupViewModel model)
+    {
+        BookmarksPopupWindow window = new() { DataContext = model };
+        RememberPlacement(window);
+        window.Show(this);
+    }
+
     // "Create Checkpoint…" — a prompt asking for a name.
     private async void OnCreateCheckpointRequested(object? sender, EventArgs e)
     {
@@ -910,6 +922,22 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         }
 
         vm.ApplyAriaClip(code, roleCode);
+    }
+
+    // Insert Role: the roles that fit the element at the caret, like the role list of an ARIA clip.
+    private async void OnInsertRoleRequested(object? sender, EventArgs e)
+    {
+        MainWindowViewModel? vm = _boundViewModel;
+        if (vm is null)
+        {
+            return;
+        }
+
+        string? roleCode = await PickMetadataFieldWindow.AskOneAsync(this, Strings.Get("MetadataEditorWindow_SelectRole"), vm.GetRoleOptionsAtCaret());
+        if (!string.IsNullOrEmpty(roleCode))
+        {
+            vm.ApplyRole(roleCode);
+        }
     }
 
     private async void OnSelectClipRequested(object? sender, EventArgs e)

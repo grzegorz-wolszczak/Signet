@@ -266,7 +266,7 @@ public sealed class MainDockFactoryTests
         Halves(layout, MainDockFactory.BottomRowId).Should().Equal(PanelPlaces.DockId(PanelPlace.BottomLeft), PanelPlaces.DockId(PanelPlace.BottomRight));
         factory.PanelsAt(PanelPlace.LeftTop).Should().Equal(DockableIds.BookBrowser, DockableIds.Clips);
         factory.PanelsAt(PanelPlace.RightTop).Should().Equal(DockableIds.Preview, DockableIds.TableOfContents, DockableIds.Checkpoints);
-        factory.PanelsAt(PanelPlace.BottomLeft).Should().Equal(DockableIds.ValidationResults, DockableIds.Notifications, DockableIds.FindUsages);
+        factory.PanelsAt(PanelPlace.BottomLeft).Should().Equal(DockableIds.ValidationResults, DockableIds.Notifications, DockableIds.FindUsages, DockableIds.Bookmarks);
         new[] { PanelPlace.LeftBottom, PanelPlace.RightBottom, PanelPlace.BottomRight }
             .Should().OnlyContain(p => factory.PanelsAt(p).Count == 0, "the second halves start empty");
     }

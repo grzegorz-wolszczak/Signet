@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:cv="using:Signet.App.CodeEditor"
+        x:Class="Signet.App.Views.BookmarksPopupWindow"
+        Classes="noFrame"
+        x:DataType="vm:BookmarksPopupViewModel"
+        Width="900" Height="600" MinWidth="450" MinHeight="250"
+        WindowStartupLocation="CenterOwner"
+        WindowDecorations="BorderOnly"
+        ShowInTaskbar="False"
+        Title="{Binding Title}">
+
+  <!-- A popup like IntelliJ's Show Bookmarks: the bookmarks on the left, the file of the selected one on the right. It
+       closes when it loses focus (click outside), on Esc and after going to a bookmark (Enter or a double click); its size and place are remembered
+       (MainWindow.RememberPlacement). -->
+
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Padding="10,6"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+      <TextBlock Text="{Binding Title}" FontWeight="Bold" HorizontalAlignment="Center" />
+    </Border>
+
+    <Panel>
+      <Grid ColumnDefinitions="3*,4,7*" IsVisible="{Binding HasItems}">
+        <ListBox x:Name="Bookmarks" Grid.Column="0" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto" Focusable="False">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:BookmarkPopupItem">
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                <Image Width="16" Height="16" Source="{DynamicResource SignetFileIcon}" />
+                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <GridSplitter Grid.Column="1" ResizeDirection="Columns" Focusable="False" />
+        <cv:BookmarkPreviewEditor x:Name="Preview" Grid.Column="2" />
+      </Grid>
+
+      <!-- Without a bookmark the popup says how to add one. -->
+      <StackPanel IsVisible="{Binding !HasItems}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+        <TextBlock Text="{Binding EmptyTitle}" HorizontalAlignment="Center" />
+        <TextBlock Text="{Binding EmptyHint}" HorizontalAlignment="Center" Opacity="0.6" />
+      </StackPanel>
+    </Panel>
+  </DockPanel>
+</Window>

@@ -122,6 +122,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _showNonBreakingSpaces = _settings.CodeEditorShowNonBreakingSpaces;
         _showZeroWidth = _settings.CodeEditorShowZeroWidth;
         _showColorPreview = _settings.CodeEditorShowColorPreview;
+        _showFoldingLines = _settings.CodeEditorShowFoldingLines;
         _bookBrowserFollowsActiveTab = _settings.BookBrowserFollowsActiveTab;
         _multilineTabs = _settings.CodeEditorMultilineTabs;
         _enableAltGr = _settings.EnableAltGr;
@@ -779,6 +780,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnShowColorPreviewChanged(bool value) => _settings.CodeEditorShowColorPreview = value;
 
+    /// <summary>The gutter of Code Editor draws a line from the start of the foldable region under the pointer to its end.</summary>
+    [ObservableProperty]
+    private bool _showFoldingLines;
+
+    partial void OnShowFoldingLinesChanged(bool value) => _settings.CodeEditorShowFoldingLines = value;
+
     /// <summary>The Book Browser selects the file of the active tab (also after a tab in a window of its own got the focus).</summary>
     [ObservableProperty]
     private bool _bookBrowserFollowsActiveTab;
@@ -960,6 +967,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         ShowNonBreakingSpaces = _settings.CodeEditorShowNonBreakingSpaces;
         ShowZeroWidth = _settings.CodeEditorShowZeroWidth;
         ShowColorPreview = _settings.CodeEditorShowColorPreview;
+        ShowFoldingLines = _settings.CodeEditorShowFoldingLines;
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
         LoadToolbarAppearance();

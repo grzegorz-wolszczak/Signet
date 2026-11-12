@@ -13,6 +13,7 @@ using Signet.Core.Misc;
 using Signet.Core.Parsers;
 using Signet.Core.Resources;
 using Signet.Core.Search;
+using Signet.Core.Semantics;
 using Signet.Core.Spellcheck;
 using Signet.Core;
 
@@ -48,6 +49,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     private ElementMergeCandidate? _mergeCandidate;
     private bool _insertFileEnabled;
     private bool _insertIdEnabled;
+    private bool _insertRoleEnabled;
     private bool _insertHyperlinkEnabled;
     private readonly List<(int Start, int End)> _searchHighlights = new();
     private string? _searchHighlightPattern;
@@ -113,6 +115,9 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     /// <summary>Whether Code Editor draws a preview under the color values (<see cref="SettingsStore.CodeEditorShowColorPreview"/>).</summary>
     public bool ShowColorPreview => _settings.CodeEditorShowColorPreview;
 
+    /// <summary>Whether the gutter draws a line along the region under the pointer (<see cref="SettingsStore.CodeEditorShowFoldingLines"/>).</summary>
+    public bool ShowFoldingLines => _settings.CodeEditorShowFoldingLines;
+
     /// <summary>The font of the marks of the invisible characters (<see cref="SettingsStore.InvisibleCharacterAppearance"/>).</summary>
     public InvisibleCharacterAppearance InvisibleCharacterFont => _settings.InvisibleCharacterAppearance;
 
@@ -126,6 +131,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         OnPropertyChanged(nameof(ShowNonBreakingSpaces));
         OnPropertyChanged(nameof(ShowZeroWidth));
         OnPropertyChanged(nameof(ShowColorPreview));
+        OnPropertyChanged(nameof(ShowFoldingLines));
         OnPropertyChanged(nameof(InvisibleCharacterFont));
         InvisibleCharactersChanged?.Invoke();
     }
@@ -209,6 +215,62 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         return matches.Count == 0 ? null : new LinkCompletionResult(context.ReplaceStart, matches);
     }
 
+    // The classes a stylesheet defines, by its bookpath, for the text the list was made from (a stylesheet is parsed again only
+    // when its text changed — the list is asked for after every typed character).
+    private readonly Dictionary<string, (string Text, IReadOnlyList<string> Classes)> _classesOfStylesheets = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The completions at the caret: the file names and anchors of a link (<see cref="GetLinkCompletions"/>), or, in the
+    /// <c>class</c> attribute of an (X)HTML file, the classes of the stylesheets of the file. A class list is offered once
+    /// something was typed — or on demand (<paramref name="manual"/>, the "Show Completions" action), when nothing was.
+    /// <c>null</c> — there is nothing to suggest.
+    /// </summary>
+    public LinkCompletionResult? GetCompletions(int caretOffset, bool manual) =>
+        GetLinkCompletions(caretOffset) ?? GetClassCompletions(caretOffset, manual);
+
+    /// <summary>
+    /// The CSS classes to offer in the <c>class</c> attribute under the caret: those the stylesheets linked from this file
+    /// and its own <c>&lt;style&gt;</c> blocks define, without the ones the attribute has, best match to what was typed first.
+    /// </summary>
+    public LinkCompletionResult? GetClassCompletions(int caretOffset, bool manual)
+    {
+        if (Resource is not HtmlResource html
+            || ClassCompletion.Detect(Document.Text, caretOffset, Syntax) is not { } context
+            || (!manual && context.Query.Length == 0))
+        {
+            return null;
+        }
+
+        List<(string Name, string Source)> defined = new();
+        foreach (string sheet in html.GetLinkedStylesheets())
+        {
+            if (DocumentTextOf?.Invoke(sheet) is not { } css)
+            {
+                continue;
+            }
+
+            if (!_classesOfStylesheets.TryGetValue(sheet, out (string Text, IReadOnlyList<string> Classes) known)
+                || !string.Equals(known.Text, css, StringComparison.Ordinal))
+            {
+                known = (css, ClassCompletion.ClassesOfStylesheet(css));
+                _classesOfStylesheets[sheet] = known;
+            }
+
+            string file = System.IO.Path.GetFileName(sheet);
+            defined.AddRange(known.Classes.Select(name => (name, file)));
+        }
+
+        defined.AddRange(ClassCompletion.ClassesOfStyleBlocks(Document.Text).Select(name => (name, Strings.Get("ClassCompletion_StyleBlock"))));
+        IReadOnlyList<LinkCompletionItem> items = ClassCompletion.Candidates(defined, context.Used, context.Query);
+        return items.Count == 0 ? null : new LinkCompletionResult(context.ReplaceStart, items, context.ReplaceEnd);
+    }
+
+    /// <summary>Request: show the completions at the caret now, even when nothing was typed yet (the "Show Completions" action).</summary>
+    public event Action? CompletionRequested;
+
+    /// <summary>Asks the view to show the completions at the caret (<see cref="CompletionRequested"/>).</summary>
+    public void RequestCompletion() => CompletionRequested?.Invoke();
+
     /// <summary>
     /// Whether the target of a reference from <c>href</c>/<c>src</c>/<c>url()</c> of this file exists in the book
     /// (external links and bare fragments — always yes). For extended highlighting.
@@ -238,6 +300,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     public void Dispose()
     {
         _settings.SettingChanged -= OnSampleSettingChanged;
+        DetachBookmarks();
     }
 
     /// <summary>Whether the editor wraps long lines (from <see cref="SettingsStore.CodeEditorWordWrap"/>).</summary>
@@ -245,6 +308,47 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     {
         get => _wordWrap;
         set => SetProperty(ref _wordWrap, value);
+    }
+
+    /// <summary>
+    /// Request: the editor does a clipboard operation on its selection (the Cut, Copy and Paste actions of the main window;
+    /// the view holds the clipboard).
+    /// </summary>
+    public event Action<EditorClipboardCommand>? ClipboardRequested;
+
+    /// <summary>Asks the view to cut, copy or paste (<see cref="ClipboardRequested"/>).</summary>
+    public void RequestClipboard(EditorClipboardCommand command) => ClipboardRequested?.Invoke(command);
+
+    /// <summary>
+    /// "Delete Line" — deletes the line with the caret, or all the lines the selection touches, with their line breaks (one
+    /// undo step); the caret goes to the start of the line that takes their place.
+    /// </summary>
+    public void DeleteLines()
+    {
+        int start = Math.Clamp(Math.Min(_selectionStart, _selectionEnd), 0, Document.TextLength);
+        int end = Math.Clamp(Math.Max(_selectionStart, _selectionEnd), 0, Document.TextLength);
+        DocumentLine first = Document.GetLineByOffset(start);
+
+        // A selection that ends at the very start of a line does not touch that line.
+        DocumentLine last = Document.GetLineByOffset(end > start && Document.GetLineByOffset(end).Offset == end ? end - 1 : end);
+        int from = first.Offset;
+        int length = last.EndOffset + last.DelimiterLength - from;
+        if (length == 0)
+        {
+            return;
+        }
+
+        // The last line has no break of its own: the break before it goes instead, so that no empty line is left behind.
+        if (last.DelimiterLength == 0 && first.LineNumber > 1)
+        {
+            DocumentLine before = first.PreviousLine!;
+            from = before.EndOffset;
+            length = last.EndOffset - from;
+        }
+
+        Document.Remove(from, length);
+        int caret = Math.Min(from, Document.TextLength);
+        SelectionRequested?.Invoke(caret, caret);
     }
 
     /// <summary>Request: scroll the editor to the given line (1-based) and place the caret there.</summary>
@@ -437,6 +541,24 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
 
     /// <summary>Whether "Insert ID" is currently allowed.</summary>
     public bool InsertIdEnabled => _insertIdEnabled;
+
+    /// <summary>Whether "Insert Role" is currently allowed (an element at the caret and a role that fits it).</summary>
+    public bool InsertRoleEnabled => _insertRoleEnabled;
+
+    /// <summary>
+    /// The roles that fit the element at the caret (<see cref="CodeInsertOperations.RoleTarget"/>), as the list of the
+    /// "Insert Role" dialog; empty when there is none.
+    /// </summary>
+    public IReadOnlyDictionary<string, DescriptiveInfo> RoleOptionsAtCaret
+    {
+        get
+        {
+            SyncModelFromDocument();
+            return CodeInsertOperations.RoleTarget(_model.Text, _caretOffset) is { } target
+                ? AriaClipBuilder.RoleOptions(target.Tag)
+                : new Dictionary<string, DescriptiveInfo>(StringComparer.Ordinal);
+        }
+    }
 
     /// <summary>Whether "Insert Hyperlink" is currently allowed.</summary>
     public bool InsertHyperlinkEnabled => _insertHyperlinkEnabled;
@@ -674,7 +796,34 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     /// Main window services for the context menu (clips, actions, book operations). Set
     /// by <c>TabManager</c>; <c>null</c> (e.g. in tests) = host-dependent items are skipped.
     /// </summary>
-    public ICodeTabHost? Host { get; set; }
+    public ICodeTabHost? Host
+    {
+        get => _host;
+        set
+        {
+            if (ReferenceEquals(_host, value))
+            {
+                return;
+            }
+
+            DetachBookmarks();
+            _host = value;
+
+            // The bookmarks of this file follow their lines through the edits of this document while the tab is open.
+            if (_host?.Bookmarks is { } bookmarks)
+            {
+                bookmarks.Attach(ResourceBookPath, Document);
+            }
+        }
+    }
+
+    private ICodeTabHost? _host;
+
+    /// <summary>
+    /// The tab was closed: the bookmarks of its file keep the lines they are on and no longer follow the document
+    /// (called by <c>TabManager</c>).
+    /// </summary>
+    public void DetachBookmarks() => _host?.Bookmarks?.Detach(ResourceBookPath);
 
     /// <summary>Whether the editor has a selection.</summary>
     public bool HasSelection => _selectionEnd > _selectionStart;
@@ -922,8 +1071,14 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
             return;
         }
 
+        bool hadSelection = HasSelection;
         _selectionStart = start;
         _selectionEnd = end;
+        if (hadSelection != HasSelection)
+        {
+            OnPropertyChanged(nameof(HasSelection));
+        }
+
         RefreshFormatState();
     }
 
@@ -1800,6 +1955,14 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         ApplyFormat(CodeInsertOperations.InsertId(_model.Text, _selectionStart, _selectionEnd, id));
     }
 
+    /// <summary>Gives the element at the caret the role (<c>epub:type</c> and <c>role</c> attributes).</summary>
+    public void InsertRole(string roleCode)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(roleCode);
+        SyncModelFromDocument();
+        ApplyFormat(CodeInsertOperations.SetRole(_model.Text, _caretOffset, _caretOffset, roleCode));
+    }
+
     /// <summary>Adds/updates the <c>href</c> attribute on the <c>&lt;a&gt;</c> under the caret.</summary>
     public void InsertHyperlink(string target)
     {
@@ -1912,6 +2075,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         ElementMergeCandidate? mergeCandidate = null;
         bool insertFile = false;
         bool insertId = false;
+        bool insertRole = false;
         bool insertHyperlink = false;
 
         if (Syntax == CodeEditorSyntax.Html)
@@ -1930,6 +2094,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
 
             insertFile = CodeInsertOperations.InsertFileAllowed(text, _selectionStart);
             insertId = CodeInsertOperations.InsertIdAllowed(text, _selectionStart);
+            insertRole = CodeInsertOperations.InsertRoleAllowed(text, _selectionStart);
             insertHyperlink = CodeInsertOperations.InsertHyperlinkAllowed(text, _selectionStart);
         }
 
@@ -1973,6 +2138,12 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         {
             _insertIdEnabled = insertId;
             OnPropertyChanged(nameof(InsertIdEnabled));
+        }
+
+        if (insertRole != _insertRoleEnabled)
+        {
+            _insertRoleEnabled = insertRole;
+            OnPropertyChanged(nameof(InsertRoleEnabled));
         }
 
         if (insertHyperlink != _insertHyperlinkEnabled)
@@ -2031,10 +2202,11 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         Title = (IsModified ? "• " : string.Empty) + Tab.Caption;
 }
 
-/// <summary>Completions: the replaced fragment starts at <see cref="ReplaceStart"/> and ends at the caret.</summary>
+/// <summary>Completions: the replaced fragment starts at <see cref="ReplaceStart"/> and ends at <see cref="ReplaceEnd"/>.</summary>
 /// <param name="ReplaceStart">Start of the replaced text.</param>
 /// <param name="Items">Items, best first.</param>
-public sealed record LinkCompletionResult(int ReplaceStart, IReadOnlyList<LinkCompletionItem> Items);
+/// <param name="ReplaceEnd">End of the replaced text; <see langword="null"/> = the caret.</param>
+public sealed record LinkCompletionResult(int ReplaceStart, IReadOnlyList<LinkCompletionItem> Items, int? ReplaceEnd = null);
 
 /// <summary>The place of the user in the text of a tab: what a new view of the tab restores (<see cref="CodeTabViewModel.ViewState"/>).</summary>
 /// <param name="TopLine">The first visible line (1-based).</param>
@@ -2042,3 +2214,16 @@ public sealed record LinkCompletionResult(int ReplaceStart, IReadOnlyList<LinkCo
 /// <param name="SelectionStart">The start of the selection.</param>
 /// <param name="SelectionLength">The length of the selection; 0 = none.</param>
 public sealed record CodeTabViewState(int TopLine, int CaretOffset, int SelectionStart, int SelectionLength);
+
+/// <summary>A clipboard operation on the selection of a code editor (<see cref="CodeTabViewModel.ClipboardRequested"/>).</summary>
+public enum EditorClipboardCommand
+{
+    /// <summary>Cut the selection to the clipboard.</summary>
+    Cut,
+
+    /// <summary>Copy the selection to the clipboard.</summary>
+    Copy,
+
+    /// <summary>Paste the clipboard at the caret (over the selection).</summary>
+    Paste,
+}

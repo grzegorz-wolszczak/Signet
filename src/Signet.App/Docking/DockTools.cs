@@ -32,6 +32,9 @@ public static class DockableIds
     /// <summary>"Find Usages" panel (the usages of a CSS class).</summary>
     public const string FindUsages = "FindUsages";
 
+    /// <summary>"Bookmarks" panel (the bookmarked lines of the book).</summary>
+    public const string Bookmarks = "Bookmarks";
+
     /// <summary>Document area (tabs).</summary>
     public const string Documents = "Documents";
 }
@@ -220,6 +223,20 @@ public sealed class FindUsagesTool : SignetTool
 
     /// <summary>Panel view model (embedded by <see cref="MainDockFactory"/>).</summary>
     public FindUsagesViewModel? ViewModel { get; init; }
+}
+
+/// <summary>"Bookmarks" panel — the bookmarked lines of the book, by file.</summary>
+public sealed class BookmarksTool : SignetTool
+{
+    /// <summary>Initializes the panel.</summary>
+    public BookmarksTool()
+    {
+        Id = DockableIds.Bookmarks;
+        Title = Strings.Get("Panel_Bookmarks");
+    }
+
+    /// <summary>Panel view model (embedded by <see cref="MainDockFactory"/>).</summary>
+    public BookmarksViewModel? ViewModel { get; init; }
 }
 
 /// <summary>Notifications panel — the history of the status bar messages.</summary>

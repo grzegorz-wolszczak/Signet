@@ -803,7 +803,6 @@ public sealed class CodeTabViewRenderTests : IDisposable
         headers.Should().Equal(
             Signet.App.Resources.Strings.Get("CodeEditorMenu_Clips"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_AddToClips"),
-            Signet.App.Resources.Strings.Get("CodeEditorMenu_ToggleLineWrapMode"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_GoToLinkOrStyle"),
             CodeTabViewModel.MergeContentTextFor(null),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_UnwrapDiv"),
@@ -1494,6 +1493,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
 
     private sealed class FakeHost : ICodeTabHost
     {
+        public Signet.App.ViewModels.BookmarkList Bookmarks { get; } = new();
+
         public System.Collections.Generic.IReadOnlyList<AppAction> CodeEditorShortcutActions { get; set; } =
             System.Array.Empty<AppAction>();
 

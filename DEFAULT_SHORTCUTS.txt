@@ -1,0 +1,132 @@
+SIGNET DEFAULT KEYBOARD SHORTCUTS (from the action catalog, AppActionCatalog): 70 entries
+==========================================================================================
+
+Column "Where it works":
+  Editor       = Code Editor with the focus (the shortcut is handled only there)
+  Window       = main window; without an open book the action is blocked
+  No book      = the action is available without an open book as well
+  XHTML tab    = the action works on the tab of an XHTML file
+
+Format: SHORTCUT | ACTION (id in the catalog) | WHERE IT WORKS
+
+FILE
+----
+Ctrl+N            | New Default (MainWindow.NewDefault) | Window, no book
+Ctrl+O            | Open... (MainWindow.Open) | Window, no book
+Ctrl+Shift+W      | Close (MainWindow.Close) | Window
+Ctrl+S            | Save (MainWindow.Save) | Window
+Ctrl+Shift+S      | Save As... (MainWindow.SaveAs) | Window
+Ctrl+P            | Print... (MainWindow.Print) | Window
+Ctrl+Q            | Quit (MainWindow.Exit) | Window, no book
+
+EDIT
+----
+Ctrl+Z            | Undo (MainWindow.Undo) | Window
+Ctrl+Y            | Redo (MainWindow.Redo) | Window
+Ctrl+Alt+V        | Paste From Clipboard History... (MainWindow.PasteClipboardHistory) | Window
+Ctrl+D            | Delete Line (MainWindow.DeleteLine) | Editor
+Ctrl+Shift+Space  | Show Completions (MainWindow.ShowCompletions) | Editor
+Ctrl+Shift+/      | Toggle Comment (MainWindow.ToggleComment) | Editor
+Ctrl+Shift+K      | Lowercase (MainWindow.CasingLowercase) | Editor
+Ctrl+Alt+U        | Uppercase (MainWindow.CasingUppercase) | Editor
+F6                | Split At Markers (MainWindow.SplitOnSGFSectionMarkers) | Window
+F5                | Preferences... (MainWindow.Preferences) | Window, no book
+
+FORMAT
+------
+Ctrl+Shift+[      | Jump To Opening Tag (MainWindow.JumpToOpeningTag) | Editor
+Ctrl+Shift+]      | Jump To Closing Tag (MainWindow.JumpToClosingTag) | Editor
+Ctrl+Alt+T        | Select Tag Contents (MainWindow.SelectTagContents) | Editor
+
+INSERT
+------
+Ctrl+Shift+Return | Split Marker (MainWindow.InsertSGFSectionMarker) | Window, XHTML tab
+Ctrl+Shift+I      | File... (MainWindow.InsertFile) | Window, XHTML tab
+Ctrl+.            | Closing Tag (MainWindow.InsertClosingTag) | Editor
+
+SEARCH
+------
+Ctrl+F            | Find & Replace... (MainWindow.Find) | Window
+Ctrl+G            | Find Next (MainWindow.FindNext) | Window
+Ctrl+Shift+G      | Find Previous (MainWindow.FindPrevious) | Window
+Ctrl+R            | Replace (MainWindow.ReplaceCurrent) | Window
+Ctrl+]            | Replace/Find Next (MainWindow.ReplaceNext) | Window
+Ctrl+[            | Replace/Find Previous (MainWindow.ReplacePrevious) | Window
+Ctrl+Shift+A      | Replace All (MainWindow.ReplaceAll) | Window
+Ctrl+Shift+N      | Count All (MainWindow.Count) | Window
+F11               | Toggle Bookmark (MainWindow.BookmarkLocation) | Editor
+Shift+F11         | Show Bookmarks... (MainWindow.ShowBookmarks) | Window
+F3                | Go To Link Or Style (MainWindow.GoToLinkOrStyle) | Editor
+Alt+F7            | Find Usages (MainWindow.FindUsages) | Editor
+Ctrl+/            | Go To Line... (MainWindow.GoToLine) | Window
+
+TOOLS
+-----
+F8                | Metadata Editor... (MainWindow.MetaEditor) | Window
+Ctrl+T            | Generate Table Of Contents... (MainWindow.GenerateTOC) | Window
+F7                | Well-Formed Check EPUB (MainWindow.WellFormedCheckEpub) | Window
+Ctrl+Shift+C      | Clip Editor... (MainWindow.ClipEditor) | Window, no book
+Ctrl+Alt+F        | Saved Searches... (MainWindow.SearchEditor) | Window, no book
+Ctrl+Alt+J        | Live CSS Panel (MainWindow.LiveCssPanel) | Window
+Ctrl+Alt+Q        | Spellcheck... (MainWindow.SpellcheckEditor) | Window
+F4                | Next Misspelled Word (MainWindow.Spellcheck) | Window
+
+VIEW
+----
+Ctrl+=            | Zoom In (MainWindow.ZoomIn) | Window
+Ctrl+-            | Zoom Out (MainWindow.ZoomOut) | Window
+Ctrl+0            | Zoom Reset (MainWindow.ZoomReset) | Window
+Alt+F1            | Book Browser panel (MainWindow.BookBrowser) | Window, no book
+F10               | Preview panel (MainWindow.PreviewWindow) | Window, no book
+Alt+F3            | Table Of Contents panel (MainWindow.TableOfContents) | Window, no book
+Alt+F2            | Validation Results panel (MainWindow.ValidationResults) | Window, no book
+
+WINDOW
+------
+Ctrl+PgDown       | Next Tab (MainWindow.NextTab) | Window
+Ctrl+PgUp         | Previous Tab (MainWindow.PreviousTab) | Window
+Ctrl+W            | Close Tab (MainWindow.CloseTab) | Window
+Ctrl+Alt+W        | Close Other Tabs (MainWindow.CloseOtherTabs) | Window
+Alt+PgDown        | Next File (MainWindow.NextResource) | Window
+Alt+PgUp          | Previous File (MainWindow.PreviousResource) | Window
+
+PANELS AND AUXILIARY WINDOWS
+----------------------------
+F2                | Rename... (MainWindow.BookBrowser.Rename) | Book Browser panel
+Del               | Delete (MainWindow.BookBrowser.Delete) | Book Browser panel
+F2                | Rename (MainWindow.ClipEditor.Rename) | Clip Editor window, no book
+Ctrl+Alt+1        | Clip 1 (MainWindow.Clip1) | Window, code tab
+Ctrl+Alt+2        | Clip 2 (MainWindow.Clip2) | Window, code tab
+Ctrl+Alt+3        | Clip 3 (MainWindow.Clip3) | Window, code tab
+Ctrl+Alt+4        | Clip 4 (MainWindow.Clip4) | Window, code tab
+Ctrl+Alt+5        | Clip 5 (MainWindow.Clip5) | Window, code tab
+Ctrl+Alt+6        | Clip 6 (MainWindow.Clip6) | Window, code tab
+Ctrl+Alt+7        | Clip 7 (MainWindow.Clip7) | Window, code tab
+Ctrl+Alt+8        | Clip 8 (MainWindow.Clip8) | Window, code tab
+Ctrl+Alt+9        | Clip 9 (MainWindow.Clip9) | Window, code tab
+Ctrl+Alt+0        | Clip 10 (MainWindow.Clip10) | Window, code tab
+
+
+REMOVED DEFAULT SHORTCUTS (assign them by hand in Preferences > Keymap)
+----------------------------------------------------------------------
+Ctrl+Shift+M             : Decrease Indent, Mark Selected Text
+Ctrl+0                   : Clip 60 (Zoom Reset kept Ctrl+0)
+Ctrl+M                   : Merge (Book Browser)
+Ctrl+Shift+R             : Reports
+Ctrl+B / Ctrl+I / Ctrl+U : Bold / Italic / Underline
+Ctrl+1 .. Ctrl+6         : Heading 1-6;  Ctrl+7 : Heading Normal
+Ctrl+E / Ctrl+J          : Align Center / Align Justify
+Ctrl+Shift+L             : Bulleted List
+Ctrl+Alt+M               : Increase Indent
+Ctrl+Space               : Remove Formatting
+
+DEFAULT SHORTCUT CONFLICTS: none (checked by the test KeyboardShortcutManagerTests).
+Note: F2 (Rename) is used in two contexts, the Book Browser and the Clip Editor; they never overlap.
+
+WHAT THIS LIST DOES NOT COVER
+-----------------------------
+- Editor shortcuts of AvaloniaEdit that Signet does not set in the catalog (Ctrl+X/C/V/A, Tab, Home/End).
+- Ctrl+click on a class, a link or a color (a mouse shortcut).
+- Actions without a default shortcut (among them Next/Previous Bookmark, Navigate Back/Forward, Recent Locations).
+
+Source: src/Signet.App/Actions/AppActionCatalog.cs (the third argument of an entry is its default shortcut).
