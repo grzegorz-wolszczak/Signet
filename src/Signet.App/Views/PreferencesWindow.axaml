@@ -1004,7 +1004,14 @@
                           <CheckBox x:Name="ExtendedHighlightingBox" Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}"
                                     IsChecked="{Binding ExtendedHighlighting}" />
                           <CheckBox x:Name="ShowColorPreviewBox" Content="{loc:Loc PreferencesWindow_ShowColorPreview}" IsChecked="{Binding ShowColorPreview}" />
-                          <CheckBox x:Name="ShowFoldingLinesBox" Content="{loc:Loc PreferencesWindow_ShowFoldingLines}" IsChecked="{Binding ShowFoldingLines}" />
+                          <CheckBox x:Name="ShowBlockLineBox" Content="{loc:Loc PreferencesWindow_ShowBlockLine}" IsChecked="{Binding ShowBlockLine}" />
+                          <!-- The thickness of the block line; its color is "Block line" in the color scheme. -->
+                          <StackPanel Orientation="Horizontal" Spacing="8" Margin="24,0,0,0" IsEnabled="{Binding ShowBlockLine}">
+                            <TextBlock Text="{loc:Loc PreferencesWindow_BlockLineThickness}" VerticalAlignment="Center" />
+                            <NumericUpDown x:Name="BlockLineThicknessBox" Width="110" Value="{Binding BlockLineThickness}"
+                                           Minimum="{x:Static vm:PreferencesViewModel.BlockLineThicknessMin}"
+                                           Maximum="{x:Static vm:PreferencesViewModel.BlockLineThicknessMax}" FormatString="0" />
+                          </StackPanel>
                           <!-- The document tabs: several rows when they do not fit. -->
                           <CheckBox x:Name="MultilineTabsBox" Content="{loc:Loc PreferencesWindow_MultilineTabs}" IsChecked="{Binding MultilineTabs}" />
                           <!-- The characters that are drawn as nothing get a mark of their own (their color is in the

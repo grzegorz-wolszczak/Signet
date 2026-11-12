@@ -29,6 +29,9 @@ public partial class CodeTabView
     // The markers of the gutter, in place of the ones of AvaloniaEdit (which has them between the dotted line and the code).
     private readonly FoldingGutterMargin _foldingGutter = new();
 
+    // The vertical line along the block the caret is in.
+    private readonly BlockLineRenderer _blockLine;
+
     // The document the folding manager was installed for (FoldingManager does not expose it).
     private TextDocument? _foldingDocument;
 
@@ -126,7 +129,6 @@ public partial class CodeTabView
         }
 
         _foldingGutter.Manager = _foldingManager;
-        _foldingGutter.ShowLines = _boundViewModel?.ShowFoldingLines ?? false;
         margins.Insert(margins.IndexOf(separator), _foldingGutter);
     }
 
@@ -134,16 +136,38 @@ public partial class CodeTabView
     // draw themselves; the pointer over a number is not over the folding column).
     private void OnGutterPointerMoved(object? sender, PointerEventArgs e)
     {
-        Point inTextView = e.GetPosition(Editor.TextArea.TextView);
-        bool inGutter = IsInGutter(inTextView);
-        _foldingGutter.GutterHovered = inGutter;
-        _foldingGutter.PointerLine = inGutter ? BookmarkMargin.LineAt(Editor.TextArea.TextView, inTextView.Y) ?? 0 : 0;
+        _foldingGutter.GutterHovered = IsInGutter(e.GetPosition(Editor.TextArea.TextView));
     }
 
-    private void OnGutterPointerExited(object? sender, PointerEventArgs e)
+    private void OnGutterPointerExited(object? sender, PointerEventArgs e) => _foldingGutter.GutterHovered = false;
+
+    // The vertical line along the block of the caret (a setting): the open regions of the folding manager, as lines.
+    private IEnumerable<(int Start, int End)> OpenRegionLines()
     {
-        _foldingGutter.GutterHovered = false;
-        _foldingGutter.PointerLine = 0;
+        if (_foldingManager is null || Editor.Document is not { } document)
+        {
+            yield break;
+        }
+
+        foreach (FoldingSection section in _foldingManager.AllFoldings)
+        {
+            if (section.IsFolded || section.Length <= 0 || section.EndOffset > document.TextLength)
+            {
+                continue;
+            }
+
+            yield return (document.GetLineByOffset(section.StartOffset).LineNumber, document.GetLineByOffset(section.EndOffset).LineNumber);
+        }
+    }
+
+    // Takes the setting, the theme and the caret to the renderer of the block line and draws it again.
+    private void UpdateBlockLine()
+    {
+        _blockLine.Enabled = _boundViewModel?.ShowBlockLine ?? false;
+        _blockLine.Thickness = _boundViewModel?.BlockLineThickness ?? 1;
+        _blockLine.Theme = Signet.App.Infrastructure.AppTheme.Current;
+        _blockLine.CaretLine = Editor.TextArea.Caret.Line;
+        Editor.TextArea.TextView.InvalidateLayer(KnownLayer.Background);
     }
 
     private void UpdateFoldings()
@@ -157,6 +181,7 @@ public partial class CodeTabView
         IReadOnlyList<FoldRegion> regions = vm.Syntax == CodeEditorSyntax.Css ? CodeFolding.ForCss(text) : CodeFolding.ForMarkup(text);
         _foldingManager.UpdateFoldings(regions.Select(r => new NewFolding(r.StartOffset, r.EndOffset) { Name = r.Title }), -1);
         _foldingGutter.InvalidateVisual();
+        UpdateBlockLine();
     }
 
     private void OnFoldedRegionPressed(object? sender, PointerPressedEventArgs e)

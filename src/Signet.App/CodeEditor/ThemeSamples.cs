@@ -5,15 +5,20 @@ namespace Signet.App.CodeEditor;
 /// <summary>The demo texts of the pages of the theme editor with an editor preview.</summary>
 public static class ThemeSamples
 {
-    /// <summary>General: XHTML with the editor's own looks (current line, selection, search, errors, hints).</summary>
+    /// <summary>
+    /// General: XHTML with the editor's own looks (current line, selection, search, errors, hints). The caret is in a div inside the
+    /// body, so the line along the block of the caret (<c>editor.blockLine</c>) has two blocks to show.
+    /// </summary>
     public static ThemeSample General { get; } = ThemeSample.Parse(
         """
         <?xml version="1.0" encoding="utf-8"?>
         <html xmlns="http://www.w3.org/1999/xhtml">
         <body>
-          <p>The caret is on this line.</p>
-          <p>Some «editor.selection|selected text» and a «search.match|search match».</p>
-          <p>Marked «search.marked|results» and a «errors.spelling|mispelled» word.</p>
+          <div>
+            <p>The caret is on this line.</p>
+            <p>Some «editor.selection|selected text» and a «search.match|search match».</p>
+            <p>Marked «search.marked|results» and a «errors.spelling|mispelled» word.</p>
+          </div>
           «editor.tagPair|<div>»<p>The pair of tags around the caret.</p>«editor.tagPair|</div>»
           <p>An «errors.wellFormed|<span>» element that is never closed.</p>
           «errors.wellFormedWarning|<p>A warning about the document.</p>»
@@ -24,7 +29,7 @@ public static class ThemeSamples
         </html>
         """,
         CodeEditorSyntax.Html,
-        caretLine: 4);
+        caretLine: 5);
 
     /// <summary>XHTML: the markup, links, emphasized text and an embedded stylesheet.</summary>
     public static ThemeSample Xhtml { get; } = ThemeSample.Parse(

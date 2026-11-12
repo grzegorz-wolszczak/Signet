@@ -23,7 +23,7 @@ namespace Signet.App.UiTests;
 
 /// <summary>
 /// The folding markers in the gutter: chevrons on the first line of a region that show while the pointer is over the gutter
-/// (a folded region keeps its chevron), the line along the region under the pointer, and a click that folds and unfolds.
+/// (a folded region keeps its chevron), and a click that folds and unfolds.
 /// </summary>
 public sealed class FoldingGutterTests : IDisposable
 {
@@ -148,84 +148,6 @@ public sealed class FoldingGutterTests : IDisposable
         // Assert
         margin.Manager!.AllFoldings.Where(f => f.IsFolded).Select(f => editor.Document.GetLineByOffset(f.StartOffset).LineNumber)
             .Should().Equal(5);
-        window.Close();
-    }
-
-    // The vertical lines the column draws (not the chevrons, which are wider): their top and bottom.
-    private static (double Top, double Bottom)[] LinesIn(FoldingGutterMargin margin)
-    {
-        DrawingGroup drawing = new();
-        using (DrawingContext context = drawing.Open())
-        {
-            margin.Render(context);
-        }
-
-        return drawing.Children.OfType<GeometryDrawing>().Where(d => d.Pen is not null)
-            .Select(d => d.Geometry!.Bounds).Where(r => r.Width < 2).Select(r => (r.Top, r.Bottom)).ToArray();
-    }
-
-    [AvaloniaFact]
-    public void A_line_joins_the_start_and_the_end_of_the_region_under_the_pointer_when_the_setting_is_on()
-    {
-        // Arrange
-        (Window window, _, _, TextEditor editor, FoldingGutterMargin margin) = Show();
-        margin.GutterHovered = true;
-        margin.PointerLine = 3; // inside the regions of lines 1 and 2: the inner one, of the <div>, lines 2 to 4
-
-        // Assert
-        LinesIn(margin).Should().BeEmpty("the setting is off");
-
-        // Act
-        margin.ShowLines = true;
-
-        // Assert
-        (double top, double bottom) = LinesIn(margin).Should().ContainSingle().Subject;
-        top.Should().BeInRange(RowTop(editor, 2), RowTop(editor, 3), "from the middle of line 2");
-        bottom.Should().BeInRange(RowTop(editor, 4), RowTop(editor, 5), "to the middle of line 4");
-        ChevronsIn(margin).Length.Should().Be(4, "the three chevrons of the starts and the line");
-
-        // Act
-        margin.GutterHovered = false;
-
-        // Assert
-        LinesIn(margin).Should().BeEmpty("the pointer left the gutter");
-        window.Close();
-    }
-
-    [AvaloniaFact]
-    public void The_line_goes_on_to_the_edge_when_the_end_of_the_region_is_not_in_view()
-    {
-        // Arrange
-        (Window window, _, _, TextEditor editor, FoldingGutterMargin margin) = Show();
-        margin.GutterHovered = true;
-        margin.ShowLines = true;
-        margin.PointerLine = 1;
-        editor.Height = RowTop(editor, 3);
-        editor.UpdateLayout();
-        Dispatcher.UIThread.RunJobs();
-
-        // Act
-        (double Top, double Bottom)[] lines = LinesIn(margin);
-
-        // Assert
-        lines.Should().ContainSingle().Which.Top.Should().BeLessThan(RowTop(editor, 2), "it starts on line 1, the first row");
-        window.Close();
-    }
-
-    [AvaloniaFact]
-    public void The_setting_of_the_lines_reaches_an_open_editor()
-    {
-        // Arrange
-        (Window window, CodeTabViewModel vm, SettingsStore settings, _, FoldingGutterMargin margin) = Show();
-        margin.ShowLines.Should().BeFalse("off by default");
-
-        // Act
-        settings.CodeEditorShowFoldingLines = true;
-        vm.NotifyInvisibleCharactersSettingChanged();
-        Dispatcher.UIThread.RunJobs();
-
-        // Assert
-        margin.ShowLines.Should().BeTrue();
         window.Close();
     }
 

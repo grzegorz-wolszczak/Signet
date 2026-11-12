@@ -2,14 +2,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:loc="using:Signet.App.Resources"
+             xmlns:views="using:Signet.App.Views"
              x:Class="Signet.App.Views.BookmarksView"
              x:DataType="vm:BookmarksViewModel">
 
   <UserControl.Resources>
     <!-- The one column of the tree: a file with the number of its bookmarks, or the line of a bookmark with its text. -->
     <DataTemplate x:Key="BookmarkTextCellTemplate" x:DataType="vm:BookmarkNode">
-      <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                 ToolTip.Tip="{Binding Text}" />
+      <views:BookmarkNodeText Node="{Binding}" Background="Transparent" VerticalAlignment="Center"
+                              TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text}" />
     </DataTemplate>
   </UserControl.Resources>
 

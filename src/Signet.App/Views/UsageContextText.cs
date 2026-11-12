@@ -69,7 +69,8 @@ public sealed class UsageContextText : TextBlock
         Inlines = inlines;
     }
 
-    private static Run Run(UsageContextSegment segment, ResolvedTheme theme, TextAttributes match)
+    // The run of a segment in the colors of the theme (also used by the panels that show a colored line of code).
+    internal static Run Run(UsageContextSegment segment, ResolvedTheme theme, TextAttributes match)
     {
         Run run = new(segment.Text);
         if (segment.Format is { } format && SyntaxColorizer.SyntaxKeys.TryGetValue(format, out ThemeKey? key))

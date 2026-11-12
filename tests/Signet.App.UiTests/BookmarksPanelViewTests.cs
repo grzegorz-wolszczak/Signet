@@ -84,4 +84,25 @@ public sealed class BookmarksPanelViewTests
         window.GetVisualDescendants().OfType<TreeDataGrid>().Single().Rows!.Count.Should().Be(4, "two files and a bookmark in each");
         window.Close();
     }
+
+    [AvaloniaFact]
+    public void The_line_of_a_bookmark_is_colored_by_the_syntax_of_its_file()
+    {
+        // Arrange
+        BookmarkList list = new() { ClosedFileLineText = (_, _) => "<p class=\"paragraph\">No, jest dosyc jasne.</p>" };
+        list.Toggle(Chapter, 160);
+        BookmarksViewModel vm = new(list, _ => Signet.Core.MainUI.CodeEditorSyntax.Html);
+        Window window = new() { Width = 600, Height = 300, Content = new BookmarksView { DataContext = vm } };
+
+        // Act
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        BookmarkNodeText line = window.GetVisualDescendants().OfType<BookmarkNodeText>().First(t => t.Node?.Bookmark is not null);
+        line.Inlines!.OfType<Avalonia.Controls.Documents.Run>().Select(r => r.Text).Should().StartWith("160: ").And.Contain("<p");
+        line.Inlines!.OfType<Avalonia.Controls.Documents.Run>().Where(r => r.Foreground is not null).Should().NotBeEmpty("the tag and the attribute are colored");
+        string.Concat(line.Inlines!.OfType<Avalonia.Controls.Documents.Run>().Select(r => r.Text)).Should().Be("160: <p class=\"paragraph\">No, jest dosyc jasne.</p>");
+        window.Close();
+    }
 }

@@ -1352,21 +1352,63 @@ public sealed class PreferencesViewModelTests : IDisposable
     }
 
     [Fact]
-    public void The_folding_lines_are_off_at_first_and_the_choice_goes_to_the_settings()
+    public void The_block_line_is_off_at_first_and_the_choice_goes_to_the_settings()
     {
         // Arrange
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
 
         // Assert
-        vm.ShowFoldingLines.Should().BeFalse();
+        vm.ShowBlockLine.Should().BeFalse();
 
         // Act
-        vm.ShowFoldingLines = true;
+        vm.ShowBlockLine = true;
         vm.ApplyCommand.Execute(null);
 
         // Assert
-        host.Settings.CodeEditorShowFoldingLines.Should().BeTrue();
+        host.Settings.CodeEditorShowBlockLine.Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_thickness_of_the_block_line_goes_to_the_settings_on_apply()
+    {
+        // Arrange
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+
+        // Assert
+        vm.BlockLineThickness.Should().Be(1);
+
+        // Act
+        vm.BlockLineThickness = 3;
+        vm.ApplyCommand.Execute(null);
+
+        // Assert
+        host.Settings.CodeEditorBlockLineThickness.Should().Be(3);
+    }
+
+    [Fact]
+    public void The_code_editor_sample_has_the_caret_inside_nested_blocks_so_that_the_block_line_shows_what_it_does()
+    {
+        // Arrange
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        Signet.App.ViewModels.Tabs.CodeTabViewModel sample = vm.CodeEditorSample;
+
+        // Act
+        string[] lines = sample.Document.Text.Split('\n');
+        int caretLine = sample.Document.GetLineByOffset(sample.ViewState!.CaretOffset).LineNumber;
+        int depth = 0;
+        int open = 0;
+        for (int i = 0; i < caretLine; i++)
+        {
+            open += lines[i].Split("<div").Length - 1;
+            open -= lines[i].Split("</div>").Length - 1;
+            depth = open;
+        }
+
+        // Assert
+        depth.Should().BeGreaterThanOrEqualTo(2, "the caret is in a div inside a div");
     }
 
     [Fact]

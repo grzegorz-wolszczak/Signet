@@ -210,7 +210,11 @@ public sealed partial class MainWindowViewModel
         _validationResults.UsageHintsToggled += (_, show) => RunAsyncAction(() => ChangeUsageHintsAsync(show));
 
         _bookmarks.ClosedFileLineText = ClosedFileLineText;
-        _bookmarksPanel = new BookmarksViewModel(_bookmarks);
+        _bookmarksPanel = new BookmarksViewModel(
+            _bookmarks,
+            bookPath => _currentBook?.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath) is { } resource
+                ? CodeEditorSyntaxMap.ForResource(resource)
+                : CodeEditorSyntax.PlainText);
         _bookmarksPanel.BookmarkActivated += (_, bookmark) => GoToBookmark(bookmark);
         _dockFactory.Bookmarks = _bookmarksPanel;
 
@@ -585,7 +589,8 @@ public sealed partial class MainWindowViewModel
                 || e.QualifiedKey.EndsWith("/code_editor_show_non_breaking_spaces", StringComparison.Ordinal)
                 || e.QualifiedKey.EndsWith("/code_editor_show_zero_width", StringComparison.Ordinal)
                 || e.QualifiedKey.EndsWith("/code_editor_show_color_preview", StringComparison.Ordinal)
-                || e.QualifiedKey.EndsWith("/code_editor_show_folding_lines", StringComparison.Ordinal)
+                || e.QualifiedKey.EndsWith("/code_editor_show_block_line", StringComparison.Ordinal)
+                || e.QualifiedKey.EndsWith("/code_editor_block_line_thickness", StringComparison.Ordinal)
                 || SettingChangeKeys.Is(e, SettingChangeKeys.AppearanceSettingsCleared))
             {
                 // The marks of the characters that are drawn as nothing — the open tabs redraw them at once.

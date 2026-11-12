@@ -571,13 +571,24 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Whether the gutter of Code Editor draws a line from the start of a foldable region to its end while the pointer is over
-    /// the region (the outline of the folding of the JetBrains IDEs). Disabled by default.
+    /// Whether Code Editor draws a vertical line along the block (the element, the comment, the CSS rule) the caret is in, from
+    /// its first line to its last — and, weaker, along the blocks around it. Disabled by default. The color is
+    /// <c>editor.blockLine</c> of the color scheme, the thickness <see cref="CodeEditorBlockLineThickness"/>.
     /// </summary>
-    public bool CodeEditorShowFoldingLines
+    public bool CodeEditorShowBlockLine
     {
-        get => ReadBool("code_editor_show_folding_lines", false);
-        set => Write("code_editor_show_folding_lines", value);
+        get => ReadBool("code_editor_show_block_line", false);
+        set => Write("code_editor_show_block_line", value);
+    }
+
+    /// <summary>The smallest and the largest thickness of the block line (px).</summary>
+    public const int BlockLineThicknessMin = 1, BlockLineThicknessMax = 4;
+
+    /// <summary>The thickness of the block line (<see cref="CodeEditorShowBlockLine"/>), in pixels; 1 by default, kept within 1 to 4.</summary>
+    public int CodeEditorBlockLineThickness
+    {
+        get => Math.Clamp(ReadInt("code_editor_block_line_thickness", 1), BlockLineThicknessMin, BlockLineThicknessMax);
+        set => Write("code_editor_block_line_thickness", Math.Clamp(value, BlockLineThicknessMin, BlockLineThicknessMax));
     }
 
     /// <summary>Whether Code Editor marks the non-breaking spaces (U+00A0), which look exactly like a space. Enabled by default.</summary>

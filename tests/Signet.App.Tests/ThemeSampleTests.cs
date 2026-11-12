@@ -109,7 +109,7 @@ public sealed class ThemeSampleTests
                 .SelectMany(s => s.Marks.Concat(s.SyntaxRanges)).Select(r => r.Key).Distinct().ToArray();
             ThemeKey[] notShown = ThemeKeys.On(page)
                 .Where(k => k != ThemeKeys.EditorText && k != ThemeKeys.EditorCurrentLine && k != ThemeKeys.EditorLineNumbers
-                            && k != ThemeKeys.EditorCurrentLineNumber)
+                            && k != ThemeKeys.EditorCurrentLineNumber && k != ThemeKeys.EditorBlockLine) // (a line, not a fragment)
                 .Except(shown).ToArray();
 
             // Assert

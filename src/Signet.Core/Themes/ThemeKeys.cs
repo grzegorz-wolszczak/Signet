@@ -25,6 +25,12 @@ public static class ThemeKeys
     public static readonly ThemeKey EditorLineNumbers = Attributes("editor.lineNumbers", ThemePage.General, "Editor",
         new TextAttributes { Foreground = Rgb(0x808080) });
 
+    /// <summary>
+    /// The vertical line along the block the caret is in (and, weaker, along the blocks around it), drawn in the text of Code
+    /// Editor when <see cref="Signet.Core.Misc.SettingsStore.CodeEditorShowBlockLine"/> is on.
+    /// </summary>
+    public static readonly ThemeKey EditorBlockLine = Color("editor.blockLine", ThemePage.General, "Editor", Rgb(0xA0A0A0));
+
     /// <summary>The number of the line with the caret (what it does not set, it takes from the line numbers).</summary>
     public static readonly ThemeKey EditorCurrentLineNumber = Attributes("editor.currentLineNumber", ThemePage.General, "Editor",
         new TextAttributes { Foreground = Rgb(0x000000) });

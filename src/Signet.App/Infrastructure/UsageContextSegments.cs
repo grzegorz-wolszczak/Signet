@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Signet.Core.BookManipulation;
+using Signet.Core.MainUI;
 using Signet.Core.Misc;
 
 namespace Signet.App.Infrastructure;
@@ -17,19 +18,24 @@ public readonly record struct UsageContextSegment(string Text, SyntaxFormat? For
 /// </summary>
 public static class UsageContextSegments
 {
-    /// <summary>The kind of file a context comes from, which decides the highlighter.</summary>
-    private enum Syntax
-    {
-        None,
-        Markup,
-        Css,
-    }
-
     /// <summary>The pieces of <see cref="ClassUsage.Context"/>, in text order; empty for an empty context.</summary>
     public static IReadOnlyList<UsageContextSegment> Of(ClassUsage usage)
     {
         ArgumentNullException.ThrowIfNull(usage);
-        string text = usage.Context;
+        return Of(usage.Context, SyntaxOf(usage), usage.ContextMatchStart, usage.ContextMatchLength);
+    }
+
+    /// <summary>
+    /// The pieces of a line of text: colored by the highlighter of <paramref name="syntax"/> (markup or CSS; other syntaxes
+    /// stay plain) and, when <paramref name="matchStart"/> is not negative, with the match marked; empty for an empty text.
+    /// </summary>
+    /// <param name="text">The line.</param>
+    /// <param name="syntax">The syntax of the file it comes from.</param>
+    /// <param name="matchStart">Where the searched text starts in the line; negative = none.</param>
+    /// <param name="matchLength">How long the searched text is.</param>
+    public static IReadOnlyList<UsageContextSegment> Of(string text, CodeEditorSyntax syntax, int matchStart = -1, int matchLength = 0)
+    {
+        ArgumentNullException.ThrowIfNull(text);
         if (text.Length == 0)
         {
             return Array.Empty<UsageContextSegment>();
@@ -39,12 +45,12 @@ public static class UsageContextSegments
         // the wrong state — the colors are a help to the eye, not a parse.
         SyntaxFormat?[] formats = new SyntaxFormat?[text.Length];
         List<SyntaxSpan> spans = new();
-        switch (SyntaxOf(usage))
+        switch (syntax)
         {
-            case Syntax.Markup:
+            case CodeEditorSyntax.Html or CodeEditorSyntax.Xml:
                 new XhtmlHighlighter().HighlightLine(text, 0, spans);
                 break;
-            case Syntax.Css:
+            case CodeEditorSyntax.Css:
                 new CssHighlighter().HighlightLine(text, 0, spans);
                 break;
         }
@@ -59,8 +65,7 @@ public static class UsageContextSegments
             }
         }
 
-        int matchStart = usage.ContextMatchStart;
-        int matchEnd = matchStart < 0 ? -1 : Math.Min(text.Length, matchStart + usage.ContextMatchLength);
+        int matchEnd = matchStart < 0 ? -1 : Math.Min(text.Length, matchStart + matchLength);
         bool IsMatch(int index) => index >= matchStart && index < matchEnd;
 
         List<UsageContextSegment> segments = new();
@@ -80,12 +85,12 @@ public static class UsageContextSegments
     }
 
     // A stylesheet, a rule of a <style> block (the usage is a selector), or a markup file; other files are plain text.
-    private static Syntax SyntaxOf(ClassUsage usage)
+    private static CodeEditorSyntax SyntaxOf(ClassUsage usage)
     {
         string path = usage.BookPath;
         if (usage.Kind == ClassUsageKind.Selector || path.EndsWith(".css", StringComparison.OrdinalIgnoreCase))
         {
-            return Syntax.Css;
+            return CodeEditorSyntax.Css;
         }
 
         string[] markup = [".xhtml", ".html", ".htm", ".xml", ".svg", ".opf", ".ncx", ".smil"];
@@ -93,10 +98,10 @@ public static class UsageContextSegments
         {
             if (path.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
             {
-                return Syntax.Markup;
+                return CodeEditorSyntax.Html;
             }
         }
 
-        return Syntax.None;
+        return CodeEditorSyntax.PlainText;
     }
 }

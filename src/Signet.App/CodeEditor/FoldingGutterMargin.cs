@@ -14,9 +14,7 @@ namespace Signet.App.CodeEditor;
 /// The folding markers of the gutter of Code Editor, drawn like the ones of the JetBrains IDEs: a chevron on the first line
 /// of a foldable region — pointing down while it is open, to the right while it is folded — that a click folds or unfolds.
 /// The chevrons of open regions show only while the pointer is over the gutter (<see cref="GutterHovered"/>); a folded
-/// region keeps its chevron. With <see cref="ShowLines"/> a thin line joins the start of the open region the pointer is in to
-/// its end (the outline of the folding of the JetBrains IDEs). The regions are those of the <see cref="Manager"/> of the
-/// editor.
+/// region keeps its chevron. The regions are those of the <see cref="Manager"/> of the editor.
 /// </summary>
 public sealed class FoldingGutterMargin : AbstractMargin
 {
@@ -31,14 +29,9 @@ public sealed class FoldingGutterMargin : AbstractMargin
     private const double ChevronEdge = 1;
     private const double ChevronStroke = 1.2;
 
-    // The line along a region.
-    private const double LineStroke = 1;
-
     private FoldingManager? _manager;
     private bool _gutterHovered;
-    private bool _showEndings;
     private int _hoverLine;
-    private int _pointerLine;
 
     /// <summary>The regions that are drawn; <see langword="null"/> = none.</summary>
     public FoldingManager? Manager
@@ -66,20 +59,6 @@ public sealed class FoldingGutterMargin : AbstractMargin
         }
     }
 
-    /// <summary>Whether a line joins the start of the region under the pointer to its end while the gutter is hovered.</summary>
-    public bool ShowLines
-    {
-        get => _showEndings;
-        set
-        {
-            if (_showEndings != value)
-            {
-                _showEndings = value;
-                InvalidateVisual();
-            }
-        }
-    }
-
     /// <summary>The background of the column; <see langword="null"/> = the editor's.</summary>
     public IBrush? Background { get; set; }
 
@@ -91,23 +70,6 @@ public sealed class FoldingGutterMargin : AbstractMargin
 
     /// <summary>The line (1-based) whose chevron the pointer is over; 0 = none.</summary>
     public int HoverLine => _hoverLine;
-
-    /// <summary>
-    /// The line (1-based) the pointer is level with anywhere in the gutter, whichever column it is over; 0 = none. The region
-    /// the line (see <see cref="ShowLines"/>) is drawn for is the innermost open one that contains this line.
-    /// </summary>
-    public int PointerLine
-    {
-        get => _pointerLine;
-        set
-        {
-            if (_pointerLine != value)
-            {
-                _pointerLine = value;
-                InvalidateVisual();
-            }
-        }
-    }
 
     /// <inheritdoc />
     protected override Size MeasureOverride(Size availableSize) => new(ColumnWidth, 0);
@@ -127,42 +89,23 @@ public sealed class FoldingGutterMargin : AbstractMargin
         }
 
         Dictionary<int, RegionsOnLine> starts = new();
-        List<(int Start, int End)> open = new();
         foreach (FoldingSection section in manager.AllFoldings)
         {
-            if (!TryLines(section, out int startLine, out int endLine))
+            if (!TryLines(section, out int startLine, out _))
             {
                 continue;
             }
 
             starts.TryGetValue(startLine, out RegionsOnLine on);
             starts[startLine] = section.IsFolded ? on with { Folded = true } : on with { Open = true };
-            if (!section.IsFolded)
-            {
-                open.Add((startLine, endLine));
-            }
         }
 
-        // The visible lines with the middle of their first row, for the line of the region and the chevrons.
+        // The visible lines with their first row.
         Dictionary<int, (double Top, double Height)> rows = new();
         foreach (VisualLine line in view.VisualLines)
         {
             double top = line.GetTextLineVisualYPosition(line.TextLines[0], VisualYPosition.LineTop) - view.VerticalOffset;
             rows[line.FirstDocumentLine.LineNumber] = (top, line.TextLines[0].Height);
-        }
-
-        // The region the line under the pointer is in: the innermost open one.
-        if (GutterHovered && ShowLines && _pointerLine > 0
-            && open.Where(r => r.Start <= _pointerLine && _pointerLine <= r.End).OrderBy(r => r.End - r.Start).FirstOrDefault() is { End: > 0 } active)
-        {
-            double top = rows.TryGetValue(active.Start, out (double Top, double Height) first)
-                ? first.Top + (first.Height / 2)
-                : (active.Start < rows.Keys.DefaultIfEmpty(0).Min() ? 0 : Bounds.Height);
-            double bottom = rows.TryGetValue(active.End, out (double Top, double Height) last)
-                ? last.Top + (last.Height / 2)
-                : (active.End > rows.Keys.DefaultIfEmpty(0).Max() ? Bounds.Height : 0);
-            double x = ColumnWidth / 2;
-            drawingContext.DrawLine(new Pen(HoverBrush, LineStroke), new Point(x, top), new Point(x, bottom));
         }
 
         foreach ((int number, (double Top, double Height) row) in rows)

@@ -9101,7 +9101,13 @@ Zamknij zakładkę</value>
   <data name="ClassCompletion_StyleBlock" xml:space="preserve">
     <value>blok &lt;style&gt;</value>
   </data>
-  <data name="PreferencesWindow_ShowFoldingLines" xml:space="preserve">
-    <value>Pokaż w rynnie linię łączącą początek zwijanego regionu z jego końcem (dla regionu pod kursorem)</value>
+  <data name="PreferencesWindow_ShowBlockLine" xml:space="preserve">
+    <value>Pokaż pionową linię wzdłuż bloku, w którym stoi kursor (i słabszą wzdłuż bloków wokół)</value>
+  </data>
+  <data name="PreferencesWindow_BlockLineThickness" xml:space="preserve">
+    <value>Grubość linii bloku (px)</value>
+  </data>
+  <data name="ThemeKey_editor_blockLine" xml:space="preserve">
+    <value>Linia bloku</value>
   </data>
 </root>

@@ -112,6 +112,16 @@ public partial class CodeTabView : UserControl
         EditorTheming.ShowThemedLineNumbers(Editor);
         _bookmarkMargin.Lines = BookmarkedLines;
         Editor.TextArea.LeftMargins.Insert(1, _bookmarkMargin); // after the numbers, before the separator
+        _blockLine = new BlockLineRenderer(OpenRegionLines);
+        Editor.TextArea.TextView.BackgroundRenderers.Add(_blockLine);
+        Editor.TextArea.Caret.PositionChanged += (_, _) =>
+        {
+            if (_blockLine.Enabled && _blockLine.CaretLine != Editor.TextArea.Caret.Line)
+            {
+                _blockLine.CaretLine = Editor.TextArea.Caret.Line;
+                Editor.TextArea.TextView.InvalidateLayer(KnownLayer.Background);
+            }
+        };
         Editor.TextArea.TextView.BackgroundRenderers.Add(_tagRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_searchRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_errorRenderer);
@@ -743,7 +753,7 @@ public partial class CodeTabView : UserControl
         _invisibleCharacters.ShowNonBreakingSpaces = _boundViewModel?.ShowNonBreakingSpaces ?? false;
         _invisibleCharacters.ShowZeroWidth = _boundViewModel?.ShowZeroWidth ?? false;
         _invisibleCharacters.Font = _boundViewModel?.InvisibleCharacterFont ?? InvisibleCharacterAppearance.Default;
-        _foldingGutter.ShowLines = _boundViewModel?.ShowFoldingLines ?? false;
+        UpdateBlockLine();
         Editor.TextArea.TextView.Redraw();
         UpdateColorPreview();
     }
@@ -1802,6 +1812,7 @@ public partial class CodeTabView : UserControl
         _lineColorizer?.SetTheme(theme);
         _errorRenderer.Theme = theme;
         _tagRenderer.Theme = theme;
+        UpdateBlockLine();
         _searchRenderer.Theme = theme;
         _spellRenderer.Theme = theme;
         _invisibleCharacters.Theme = theme;

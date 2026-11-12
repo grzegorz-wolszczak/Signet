@@ -42,21 +42,47 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
-    public void The_folding_lines_of_the_gutter_are_off_at_first_and_the_choice_is_kept()
+    public void The_block_line_is_off_at_first_and_the_choice_is_kept()
     {
         // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
 
         // Act & Assert
-        sut.CodeEditorShowFoldingLines.Should().BeFalse("as in the JetBrains IDEs");
+        sut.CodeEditorShowBlockLine.Should().BeFalse();
 
         // Act
-        sut.CodeEditorShowFoldingLines = true;
+        sut.CodeEditorShowBlockLine = true;
         sut.Save();
 
         // Assert
-        NewStore(dir).CodeEditorShowFoldingLines.Should().BeTrue();
+        NewStore(dir).CodeEditorShowBlockLine.Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_block_line_is_one_pixel_thick_at_first_and_the_thickness_is_kept_within_its_range()
+    {
+        // Arrange
+        using TempDir dir = new();
+        SettingsStore sut = NewStore(dir);
+
+        // Act & Assert
+        sut.CodeEditorBlockLineThickness.Should().Be(1);
+
+        // Act
+        sut.CodeEditorBlockLineThickness = 3;
+        sut.Save();
+
+        // Assert
+        NewStore(dir).CodeEditorBlockLineThickness.Should().Be(3);
+
+        // Act
+        sut.CodeEditorBlockLineThickness = 99;
+        sut.CodeEditorBlockLineThickness.Should().Be(SettingsStore.BlockLineThicknessMax);
+        sut.CodeEditorBlockLineThickness = -5;
+
+        // Assert
+        sut.CodeEditorBlockLineThickness.Should().Be(SettingsStore.BlockLineThicknessMin);
     }
 
     [Fact]

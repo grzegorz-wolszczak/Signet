@@ -4,6 +4,7 @@
 <signet-scheme version="1" id="signet-dark" name="Signet Dark">
   <colors>
     <color key="editor.currentLine" value="#2A2D2E" />
+    <color key="editor.blockLine" value="#707070" />
   </colors>
   <attributes>
     <attribute key="editor.text" foreground="#D4D4D4" background="#1E1E1E" />

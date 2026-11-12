@@ -1,6 +1,8 @@
+using System;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.ViewModels;
+using Signet.Core.MainUI;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -148,5 +150,27 @@ public sealed class BookmarksViewModelTests
         // Assert
         activated.Should().BeSameAs(bookmark);
         activations.Should().Be(1);
+    }
+
+    [Fact]
+    public void The_nodes_of_a_bookmark_carry_the_line_its_prefix_and_the_syntax_of_the_file()
+    {
+        // Arrange
+        BookmarkList list = new() { ClosedFileLineText = (_, line) => $"  <p class=\"x\">line {line}</p>  " };
+        BookmarksViewModel sut = new(list, path => path.EndsWith(".css", StringComparison.Ordinal) ? CodeEditorSyntax.Css : CodeEditorSyntax.Html);
+
+        // Act
+        list.Toggle(Chapter, 4);
+        list.Toggle(Style, 2);
+
+        // Assert
+        BookmarkNode style = sut.Roots[0].Children.Single();
+        BookmarkNode chapter = sut.Roots[1].Children.Single();
+        chapter.Prefix.Should().Be("4: ");
+        chapter.LineText.Should().Be("<p class=\"x\">line 4</p>");
+        chapter.Syntax.Should().Be(CodeEditorSyntax.Html);
+        style.Syntax.Should().Be(CodeEditorSyntax.Css);
+        chapter.Text.Should().Be("4: <p class=\"x\">line 4</p>");
+        sut.Roots[1].Syntax.Should().Be(default(CodeEditorSyntax), "a file node has no line to color");
     }
 }

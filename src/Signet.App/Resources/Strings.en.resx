@@ -9101,7 +9101,13 @@ Close the tab</value>
   <data name="ClassCompletion_StyleBlock" xml:space="preserve">
     <value>&lt;style&gt; block</value>
   </data>
-  <data name="PreferencesWindow_ShowFoldingLines" xml:space="preserve">
-    <value>Show a line in the gutter from the start of a foldable region to its end (for the region under the pointer)</value>
+  <data name="PreferencesWindow_ShowBlockLine" xml:space="preserve">
+    <value>Show a vertical line along the block the caret is in (and a weaker one along the blocks around it)</value>
+  </data>
+  <data name="PreferencesWindow_BlockLineThickness" xml:space="preserve">
+    <value>Block line thickness (px)</value>
+  </data>
+  <data name="ThemeKey_editor_blockLine" xml:space="preserve">
+    <value>Block line</value>
   </data>
 </root>

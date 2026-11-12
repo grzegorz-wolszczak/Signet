@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.Input;
+using Signet.Core.MainUI;
 
 namespace Signet.App.ViewModels;
 
@@ -15,12 +16,16 @@ namespace Signet.App.ViewModels;
 public sealed class BookmarksViewModel : ViewModelBase
 {
     private readonly BookmarkList _bookmarks;
+    private readonly Func<string, CodeEditorSyntax> _syntaxOf;
     private BookmarkNode? _selected;
 
     /// <summary>Creates the view model over the bookmarks of the book (the tree follows <see cref="BookmarkList.Changed"/>).</summary>
-    public BookmarksViewModel(BookmarkList bookmarks)
+    /// <param name="bookmarks">The bookmarks.</param>
+    /// <param name="syntaxOf">The syntax of a file by its book path, for the colors of the line shown; null = plain text.</param>
+    public BookmarksViewModel(BookmarkList bookmarks, Func<string, CodeEditorSyntax>? syntaxOf = null)
     {
         _bookmarks = bookmarks ?? throw new ArgumentNullException(nameof(bookmarks));
+        _syntaxOf = syntaxOf ?? (_ => CodeEditorSyntax.PlainText);
         DeleteCommand = new RelayCommand(DeleteSelected, () => Selected is not null);
         ClearCommand = new RelayCommand(_bookmarks.Clear, () => HasBookmarks);
         _bookmarks.Changed += (_, _) => Rebuild();
@@ -92,12 +97,17 @@ public sealed class BookmarksViewModel : ViewModelBase
         foreach (IGrouping<string, Bookmark> file in _bookmarks.Items.GroupBy(b => b.BookPath, StringComparer.Ordinal))
         {
             BookmarkNode node = new(file.Key, $"{System.IO.Path.GetFileName(file.Key)} ({file.Count()})");
+            CodeEditorSyntax syntax = _syntaxOf(file.Key);
             foreach (Bookmark bookmark in file)
             {
+                string line = bookmark.Line.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 string text = _bookmarks.LineText(bookmark);
-                node.Children.Add(new BookmarkNode(file.Key, text.Length > 0 ? $"{bookmark.Line}: {text}" : bookmark.Line.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                node.Children.Add(new BookmarkNode(file.Key, text.Length > 0 ? $"{line}: {text}" : line)
                 {
                     Bookmark = bookmark,
+                    Prefix = text.Length > 0 ? $"{line}: " : line,
+                    LineText = text,
+                    Syntax = syntax,
                 });
             }
 
@@ -124,6 +134,15 @@ public sealed class BookmarkNode
 
     /// <summary>The text of the node: a file with the number of its bookmarks, or a line with its text.</summary>
     public string Text { get; }
+
+    /// <summary>The line number with its colon, in front of the text of the line (a bookmark); empty for a file.</summary>
+    public string Prefix { get; init; } = string.Empty;
+
+    /// <summary>The text of the bookmarked line, trimmed (a bookmark); empty for a file.</summary>
+    public string LineText { get; init; } = string.Empty;
+
+    /// <summary>The syntax of the file of the bookmark, which the line is colored by.</summary>
+    public CodeEditorSyntax Syntax { get; init; }
 
     /// <summary>The bookmark of the node; <see langword="null"/> for a file.</summary>
     public Bookmark? Bookmark { get; init; }

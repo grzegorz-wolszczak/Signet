@@ -21,7 +21,8 @@ public static class SampleBook
 
     // What the first chapter shows in the sample of Code Editor: headings, a class, links (one of them broken, so the highlighting
     // of a broken link shows), an image, a style sheet and a line with the characters that are drawn as nothing
-    // (so that the three settings of Preferences show what they do), written the way a book is.
+    // (so that the three settings of Preferences show what they do), written the way a book is. The paragraphs sit in divs
+    // inside a div, so that the line along the block of the caret (a setting) has nested blocks to show.
     private const string FirstChapterTemplate = """
         <?xml version="1.0" encoding="utf-8"?>
         <!DOCTYPE html>
@@ -32,10 +33,14 @@ public static class SampleBook
         </head>
         <body>
           <h1 id="start">The Lighthouse</h1>
-          <p class="lead">The sea was <em>calm</em> that morning, and the keeper climbed the stairs.</p>
-          <p>Read <a href="Chapter02.xhtml">the next chapter</a> or <a href="Missing.xhtml">a missing page</a>.</p>
-          <div class="note">
-            <p>A <span class="small">short</span> note under the light.</p>
+          <div class="chapter">
+            <div class="scene">
+              <p class="lead">The sea was <em>calm</em> that morning, and the keeper climbed the stairs.</p>
+              <p>Read <a href="Chapter02.xhtml">the next chapter</a> or <a href="Missing.xhtml">a missing page</a>.</p>
+            </div>
+            <div class="note">
+              <p>A <span class="small">short</span> note under the light.</p>
+            </div>
           </div>
           <!-- Characters that are drawn as nothing (Code Editor can mark them): a word hyphenated with soft
                hyphens, a non-breaking space and a zero-width space. -->

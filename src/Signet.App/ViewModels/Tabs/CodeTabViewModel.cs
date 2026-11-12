@@ -115,8 +115,11 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     /// <summary>Whether Code Editor draws a preview under the color values (<see cref="SettingsStore.CodeEditorShowColorPreview"/>).</summary>
     public bool ShowColorPreview => _settings.CodeEditorShowColorPreview;
 
-    /// <summary>Whether the gutter draws a line along the region under the pointer (<see cref="SettingsStore.CodeEditorShowFoldingLines"/>).</summary>
-    public bool ShowFoldingLines => _settings.CodeEditorShowFoldingLines;
+    /// <summary>Whether the text shows a vertical line along the block the caret is in (<see cref="SettingsStore.CodeEditorShowBlockLine"/>).</summary>
+    public bool ShowBlockLine => _settings.CodeEditorShowBlockLine;
+
+    /// <summary>The thickness of that line (<see cref="SettingsStore.CodeEditorBlockLineThickness"/>), in pixels.</summary>
+    public int BlockLineThickness => _settings.CodeEditorBlockLineThickness;
 
     /// <summary>The font of the marks of the invisible characters (<see cref="SettingsStore.InvisibleCharacterAppearance"/>).</summary>
     public InvisibleCharacterAppearance InvisibleCharacterFont => _settings.InvisibleCharacterAppearance;
@@ -131,7 +134,8 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         OnPropertyChanged(nameof(ShowNonBreakingSpaces));
         OnPropertyChanged(nameof(ShowZeroWidth));
         OnPropertyChanged(nameof(ShowColorPreview));
-        OnPropertyChanged(nameof(ShowFoldingLines));
+        OnPropertyChanged(nameof(ShowBlockLine));
+        OnPropertyChanged(nameof(BlockLineThickness));
         OnPropertyChanged(nameof(InvisibleCharacterFont));
         InvisibleCharactersChanged?.Invoke();
     }

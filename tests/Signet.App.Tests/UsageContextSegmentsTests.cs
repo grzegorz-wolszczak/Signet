@@ -3,6 +3,7 @@ using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Infrastructure;
 using Signet.Core.BookManipulation;
+using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Xunit;
 
@@ -29,6 +30,23 @@ public sealed class UsageContextSegmentsTests
 
         // Assert
         string.Concat(segments.Select(s => s.Text)).Should().Be(context);
+    }
+
+    [Fact]
+    public void A_line_of_a_file_of_a_given_syntax_is_colored_by_that_syntax_and_a_plain_one_is_not()
+    {
+        // Act
+        IReadOnlyList<UsageContextSegment> markup = UsageContextSegments.Of("<p class=\"note\">Text</p>", CodeEditorSyntax.Html);
+        IReadOnlyList<UsageContextSegment> css = UsageContextSegments.Of(".note { color: red; }", CodeEditorSyntax.Css);
+        IReadOnlyList<UsageContextSegment> plain = UsageContextSegments.Of("<p class=\"note\">Text</p>", CodeEditorSyntax.PlainText);
+
+        // Assert
+        markup.Should().Contain(s => s.Text == "<p" && s.Format == SyntaxFormat.XhtmlTagName);
+        css.Should().Contain(s => s.Format != null);
+        plain.Should().ContainSingle().Which.Format.Should().BeNull();
+        UsageContextSegments.Of(string.Empty, CodeEditorSyntax.Html).Should().BeEmpty();
+        string.Concat(markup.Select(s => s.Text)).Should().Be("<p class=\"note\">Text</p>");
+        markup.Should().NotContain(s => s.IsMatch, "no match was given");
     }
 
     [Fact]

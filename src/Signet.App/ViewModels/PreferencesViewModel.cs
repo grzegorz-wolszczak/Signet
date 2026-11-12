@@ -122,7 +122,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _showNonBreakingSpaces = _settings.CodeEditorShowNonBreakingSpaces;
         _showZeroWidth = _settings.CodeEditorShowZeroWidth;
         _showColorPreview = _settings.CodeEditorShowColorPreview;
-        _showFoldingLines = _settings.CodeEditorShowFoldingLines;
+        _showBlockLine = _settings.CodeEditorShowBlockLine;
+        _blockLineThickness = _settings.CodeEditorBlockLineThickness;
         _bookBrowserFollowsActiveTab = _settings.BookBrowserFollowsActiveTab;
         _multilineTabs = _settings.CodeEditorMultilineTabs;
         _enableAltGr = _settings.EnableAltGr;
@@ -782,9 +783,21 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     /// <summary>The gutter of Code Editor draws a line from the start of the foldable region under the pointer to its end.</summary>
     [ObservableProperty]
-    private bool _showFoldingLines;
+    private bool _showBlockLine;
 
-    partial void OnShowFoldingLinesChanged(bool value) => _settings.CodeEditorShowFoldingLines = value;
+    partial void OnShowBlockLineChanged(bool value) => _settings.CodeEditorShowBlockLine = value;
+
+    /// <summary>The thickness of the block line (px); its color is <c>editor.blockLine</c> of the color scheme.</summary>
+    [ObservableProperty]
+    private int _blockLineThickness;
+
+    partial void OnBlockLineThicknessChanged(int value) => _settings.CodeEditorBlockLineThickness = value;
+
+    /// <summary>The smallest and the largest thickness of the block line (px), for the box of the setting.</summary>
+    public static decimal BlockLineThicknessMin => SettingsStore.BlockLineThicknessMin;
+
+    /// <inheritdoc cref="BlockLineThicknessMin"/>
+    public static decimal BlockLineThicknessMax => SettingsStore.BlockLineThicknessMax;
 
     /// <summary>The Book Browser selects the file of the active tab (also after a tab in a window of its own got the focus).</summary>
     [ObservableProperty]
@@ -967,7 +980,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         ShowNonBreakingSpaces = _settings.CodeEditorShowNonBreakingSpaces;
         ShowZeroWidth = _settings.CodeEditorShowZeroWidth;
         ShowColorPreview = _settings.CodeEditorShowColorPreview;
-        ShowFoldingLines = _settings.CodeEditorShowFoldingLines;
+        ShowBlockLine = _settings.CodeEditorShowBlockLine;
+        BlockLineThickness = _settings.CodeEditorBlockLineThickness;
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
         LoadToolbarAppearance();

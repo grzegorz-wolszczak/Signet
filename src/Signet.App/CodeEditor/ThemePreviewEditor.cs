@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls.Primitives;
@@ -40,6 +41,9 @@ public sealed class ThemePreviewEditor : TextEditor
     private bool _attached;
     private int _blinkTick;
 
+    // The line along the block of the caret (editor.blockLine), shown whether or not the setting is on, so the color can be seen.
+    private readonly BlockLineRenderer _blockLine;
+
     /// <summary>Creates the editor (read-only, not focusable, with line numbers).</summary>
     public ThemePreviewEditor()
     {
@@ -54,6 +58,8 @@ public sealed class ThemePreviewEditor : TextEditor
         _renderer = new MarksRenderer(this);
         TextArea.TextView.LineTransformers.Add(_marks);
         TextArea.TextView.BackgroundRenderers.Add(_renderer);
+        _blockLine = new BlockLineRenderer(BlockLines) { Enabled = true };
+        TextArea.TextView.BackgroundRenderers.Add(_blockLine);
         TextArea.AddHandler(PointerPressedEvent, OnPointerPressed, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         _blinkTimer.Tick += (_, _) => OnBlinkTick();
         EditorZoom.Attach(this);
@@ -96,6 +102,7 @@ public sealed class ThemePreviewEditor : TextEditor
         {
             _sample = sample;
             Document.Text = sample.Text;
+            _blockLine.CaretLine = sample.Syntax == CodeEditorSyntax.Html ? sample.CaretLine : 0;
             InstallSyntax(sample);
         }
 
@@ -103,10 +110,25 @@ public sealed class ThemePreviewEditor : TextEditor
         UpdateNumberFrame();
     }
 
+    // The first and the last line of the blocks of the sample (the folding regions of a markup sample).
+    private IEnumerable<(int Start, int End)> BlockLines()
+    {
+        if (_sample?.Syntax != CodeEditorSyntax.Html)
+        {
+            yield break;
+        }
+
+        foreach (FoldRegion region in CodeFolding.ForMarkup(Document.Text))
+        {
+            yield return (Document.GetLineByOffset(region.StartOffset).LineNumber, Document.GetLineByOffset(region.EndOffset).LineNumber);
+        }
+    }
+
     /// <summary>Changes the colors.</summary>
     public void SetTheme(ResolvedTheme theme)
     {
         _theme = theme ?? throw new ArgumentNullException(nameof(theme));
+        _blockLine.Theme = theme;
         _colorizer?.SetTheme(theme);
         _textMate?.SetTheme(CodeEditorTextMate.ThemeFor(theme));
         EditorTheming.Apply(this, theme);
