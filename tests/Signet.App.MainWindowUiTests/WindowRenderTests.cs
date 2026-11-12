@@ -149,6 +149,14 @@ public sealed class WindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // The tab view is materialized by a layout pass that follows the render tick; on a loaded machine one frame
+        // was not always enough (seen once in a run of all the test projects at once), so a few more are given.
+        for (int frame = 0; frame < 5 && !window.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Any(); frame++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+        }
+
         // Assert
         vm.ActiveCodeTab.Should().NotBeNull();
         window.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Should().NotBeEmpty(
