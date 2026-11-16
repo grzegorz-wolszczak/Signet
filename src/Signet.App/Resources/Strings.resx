@@ -2132,6 +2132,25 @@ Czy chcesz zapisać zmiany?</value>
   <data name="PreviewView_Forward" xml:space="preserve">
     <value>Naprzód (następne miejsce w podglądzie)</value>
   </data>
+  <data name="Preview_ExternalLinkOpenFailed" xml:space="preserve">
+    <value>Podgląd: nie udało się otworzyć adresu {0}: {1}</value>
+  </data>
+  <data name="PreviewView_ExternalLinkTitle" xml:space="preserve">
+    <value>Otworzyć w zewnętrznym programie?</value>
+  </data>
+  <data name="PreviewView_ExternalLinkMessage" xml:space="preserve">
+    <value>Ten adres leży poza książką:
+
+{0}
+
+Otworzyć go w domyślnej przeglądarce (lub programie pocztowym)?</value>
+  </data>
+  <data name="PreviewView_ExternalLinkOpen" xml:space="preserve">
+    <value>Otwórz</value>
+  </data>
+  <data name="PreferencesWindow_ConfirmExternalLinks" xml:space="preserve">
+    <value>Pytaj przed otwarciem adresu spoza książki w zewnętrznym programie</value>
+  </data>
   <data name="PreviewView_ZoomOut" xml:space="preserve">
     <value>Pomniejsz podgląd (Ctrl+kółko myszy w podglądzie)</value>
   </data>

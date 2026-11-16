@@ -2132,6 +2132,25 @@ Do you want to save the changes?</value>
   <data name="PreviewView_Forward" xml:space="preserve">
     <value>Forward (next place in the preview)</value>
   </data>
+  <data name="Preview_ExternalLinkOpenFailed" xml:space="preserve">
+    <value>Preview: could not open {0}: {1}</value>
+  </data>
+  <data name="PreviewView_ExternalLinkTitle" xml:space="preserve">
+    <value>Open in an external program?</value>
+  </data>
+  <data name="PreviewView_ExternalLinkMessage" xml:space="preserve">
+    <value>This address is outside the book:
+
+{0}
+
+Open it in the default browser (or mail program)?</value>
+  </data>
+  <data name="PreviewView_ExternalLinkOpen" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="PreferencesWindow_ConfirmExternalLinks" xml:space="preserve">
+    <value>Ask before opening an address outside the book in an external program</value>
+  </data>
   <data name="PreviewView_ZoomOut" xml:space="preserve">
     <value>Zoom the preview out (Ctrl+mouse wheel in the preview)</value>
   </data>

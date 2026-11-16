@@ -175,6 +175,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _startScreenRecentFilesLimit = _settings.StartScreenRecentFilesLimit;
         _previewRefreshDelay = _settings.UiPreviewTimeout;
         _previewFollowFootnotesInCodeView = _settings.PreviewFollowFootnotesInCodeView;
+        _previewConfirmExternalLinks = _settings.PreviewConfirmExternalLinks;
         _tempFolderHome = _settings.TempFolderHome;
         _cssEpub2ValidationSpec = _settings.CssEpub2ValidationSpec;
         _cssEpub3ValidationSpec = _settings.CssEpub3ValidationSpec;
@@ -1154,6 +1155,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnPreviewFollowFootnotesInCodeViewChanged(bool value) =>
         _settings.PreviewFollowFootnotesInCodeView = value;
+
+    /// <summary>Whether the Preview asks before it opens a web or mail address in the system's default application.</summary>
+    [ObservableProperty]
+    private bool _previewConfirmExternalLinks;
+
+    partial void OnPreviewConfirmExternalLinksChanged(bool value) =>
+        _settings.PreviewConfirmExternalLinks = value;
 
     /// <summary>Parent directory of the working directory (empty = the system default).</summary>
     [ObservableProperty]

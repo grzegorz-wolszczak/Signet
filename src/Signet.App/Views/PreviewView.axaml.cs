@@ -109,6 +109,7 @@ public partial class PreviewView : UserControl
             _boundViewModel.SelectAllRequested -= OnSelectAllRequested;
             _boundViewModel.CopyRequested -= OnCopyRequested;
             _boundViewModel.CustomCssRequested -= OnCustomCssRequested;
+            _boundViewModel.ExternalLinkConfirmationRequested -= OnExternalLinkConfirmationRequested;
         }
 
         _boundViewModel = DataContext as PreviewViewModel;
@@ -128,6 +129,7 @@ public partial class PreviewView : UserControl
             _boundViewModel.SelectAllRequested += OnSelectAllRequested;
             _boundViewModel.CopyRequested += OnCopyRequested;
             _boundViewModel.CustomCssRequested += OnCustomCssRequested;
+            _boundViewModel.ExternalLinkConfirmationRequested += OnExternalLinkConfirmationRequested;
 
             Uri? current = _boundViewModel.CurrentUrlOrNull();
             if (current is not null)
@@ -658,6 +660,33 @@ public partial class PreviewView : UserControl
         if (_boundViewModel is not null && !_boundViewModel.AllowNavigation(e.Uri))
         {
             e.Cancel = true;
+        }
+    }
+
+    // A web or mail address clicked in the page: asked about (with "Don't ask again") before it is opened outside.
+    private async void OnExternalLinkConfirmationRequested(object? sender, Uri address)
+    {
+        PreviewViewModel? viewModel = _boundViewModel;
+        bool open = false;
+        bool dontAskAgain = false;
+        try
+        {
+            if (TopLevel.GetTopLevel(this) is Window owner)
+            {
+                (open, dontAskAgain) = await ConfirmWindow.AskWithDontAskAgainAsync(
+                    owner,
+                    Strings.Get("PreviewView_ExternalLinkTitle"),
+                    Strings.Format("PreviewView_ExternalLinkMessage", address),
+                    Strings.Get("PreviewView_ExternalLinkOpen")).ConfigureAwait(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "The question about opening {Url} outside failed", address);
+        }
+        finally
+        {
+            viewModel?.AnswerExternalLink(address, open, dontAskAgain);
         }
     }
 

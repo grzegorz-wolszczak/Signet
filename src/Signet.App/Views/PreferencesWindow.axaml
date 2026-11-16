@@ -1125,6 +1125,11 @@
                               IsChecked="{Binding PreviewFollowFootnotesInCodeView}" />
                   </Border>
 
+                  <Border Classes="section">
+                    <CheckBox Content="{loc:Loc PreferencesWindow_ConfirmExternalLinks}"
+                              IsChecked="{Binding PreviewConfirmExternalLinks}" />
+                  </Border>
+
                 </StackPanel>
               </ScrollViewer>
             </views:PageWidthHost>

@@ -81,6 +81,16 @@ public static class ExternalOpen
         }
     }
 
+    /// <summary>
+    /// Tries to open the web (or mail) address <paramref name="address"/> in the system's default application, e.g.
+    /// the browser. Returns <c>false</c> (and fills <paramref name="error"/>) when the shell refused.
+    /// </summary>
+    public static bool TryOpenUrl(Uri address, out string? error)
+    {
+        ArgumentNullException.ThrowIfNull(address);
+        return TryStart(address.AbsoluteUri, out error);
+    }
+
     private static bool TryStart(string path, out string? error)
     {
         try

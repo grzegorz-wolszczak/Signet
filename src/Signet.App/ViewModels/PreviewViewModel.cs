@@ -44,6 +44,8 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     private readonly IStatusBarService _statusBar;
 
     private Func<string, bool> _externalFileOpener = path => ExternalOpen.TryOpen(path, out _);
+    private Func<Uri, string?> _externalUrlOpener = address => ExternalOpen.TryOpenUrl(address, out string? error) ? null : error;
+    private bool _externalLinkPending;
     private Func<IReadOnlyDictionary<string, string>>? _workingTexts;
     private PreviewMirror? _mirror;
     private PreviewInstrumentation? _instrumentation;
@@ -147,6 +149,15 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// <c>{arg}</c> (Preview → Code Editor).
     /// </summary>
     public event EventHandler<int>? CodeCaretJumpRequested;
+
+    /// <summary>
+    /// Raised when a web or mail address was clicked in the page and the user is to be asked whether to open it in the
+    /// system's default application (<see cref="ConfirmExternalLinks"/>); the view answers with <see cref="AnswerExternalLink"/>.
+    /// </summary>
+    public event EventHandler<Uri>? ExternalLinkConfirmationRequested;
+
+    /// <summary>Raised when the user chose not to be asked about external addresses again.</summary>
+    public event EventHandler? ExternalLinkConfirmationDisabled;
 
     /// <summary>
     /// Raised when a step through the history (Back / Forward) shows a place: the host activates the tab of
@@ -654,10 +665,89 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return true;
         }
 
+        if (IsExternalLink(target))
+        {
+            RequestExternalLink(target);
+            return false;
+        }
+
         _statusBar.ShowMessage(
             Strings.Format("Preview_ExternalNavigationBlocked", target), TimeSpan.FromSeconds(5));
         return false;
     }
+
+    /// <summary>
+    /// Whether the user is asked before a web or mail address clicked in the page is opened in the system's default
+    /// application (Preferences › Preview Panel); set by the host from <c>SettingsStore.PreviewConfirmExternalLinks</c>.
+    /// </summary>
+    public bool ConfirmExternalLinks { get; set; } = true;
+
+    /// <summary>Whether the address leaves the book for the web or a mail program (the only ones that may be opened outside).</summary>
+    public static bool IsExternalLink(Uri target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        return target.IsAbsoluteUri
+            && (target.Scheme == Uri.UriSchemeHttp || target.Scheme == Uri.UriSchemeHttps || target.Scheme == Uri.UriSchemeMailto);
+    }
+
+    // The page never goes there itself: the address is either opened outside at once or only after the user agreed.
+    private void RequestExternalLink(Uri target)
+    {
+        if (!ConfirmExternalLinks)
+        {
+            OpenExternalLink(target);
+            return;
+        }
+
+        // One question at a time: the engine may report the same click twice (navigation and new window).
+        if (_externalLinkPending)
+        {
+            return;
+        }
+
+        _externalLinkPending = true;
+        if (ExternalLinkConfirmationRequested is null)
+        {
+            _externalLinkPending = false;
+            return;
+        }
+
+        ExternalLinkConfirmationRequested.Invoke(this, target);
+    }
+
+    /// <summary>The answer to <see cref="ExternalLinkConfirmationRequested"/>.</summary>
+    /// <param name="target">The address that was asked about.</param>
+    /// <param name="open">Whether the user agreed to open it outside.</param>
+    /// <param name="dontAskAgain">Whether the user turned the question off (counts only together with <paramref name="open"/>).</param>
+    public void AnswerExternalLink(Uri target, bool open, bool dontAskAgain)
+    {
+        _externalLinkPending = false;
+        if (_disposed || !open)
+        {
+            return;
+        }
+
+        if (dontAskAgain)
+        {
+            ConfirmExternalLinks = false;
+            ExternalLinkConfirmationDisabled?.Invoke(this, EventArgs.Empty);
+        }
+
+        OpenExternalLink(target);
+    }
+
+    private void OpenExternalLink(Uri target)
+    {
+        if (_externalUrlOpener(target) is { } error)
+        {
+            _statusBar.ShowMessage(
+                Strings.Format("Preview_ExternalLinkOpenFailed", target, error), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+        }
+    }
+
+    /// <summary>Replaces the way an address is opened in the system's default application (tests); the opener returns an error text or <see langword="null"/>.</summary>
+    public void AttachExternalUrlOpener(Func<Uri, string?> opener) =>
+        _externalUrlOpener = opener ?? throw new ArgumentNullException(nameof(opener));
 
     /// <summary>Replaces the way files are opened in an external program (tests — default <see cref="ExternalOpen.TryOpen(string, out string?)"/>).</summary>
     public void AttachExternalFileOpener(Func<string, bool> opener) =>

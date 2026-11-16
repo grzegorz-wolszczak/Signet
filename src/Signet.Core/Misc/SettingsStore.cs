@@ -258,6 +258,16 @@ public sealed class SettingsStore
         set => Write("preview_follow_footnotes_in_code_view", value);
     }
 
+    /// <summary>
+    /// Whether the Preview asks before it opens a web or mail address clicked in the page in the system's default
+    /// application (default <see langword="true"/>); the question's "Don't ask again" turns it off.
+    /// </summary>
+    public bool PreviewConfirmExternalLinks
+    {
+        get => ReadBool("preview_confirm_external_links", true);
+        set => Write("preview_confirm_external_links", value);
+    }
+
     /// <summary>Whether to highlight the focused control.</summary>
     public bool UiHighlightFocusWidgetEnabled
     {

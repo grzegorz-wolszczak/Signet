@@ -544,6 +544,7 @@ public sealed partial class MainWindowViewModel
         _preview.DebounceInterval = TimeSpan.FromMilliseconds(_settings.UiPreviewTimeout);
         _preview.Highlight = _settings.PreviewHighlight;
         _preview.FollowFootnotesInCodeView = _settings.PreviewFollowFootnotesInCodeView;
+        _preview.ConfirmExternalLinks = _settings.PreviewConfirmExternalLinks;
         _preview.Fonts = _settings.PreviewAppearance;
         // The preview's own zoom, remembered across restarts (saved with the rest of the settings on exit).
         _preview.SetZoom(_settings.ZoomPreview);
@@ -580,6 +581,10 @@ public sealed partial class MainWindowViewModel
             {
                 _preview.FollowFootnotesInCodeView = _settings.PreviewFollowFootnotesInCodeView;
             }
+            else if (e.QualifiedKey.EndsWith("/preview_confirm_external_links", StringComparison.Ordinal))
+            {
+                _preview.ConfirmExternalLinks = _settings.PreviewConfirmExternalLinks;
+            }
             else if (e.QualifiedKey.EndsWith("/preview_appearance", StringComparison.Ordinal))
             {
                 _preview.Fonts = _settings.PreviewAppearance;
@@ -610,6 +615,7 @@ public sealed partial class MainWindowViewModel
         _tabManager.ActiveTabChanged += OnActiveTabChanged;
         _preview.CodeCaretJumpRequested += OnPreviewCodeCaretJumpRequested;
         _preview.CodeViewActivationRequested += OnPreviewCodeViewActivationRequested;
+        _preview.ExternalLinkConfirmationDisabled += OnPreviewExternalLinkConfirmationDisabled;
         _preview.PropertyChanged += OnPreviewPropertyChanged;
         BookBrowser.OpenResourceRequested += OnOpenResourceRequested;
         BookBrowser.TocChanged += (_, _) => ((IBookWorkspace)this).RefreshAfterBookEdit();
@@ -2003,6 +2009,7 @@ public sealed partial class MainWindowViewModel
         _tabManager.ActiveTabChanged -= OnActiveTabChanged;
         _preview.CodeCaretJumpRequested -= OnPreviewCodeCaretJumpRequested;
         _preview.CodeViewActivationRequested -= OnPreviewCodeViewActivationRequested;
+        _preview.ExternalLinkConfirmationDisabled -= OnPreviewExternalLinkConfirmationDisabled;
         _preview.PropertyChanged -= OnPreviewPropertyChanged;
         _tabManager.Dispose();
         _preview.Dispose();
@@ -4245,6 +4252,10 @@ public sealed partial class MainWindowViewModel
     // active (a CSS file, a different HTML file, an image…), the previewed file's tab is activated
     // (or opened) first, so the caret jump never lands in an unrelated file.
     private void OnPreviewCodeCaretJumpRequested(object? sender, int offset) => ActivatePreviewedFile(offset);
+
+    // "Don't ask again" of the question about opening an external address from the preview.
+    private void OnPreviewExternalLinkConfirmationDisabled(object? sender, EventArgs e) =>
+        _settings.PreviewConfirmExternalLinks = false;
 
     // A step through the preview's history (Back / Forward): the previewed file's tab is activated and, when the place
     // has an offset (-1 = it has none), its caret moved there.
