@@ -24,13 +24,31 @@
     </Style>
   </UserControl.Styles>
 
-  <!-- Layout: the page on top, the panel's own toolbar at the bottom (ToolbarId.Preview — its buttons are configured
+  <!-- Layout: the history bar (back / forward) at the top, the page, the panel's own toolbar at the bottom (ToolbarId.Preview — its buttons are configured
        like those of any other toolbar) and, always at its end, the preview's own zoom bar (− NN% +), which is not an
        item of the toolbar and cannot be taken off it. -->
-  <Grid RowDefinitions="*,Auto">
+  <Grid RowDefinitions="Auto,*,Auto">
+
+    <!-- The history of the places shown, as in a browser: back and forward. -->
+    <Border x:Name="HistoryBar"
+            Grid.Row="0"
+            Padding="1"
+            BorderThickness="0,0,0,1"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <StackPanel Orientation="Horizontal" Spacing="2">
+        <Button x:Name="BackButton" Classes="previewTool" Command="{Binding GoBackCommand}"
+                ToolTip.Tip="{loc:Loc PreviewView_Back}">
+          <Image Width="16" Height="16" Source="{DynamicResource back}" />
+        </Button>
+        <Button x:Name="ForwardButton" Classes="previewTool" Command="{Binding GoForwardCommand}"
+                ToolTip.Tip="{loc:Loc PreviewView_Forward}">
+          <Image Width="16" Height="16" Source="{DynamicResource forward}" />
+        </Button>
+      </StackPanel>
+    </Border>
 
     <!-- The page: grayed out while no book is open (the toolbar under it stays enabled). -->
-    <Panel Grid.Row="0" IsEnabled="{Binding IsContentEnabled}">
+    <Panel Grid.Row="1" IsEnabled="{Binding IsContentEnabled}">
       <!-- Opacity="0" until the first real frame: in GpuSurface mode the library, before WebView2
            delivers an image, shows a synthetic test frame (a colored pattern) — see PreviewView.OnRenderFrameCaptured. -->
       <nwv:NativeWebView x:Name="WebView" RenderMode="GpuSurface" Opacity="0" />
@@ -54,7 +72,7 @@
          resources of this border, which come before the application's (those hold the look of the main window's
          toolbars). -->
     <Border x:Name="ToolbarHost"
-            Grid.Row="1"
+            Grid.Row="2"
             Padding="1"
             BorderThickness="0,1,0,0"
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">

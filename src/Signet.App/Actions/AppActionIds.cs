@@ -288,6 +288,10 @@ public static class AppActionIds
     public const string PreviewCycleCustomCss = "MainWindow.Preview.CycleCustomCss";
     public const string PreviewPrint = "MainWindow.Preview.Print";
 
+    // The history of the places the preview has shown (the arrows at the top of the panel).
+    public const string PreviewBack = "MainWindow.Preview.Back";
+    public const string PreviewForward = "MainWindow.Preview.Forward";
+
     /// <summary>
     /// Category of the actions of the Preview panel's own toolbar. Not a panel category
     /// (<see cref="IsPanelCategory"/>): their shortcuts, if the user gives them any, work in the whole window, as the

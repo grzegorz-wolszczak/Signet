@@ -233,6 +233,8 @@ public static class AppActionCatalog
         new(AppActionIds.PreviewReload, "&Refresh Preview", "", "reload-page", AppActionIds.PreviewCategory),
         new(AppActionIds.PreviewCycleCustomCss, "Cycle Custom CSS &Files", "", "cycle-css", AppActionIds.PreviewCategory),
         new(AppActionIds.PreviewPrint, "&Print Preview View", "", "document-print", AppActionIds.PreviewCategory),
+        new(AppActionIds.PreviewBack, "Preview &Back", "", ActionIconKeys.Back, AppActionIds.PreviewCategory),
+        new(AppActionIds.PreviewForward, "Preview For&ward", "", ActionIconKeys.Forward, AppActionIds.PreviewCategory),
 
         // Book Browser panel context menu, exposed here so that every item can be bound to a shortcut.
         // These shortcuts work ONLY when the focus is in the panel — BookBrowserView registers them

@@ -2117,8 +2117,20 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_Preview_CycleCustomCss" xml:space="preserve">
     <value>Przełącz niestandardowy &amp;CSS</value>
   </data>
+  <data name="Action_MainWindow_Preview_Back" xml:space="preserve">
+    <value>&amp;Wstecz w podglądzie</value>
+  </data>
+  <data name="Action_MainWindow_Preview_Forward" xml:space="preserve">
+    <value>&amp;Naprzód w podglądzie</value>
+  </data>
   <data name="Action_MainWindow_Preview_Print" xml:space="preserve">
     <value>&amp;Drukuj podgląd</value>
+  </data>
+  <data name="PreviewView_Back" xml:space="preserve">
+    <value>Wstecz (poprzednie miejsce w podglądzie)</value>
+  </data>
+  <data name="PreviewView_Forward" xml:space="preserve">
+    <value>Naprzód (następne miejsce w podglądzie)</value>
   </data>
   <data name="PreviewView_ZoomOut" xml:space="preserve">
     <value>Pomniejsz podgląd (Ctrl+kółko myszy w podglądzie)</value>
@@ -8446,6 +8458,12 @@ Zamknij zakładkę</value>
   </data>
   <data name="ActionTip_MainWindow_Preview_CycleCustomCss" xml:space="preserve">
     <value>Przełącza po kolei niestandardowe arkusze CSS stosowane w Podglądzie.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_Back" xml:space="preserve">
+    <value>Wraca do poprzedniego miejsca w Podglądzie (strona, przypis lub dalszy skok w pliku).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_Forward" xml:space="preserve">
+    <value>Przechodzi do następnego miejsca w historii Podglądu.</value>
   </data>
   <data name="ActionTip_MainWindow_Preview_Print" xml:space="preserve">
     <value>Drukuje to, co widać w Podglądzie.</value>

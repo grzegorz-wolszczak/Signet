@@ -2117,8 +2117,20 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_Preview_CycleCustomCss" xml:space="preserve">
     <value>Cycle Custom CSS &amp;Files</value>
   </data>
+  <data name="Action_MainWindow_Preview_Back" xml:space="preserve">
+    <value>Preview &amp;Back</value>
+  </data>
+  <data name="Action_MainWindow_Preview_Forward" xml:space="preserve">
+    <value>Preview For&amp;ward</value>
+  </data>
   <data name="Action_MainWindow_Preview_Print" xml:space="preserve">
     <value>&amp;Print Preview View</value>
+  </data>
+  <data name="PreviewView_Back" xml:space="preserve">
+    <value>Back (previous place in the preview)</value>
+  </data>
+  <data name="PreviewView_Forward" xml:space="preserve">
+    <value>Forward (next place in the preview)</value>
   </data>
   <data name="PreviewView_ZoomOut" xml:space="preserve">
     <value>Zoom the preview out (Ctrl+mouse wheel in the preview)</value>
@@ -8446,6 +8458,12 @@ Close the tab</value>
   </data>
   <data name="ActionTip_MainWindow_Preview_CycleCustomCss" xml:space="preserve">
     <value>Cycles through the custom CSS files applied in the Preview.</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_Back" xml:space="preserve">
+    <value>Returns to the previous place in the Preview (a page, a footnote or a further jump within a file).</value>
+  </data>
+  <data name="ActionTip_MainWindow_Preview_Forward" xml:space="preserve">
+    <value>Goes to the next place in the Preview history.</value>
   </data>
   <data name="ActionTip_MainWindow_Preview_Print" xml:space="preserve">
     <value>Prints what the Preview shows.</value>

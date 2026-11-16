@@ -69,6 +69,12 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     // scrolled to the middle of the preview and highlighted (the engine leaves a fragment at the top, unmarked).
     private int? _footnoteLanding;
     private string _currentUrlText = string.Empty;
+
+    // The places shown so far (Back / Forward). A place shown by a step through it is not recorded again: the
+    // file the Code Editor then activates comes back through ShowResource and must not reload the page.
+    private readonly PreviewHistory _history = new();
+    private string? _shownByHistory;
+    private bool _steppingHistory;
     private double _zoomFactor = 1.0;
     private PreviewAppearance _fonts = PreviewAppearance.Default;
     private bool _disposed;
@@ -141,6 +147,12 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// <c>{arg}</c> (Preview → Code Editor).
     /// </summary>
     public event EventHandler<int>? CodeCaretJumpRequested;
+
+    /// <summary>
+    /// Raised when a step through the history (Back / Forward) shows a place: the host activates the tab of
+    /// <see cref="CurrentBookPath"/> and moves its caret to the offset of the event (<c>-1</c> = leaves it).
+    /// </summary>
+    public event EventHandler<int>? CodeViewActivationRequested;
 
     /// <summary>
     /// The view should show the native, interactive print dialog of the current preview page
@@ -298,6 +310,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         _footnoteLanding = null;
         _instrumentation = null;
         CurrentUrlText = string.Empty;
+        ForgetHistory();
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(CurrentBookPath));
     }
@@ -319,6 +332,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             && string.Equals(_currentBookPath, html.BookPath, StringComparison.Ordinal);
         if (!string.Equals(_currentBookPath, html.BookPath, StringComparison.Ordinal))
         {
+            RecordVisit(new PreviewHistoryEntry(html, null, null));
             _lastCaretOffset = null;
             _currentFragment = null;
             _footnoteLanding = null;
@@ -328,6 +342,16 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         _currentResource = html;
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(CurrentBookPath));
+
+        if (string.Equals(_shownByHistory, html.BookPath, StringComparison.Ordinal))
+        {
+            // The tab of a place the history went to became active: the page is already on its way there.
+            _shownByHistory = null;
+            _currentFragment = null;
+            return;
+        }
+
+        _shownByHistory = null;
 
         if (sameResource && _currentFragment is not null)
         {
@@ -355,6 +379,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         _footnoteLanding = null;
         _instrumentation = null;
         CurrentUrlText = string.Empty;
+        ForgetHistory();
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(CurrentBookPath));
         ClearRequested?.Invoke(this, EventArgs.Empty);
@@ -408,8 +433,10 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        int? previousOffset = _lastCaretOffset;
         _lastCaretOffset = sourceOffset;
         bool echoOfPreviewClick = IsEchoOfPreviewClick(sourceOffset);
+        RecordLargeCaretJump(previousOffset, sourceOffset, echoOfPreviewClick);
         if (_instrumentation is null)
         {
             return;
@@ -788,6 +815,12 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 JumpToSource(clickedOffset);
             }
 
+            if (_mirror.BookPathForUri(target) is { } linkedPath
+                && _book.GetFolderKeeper().GetResourceByBookPathNoThrow(linkedPath) is HtmlResource linked)
+            {
+                RecordVisit(new PreviewHistoryEntry(linked, FragmentOf(target), null));
+            }
+
             NavigateRequested?.Invoke(this, target);
             return;
         }
@@ -818,6 +851,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         HtmlResource? previousResource = _currentResource;
         string? previousFragment = _currentFragment;
         bool pathChanged = !string.Equals(_currentBookPath, html.BookPath, StringComparison.Ordinal);
+        int? leavingOffset = OffsetLeft();
 
         _currentBookPath = html.BookPath;
         _currentResource = html;
@@ -832,6 +866,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        RecordVisit(new PreviewHistoryEntry(html, _currentFragment, null), leavingOffset);
         if (pathChanged)
         {
             _lastCaretOffset = null;
@@ -885,6 +920,137 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         var element = XhtmlDoc.Parse(source).GetElementById(id);
         int offset = element is null ? -1 : XhtmlDoc.OffsetFromNode(element);
         return Math.Max(0, offset);
+    }
+
+    // ---- History (Back / Forward) ----
+
+    /// <summary>Whether there is a place before the one shown.</summary>
+    public bool CanGoBack => _history.CanGoBack;
+
+    /// <summary>Whether there is a place after the one shown.</summary>
+    public bool CanGoForward => _history.CanGoForward;
+
+    [RelayCommand(CanExecute = nameof(CanGoBack))]
+    private void GoBack() => StepHistory(-1);
+
+    [RelayCommand(CanExecute = nameof(CanGoForward))]
+    private void GoForward() => StepHistory(1);
+
+    private void ForgetHistory()
+    {
+        _history.Clear();
+        _shownByHistory = null;
+        NotifyHistoryChanged();
+    }
+
+    private void NotifyHistoryChanged()
+    {
+        OnPropertyChanged(nameof(CanGoBack));
+        OnPropertyChanged(nameof(CanGoForward));
+        GoBackCommand.NotifyCanExecuteChanged();
+        GoForwardCommand.NotifyCanExecuteChanged();
+    }
+
+    private void RecordVisit(PreviewHistoryEntry entry) => RecordVisit(entry, OffsetLeft());
+
+    private void RecordVisit(PreviewHistoryEntry entry, int? leavingOffset)
+    {
+        if (_history.Visit(entry, leavingOffset))
+        {
+            NotifyHistoryChanged();
+        }
+    }
+
+    // Where the reader is in the place the history is at: the caret of the shown file (the place may be another one
+    // than the shown file after a link followed in the page).
+    private int? OffsetLeft() =>
+        _history.Current is { } current && ReferenceEquals(current.Resource, _currentResource) ? _lastCaretOffset : null;
+
+    // A jump of the Code Editor caret far within the page is a place of its own, as one to another file is. Typing,
+    // arrow keys, a click in the preview and the caret moves of a step through the history are not.
+    private void RecordLargeCaretJump(int? previousOffset, int offset, bool echoOfPreviewClick)
+    {
+        if (echoOfPreviewClick || _steppingHistory || previousOffset is not { } previous
+            || Math.Abs(offset - previous) < PreviewHistoryConstants.LargeCaretJumpChars
+            || _currentResource is not { } resource
+            || !ReferenceEquals(_history.Current?.Resource, resource))
+        {
+            return;
+        }
+
+        RecordVisit(new PreviewHistoryEntry(resource, null, offset), previous);
+    }
+
+    private static string? FragmentOf(Uri target) => target.Fragment.Length > 1 ? target.Fragment : null;
+
+    private void StepHistory(int direction)
+    {
+        if (_disposed || _book is null || _mirror is null)
+        {
+            return;
+        }
+
+        PreviewHistoryEntry? from = _history.Current;
+        PreviewHistoryEntry? entry = _history.Move(direction, OffsetLeft(), IsStillInBook);
+        NotifyHistoryChanged();
+        if (entry is not null)
+        {
+            ShowHistoryEntry(entry, pathChanged: from is null || !ReferenceEquals(from.Resource, entry.Resource));
+        }
+    }
+
+    // A place can be shown while its file is in the book (it may have been renamed, not deleted or replaced).
+    private bool IsStillInBook(PreviewHistoryEntry entry) =>
+        ReferenceEquals(_book?.GetFolderKeeper().GetResourceByBookPathNoThrow(entry.Resource.BookPath), entry.Resource);
+
+    private void ShowHistoryEntry(PreviewHistoryEntry entry, bool pathChanged)
+    {
+        HtmlResource html = entry.Resource;
+        string? previousBookPath = _currentBookPath;
+        HtmlResource? previousResource = _currentResource;
+        string? previousFragment = _currentFragment;
+
+        _currentBookPath = html.BookPath;
+        _currentResource = html;
+        _currentFragment = entry.Fragment;
+
+        IReadOnlyDictionary<string, string>? overrides = _workingTexts?.Invoke();
+        if (!TrySync(overrides))
+        {
+            _currentBookPath = previousBookPath;
+            _currentResource = previousResource;
+            _currentFragment = previousFragment;
+            return;
+        }
+
+        Uri url = CurrentPageUrl();
+        int? offset = entry.Offset ?? (entry.Fragment is null ? null : OffsetForFootnote(html, url, overrides));
+
+        // A page loaded anew is scrolled to the place when it is there; the one already shown at once.
+        bool loadsAnew = pathChanged || entry.Fragment is null;
+        _footnoteLanding = loadsAnew ? offset : null;
+        _lastCaretOffset = offset;
+        _previewClick = offset is { } clicked ? (clicked, Environment.TickCount64) : null;
+        _restoreCaretAfterLoad = false;
+        _shownByHistory = html.BookPath;
+        OnPropertyChanged(nameof(HasContent));
+        OnPropertyChanged(nameof(CurrentBookPath));
+        CurrentUrlText = html.BookPath;
+        NavigateRequested?.Invoke(this, url);
+        if (!loadsAnew && offset is { } scrollTo)
+        {
+            ScrollToNote(scrollTo);
+        }
+
+        _steppingHistory = true;
+        try
+        {
+            CodeViewActivationRequested?.Invoke(this, offset ?? -1);
+        }
+        finally
+        {
+            _steppingHistory = false;
+        }
     }
 
     private Uri CurrentPageUrl()

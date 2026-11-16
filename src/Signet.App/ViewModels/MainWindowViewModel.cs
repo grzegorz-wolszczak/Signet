@@ -530,6 +530,9 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.PreviewReload, () => _preview.ReloadCommand.Execute(null));
         _actions.SetHandler(AppActionIds.PreviewCycleCustomCss, () => _preview.CycleCustomCssCommand.Execute(null));
         _actions.SetHandler(AppActionIds.PreviewPrint, () => _preview.PrintCommand.Execute(null));
+        _actions.SetHandler(AppActionIds.PreviewBack, () => _preview.GoBackCommand.Execute(null));
+        _actions.SetHandler(AppActionIds.PreviewForward, () => _preview.GoForwardCommand.Execute(null));
+        UpdatePreviewHistoryActions();
         if (_actions.Get(AppActionIds.PreviewCycleCustomCss) is { } cycleCss)
         {
             cycleCss.IsEnabled = _preview.HasCustomCss;
@@ -606,6 +609,7 @@ public sealed partial class MainWindowViewModel
 
         _tabManager.ActiveTabChanged += OnActiveTabChanged;
         _preview.CodeCaretJumpRequested += OnPreviewCodeCaretJumpRequested;
+        _preview.CodeViewActivationRequested += OnPreviewCodeViewActivationRequested;
         _preview.PropertyChanged += OnPreviewPropertyChanged;
         BookBrowser.OpenResourceRequested += OnOpenResourceRequested;
         BookBrowser.TocChanged += (_, _) => ((IBookWorkspace)this).RefreshAfterBookEdit();
@@ -689,6 +693,10 @@ public sealed partial class MainWindowViewModel
         if (e.PropertyName == nameof(PreviewViewModel.ZoomFactor))
         {
             _settings.ZoomPreview = (float)_preview.ZoomFactor;
+        }
+        else if (e.PropertyName is nameof(PreviewViewModel.CanGoBack) or nameof(PreviewViewModel.CanGoForward))
+        {
+            UpdatePreviewHistoryActions();
         }
     }
 
@@ -1994,6 +2002,7 @@ public sealed partial class MainWindowViewModel
 
         _tabManager.ActiveTabChanged -= OnActiveTabChanged;
         _preview.CodeCaretJumpRequested -= OnPreviewCodeCaretJumpRequested;
+        _preview.CodeViewActivationRequested -= OnPreviewCodeViewActivationRequested;
         _preview.PropertyChanged -= OnPreviewPropertyChanged;
         _tabManager.Dispose();
         _preview.Dispose();
@@ -4235,7 +4244,26 @@ public sealed partial class MainWindowViewModel
     // A click in the preview always refers to the file shown in the preview. When another tab is
     // active (a CSS file, a different HTML file, an image…), the previewed file's tab is activated
     // (or opened) first, so the caret jump never lands in an unrelated file.
-    private void OnPreviewCodeCaretJumpRequested(object? sender, int offset)
+    private void OnPreviewCodeCaretJumpRequested(object? sender, int offset) => ActivatePreviewedFile(offset);
+
+    // A step through the preview's history (Back / Forward): the previewed file's tab is activated and, when the place
+    // has an offset (-1 = it has none), its caret moved there.
+    private void OnPreviewCodeViewActivationRequested(object? sender, int offset) => ActivatePreviewedFile(offset);
+
+    private void UpdatePreviewHistoryActions()
+    {
+        if (_actions.Get(AppActionIds.PreviewBack) is { } back)
+        {
+            back.IsEnabled = _preview.CanGoBack;
+        }
+
+        if (_actions.Get(AppActionIds.PreviewForward) is { } forward)
+        {
+            forward.IsEnabled = _preview.CanGoForward;
+        }
+    }
+
+    private void ActivatePreviewedFile(int offset)
     {
         string? previewBookPath = _preview.CurrentBookPath;
         if (previewBookPath is null || _currentBook is null)
@@ -4255,7 +4283,8 @@ public sealed partial class MainWindowViewModel
             _tabManager.OpenResource(resource);
         }
 
-        if (ActiveCodeTab is { } tab && string.Equals(tab.ResourceBookPath, previewBookPath, StringComparison.Ordinal))
+        if (offset >= 0 && ActiveCodeTab is { } tab
+            && string.Equals(tab.ResourceBookPath, previewBookPath, StringComparison.Ordinal))
         {
             tab.GoToOffset(offset);
         }
