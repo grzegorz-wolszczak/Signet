@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AwesomeAssertions;
+using Signet.App.Infrastructure;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.Core.BookManipulation;
@@ -14,6 +15,9 @@ namespace Signet.App.Tests;
 /// <summary>Back and forward in the preview: what is recorded and what a step does (<see cref="PreviewViewModel"/>).</summary>
 public sealed class PreviewHistoryNavigationTests
 {
+    private static readonly string[] Blocks = { "p", "h1", "h6", "li", "blockquote", "td", "figcaption" };
+    private static readonly string[] NotBlocks = { "div", "section", "ul", "table", "span", "a", "body" };
+
     private static PreviewViewModel New() => new(new StatusBarService()) { DebounceInterval = TimeSpan.Zero };
 
     private static Uri UrlOf(PreviewViewModel vm, HtmlResource resource, string? fragment = null) =>
@@ -222,5 +226,87 @@ public sealed class PreviewHistoryNavigationTests
 
         // Assert
         sut.CanGoBack.Should().BeFalse();
+    }
+
+    [Fact]
+    public void A_click_in_a_block_of_text_is_a_place_once_per_block()
+    {
+        // Arrange
+        using Book book = BookCreator.CreateNewBook("3.0");
+        HtmlResource chapter = book.GetHtmlResourcesExcludingNav().First();
+        using PreviewViewModel sut = New();
+        List<int> activated = new();
+        sut.CodeViewActivationRequested += (_, offset) => activated.Add(offset);
+        sut.SetBook(book);
+        sut.ShowResource(chapter);
+        sut.SyncCaretToPreview(5);
+
+        // Act
+        sut.HandlePreviewMessage("signet-block:100");
+        sut.HandlePreviewMessage("signet-loc:110");
+        sut.SyncCaretToPreview(110);
+        sut.HandlePreviewMessage("signet-block:100");
+
+        // Assert
+        sut.CanGoBack.Should().BeTrue();
+        sut.CanGoForward.Should().BeFalse();
+
+        // Act
+        sut.HandlePreviewMessage("signet-block:300");
+        sut.GoBackCommand.Execute(null);
+
+        // Assert
+        activated.Should().Equal(110);
+        sut.CanGoBack.Should().BeTrue("the first block was a place of its own, after the start");
+        sut.CanGoForward.Should().BeTrue();
+
+        // Act
+        sut.GoBackCommand.Execute(null);
+
+        // Assert
+        activated.Should().Equal(110, 5);
+        sut.CanGoBack.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("signet-block:")]
+    [InlineData("signet-block:abc")]
+    [InlineData("signet-block:-1")]
+    public void A_block_click_without_a_usable_offset_is_ignored(string message)
+    {
+        // Arrange
+        using Book book = BookCreator.CreateNewBook("3.0");
+        HtmlResource chapter = book.GetHtmlResourcesExcludingNav().First();
+        using PreviewViewModel sut = New();
+        sut.SetBook(book);
+        sut.ShowResource(chapter);
+
+        // Act
+        sut.HandlePreviewMessage(message);
+
+        // Assert
+        sut.CanGoBack.Should().BeFalse();
+    }
+
+    [Fact]
+    public void The_click_bridge_reports_the_blocks_of_text_and_not_the_containers()
+    {
+        // Arrange
+        string script = PreviewClickBridge.Script;
+
+        // Act & Assert
+        foreach (string tag in Blocks)
+        {
+            PreviewClickBridge.BlockTags.Should().Contain(tag);
+        }
+
+        foreach (string tag in NotBlocks)
+        {
+            PreviewClickBridge.BlockTags.Should().NotContain(tag);
+        }
+
+        script.Should().Contain("'p':1").And.Contain("footnote|endnote|rearnote").And.Contain("signet-block:");
+        script.IndexOf("signet-block:", StringComparison.Ordinal)
+            .Should().BeLessThan(script.IndexOf("'signet-loc:'", StringComparison.Ordinal), "the block is reported before the caret moves");
     }
 }

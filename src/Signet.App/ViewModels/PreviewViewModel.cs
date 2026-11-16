@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core.BookManipulation;
@@ -76,6 +77,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     // file the Code Editor then activates comes back through ShowResource and must not reload the page.
     private readonly PreviewHistory _history = new();
     private string? _shownByHistory;
+    private int? _lastBlockClick;
     private bool _steppingHistory;
     private double _zoomFactor = 1.0;
     private PreviewAppearance _fonts = PreviewAppearance.Default;
@@ -567,6 +569,21 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        if (message.StartsWith(PreviewClickBridge.BlockMessagePrefix, StringComparison.Ordinal))
+        {
+            if (int.TryParse(
+                    message.AsSpan(PreviewClickBridge.BlockMessagePrefix.Length),
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out int blockOffset)
+                && blockOffset >= 0)
+            {
+                RecordBlockClick(blockOffset);
+            }
+
+            return;
+        }
+
         const string prefix = "signet-loc:";
         if (message.StartsWith(prefix, StringComparison.Ordinal)
             && int.TryParse(
@@ -1030,6 +1047,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     {
         _history.Clear();
         _shownByHistory = null;
+        _lastBlockClick = null;
         NotifyHistoryChanged();
     }
 
@@ -1047,6 +1065,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     {
         if (_history.Visit(entry, leavingOffset))
         {
+            _lastBlockClick = null;
             NotifyHistoryChanged();
         }
     }
@@ -1071,6 +1090,25 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         RecordVisit(new PreviewHistoryEntry(resource, null, offset), previous);
     }
 
+    // A click in a block of text (a paragraph, a heading, a list item, a note…) is a place of its own, once per block:
+    // clicking in the same block again, or inside its inline elements, adds nothing. It comes before the caret move that
+    // the same click causes, so the caret is still where the reader was.
+    private void RecordBlockClick(int blockOffset)
+    {
+        if (_disposed || _history.Current is not { } current || _lastBlockClick == blockOffset)
+        {
+            return;
+        }
+
+        int? leavingOffset = OffsetLeft();
+        if (_history.Visit(new PreviewHistoryEntry(current.Resource, null, blockOffset), leavingOffset))
+        {
+            NotifyHistoryChanged();
+        }
+
+        _lastBlockClick = blockOffset;
+    }
+
     private static string? FragmentOf(Uri target) => target.Fragment.Length > 1 ? target.Fragment : null;
 
     private void StepHistory(int direction)
@@ -1080,6 +1118,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        _lastBlockClick = null;
         PreviewHistoryEntry? from = _history.Current;
         PreviewHistoryEntry? entry = _history.Move(direction, OffsetLeft(), IsStillInBook);
         NotifyHistoryChanged();
