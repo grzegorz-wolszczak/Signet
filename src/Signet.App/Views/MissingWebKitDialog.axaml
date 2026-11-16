@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.MissingWebKitDialog"
+        Width="560" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Title="{loc:Loc MissingWebKitDialog_Title}">
+  <StackPanel Margin="16" Spacing="12">
+    <TextBlock Text="{loc:Loc MissingWebKitDialog_Message}" TextWrapping="Wrap" />
+    <TextBlock Text="{loc:Loc MissingWebKitDialog_Install}" FontWeight="SemiBold" />
+    <SelectableTextBlock Text="{loc:Loc MissingWebKitDialog_Commands}" FontFamily="monospace" TextWrapping="Wrap" />
+    <TextBlock Text="{loc:Loc MissingWebKitDialog_Restart}" TextWrapping="Wrap" Opacity="0.7" />
+    <Button x:Name="OkButton" Content="{loc:Loc MissingWebKitDialog_Ok}" HorizontalAlignment="Right"
+            MinWidth="90" IsDefault="True" IsCancel="True" />
+  </StackPanel>
+</Window>

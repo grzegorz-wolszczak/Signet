@@ -376,6 +376,11 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
             _ = vm.RunStartupAsync();
         }
+
+        if (!WebKitGtkAvailability.IsAvailable)
+        {
+            _ = MissingWebKitDialog.ShowAsync(this);
+        }
     }
 
     // The debug log starts with what a window problem needs: version, system, monitors and their scaling, language.

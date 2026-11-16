@@ -9110,4 +9110,28 @@ Zamknij zakładkę</value>
   <data name="ThemeKey_editor_blockLine" xml:space="preserve">
     <value>Linia bloku</value>
   </data>
+  <data name="MissingWebKitDialog_Title" xml:space="preserve">
+    <value>Brak WebKitGTK</value>
+  </data>
+  <data name="MissingWebKitDialog_Message" xml:space="preserve">
+    <value>Na tym komputerze nie ma biblioteki WebKitGTK 4.1 (libwebkit2gtk-4.1.so.0). Bez niej panel Preview nie wyświetli książki — zostanie pusty.</value>
+  </data>
+  <data name="MissingWebKitDialog_Install" xml:space="preserve">
+    <value>Zainstaluj ją w terminalu:</value>
+  </data>
+  <data name="MissingWebKitDialog_Commands" xml:space="preserve">
+    <value>Fedora:         sudo dnf install webkit2gtk4.1
+Debian/Ubuntu:  sudo apt install libwebkit2gtk-4.1-0
+Arch:           sudo pacman -S webkit2gtk-4.1
+openSUSE:       sudo zypper install libwebkit2gtk-4_1-0</value>
+  </data>
+  <data name="MissingWebKitDialog_Restart" xml:space="preserve">
+    <value>Po instalacji uruchom Signet ponownie.</value>
+  </data>
+  <data name="MissingWebKitDialog_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Preview_WebKitMissing" xml:space="preserve">
+    <value>Preview jest niedostępny — brakuje biblioteki WebKitGTK 4.1 (libwebkit2gtk-4.1.so.0). Zainstaluj ją (Fedora: sudo dnf install webkit2gtk4.1) i uruchom Signet ponownie.</value>
+  </data>
 </root>

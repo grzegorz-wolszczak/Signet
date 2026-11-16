@@ -71,11 +71,8 @@ public partial class EditTocWindow : Window
         }
 
         _selection = null;
-        if (_source is not null)
-        {
-            _source.Dispose();
-            _source = null;
-        }
+        _source?.Dispose();
+        _source = null;
 
         _bound = DataContext as EditTocViewModel;
 

@@ -526,15 +526,9 @@ internal sealed class NvdlSchema : ISchema
 
             try
             {
-                if (_md.AttributeActions is not null)
-                {
-                    _md.AttributeActions.AddSchema(CreateSubSchema(true));
-                }
+                _md.AttributeActions?.AddSchema(CreateSubSchema(true));
 
-                if (_md.Actions is not null)
-                {
-                    _md.Actions.AddNoResultAction(new ValidateAction(_md.ModeUsage!, CreateSubSchema(false)));
-                }
+                _md.Actions?.AddNoResultAction(new ValidateAction(_md.ModeUsage!, CreateSubSchema(false)));
             }
             catch (IncorrectSchemaException)
             {
@@ -574,10 +568,7 @@ internal sealed class NvdlSchema : ISchema
 
         private void ParseAttach(IAttributes attributes)
         {
-            if (_md.AttributeActions is not null)
-            {
-                _md.AttributeActions.Attach = true;
-            }
+            _md.AttributeActions?.Attach = true;
 
             ParseResultAction(attributes, m => new AttachAction(m));
         }
@@ -621,10 +612,7 @@ internal sealed class NvdlSchema : ISchema
                 _md.ModeUsage = null;
             }
 
-            if (_md.AttributeActions is not null)
-            {
-                _md.AttributeActions.Reject = true;
-            }
+            _md.AttributeActions?.Reject = true;
         }
 
         private void ParseCancelNestedActions(IAttributes attributes)
@@ -639,10 +627,7 @@ internal sealed class NvdlSchema : ISchema
                 _md.ModeUsage = null;
             }
 
-            if (_md.AttributeActions is not null)
-            {
-                _md.AttributeActions.CancelNestedActions = true;
-            }
+            _md.AttributeActions?.CancelNestedActions = true;
         }
 
         private void ParseContext(IAttributes attributes)

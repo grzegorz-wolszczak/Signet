@@ -144,10 +144,7 @@ public partial class KeymapView : UserControl
     private void OnFindFirstStrokeClearClicked(object? sender, RoutedEventArgs e)
     {
         WithoutFilterSync(ClearFindFields);
-        if (_bound is not null)
-        {
-            _bound.ShortcutFilter = null;
-        }
+        _bound?.ShortcutFilter = null;
 
         FindFirstStroke.Focus();
     }
@@ -227,10 +224,7 @@ public partial class KeymapView : UserControl
         if ((e.Source as StyledElement)?.DataContext is KeymapNode { IsGroup: false } node && e.Source is Control anchor)
         {
             e.Handled = true;
-            if (_bound is not null)
-            {
-                _bound.Selected = node;
-            }
+            _bound?.Selected = node;
 
             ShowEditMenu(node, anchor);
         }

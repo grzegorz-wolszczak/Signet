@@ -69,10 +69,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             || e.QualifiedKey.Contains("book_browser_appearance", StringComparison.Ordinal))
         {
             // The names of the files may show their folders now (or not any more): the tree is rebuilt.
-            if (_model is not null)
-            {
-                _model.ShowFolders = _settings.BookBrowserAppearance.ShowFolders;
-            }
+            _model?.ShowFolders = _settings.BookBrowserAppearance.ShowFolders;
 
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -1278,10 +1275,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         // SetNcxDocument(GetNcxDocument()) parses the current XML and writes it back —
         // NcxDocument.ToXml() always recomputes playOrder (RecomputePlayOrder).
         ncx.SetNcxDocument(ncx.GetNcxDocument());
-        if (_book is not null)
-        {
-            _book.Modified = true;
-        }
+        _book?.Modified = true;
 
         _statusBar.ShowMessage(Strings.Get("BookBrowser_NcxRenumbered"), TimeSpan.FromSeconds(3));
     }

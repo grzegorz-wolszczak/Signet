@@ -18,6 +18,7 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        WebKitEnvironment.Apply();
         string logDir = AppLogging.ConfigureSerilog();
         StartupTimeline.Mark("main entered, log ready");
         using ILoggerFactory loggerFactory = AppLogging.CreateLoggerFactory();

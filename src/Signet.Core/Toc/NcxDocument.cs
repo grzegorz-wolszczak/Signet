@@ -672,26 +672,17 @@ public sealed class NcxDocument
                 break;
 
             case TextSink.PageTargetLabel:
-                if (currentPage is not null)
-                {
-                    currentPage.Label = value;
-                }
+                currentPage?.Label = value;
 
                 break;
 
             case TextSink.NavTargetLabel:
-                if (currentNavTarget is not null)
-                {
-                    currentNavTarget.Label = value;
-                }
+                currentNavTarget?.Label = value;
 
                 break;
 
             case TextSink.NavListLabel:
-                if (currentNavList is not null)
-                {
-                    currentNavList.Label = value;
-                }
+                currentNavList?.Label = value;
 
                 break;
 

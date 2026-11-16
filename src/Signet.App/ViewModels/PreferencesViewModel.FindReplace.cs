@@ -63,10 +63,7 @@ public sealed partial class PreferencesViewModel
     {
         FindReplaceAppearance look = new(FindReplaceFieldFontFamily, FindReplaceFieldFontSize, FindReplaceFieldFontWeight);
         _settings.FindReplaceAppearance = look;
-        if (_findReplaceSample is not null)
-        {
-            _findReplaceSample.FieldFont = look.Normalized();
-        }
+        _findReplaceSample?.FieldFont = look.Normalized();
     }
 
     private FontSettingViewModel FindReplaceFieldsFontRow() =>

@@ -272,10 +272,7 @@ public sealed class MainDockFactory : Factory
 
         // The Preview grays out the page alone, not the whole panel: its toolbar is configured from its own context
         // menu, which a disabled panel would not even open (PreviewViewModel.IsContentEnabled).
-        if (_preview is not null)
-        {
-            _preview.IsContentEnabled = open;
-        }
+        _preview?.IsContentEnabled = open;
     }
 
     /// <summary>
@@ -634,10 +631,7 @@ public sealed class MainDockFactory : Factory
             }
         }
 
-        if (DocumentDock is not null)
-        {
-            DocumentDock.Title = Strings.Get("Panel_Documents");
-        }
+        DocumentDock?.Title = Strings.Get("Panel_Documents");
 
         // The name of the shown file goes back after the title of the panel was reset above.
         UpdatePreviewTitle();

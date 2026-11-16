@@ -40,7 +40,7 @@ public sealed class ClassCompletionViewTests : IDisposable
 
         CodeTabViewModel vm = new(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker)
         {
-            BookFiles = () => Array.Empty<LinkCompletionFile>(),
+            BookFiles = Array.Empty<LinkCompletionFile>,
             DocumentTextOf = bookPath => bookPath == "style.css" ? ".note { x: y } .notice { x: y } .lead { x: y }" : null,
         };
         Window window = new() { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };

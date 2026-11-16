@@ -103,10 +103,7 @@ public sealed class ImageTabViewModel : ContentTabViewModel
             return;
         }
 
-        if (_book is not null)
-        {
-            _book.Modified = true;
-        }
+        _book?.Modified = true;
 
         _image.NotifyUpdatedOnDisk();
         _statusBar.ShowMessage(Strings.Format("ImageTab_Resized", width, height), TimeSpan.FromSeconds(4));

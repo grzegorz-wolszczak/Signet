@@ -459,7 +459,7 @@ public sealed class FileWorkflow : IDisposable
         BookLoadMap loading = new(progress);
         try
         {
-            Core.BookManipulation.WellFormedResult? invalid = await Task.Run(() => importer.CheckValidToLoad()).ConfigureAwait(true);
+            Core.BookManipulation.WellFormedResult? invalid = await Task.Run(importer.CheckValidToLoad).ConfigureAwait(true);
             if (invalid is { IsWellFormed: false } err)
             {
                 return (null, Strings.Format("File_NotWellFormedOnOpen", err.Line, err.Message));

@@ -413,10 +413,7 @@ internal sealed class CompactSyntax : IParseContext
         Pattern p = AnnotatedPrimaryExpr(topLevel, scope, except);
         if (Kind(1) is TokenKind.Plus or TokenKind.QuestionMark or TokenKind.Star)
         {
-            if (hadOccur is not null)
-            {
-                hadOccur[0] = true;
-            }
+            hadOccur?[0] = true;
 
             CompactToken t = Consume(Kind(1));
             CheckExcept(except);

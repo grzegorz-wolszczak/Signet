@@ -1665,6 +1665,6 @@ public sealed class SettingsStoreTests
         SettingsStore draft = NewStore(dir).CreateDraft();
 
         // Act & Assert
-        FluentActions.Invoking(() => draft.CreateDraft()).Should().Throw<System.InvalidOperationException>();
+        FluentActions.Invoking(draft.CreateDraft).Should().Throw<System.InvalidOperationException>();
     }
 }

@@ -232,6 +232,14 @@ public partial class PreviewView : UserControl
 
         AppTheme.Changed += OnAppThemeChanged;
 
+        if (!WebKitGtkAvailability.IsAvailable)
+        {
+            // Without the library the web view stays a transparent hole: say why instead.
+            _initFailed = true;
+            ShowFallback(Strings.Get("Preview_WebKitMissing"));
+            return;
+        }
+
         try
         {
             Nwv.NativeWebViewRuntime.EnsureCurrentPlatformRegistered();

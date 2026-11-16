@@ -257,10 +257,7 @@ public sealed class ClipsViewModel : ViewModelBase
                 return;
             }
 
-            if (old is not null)
-            {
-                old.IsEditing = false;
-            }
+            old?.IsEditing = false;
 
             if (value is not null)
             {
