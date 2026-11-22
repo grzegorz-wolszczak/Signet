@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Signet
+GenericName=EPUB Editor
+GenericName[pl]=Edytor EPUB
+Comment=Edit EPUB 2 and EPUB 3 ebooks
+Comment[pl]=Edycja e-booków EPUB 2 i EPUB 3
+Exec=signet %f
+Icon=io.github.grzegorz_wolszczak.Signet
+Terminal=false
+Categories=Office;Publishing;
+MimeType=application/epub+zip;
+Keywords=epub;ebook;editor;
+StartupWMClass=Signet.App

@@ -1,0 +1,12 @@
+Package: signet
+Version: @VERSION@
+Architecture: amd64
+Maintainer: Signet <https://github.com/grzegorz-wolszczak/Signet/issues>
+Installed-Size: @INSTALLED_SIZE@
+Depends: libwebkit2gtk-4.1-0, libgtk-3-0
+Section: editors
+Priority: optional
+Homepage: https://github.com/grzegorz-wolszczak/Signet
+Description: Editor for EPUB 2 and EPUB 3 ebooks
+ Code editor with preview, find and replace, table of contents, metadata,
+ reports, spellcheck, reformatting and a book check based on EPUBCheck.
