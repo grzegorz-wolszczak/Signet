@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.grzegorz_wolszczak.Signet</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Signet</name>
+  <summary>Editor for EPUB 2 and EPUB 3 ebooks</summary>
+  <description>
+    <p>
+      Signet is a desktop editor for EPUB ebooks: code editor with preview, find and replace, table of contents,
+      metadata, reports, spellcheck, reformatting and a book check based on EPUBCheck.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.grzegorz_wolszczak.Signet.desktop</launchable>
+  <url type="homepage">https://github.com/grzegorz-wolszczak/Signet</url>
+  <provides>
+    <binary>signet</binary>
+  </provides>
+  <content_rating type="oars-1.1" />
+</component>

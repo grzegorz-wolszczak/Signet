@@ -1,9 +1,11 @@
 <Project>
 
   <!--
-    Signet versioning: <VersionPrefix>-<yyyyMMddHHmm UTC>, e.g. 0.8.0-202610021432.
+    Signet versioning: <VersionPrefix>-<yyyyMMddHHmm UTC>, e.g. 0.1.0.0-202610021432, for local builds.
 
-    VersionPrefix comes from Directory.Build.props; the timestamp is the build time (UTC).
+    VersionPrefix comes from Directory.Build.props; the timestamp is the build time (UTC). A release build of the release
+    pipeline passes -p:SignetReleaseVersion=X.Y.Z.W: Signet's own projects then carry exactly that version, without a
+    timestamp. The EPUBCheck port overrides VersionPrefix (EpubCheckVersion.props) and keeps its timestamp.
     The full version goes into AssemblyInformationalVersionAttribute and is read at runtime
     by Signet.App.Infrastructure.AppVersion.
 
@@ -22,6 +24,7 @@
            standalone EPUBCheck tool builds two platforms with one version. -->
       <SignetBuildTimestamp Condition="'$(SignetBuildTimestamp)' == ''">$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmm'))</SignetBuildTimestamp>
       <InformationalVersion>$(VersionPrefix)-$(SignetBuildTimestamp)</InformationalVersion>
+      <InformationalVersion Condition="'$(SignetReleaseVersion)' != '' and '$(VersionPrefix)' == '$(SignetReleaseVersion)'">$(SignetReleaseVersion)</InformationalVersion>
     </PropertyGroup>
 
     <Message Importance="high" Text="Signet $(InformationalVersion)" />

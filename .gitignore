@@ -188,6 +188,8 @@ cython_debug/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
+# ...but not the release scripts (CI and releases, AGENTS.md).
+!/scripts/release/
 [Rr]eleases/
 x64/
 x86/

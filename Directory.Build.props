@@ -11,7 +11,11 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <Deterministic>true</Deterministic>
-    <VersionPrefix>0.10.0</VersionPrefix>
+    <!-- Signet's version is MAJOR.MINOR.PATCH.BUILD. Released versions come from the git tags vX.Y.Z.W made by the release
+         pipeline (.github/workflows/release.yml), which passes -p:SignetReleaseVersion=X.Y.Z.W; this prefix is only the
+         version of local builds and is not bumped by hand. -->
+    <VersionPrefix>0.1.0.0</VersionPrefix>
+    <VersionPrefix Condition="'$(SignetReleaseVersion)' != ''">$(SignetReleaseVersion)</VersionPrefix>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 

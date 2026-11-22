@@ -1,0 +1,30 @@
+#!/bin/sh
+# AppRun of the Signet AppImage (scripts/release/package-linux.sh).
+#
+# The bundled libwebkit2gtk looks for its helper processes (WebKitWebProcess, WebKitNetworkProcess) and its injected
+# bundle at a path patched to be relative: ././/lib/x86_64-linux-gnu/webkit2gtk-4.1, i.e. relative to $APPDIR/usr. So
+# the working directory has to be $APPDIR/usr; arguments naming existing files are made absolute first, so that a book
+# given relative to the caller's directory still opens.
+set -e
+
+APPDIR="${APPDIR:-$(dirname "$(readlink -f "$0")")}"
+export APPDIR
+
+# The environment of the bundled GTK is set before this script runs: linuxdeploy installs this script as
+# AppRun.wrapped behind its own AppRun, which sources apprun-hooks/ (linuxdeploy-plugin-gtk).
+
+# GStreamer is bundled (WebKit links it) but its plugins are not: the host's plugins, built for another GStreamer, must
+# not be loaded into the bundled one. Audio and video in the Preview do not play in the AppImage.
+export GST_PLUGIN_SYSTEM_PATH_1_0="$APPDIR/usr/lib/gstreamer-1.0"
+export GST_PLUGIN_PATH_1_0="$APPDIR/usr/lib/gstreamer-1.0"
+
+for arg in "$@"; do
+    shift
+    if [ -e "$arg" ]; then
+        arg="$(readlink -f "$arg")"
+    fi
+    set -- "$@" "$arg"
+done
+
+cd "$APPDIR/usr"
+exec "$APPDIR/usr/bin/Signet.App" "$@"
