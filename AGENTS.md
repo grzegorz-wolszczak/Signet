@@ -68,6 +68,8 @@ Never launch or drive the desktop app (UI Automation, SendKeys, simulated input)
 ## Commits
 
 Conventional Commits (`type(scope): description`), type from `feat fix refactor test docs build chore perf ci`.
+Mind the version keywords (see *CI and releases*): `minor`, `patch`, `bugfix` anywhere in a message merged to `main`
+pick the next version, so don't write them casually.
 The body must be detailed: what changed and why, key decisions/trade-offs, impact on other modules.
 A package version change = its own `build` commit.
 
@@ -130,5 +132,44 @@ A package version change = its own `build` commit.
   `.resx`) are CRLF on disk on every platform (`.gitattributes` `eol=crlf` + `.editorconfig` `end_of_line = crlf`; keep both
   lists in step when adding an extension); `*.sh` LF; `*.cmd`/`*.bat` CRLF; other text `text=auto`. Byte-stable:
   `tests/corpus/`, `src/Signet.Core/EmbeddedData/` (LF). A file a tool wrote as LF is fixed by converting it to CRLF.
-- **Version:** `<VersionPrefix>-<yyyyMMddHHmm UTC>` (`version/Versioning.targets`, only in `Signet.App.csproj`);
-  at runtime `Signet.App.Infrastructure.AppVersion.Text`.
+- **Version:** `MAJOR.MINOR.PATCH.BUILD`. Local builds: `<VersionPrefix>-<yyyyMMddHHmm UTC>` (`0.1.0.0-…`, prefix in
+  `Directory.Build.props`, not bumped by hand); release builds get `-p:SignetReleaseVersion=X.Y.Z.W` and carry exactly
+  that (`version/Versioning.targets`). At runtime `Signet.App.Infrastructure.AppVersion.Text`. The EPUBCheck port keeps
+  its own version (`version/EpubCheckVersion.props`).
+
+## CI and releases
+
+GitHub Actions, workflows in `.github/workflows/`, scripts in `scripts/release/`, packaging files in `packaging/`.
+
+- **`main` is protected** (ruleset `.github/rulesets/main.json`, applied with `scripts/release/setup-github.sh`): no
+  direct pushes, no force pushes; changes only through a pull request, **squash merge only**, the check `Linux tests`
+  must pass and the branch must be up to date. Repository admins may bypass. Work on a branch and open a PR; never push
+  to `main`.
+- **Every PR** runs `ci.yml`: all test projects on Linux (`xvfb-run dotnet test Signet.slnx`; benchmarks and the Java
+  differential tests skip themselves). No Windows test run.
+- **Every push to `main`** runs `release.yml`: the tests again, then the next version, packages, and a GitHub release
+  with the tag `vX.Y.Z.W` (notes generated from the PRs). The tag is created only when all required packages built;
+  runs are serialized.
+- **Version** = last tag `vX.Y.Z.W` (none: first release `0.1.0.0`), bumped by `scripts/release/next-version.sh` from
+  the commit messages of the push (for a PR: the squash commit = PR title + description). Whole words, any case:
+  - `minor` → `X.(Y+1).0.0`
+  - `patch` or `bugfix` → `X.Y.(Z+1).0`
+  - none of them → `X.Y.Z.(W+1)`
+  - `minor` wins over `patch`/`bugfix`. MAJOR is never bumped automatically: tag a commit `vN.0.0.0` by hand.
+  - So put the keyword in the **PR title or description** to choose the bump.
+- **Release assets:**
+  - `Signet-<v>-x86_64.AppImage` (+ `.zsync`) — self-contained: bundles WebKitGTK and GTK from Ubuntu 22.04 (glibc
+    2.35+). The bundled `libwebkit2gtk` is patched to find its helper processes relative to `$APPDIR/usr`, which
+    `packaging/linux/AppRun` makes the working directory (it makes file arguments absolute first). The P/Invoked
+    libraries are symlinked beside the executable instead of using `LD_LIBRARY_PATH`.
+  - `signet_<v>_amd64.deb`, `signet-<v>-1.x86_64.rpm` — app in `/opt/signet`, command `signet`; depend on the
+    distribution's WebKitGTK 4.1 and GTK 3.
+  - `Signet-<v>-win-x64.zip` — self-contained single file (`Signet.exe`, ReadyToRun) + a few native DLLs.
+  - `Signet-<v>-win-x64-aot.zip` — NativeAOT, **experimental** (the job may fail without blocking the release; XSLT
+    Schematron and reflection bindings are not AOT-safe). One of the two Windows variants will be dropped.
+  - `signet-cli-<v>-linux-x64.tar.gz` / `-win-x64.zip` and `epubcheck.net-<port version>-<rid>.*` (single files).
+- Packaging locally: `scripts/release/package-linux.sh <v>` (on Ubuntu 22.04, e.g. in a container),
+  `scripts/release/package-tools.sh <v>`, `scripts/release/package-windows.ps1 -Version <v> -Variant SingleFile|Aot`.
+  Output in `artifacts/release/`.
+- Pinned versions: actions by major tag; linuxdeploy, linuxdeploy-plugin-gtk and appimagetool by release/commit in
+  `package-linux.sh`.
