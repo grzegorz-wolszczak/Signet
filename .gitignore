@@ -42,6 +42,8 @@ MANIFEST
 *.manifest
 !src/Signet.App/app.manifest
 *.spec
+# ...but not the rpm spec of the Linux packages (scripts/release/package-linux.sh).
+!/packaging/linux/rpm/*.spec
 
 # Installer logs
 pip-log.txt
