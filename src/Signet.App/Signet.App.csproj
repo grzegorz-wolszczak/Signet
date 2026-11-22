@@ -66,7 +66,7 @@
     <ProjectReference Include="..\Signet.NativeWebView.Platform.Linux\Signet.NativeWebView.Platform.Linux.csproj" />
   </ItemGroup>
 
-  <!-- Version 0.1-<timestamp>-<build number>; the number is bumped on every App build. -->
+  <!-- Version <VersionPrefix>-<timestamp> (local) or the exact release version (release pipeline). -->
   <Import Project="..\..\version\Versioning.targets" />
 
   <ItemGroup>

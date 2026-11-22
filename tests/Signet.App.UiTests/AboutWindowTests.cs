@@ -18,7 +18,7 @@ public sealed class AboutWindowTests
     public void Shows_the_compiled_in_version()
     {
         // Arrange
-        string prefix = typeof(AboutWindowTests).Assembly.GetName().Version!.ToString(3);
+        string prefix = typeof(AboutWindowTests).Assembly.GetName().Version!.ToString(4);
         AboutWindow window = new();
 
         // Act
